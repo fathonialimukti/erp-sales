@@ -3,41 +3,26 @@ import { publicProcedure, router } from "../trpc.js";
 
 /**
  * Public landing page router — no auth required.
- * Returns WH01 warehouse layout data for the hero 3D scene.
+ * Returns CRM stats for the landing page dashboard.
  */
 export const landingRouter = router({
   getScene: publicProcedure.query(async () => {
-    const warehouse = await prisma.warehouse.findFirst({
-      where: { objectId: "WH01" },
-      select: { id: true, objectId: true },
-    });
+    const [regionCount, areaCount, customerCount, outletCount, salesOrderCount] = await Promise.all([
+      prisma.region.count(),
+      prisma.area.count(),
+      prisma.customer.count(),
+      prisma.outlet.count(),
+      prisma.salesOrder.count(),
+    ]);
 
-    if (!warehouse) {
-      return { warehouseObjectId: null, locations: [] };
-    }
-
-    const locations = await prisma.storageLocation.findMany({
-      where: { warehouseId: warehouse.id },
-      orderBy: { id: "asc" },
-      select: {
-        id: true,
-        pallet: {
-          select: {
-            id: true,
-            sourceType: true,
-            sourceItemId: true,
-            sku: {
-              select: {
-                id: true,
-                name: true,
-                objectId: true,
-              },
-            },
-          },
-        },
+    return {
+      stats: {
+        regions: regionCount,
+        areas: areaCount,
+        customers: customerCount,
+        outlets: outletCount,
+        salesOrders: salesOrderCount,
       },
-    });
-
-    return { warehouseObjectId: warehouse.objectId, locations };
+    };
   }),
 });

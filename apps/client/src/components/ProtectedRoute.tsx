@@ -1,25 +1,18 @@
-import { Navigate } from 'react-router';
-import { useAtomValue } from 'jotai';
-import { authBootstrapReadyAtom, isAuthenticatedAtom } from '../lib/atoms';
-import type { ReactNode } from 'react';
+import { Navigate } from "react-router";
+import { useAtomValue } from "jotai";
+import type { ReactNode } from "react";
+import { authBootstrapReadyAtom, isAuthenticatedAtom } from "../lib/atoms";
 
-type ProtectedRouteProps = {
+interface ProtectedRouteProps {
   children: ReactNode;
-};
+}
 
-function ProtectedRoute({ children }: ProtectedRouteProps) {
+export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const authBootstrapReady = useAtomValue(authBootstrapReadyAtom);
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
 
-  if (!authBootstrapReady) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!authBootstrapReady) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return <>{children}</>;
-}
-
-export { ProtectedRoute };
+};

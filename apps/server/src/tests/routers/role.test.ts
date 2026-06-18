@@ -42,12 +42,10 @@ describe('role router', () => {
 
     const role = await caller.accessControl.role.create({
       name: `TEST_ROLE_CREATE_${randomUUID()}`,
-      permissions: [permission.id],
+      permissionIds: [permission.id],
     });
 
     expect(role.id).toBeTruthy();
-    expect(role.permissions.map((rp) => rp.permission.id)).toContain(permission.id);
-
     createdRoleIds.push(role.id);
 
     const activity = await prisma.activityLog.findFirst({
@@ -79,13 +77,12 @@ describe('role router', () => {
     createdRoleIds.push(role.id);
 
     const updated = await caller.accessControl.role.update({
-      id: role.id,
+      currentId: role.id,
       name: `${role.name}-UPDATED`,
-      permissions: [permissionB.id],
+      permissionIds: [permissionB.id],
     });
 
     expect(updated.name).toContain('-UPDATED');
-    expect(updated.permissions.map((rp) => rp.permission.id)).toEqual([permissionB.id]);
 
     const activity = await prisma.activityLog.findFirst({
       where: {

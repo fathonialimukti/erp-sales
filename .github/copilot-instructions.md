@@ -15,7 +15,7 @@ Use:
 - **Turborepo** for monorepo management
 
 Always respect the current project structure and recent file edits.
-Only refer to file i provided in the context, focus on it and feel free to ask for more files if needed. Do not suggest code that has been deleted in recent edits.
+Only refer to files provided in context, focus on them and feel free to ask for more files if needed. Do not suggest code that has been deleted in recent edits.
 ---
 
 **Preferred architecture**: Feature-Sliced Design (light version) — group by **feature** inside `features/` when it grows.
@@ -55,6 +55,7 @@ Only refer to file i provided in the context, focus on it and feel free to ask f
 - Use `useMemo` / `useCallback` / `React.memo` **only** when performance issues are measured
 - Prefer **composition** and **context** over heavy prop drilling
 - Use **Zustand** or **Jotai** sparingly for global state (only when truly needed)
+- Every page component MUST add a `data-ai-context` attribute on its outermost wrapper element containing `JSON.stringify()` of key page context: `{ section, id, documentNumber, name, approvalStatus, itemCount, ... }`. The `section` value should be a kebab-case identifier matching the route/feature name (e.g., `receiving-transaction-detail`, `area-index`, `region-form`).
 
 ---
 
@@ -146,6 +147,8 @@ packages/schemas — Shared Zod schemas (@repo/schemas) — use these first befo
 packages/ui      — Turborepo scaffold placeholder, NOT used by client (client uses @heroui/react directly)
 ```
 
+> **Module-level docs**: Read `apps/server/src/routers/*/CLAUDE.md` before editing a feature — they contain data flows, business rules, and gotchas specific to each domain.
+
 ### Build & Dev Commands
 
 | Scope | Command | What it does |
@@ -158,6 +161,7 @@ packages/ui      — Turborepo scaffold placeholder, NOT used by client (client 
 | Server | `bun run db:studio` | Open Prisma Studio |
 | Server | `bun run db:push` | Push schema without migration (dev only) |
 | Server | `bun run test` | Run Vitest tests |
+| Server | `bunx vitest run path/to/test.ts` | Run a single test |
 
 ### Server Required Env Variables
 
@@ -175,9 +179,28 @@ packages/ui      — Turborepo scaffold placeholder, NOT used by client (client 
 - **PostgreSQL** via `pg` pool + `@prisma/adapter-pg` (driver adapter mode)
 - Schema: [apps/server/src/prisma/schema.prisma](../apps/server/src/prisma/schema.prisma)
 - Generated client: `apps/server/src/prisma/generated/` (non-standard — **not** `node_modules/.prisma`)
-- Import Prisma client from `'../prisma/generated'` inside the server package
+- Import Prisma client from `'../prisma/generated/client'` inside the server package
 - All IDs use `@default(ulid())` — never use numeric auto-increment or UUID
 - Key enums: `ApprovalStatus` (`DRAFT | PROPOSED | APPROVED | REJECTED`), `PalletStatus`, `StorageLocationStatus`
+
+---
+
+## Server-Side Patterns
+
+- **Prisma client**: import from `'../prisma/generated/client'` (not `@prisma/client`). Singleton at `'../lib/prisma.js'`. In transactional procedures, use `ctx.db` (not `prisma` directly) so queries join the transaction.
+- **All imports use `.js` extensions** (ESM output target).
+- **Activity logging required** on every mutation: `logActivity(prisma, { action, userId, resource, resourceId, message, detail })` with helpers `buildCreateLogDetail`, `buildUpdateLogDetail`, `buildDeleteLogDetail` from `'../lib/log-detail.js'`.
+- **List queries**: use `createListInputSchema()`, `buildPaginationParams`, `buildPaginationMeta`, and `buildTextSearchWhere(input?.search, [...fields])` from `'../lib/list-query.js'`.
+- **Procedure tiers**: `publicProcedure` (no auth), `protectedProcedure` (JWT), `transactionalProtectedProcedure` (JWT + `prisma.$transaction`). Chain `.use(hasPermission('resource@action'))` for permission gating.
+
+---
+
+## Shared Schemas (`@repo/schemas`)
+
+- Import from individual domain files (e.g. `@repo/schemas/warehouse`), **not** the barrel `@repo/schemas`.
+- Never define Zod schemas locally in a router if they belong in shared schemas.
+- `update*Schema` **must** include `currentId: z.string()` — required for activity logging and rename tracking.
+- After adding a new schema file, export it from `packages/schemas/src/index.ts`.
 
 ---
 
@@ -245,3 +268,5 @@ Split into two components: an **outer** loader and an **inner** form.
 - Locales: `en` and `id` (Indonesian) — files at `apps/client/src/locales/`
 - Usage: `const intl = useIntl(); intl.formatMessage({ id: 'key.path', defaultMessage: 'Fallback' })`
 - Locale persisted as Jotai atom + cookie
+- Key pattern: `{domain}.{page}.{key}` (e.g. `warehouse.form.title_create`). **Always add keys to both `en.json` and `id.json`** — same keys, parallel translations.
+- For dynamic values use ICU message format: `"Delete \"{name}\"?"` with `{ name: record.name }` as `values` argument.

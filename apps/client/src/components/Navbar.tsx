@@ -1,186 +1,127 @@
-import {
-  Dropdown,
-  Avatar,
-  Card,
-  Button,
-  Select,
-  ListBox,
-  Label,
-} from '@heroui/react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { authUserAtom, sidebarOpenAtom, themeModeAtom } from '../lib/atoms';
-import { Icon } from '@iconify/react';
-import { useNavigate } from 'react-router';
-import { useAuthActions } from '../lib/useAuth';
-import { useIntl } from 'react-intl';
-import { useLocale } from '../lib/useLocale';
-import { localeLabels, localeSymbols, supportedLocales } from '../lib/locale';
-import type { Key } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useNavigate } from "react-router";
+import { useIntl } from "react-intl";
+import { Icon } from "../ui";
+import { authUserAtom, sidebarOpenAtom, themeModeAtom } from "../lib/atoms";
+import { useAuthActions } from "../lib/useAuth";
+import { useLocale } from "../lib/useLocale";
+import { localeLabels, localeSymbols, supportedLocales } from "../lib/locale";
+import { Avatar } from "../ui/Avatar";
+import { Button } from "../ui/Button";
+import { Dropdown, DropdownItem, DropdownSeparator } from "../ui/Dropdown";
+import { Select } from "../ui/Select";
 
 type SupportedLocale = (typeof supportedLocales)[number];
 
-function Navbar() {
+export const Navbar = () => {
   const navigate = useNavigate();
+  const intl = useIntl();
   const user = useAtomValue(authUserAtom);
   const setSidebarOpen = useSetAtom(sidebarOpenAtom);
   const [theme, setTheme] = useAtom(themeModeAtom);
   const { logout } = useAuthActions();
-  const intl = useIntl();
   const { locale, setLocale } = useLocale();
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login', { replace: true });
-  };
-
-  const handleUserAction = async (key: Key) => {
-    if (key === 'logout') {
-      await handleLogout();
-    }
-  };
-
-  const handleLocaleChange = (key: Key | null) => {
-    if (key === 'en' || key === 'id') {
-      setLocale(key);
-    }
+    navigate("/login", { replace: true });
   };
 
   const toggleSidebar = () => setSidebarOpen((prev: boolean) => !prev);
-
   const toggleTheme = () =>
-    setTheme((prev: 'light' | 'dark') => (prev === 'dark' ? 'light' : 'dark'));
-
-  const userInitials = user?.name
-    .split(' ')
-    .map((s) => s[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+    setTheme((prev: "light" | "dark") => (prev === "dark" ? "light" : "dark"));
 
   return (
-    <div className="md:mx-4 md:mt-4">
-      <Card>
-        <Card.Content>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Button
-                isIconOnly
-                variant="ghost"
-                onPress={toggleSidebar}
-                aria-label="Toggle sidebar"
-              >
-                <Icon icon="solar:hamburger-menu-linear" className="h-5 w-5" />
-              </Button>
-              <p className="text-lg font-bold">
-                {intl.formatMessage({ id: 'nav.erp_sales', defaultMessage: 'ERP SALES' })}
-              </p>
-            </div>
+    <header className="border-b border-slate-200 bg-surface-1 px-4 py-3 dark:border-slate-800">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            aria-label={intl.formatMessage({ id: "nav.toggle_sidebar", defaultMessage: "Toggle sidebar" })}
+          >
+            <Icon icon="solar:hamburger-menu-linear" className="h-5 w-5" />
+          </Button>
+          <p className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            {intl.formatMessage({ id: "nav.erp_sales", defaultMessage: "ERP SALES" })}
+          </p>
+        </div>
 
-            <div className="flex items-center gap-2">
-              <Select
-                selectedKey={locale}
-                onSelectionChange={handleLocaleChange}
-                variant="secondary"
-                aria-label={intl.formatMessage({ id: 'nav.language', defaultMessage: 'Language' })}
-              >
-                <Select.Trigger>
-                  <Select.Value>{localeSymbols[locale]}</Select.Value>
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    {supportedLocales.map((code: SupportedLocale) => (
-                      <ListBox.Item key={code} id={code} textValue={localeLabels[code]}>
-                        <span className="font-semibold">{localeSymbols[code]}</span>
-                        <Label>{localeLabels[code]}</Label>
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-
-              <Button
-                isIconOnly
-                variant="ghost"
-                onPress={toggleTheme}
-                aria-label={intl.formatMessage({ id: 'nav.theme', defaultMessage: 'Theme' })}
-              >
-                <Icon
-                  icon={theme === 'dark' ? 'solar:sun-2-linear' : 'solar:moon-linear'}
-                  className="h-5 w-5"
-                />
-              </Button>
-
-              {user ? (
-                <Dropdown>
-                  <Dropdown.Trigger>
-                    <div className="ml-1 flex items-center text-left" aria-label="User menu">
-                      <Avatar size="sm">
-                        <Avatar.Fallback>{userInitials}</Avatar.Fallback>
-                      </Avatar>
-                      <div className="ml-3 hidden md:flex md:flex-col">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {user.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {user.roleName}
-                        </p>
-                      </div>
-                    </div>
-                  </Dropdown.Trigger>
-
-                  <Dropdown.Popover>
-                    <Dropdown.Menu aria-label="User Actions" onAction={handleUserAction}>
-                      <Dropdown.Item id="profile" textValue="profile">
-                        <div className="flex flex-col gap-1 py-1">
-                          <Label>
-                            {intl.formatMessage({ id: 'nav.signed_in_as', defaultMessage: 'Signed in as' })}
-                          </Label>
-                          <span className="font-semibold text-foreground">{user.name}</span>
-                        </div>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="role" textValue="role">
-                        <Label>Role: {user.roleName}</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="email" textValue="email">
-                        <Label>{user.email}</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="settings" textValue="settings">
-                        <Label>{intl.formatMessage({ id: 'nav.my_settings', defaultMessage: 'My Settings' })}</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="team_settings" textValue="team settings">
-                        <Label>{intl.formatMessage({ id: 'nav.team_settings', defaultMessage: 'Team Settings' })}</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="analytics" textValue="analytics">
-                        <Label>{intl.formatMessage({ id: 'nav.analytics', defaultMessage: 'Analytics' })}</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="system" textValue="system">
-                        <Label>{intl.formatMessage({ id: 'nav.system', defaultMessage: 'System' })}</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="configurations" textValue="configurations">
-                        <Label>
-                          {intl.formatMessage({ id: 'nav.configurations', defaultMessage: 'Configurations' })}
-                        </Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="help_and_feedback" textValue="help and feedback">
-                        <Label>
-                          {intl.formatMessage({ id: 'nav.help_and_feedback', defaultMessage: 'Help & Feedback' })}
-                        </Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="logout" textValue="logout" variant="danger">
-                        <Label>{intl.formatMessage({ id: 'nav.logout', defaultMessage: 'Log Out' })}</Label>
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown.Popover>
-                </Dropdown>
-              ) : null}
-            </div>
+        <div className="flex items-center gap-2">
+          <div className="w-32">
+            <Select
+              aria-label={intl.formatMessage({ id: "nav.language", defaultMessage: "Language" })}
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as SupportedLocale)}
+            >
+              {supportedLocales.map((code) => (
+                <option key={code} value={code}>
+                  {localeSymbols[code]} — {localeLabels[code]}
+                </option>
+              ))}
+            </Select>
           </div>
-        </Card.Content>
-      </Card>
-    </div>
-  );
-}
 
-export { Navbar };
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label={intl.formatMessage({ id: "nav.theme", defaultMessage: "Theme" })}
+          >
+            <Icon
+              icon={theme === "dark" ? "solar:sun-2-linear" : "solar:moon-linear"}
+              className="h-5 w-5"
+            />
+          </Button>
+
+          {user && (
+            <Dropdown
+              trigger={
+                <div className="flex items-center gap-3 rounded-md px-2 py-1 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+                  <Avatar name={user.name} />
+                  <div className="hidden text-left md:block">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.roleName}</p>
+                  </div>
+                  <Icon icon="solar:alt-arrow-down-linear" className="hidden h-4 w-4 text-slate-400 md:block" />
+                </div>
+              }
+            >
+              <div className="px-3 py-2">
+                <p className="text-xs text-slate-500">
+                  {intl.formatMessage({ id: "nav.signed_in_as", defaultMessage: "Signed in as" })}
+                </p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.name}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{user.email}</p>
+              </div>
+              <DropdownSeparator />
+              <DropdownItem
+                leftIcon={<Icon icon="solar:settings-linear" className="h-4 w-4" />}
+                onClick={() => navigate("/users")}
+              >
+                {intl.formatMessage({ id: "nav.my_settings", defaultMessage: "My Settings" })}
+              </DropdownItem>
+              <DropdownItem
+                leftIcon={<Icon icon="solar:history-linear" className="h-4 w-4" />}
+                onClick={() => navigate("/activity-logs")}
+              >
+                {intl.formatMessage({ id: "nav.activity_logs", defaultMessage: "Activity Logs" })}
+              </DropdownItem>
+              <DropdownSeparator />
+              <DropdownItem
+                tone="danger"
+                leftIcon={<Icon icon="solar:logout-2-linear" className="h-4 w-4" />}
+                onClick={handleLogout}
+              >
+                {intl.formatMessage({ id: "nav.logout", defaultMessage: "Log Out" })}
+              </DropdownItem>
+            </Dropdown>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};

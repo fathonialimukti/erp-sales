@@ -1,0 +1,35 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/marcosgomesneto/bun-devcontainers/tree/main/src/basic-bun
+{
+  "name": "erp_sales",
+  "dockerFile": "Dockerfile",
+  "runArgs": ["--network=dev", "--name=erp_sales"],
+  "forwardPorts": [2022, 1420],
+  "containerEnv": {
+    "HOST": "0.0.0.0"
+  },
+  "portsAttributes": {
+    "1420": {
+      "label": "Vite Client",
+      "onAutoForward": "notify"
+    },
+    "2022": {
+      "label": "tRPC Server",
+      "onAutoForward": "notify"
+    }
+  },
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "oven.bun-vscode",
+        "Prisma.prisma",
+        "bradlc.vscode-tailwindcss",
+        "EditorConfig.EditorConfig",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}

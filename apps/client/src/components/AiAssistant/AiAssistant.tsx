@@ -1,5 +1,5 @@
-import { Icon } from '@iconify/react';
-import { Button, Card, CardContent, CardFooter, CardHeader, Chip, ScrollShadow, Spinner, TextArea } from '@heroui/react';
+import { Icon } from "../../ui";
+import { Button, Card, CardContent, CardFooter, CardHeader, Chip, Spinner, Textarea } from '../../ui';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -263,7 +263,7 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
     state === 'output-available' ? 'success' :
       state === 'output-error' ? 'danger' :
         state === 'input-streaming' ? 'warning' :
-          ('default' as const);
+          ('neutral' as const);
 
   const prefix =
     state === 'output-available' ? '✓' :
@@ -275,8 +275,8 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
     : `${prefix} ${meta.label}${detail}`;
 
   return (
-    <Chip size="sm" variant="soft" color={color}>
-      <Icon icon={meta.icon} width={12} style={{ marginRight: '3px', verticalAlign: 'middle' }} />
+    <Chip size="sm" tone={color}>
+      <Icon icon={meta.icon} className="h-3 w-3" style={{ marginRight: '3px', verticalAlign: 'middle' }} />
       {labelText}
     </Chip>
   );
@@ -591,13 +591,13 @@ export const AiAssistant = () => {
                 <span style={{ fontWeight: 600, fontSize: '14px' }}>ERP Assistant</span>
               </div>
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <Button isIconOnly size="sm" variant="ghost" onPress={clearChat} aria-label="Clear chat history">
+                <Button isIconOnly size="sm" variant="ghost" onClick={clearChat} aria-label="Clear chat history">
                   <Icon icon="solar:trash-bin-minimalistic-linear" width={16} />
                 </Button>
-                <Button isIconOnly size="sm" variant="ghost" onPress={() => setIsExpanded((v) => !v)} aria-label="Expand chat">
+                <Button isIconOnly size="sm" variant="ghost" onClick={() => setIsExpanded((v) => !v)} aria-label="Expand chat">
                   <Icon icon={isExpanded ? 'solar:minimize-square-linear' : 'solar:maximize-square-linear'} width={16} />
                 </Button>
-                <Button isIconOnly size="sm" variant="ghost" onPress={() => { setOpen(false); setIsExpanded(false); }}>
+                <Button isIconOnly size="sm" variant="ghost" onClick={() => { setOpen(false); setIsExpanded(false); }}>
                   <Icon icon="solar:close-circle-linear" width={16} />
                 </Button>
               </div>
@@ -605,7 +605,7 @@ export const AiAssistant = () => {
           </CardHeader>
 
           <CardContent className='p-0'>
-            <ScrollShadow className={isExpanded ? 'h-[75vh] px-4' : 'h-[60vh] px-4'} size={80}>
+            <div className={isExpanded ? 'h-[75vh] overflow-y-auto px-4' : 'h-[60vh] overflow-y-auto px-4'}>
               {messages.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '24px', color: '#888', fontSize: '13px' }}>
                   <Icon icon="solar:chat-round-dots-linear" width={32} style={{ display: 'block', margin: '0 auto 8px' }} />
@@ -730,13 +730,12 @@ export const AiAssistant = () => {
               )}
               {/* Sentinel for auto-scroll */}
               <div ref={messagesEndRef} />
-            </ScrollShadow>
+            </div>
           </CardContent>
 
           <CardFooter>
             <div style={{ display: 'flex', gap: '8px', width: '100%', alignItems: 'flex-end' }}>
-              <TextArea
-                variant="secondary"
+              <Textarea
                 placeholder="Ask a question..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -744,7 +743,7 @@ export const AiAssistant = () => {
                 disabled={isLoading}
                 style={{ flex: 1, minWidth: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}
               />
-              <Button isIconOnly variant="primary" size="sm" onPress={handleSend} isDisabled={isLoading || !input.trim()}>
+              <Button isIconOnly variant="primary" size="sm" onClick={handleSend} isDisabled={isLoading || !input.trim()}>
                 <Icon icon="solar:plain-bold" width={16} />
               </Button>
             </div>

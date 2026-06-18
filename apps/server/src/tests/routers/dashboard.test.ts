@@ -26,20 +26,14 @@ afterAll(async () => {
 });
 
 describe('dashboard router', () => {
-  it('returns summary and warehouse allocations', async () => {
-    const summary = await caller.dashboard.summary();
-    expect(summary.pallets).toBeDefined();
-    expect(summary.pallets.total).toBeDefined();
-    expect(summary.pallets.available).toBeDefined();
-    expect(summary.pallets.notAvailable).toBeDefined();
-    expect(summary.pendingApprovals).toBeDefined();
-    expect(summary.pendingApprovals.total).toBeDefined();
-    expect(summary.pendingApprovals.breakdown).toBeDefined();
-    expect(summary.execution).toBeDefined();
-    expect(summary.monthlyActivity).toBeDefined();
-    expect(summary.prevMonthActivity).toBeDefined();
+  it('returns sales KPIs', async () => {
+    const sales = await caller.dashboard.sales();
+    expect(sales.kpis).toBeDefined();
+    expect(sales.revenueTrend).toBeDefined();
+    expect(sales.topCustomers).toBeDefined();
+    expect(sales.recentActivity).toBeDefined();
 
-    const allocations = await caller.dashboard.warehouseAllocations();
-    expect(Array.isArray(allocations)).toBe(true);
+    const feed = await caller.dashboard.activityFeed({ limit: 5 });
+    expect(feed.data).toBeDefined();
   });
 });

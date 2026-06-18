@@ -1,0 +1,844 @@
+/* ============================================================
+ * Sales Order Form — regular CSS (no Tailwind)
+ * 60% surface / 30% slate / 10% accent (emerald)
+ * ============================================================ */
+
+.so-form {
+  --so-bg: #f8fafc;
+  --so-surface: #ffffff;
+  --so-surface-2: #f1f5f9;
+  --so-surface-3: #e2e8f0;
+  --so-border: #e2e8f0;
+  --so-border-strong: #cbd5e1;
+  --so-fg: #0f172a;
+  --so-fg-muted: #64748b;
+  --so-fg-subtle: #94a3b8;
+  --so-accent: #10b981;
+  --so-accent-hover: #059669;
+  --so-accent-soft: #ecfdf5;
+  --so-accent-soft-2: #d1fae5;
+  --so-danger: #ef4444;
+  --so-danger-soft: #fef2f2;
+  --so-warning: #f59e0b;
+  --so-warning-soft: #fffbeb;
+  --so-radius: 12px;
+  --so-radius-sm: 8px;
+  --so-radius-lg: 16px;
+  --so-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --so-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --so-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10);
+  --so-font: "Inter", "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --so-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  background: var(--so-bg);
+  color: var(--so-fg);
+  font-family: var(--so-font);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 24px 8px 64px;
+  min-height: 100%;
+}
+
+.dark .so-form {
+  --so-bg: #020617;
+  --so-surface: #0f172a;
+  --so-surface-2: #1e293b;
+  --so-surface-3: #334155;
+  --so-border: #1e293b;
+  --so-border-strong: #334155;
+  --so-fg: #f1f5f9;
+  --so-fg-muted: #94a3b8;
+  --so-fg-subtle: #64748b;
+}
+
+/* ===== Layout shell ===== */
+.so-form__shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.so-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 4px 0;
+}
+
+.so-form__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--so-fg);
+}
+
+.so-form__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--so-fg-muted);
+}
+
+.so-form__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--so-fg-muted);
+  background: transparent;
+  border: 1px solid var(--so-border);
+  border-radius: var(--so-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+.so-form__back:hover {
+  background: var(--so-surface-2);
+  color: var(--so-fg);
+}
+
+/* ===== Card ===== */
+.so-card {
+  background: var(--so-surface);
+  border: 1px solid var(--so-border);
+  border-radius: var(--so-radius);
+  box-shadow: var(--so-shadow-sm);
+  /* overflow: visible is required so SelectSearch popovers can escape the card.
+   * Card-header rounding is preserved by clipping the header on its own. */
+  overflow: visible;
+}
+
+.so-card__header {
+  /* Header sits flush against the card's top corners; re-apply the
+   * rounded clip here so the bottom border doesn't bleed into the
+   * rounded edge. Body keeps overflow: visible. */
+  border-top-left-radius: var(--so-radius);
+  border-top-right-radius: var(--so-radius);
+  position: relative;
+  z-index: 1;
+}
+
+.so-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--so-border);
+  background: var(--so-surface);
+}
+
+.so-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--so-fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.so-card__title .so-card__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--so-accent-soft);
+  color: var(--so-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.so-card__body {
+  padding: 20px;
+  overflow: visible;
+}
+
+.so-card__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--so-fg-muted);
+}
+
+/* ===== Fieldset sections ===== */
+.so-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  overflow: visible;
+}
+
+.so-section--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 768px) {
+  .so-section,
+  .so-section--2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Form field ===== */
+.so-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* The popover (which lives in the same field) is positioned relative
+   * to the inner .so-select wrapper, but we still want overflow: visible
+   * here in case any future popover is attached to the field itself. */
+  overflow: visible;
+}
+
+.so-field__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--so-fg);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.so-field__required {
+  color: var(--so-danger);
+  font-weight: 600;
+}
+
+.so-field__input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--so-surface);
+  border: 1px solid var(--so-border-strong);
+  border-radius: var(--so-radius-sm);
+  font-size: 14px;
+  color: var(--so-fg);
+  font-family: inherit;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.so-field__input::placeholder {
+  color: var(--so-fg-subtle);
+}
+
+.so-field__input:hover {
+  border-color: var(--so-fg-subtle);
+}
+
+.so-field__input:focus {
+  border-color: var(--so-accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.so-field__input:disabled {
+  background: var(--so-surface-2);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.so-field__input--error {
+  border-color: var(--so-danger);
+}
+
+.so-field__input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.so-field__error {
+  font-size: 12px;
+  color: var(--so-danger);
+  margin: 0;
+}
+
+.so-field__textarea {
+  min-height: 96px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* ===== Item row ===== */
+.so-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.so-item {
+  display: grid;
+  grid-template-columns: 2fr 0.7fr 0.9fr 0.6fr 0.6fr 0.9fr 40px;
+  gap: 8px;
+  padding: 12px;
+  background: var(--so-surface-2);
+  border: 1px solid var(--so-border);
+  border-radius: var(--so-radius-sm);
+  align-items: end;  /* aligns the remove button to the input row */
+}
+
+.so-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.so-item > div > .so-item__label {
+  flex-shrink: 0;
+}
+
+.so-item__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--so-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.so-item__remove {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--so-border);
+  border-radius: var(--so-radius-sm);
+  color: var(--so-fg-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  align-self: end;
+  flex-shrink: 0;
+}
+
+.so-item__remove:hover {
+  background: var(--so-danger-soft);
+  border-color: var(--so-danger);
+  color: var(--so-danger);
+}
+
+.so-item__remove svg {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .so-item {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ===== Totals summary ===== */
+.so-totals {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.so-totals__card {
+  background: linear-gradient(135deg, var(--so-surface) 0%, var(--so-surface-2) 100%);
+  border: 1px solid var(--so-border);
+  border-radius: var(--so-radius);
+  padding: 12px 20px;
+  min-width: 240px;
+  text-align: right;
+}
+
+.so-totals__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--so-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 4px;
+}
+
+.so-totals__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--so-accent);
+  font-family: var(--so-mono);
+  margin: 0;
+}
+
+/* ===== Action bar ===== */
+.so-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.so-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: var(--so-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.so-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.so-btn--primary {
+  background: var(--so-accent);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3);
+}
+.so-btn--primary:hover:not(:disabled) {
+  background: var(--so-accent-hover);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.4);
+}
+.so-btn--primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.so-btn--ghost {
+  background: transparent;
+  color: var(--so-fg-muted);
+  border-color: var(--so-border);
+}
+.so-btn--ghost:hover:not(:disabled) {
+  background: var(--so-surface-2);
+  color: var(--so-fg);
+}
+
+.so-btn--outline {
+  background: var(--so-surface);
+  color: var(--so-fg);
+  border-color: var(--so-border-strong);
+}
+.so-btn--outline:hover:not(:disabled) {
+  background: var(--so-surface-2);
+  border-color: var(--so-fg-subtle);
+}
+
+.so-btn--sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.so-btn--icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+/* ===== Spinner ===== */
+.so-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: so-spin 0.7s linear infinite;
+}
+
+.so-spinner--lg {
+  width: 36px;
+  height: 36px;
+  border-width: 3px;
+}
+
+@keyframes so-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Notice (form error) ===== */
+.so-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--so-danger-soft);
+  border: 1px solid color-mix(in srgb, var(--so-danger) 30%, transparent);
+  border-radius: var(--so-radius-sm);
+  color: var(--so-danger);
+  font-size: 13px;
+}
+
+/* ===== Modal ===== */
+.so-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.so-modal {
+  background: var(--so-surface);
+  border-radius: var(--so-radius);
+  box-shadow: var(--so-shadow-lg);
+  max-width: 420px;
+  width: 100%;
+  overflow: hidden;
+  animation: so-fade-in 0.18s ease-out;
+}
+
+@keyframes so-fade-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.so-modal__body {
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.so-modal__icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.so-modal__icon--success {
+  background: var(--so-accent-soft);
+  color: var(--so-accent);
+}
+
+.so-modal__icon--error {
+  background: var(--so-danger-soft);
+  color: var(--so-danger);
+}
+
+.so-modal__title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--so-fg);
+}
+
+.so-modal__msg {
+  margin: 0;
+  font-size: 13px;
+  color: var(--so-fg-muted);
+}
+
+.so-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--so-surface-2);
+  border-top: 1px solid var(--so-border);
+}
+
+.so-modal__header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--so-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.so-modal__header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--so-fg);
+}
+
+/* ===== SelectSearch custom trigger (inline) ===== */
+.so-select {
+  position: relative;
+}
+
+.so-select__trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--so-surface);
+  border: 1px solid var(--so-border-strong);
+  border-radius: var(--so-radius-sm);
+  font-size: 14px;
+  color: var(--so-fg);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.so-select__trigger:hover {
+  border-color: var(--so-fg-subtle);
+}
+
+.so-select__trigger:focus,
+.so-select__trigger[aria-expanded="true"] {
+  border-color: var(--so-accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+  outline: none;
+}
+
+.so-select__trigger--error {
+  border-color: var(--so-danger);
+}
+
+.so-select__trigger--placeholder {
+  color: var(--so-fg-subtle);
+}
+
+.so-select__initial {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.so-select__value {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.so-select__caret {
+  color: var(--so-fg-subtle);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.so-select__popover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  /* Must be high enough to escape the card AND the main scroll container. */
+  z-index: 9999;
+  background: var(--so-surface);
+  border: 1px solid var(--so-border);
+  border-radius: var(--so-radius);
+  box-shadow: var(--so-shadow-lg);
+  overflow: hidden;
+  animation: so-fade-in 0.12s ease-out;
+}
+
+.so-select__search {
+  padding: 10px;
+  border-bottom: 1px solid var(--so-border);
+  background: var(--so-surface-2);
+}
+
+.so-select__search-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 32px;
+  border: 1px solid var(--so-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--so-surface);
+  color: var(--so-fg);
+  outline: none;
+  font-family: inherit;
+}
+
+.so-select__search-input:focus {
+  border-color: var(--so-accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+}
+
+.so-select__search-wrap {
+  position: relative;
+}
+
+.so-select__search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--so-fg-subtle);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.so-select__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.so-select__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--so-fg);
+  transition: background 0.1s ease;
+}
+
+.so-select__item--highlighted,
+.so-select__item:hover {
+  background: var(--so-surface-2);
+}
+
+.so-select__item--selected {
+  color: var(--so-accent);
+  font-weight: 500;
+}
+
+.so-select__item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.so-select__item-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.so-select__item-desc {
+  font-size: 11px;
+  color: var(--so-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.so-select__check {
+  color: var(--so-accent);
+  font-size: 14px;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.so-select__item--selected .so-select__check {
+  opacity: 1;
+}
+
+.so-select__empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--so-fg-muted);
+}
+
+.so-select__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1px solid var(--so-border);
+  background: var(--so-surface-2);
+  font-size: 11px;
+  color: var(--so-fg-muted);
+}
+
+.so-select__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.so-select__kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  background: var(--so-surface);
+  border: 1px solid var(--so-border);
+  border-radius: 3px;
+  font-family: var(--so-mono);
+  font-size: 10px;
+  color: var(--so-fg);
+}
+
+/* ===== Date picker wrapper ===== */
+.so-datepicker {
+  position: relative;
+}
+
+.so-datepicker__trigger {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  width: 100%;
+  padding: 0 12px;
+  background: var(--so-surface);
+  border: 1px solid var(--so-border-strong);
+  border-radius: var(--so-radius-sm);
+  font-size: 14px;
+  color: var(--so-fg);
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.so-datepicker__trigger:focus-within {
+  border-color: var(--so-accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.so-datepicker__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--so-fg);
+  font-family: inherit;
+  height: 100%;
+}
+
+.so-datepicker__input::placeholder {
+  color: var(--so-fg-subtle);
+}
+
+.so-datepicker__icon {
+  color: var(--so-fg-subtle);
+  font-size: 16px;
+}
+
+/* ===== Loading state ===== */
+.so-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--so-fg-muted);
+}

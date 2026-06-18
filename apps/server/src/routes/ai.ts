@@ -89,7 +89,7 @@ function trimMessageHistory(messages: { role: string }[], maxTurns: number): typ
     let turnsCollected = 0;
 
     for (let i = messages.length - 1; i >= 0; i--) {
-        const msg = messages[i];
+        const msg = messages[i]!;
         if (msg.role === 'assistant') {
             // Assistant messages are always kept when their paired user message is kept
             kept.unshift(msg);

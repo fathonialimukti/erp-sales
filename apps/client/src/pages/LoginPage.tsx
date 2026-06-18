@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { useForm } from '@tanstack/react-form';
-import { Button, Card, Input } from '@heroui/react';
-import { Icon } from '@iconify/react';
-import { useAuthActions } from '../lib/useAuth';
+import { Icon } from "../ui";
 import { useAtomValue } from 'jotai';
+import { useAuthActions } from '../lib/useAuth';
 import { isAuthenticatedAtom } from '../lib/atoms';
+import { Button } from '../ui/Button';
+import { Card, CardBody, CardFooter, CardHeader, CardTitle, CardDescription } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { useToast } from '../ui/useToast';
 
-function LoginPage() {
+export const LoginPage = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
   const { login } = useAuthActions();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const toast = useToast();
 
   const highlights = [
     {
@@ -32,15 +36,12 @@ function LoginPage() {
   ];
 
   const form = useForm({
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
     onSubmit: async ({ value }) => {
       setSubmitError(null);
-
       try {
         await login(value);
+        toast.success('Welcome back');
         navigate('/dashboard', { replace: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Login failed';
@@ -49,44 +50,44 @@ function LoginPage() {
     },
   });
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <Card className="grid w-full overflow-hidden rounded-[2rem] border border-border/70 bg-white/92 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur md:grid-cols-[1.1fr_0.9fr] dark:bg-surface/92">
-      <div className="relative overflow-hidden border-b border-border/60 bg-[linear-gradient(135deg,rgba(17,24,39,0.96),rgba(30,41,59,0.96)_42%,rgba(37,99,235,0.88))] p-8 text-white md:border-r md:border-b-0 md:p-10">
-        <div className="absolute top-0 right-0 h-44 w-44 translate-x-1/3 -translate-y-1/3 rounded-full bg-white/12 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-40 w-40 -translate-x-1/3 translate-y-1/3 rounded-full bg-cyan-300/15 blur-3xl" />
-
+    <Card className="grid w-full overflow-hidden md:grid-cols-2">
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white md:p-10">
+        <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-accent-500/20 blur-3xl" />
         <div className="relative flex h-full flex-col justify-between gap-8">
           <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-              <Icon icon="solar:shield-keyhole-linear" className="size-4" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
+              <Icon icon="solar:shield-keyhole-linear" className="h-4 w-4" />
               Secure ERP Access
             </div>
-
             <div className="space-y-3">
-              <p className="text-sm font-medium uppercase tracking-[0.22em] text-white/55">Warehouse Control Center</p>
-              <h1 className="max-w-md text-3xl leading-tight font-semibold sm:text-4xl">
+              <p className="text-sm font-medium uppercase tracking-[0.22em] text-white/55">
+                Warehouse Control Center
+              </p>
+              <h1 className="max-w-md text-3xl font-semibold leading-tight sm:text-4xl">
                 Professional operations start with a disciplined sign-in flow.
               </h1>
-              <p className="max-w-lg text-sm leading-6 text-white/72 sm:text-base">
+              <p className="max-w-lg text-sm leading-6 text-white/70 sm:text-base">
                 Access inventory, warehouse master data, approvals, and activity logs from one operational dashboard.
               </p>
             </div>
           </div>
-
           <div className="grid gap-3">
             {highlights.map((item) => (
-              <div key={item.title} className="rounded-2xl border border-white/12 bg-white/8 p-4 backdrop-blur-sm">
+              <div
+                key={item.title}
+                className="rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm"
+              >
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex size-10 items-center justify-center rounded-2xl bg-white/12 text-white">
-                    <Icon icon={item.icon} className="size-5" />
+                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white">
+                    <Icon icon={item.icon} className="h-5 w-5" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{item.title}</p>
-                    <p className="mt-1 text-sm leading-5 text-white/68">{item.description}</p>
+                    <p className="mt-1 text-sm leading-5 text-white/70">{item.description}</p>
                   </div>
                 </div>
               </div>
@@ -95,21 +96,19 @@ function LoginPage() {
         </div>
       </div>
 
-      <div className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,250,252,0.92))] p-8 md:p-10 dark:bg-[linear-gradient(180deg,rgba(18,24,38,0.96),rgba(17,24,39,0.92))]">
-        <Card.Header>
+      <CardBody className="p-8 md:p-10">
+        <CardHeader className="border-b-0 px-0 pb-0">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
-              <Icon icon="solar:login-2-linear" className="size-4" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent-700">
+              <Icon icon="solar:login-2-linear" className="h-4 w-4" />
               Sign In
             </div>
             <div>
-              <Card.Title>Welcome back</Card.Title>
-              <Card.Description>
-                Use your company credentials to continue to the ERP workspace.
-              </Card.Description>
+              <CardTitle>Welcome back</CardTitle>
+              <CardDescription>Use your company credentials to continue to the ERP workspace.</CardDescription>
             </div>
           </div>
-        </Card.Header>
+        </CardHeader>
 
         <form
           onSubmit={(event) => {
@@ -121,93 +120,63 @@ function LoginPage() {
         >
           <form.Field
             name="email"
-            validators={{
-              onChange: ({ value }) => (!value ? 'Email is required' : undefined),
-            }}
+            validators={{ onChange: ({ value }) => (!value ? 'Email is required' : undefined) }}
           >
             {(field) => (
-              <div className="space-y-2">
-                <label className="form-label" htmlFor="email">Email</label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  value={field.state.value}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  variant="secondary"
-                  fullWidth
-                  autoComplete="email"
-                />
-                {field.state.meta.errors[0] ? (
-                  <p className="text-sm text-red-600 dark:text-red-400">{field.state.meta.errors[0]}</p>
-                ) : null}
-              </div>
+              <Input
+                id="email"
+                type="email"
+                label="Email"
+                placeholder="you@company.com"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                autoComplete="email"
+                error={field.state.meta.errors[0] ? String(field.state.meta.errors[0]) : undefined}
+              />
             )}
           </form.Field>
 
           <form.Field
             name="password"
-            validators={{
-              onChange: ({ value }) => (!value ? 'Password is required' : undefined),
-            }}
+            validators={{ onChange: ({ value }) => (!value ? 'Password is required' : undefined) }}
           >
             {(field) => (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <label className="form-label" htmlFor="password">Password</label>
-                  <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">Protected session</span>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={field.state.value}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  variant="secondary"
-                  fullWidth
-                  autoComplete="current-password"
-                />
-                {field.state.meta.errors[0] ? (
-                  <p className="text-sm text-red-600 dark:text-red-400">{field.state.meta.errors[0]}</p>
-                ) : null}
-              </div>
+              <Input
+                id="password"
+                type="password"
+                label="Password"
+                placeholder="Enter your password"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                autoComplete="current-password"
+                error={field.state.meta.errors[0] ? String(field.state.meta.errors[0]) : undefined}
+              />
             )}
           </form.Field>
 
-          {submitError ? (
-            <div className="rounded-2xl border border-danger-soft-hover bg-danger/8 px-4 py-3 text-sm text-danger">
+          {submitError && (
+            <div className="rounded-md border border-state-danger/30 bg-state-danger-bg px-4 py-3 text-sm text-state-danger">
               <div className="flex items-start gap-2">
-                <Icon icon="solar:danger-triangle-linear" className="mt-0.5 size-4 shrink-0" />
+                <Icon icon="solar:danger-triangle-linear" className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{submitError}</span>
               </div>
             </div>
-          ) : null}
+          )}
 
-          <Button type="submit" variant="primary" fullWidth isPending={form.state.isSubmitting}>
-            {({ isPending }) => (
-              <>
-                <Icon icon={isPending ? 'solar:refresh-linear' : 'solar:login-3-linear'} className={`size-4 ${isPending ? 'animate-spin' : ''}`} />
-                {isPending ? 'Signing In...' : 'Sign In to Dashboard'}
-              </>
-            )}
+          <Button type="submit" variant="primary" fullWidth isLoading={form.state.isSubmitting}>
+            {form.state.isSubmitting ? 'Signing in…' : 'Sign in to dashboard'}
           </Button>
         </form>
 
-        <Card.Footer>
-          <div className="mt-8 flex w-full items-center justify-between gap-3 border-t border-border/60 pt-5 text-xs text-muted">
+        <CardFooter className="mt-8 border-t border-slate-200 px-0 pt-5">
+          <div className="flex w-full items-center justify-between gap-3 text-xs text-slate-500">
             <div className="flex items-center gap-2">
-              <Icon icon="solar:lock-keyhole-linear" className="size-4" />
+              <Icon icon="solar:lock-keyhole-linear" className="h-4 w-4" />
               Session is protected and permission-aware.
             </div>
-            <div className="hidden items-center gap-2 sm:flex">
-              <Icon icon="solar:server-square-cloud-linear" className="size-4" />
-              ERP Warehouse Suite
-            </div>
           </div>
-        </Card.Footer>
-      </div>
+        </CardFooter>
+      </CardBody>
     </Card>
   );
-}
-
-export { LoginPage };
+};

@@ -45,5 +45,5 @@ app.post('/api/ai/chat', aiChatHandler);
 app.get('/api/ai/chat/:chatId/stream', aiChatResumeHandler);
 app.post('/api/ai/query', aiQueryDatabaseHandler);
 
-app.listen(port);
-console.log(`✓ tRPC server listening on http://localhost:${port}/trpc/`);
+app.listen(port, '0.0.0.0');
+console.log(`✓ tRPC server listening on http://0.0.0.0:${port}/trpc/`);

@@ -1,193 +1,158 @@
 import { useLocation, useNavigate } from "react-router";
 import { useAtomValue } from "jotai";
-import { hasPermissionAtom } from "../lib/atoms";
-import { Icon } from "@iconify/react";
-import { Accordion, Button, Card } from "@heroui/react";
-import { useIntl } from 'react-intl';
-import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
+import { Icon } from "../ui";
+import { useIntl } from "react-intl";
 import type { ReactNode } from "react";
+import { hasPermissionAtom } from "../lib/atoms";
+import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
+import { Button } from "../ui/Button";
+import { cn } from "../ui/cn";
 
 interface SidebarProps {
-    isOpen: boolean;
-    onClose: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-function Sidebar({ isOpen, onClose }: SidebarProps) {
-    const location = useLocation();
-    const navigate = useNavigate();
+const normalizePath = (path: string) =>
+  path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
 
-    const normalizePath = (path: string) => {
-        if (path.length > 1 && path.endsWith('/')) {
-            return path.slice(0, -1);
-        }
+const isPathActive = (current: string, target: string) => {
+  const c = normalizePath(current);
+  const t = normalizePath(target);
+  if (t === "/") return c === "/";
+  return c === t || c.startsWith(`${t}/`);
+};
 
-        return path;
-    };
+const renderIcon = (icon: string) => {
+  const isLocalAsset =
+    /^(\/|https?:\/\/)/.test(icon) || /\.(svg|png|jpe?g|webp|gif)$/i.test(icon);
+  if (isLocalAsset) {
+    return <img src={icon} alt="" className="h-4 w-4 object-contain" aria-hidden="true" />;
+  }
+  return <Icon icon={icon} className="h-4 w-4" />;
+};
 
-    const isPathActive = (href: string) => {
-        const currentPath = normalizePath(location.pathname);
-        const targetPath = normalizePath(href);
+const filterByPermission = (
+  items: NavMenuItem[],
+  hasPermission: (p: string | string[]) => boolean,
+): NavMenuItem[] => {
+  return items
+    .map((item) => {
+      const children = item.children ? filterByPermission(item.children, hasPermission) : undefined;
+      const visibleChildren = children?.length ? children : undefined;
+      const itemAllowed = !item.permission || hasPermission(item.permission);
+      if (!itemAllowed && !visibleChildren) return undefined;
+      return { ...item, children: visibleChildren };
+    })
+    .filter((item): item is NavMenuItem => item !== undefined);
+};
 
-        if (targetPath === '/') {
-            return currentPath === '/';
-        }
+export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const intl = useIntl();
+  const hasPermission = useAtomValue(hasPermissionAtom);
 
-        return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    };
+  const visibleItems = filterByPermission(NAV_MENU, hasPermission);
+  const menuHeading = intl.formatMessage({ id: "nav.menu", defaultMessage: "Menu" });
 
-
-    const handleNavigate = (href: string) => {
-        navigate(href);
-    };
-
-    const renderIcon = (icon: string) => {
-        const isLocalAsset = /^(\/|https?:\/\/)/.test(icon) || /\.(svg|png|jpe?g|webp|gif)$/i.test(icon);
-
-        if (isLocalAsset) {
-            return <img src={icon} alt="" className="h-4 w-4 object-contain" aria-hidden="true" />;
-        }
-
-        return <Icon icon={icon} className="h-4 w-4" />;
-    };
-
-    const hasPermission = useAtomValue(hasPermissionAtom);
-
-    const filterByPermission = (items: NavMenuItem[]): NavMenuItem[] => {
-        const filtered: Array<NavMenuItem | undefined> = items
-            .map((item) => {
-                const children = item.children ? filterByPermission(item.children) : undefined;
-                const visibleChildren = children?.length ? children : undefined;
-                const itemAllowed = !item.permission || hasPermission(item.permission);
-
-                if (!itemAllowed && !visibleChildren) {
-                    return undefined;
-                }
-
-                return {
-                    ...item,
-                    children: visibleChildren,
-                };
-            });
-
-        return filtered.filter((item: NavMenuItem | undefined): item is NavMenuItem => item !== undefined);
-    };
-
-    const visibleItems = filterByPermission(NAV_MENU);
-    const intl = useIntl();
-
-    const getMenuLabel = (name: string) => intl.formatMessage({ id: name, defaultMessage: name });
-
-    const menuHeading = intl.formatMessage({ id: 'nav_menu', defaultMessage: 'Menu' });
-
-    const renderMenuItem = (item: NavMenuItem, parentKey: string): ReactNode => {
-        const itemKey = `${parentKey}/${item.name}`;
-        const active = Boolean(item.href && isPathActive(item.href));
-
-        if (item.children?.length) {
-            return (
-                <Accordion key={itemKey} variant="surface" hideSeparator>
-                    <Accordion.Item key={itemKey} id={itemKey}>
-                        <Accordion.Heading>
-                            <Accordion.Trigger className="gap-2 py-2 pl-3.5">
-                                {renderIcon(item.icon || "solar:question-circle-linear")}
-                                {getMenuLabel(item.name)}
-                                <Accordion.Indicator />
-                            </Accordion.Trigger>
-                        </Accordion.Heading>
-                        <Accordion.Panel>
-                            <Accordion.Body>
-                                <div className="space-y-1 border-l pl-2">
-                                    {item.children.map((child) => renderMenuItem(child, itemKey))}
-                                </div>
-                            </Accordion.Body>
-                        </Accordion.Panel>
-                    </Accordion.Item>
-                </Accordion>
-            );
-        }
-
-        if (item.href) {
-            return (
-                <Button
-                    key={itemKey}
-                    variant={active ? "primary" : "ghost"}
-                    fullWidth
-                    onPress={() => handleNavigate(item.href!)}
-                    className="justify-start gap-2"
-                >
-                    {renderIcon(item.icon || "solar:question-circle-linear")}
-                    {getMenuLabel(item.name)}
-                </Button>
-            );
-        }
-
-        return (
-            <div key={itemKey} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm">
-                {renderIcon(item.icon || "solar:question-circle-linear")}
-                <span>{getMenuLabel(item.name)}</span>
-            </div>
-        );
-    };
-
+  const renderLeaf = (item: NavMenuItem, key: string) => {
+    if (!item.href) {
+      return (
+        <div
+          key={key}
+          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+        >
+          {renderIcon(item.icon || "solar:question-circle-linear")}
+          <span>{intl.formatMessage({ id: item.name, defaultMessage: item.name })}</span>
+        </div>
+      );
+    }
+    const active = isPathActive(location.pathname, item.href);
     return (
-        <>
-            {/* Mobile overlay */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-                    aria-hidden="true"
-                    onClick={onClose}
-                />
-            )}
-
-            {/* Mobile sidebar drawer */}
-            <aside
-                className={`fixed left-0 top-0 z-40 h-screen w-72 transform bg-transparent px-4 pb-4 pt-2 transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
-            >
-                <div className="flex h-full flex-col overflow-hidden">
-                    <Card className="h-full">
-                        <Card.Header>
-                            <div className="flex w-full items-center justify-between gap-3 border-b border-gray-200 pb-3 dark:border-gray-800">
-                                <span className="text-lg font-bold">{menuHeading}</span>
-                                <Button isIconOnly variant="ghost" aria-label="Close sidebar" onPress={onClose}>
-                                    <Icon icon="solar:close-circle-linear" className="h-5 w-5" />
-                                </Button>
-                            </div>
-                        </Card.Header>
-                        <Card.Content className="min-h-0 overflow-hidden">
-                            <nav className="flex-1 space-y-1 overflow-y-auto">
-                                {visibleItems.map((item) => renderMenuItem(item, "root"))}
-                            </nav>
-                        </Card.Content>
-                    </Card>
-                </div>
-            </aside>
-
-            {/* Desktop sidebar in flex flow */}
-            <aside
-                className={`hidden h-full shrink-0 overflow-hidden transition-[width,padding] duration-300 ease-in-out lg:block ${isOpen ? "w-72 pl-4 py-4" : "w-0 p-0"
-                    }`}
-                aria-hidden={!isOpen}
-            >
-                <div className={`flex h-full flex-col overflow-hidden transition-opacity duration-200 ${isOpen
-                    ? "opacity-100"
-                    : "invisible pointer-events-none opacity-0"
-                    }`}>
-                    <Card className="h-full">
-                        <Card.Header>
-                            <span className="text-lg font-bold">{menuHeading}</span>
-                        </Card.Header>
-                        <Card.Content className="min-h-0 overflow-hidden">
-                            <nav className="flex-1 space-y-1 overflow-y-auto">
-                                {visibleItems.map((item) => renderMenuItem(item, "root-desktop"))}
-                            </nav>
-                        </Card.Content>
-                    </Card>
-                </div>
-            </aside>
-        </>
+      <Button
+        key={key}
+        variant={active ? "primary" : "ghost"}
+        fullWidth
+        onClick={() => {
+          navigate(item.href!);
+          onClose();
+        }}
+        leftIcon={renderIcon(item.icon || "solar:question-circle-linear")}
+        className="justify-start"
+      >
+        {intl.formatMessage({ id: item.name, defaultMessage: item.name })}
+      </Button>
     );
-}
+  };
 
-export { Sidebar };
+  const renderItem = (item: NavMenuItem, parentKey: string): ReactNode => {
+    const key = `${parentKey}/${item.name}`;
+    if (item.children?.length) {
+      return (
+        <details key={key} className="group">
+          <summary
+            className={cn(
+              "flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 [&::-webkit-details-marker]:hidden",
+              "dark:text-slate-300 dark:hover:bg-slate-800",
+            )}
+          >
+            {renderIcon(item.icon || "solar:question-circle-linear")}
+            <span className="flex-1">
+              {intl.formatMessage({ id: item.name, defaultMessage: item.name })}
+            </span>
+            <Icon
+              icon="solar:alt-arrow-down-linear"
+              className="h-3.5 w-3.5 text-slate-400 transition-transform group-open:rotate-180"
+            />
+          </summary>
+          <div className="mt-1 space-y-1 border-l border-slate-200 pl-2 dark:border-slate-800">
+            {item.children.map((child) => renderItem(child, key))}
+          </div>
+        </details>
+      );
+    }
+    return renderLeaf(item, key);
+  };
+
+  return (
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+          aria-hidden="true"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen w-72 transform border-r border-slate-200 bg-surface-1 transition-transform duration-200 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 dark:border-slate-800",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          !isOpen && "lg:hidden",
+        )}
+        aria-hidden={!isOpen}
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+            <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              {menuHeading}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Close sidebar"
+              onClick={onClose}
+              className="lg:hidden"
+            >
+              <Icon icon="solar:close-circle-linear" className="h-5 w-5" />
+            </Button>
+          </div>
+          <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+            {visibleItems.map((item) => renderItem(item, "root"))}
+          </nav>
+        </div>
+      </aside>
+    </>
+  );
+};

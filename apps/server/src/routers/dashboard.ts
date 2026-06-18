@@ -3,164 +3,6 @@ import { prisma } from '../lib/prisma.js';
 import { protectedProcedure, router } from '../trpc.js';
 
 export const dashboardRouter = router({
-    summary: protectedProcedure.query(async () => {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-        const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-
-        const [
-            palletTotal,
-            palletAvailable,
-            palletNotAvailable,
-            // Inbound PROPOSED counts
-            receivingProposed,
-            wipCompletionProposed,
-            rmaReceiptProposed,
-            foundProposed,
-            lossProposed,
-            // Outbound PROPOSED counts
-            shipmentProposed,
-            wipIssueProposed,
-            returnToSupplierProposed,
-            disposalProposed,
-            // Execution queues
-            putawayPending,
-            dispatchPending,
-            // This month inbound activity
-            receivingThisMonth,
-            wipCompletionThisMonth,
-            rmaReceiptThisMonth,
-            foundThisMonth,
-            // This month outbound activity
-            shipmentThisMonth,
-            wipIssueThisMonth,
-            returnToSupplierThisMonth,
-            disposalThisMonth,
-            // Previous month (for delta)
-            receivingPrevMonth,
-            shipmentPrevMonth,
-        ] = await Promise.all([
-            prisma.pallet.count(),
-            prisma.pallet.count({ where: { status: 'AVAILABLE' } }),
-            prisma.pallet.count({ where: { status: 'NOT_AVAILABLE' } }),
-            prisma.receivingTransaction.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.wipCompletion.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.rmaReceipt.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.foundTransaction.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.lossTransaction.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.shipment.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.wipIssue.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.returnToSupplier.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.disposal.count({ where: { approvalStatus: 'PROPOSED' } }),
-            prisma.putawayLine.count({ where: { status: 'PENDING' } }),
-            prisma.pickLine.count({ where: { status: 'PENDING' } }),
-            prisma.receivingTransaction.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.wipCompletion.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.rmaReceipt.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.foundTransaction.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.shipment.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.wipIssue.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.returnToSupplier.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.disposal.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-            prisma.receivingTransaction.count({ where: { createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth } } }),
-            prisma.shipment.count({ where: { createdAt: { gte: startOfPrevMonth, lte: endOfPrevMonth } } }),
-        ]);
-
-        const totalInboundThisMonth = receivingThisMonth + wipCompletionThisMonth + rmaReceiptThisMonth + foundThisMonth;
-        const totalOutboundThisMonth = shipmentThisMonth + wipIssueThisMonth + returnToSupplierThisMonth + disposalThisMonth;
-        const totalInboundProposed = receivingProposed + wipCompletionProposed + rmaReceiptProposed + foundProposed;
-        const totalOutboundProposed = shipmentProposed + wipIssueProposed + returnToSupplierProposed + disposalProposed;
-
-        return {
-            pallets: {
-                total: palletTotal,
-                available: palletAvailable,
-                notAvailable: palletNotAvailable,
-            },
-            pendingApprovals: {
-                total: totalInboundProposed + totalOutboundProposed + lossProposed,
-                inbound: totalInboundProposed,
-                outbound: totalOutboundProposed,
-                loss: lossProposed,
-                breakdown: {
-                    receiving: receivingProposed,
-                    wipCompletion: wipCompletionProposed,
-                    rmaReceipt: rmaReceiptProposed,
-                    found: foundProposed,
-                    shipment: shipmentProposed,
-                    wipIssue: wipIssueProposed,
-                    returnToSupplier: returnToSupplierProposed,
-                    disposal: disposalProposed,
-                },
-            },
-            execution: {
-                putawayPending,
-                dispatchPending,
-            },
-            monthlyActivity: {
-                totalInbound: totalInboundThisMonth,
-                totalOutbound: totalOutboundThisMonth,
-                receiving: receivingThisMonth,
-                wipCompletion: wipCompletionThisMonth,
-                rmaReceipt: rmaReceiptThisMonth,
-                found: foundThisMonth,
-                shipment: shipmentThisMonth,
-                wipIssue: wipIssueThisMonth,
-                returnToSupplier: returnToSupplierThisMonth,
-                disposal: disposalThisMonth,
-            },
-            prevMonthActivity: {
-                receiving: receivingPrevMonth,
-                shipment: shipmentPrevMonth,
-            },
-        };
-    }),
-
-    warehouseAllocations: protectedProcedure.query(async () => {
-        const [warehouses, allLocations, fullLocations] = await Promise.all([
-            prisma.warehouse.findMany({
-                select: {
-                    id: true,
-                    name: true,
-                },
-            }),
-            prisma.storageLocation.groupBy({
-                by: ['warehouseId'],
-                _count: { id: true },
-            }),
-            prisma.storageLocation.groupBy({
-                by: ['warehouseId'],
-                where: { status: 'FULL' },
-                _count: { id: true },
-            }),
-        ]);
-
-        const warehouseNameMap: Record<string, string> = {};
-        warehouses.forEach((warehouse) => {
-            warehouseNameMap[warehouse.id] = warehouse.name;
-        });
-
-        const usedMap: Record<string, number> = {};
-        fullLocations.forEach(({ warehouseId, _count }) => {
-            usedMap[warehouseId] = _count.id;
-        });
-
-        return allLocations.map(({ warehouseId, _count }) => {
-            const total = _count.id;
-            const used = usedMap[warehouseId] ?? 0;
-            const rate = total > 0 ? Math.round((used / total) * 100) : 0;
-            return {
-                warehouseId,
-                warehouseName: warehouseNameMap[warehouseId] ?? null,
-                total,
-                used,
-                rate,
-            };
-        });
-    }),
-
     activityFeed: protectedProcedure
         .input(z.object({ limit: z.number().int().min(1).max(50).optional() }).optional())
         .query(async ({ input }) => {
@@ -185,58 +27,150 @@ export const dashboardRouter = router({
             return { data };
         }),
 
-    myTasks: protectedProcedure.query(async ({ ctx }) => {
-        const userId = ctx.user!.userId;
+    /**
+     * Sales-focused dashboard data: KPI counts, 30-day revenue trend,
+     * top-5 customers by revenue this month, and recent activity.
+     * All queries run in parallel and return Decimal as number.
+     */
+    sales: protectedProcedure.query(async () => {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+        // 30-day window (including today)
+        const trendStart = new Date(now);
+        trendStart.setHours(0, 0, 0, 0);
+        trendStart.setDate(trendStart.getDate() - 29);
 
         const [
-            approvableReceiving, approvableWipCompletion, approvableRmaReceipt,
-            approvableShipment, approvableWipIssue, approvableRts,
-            approvableDisposal, approvableLoss, approvableFound,
-            putawayPending, pickPending,
-            draftReceiving, draftWipCompletion, draftRmaReceipt, draftFound,
-            draftShipment, draftWipIssue, draftRts, draftDisposal, draftLoss,
-            myRecentActivity,
+            openOrders,
+            draftOrders,
+            proposedOrders,
+            approvedOrders,
+            rejectedOrders,
+            customerCount,
+            skuCount,
+            activeSkuCount,
+            monthRevenueRaw,
+            prevMonthRevenueRaw,
+            visitCount,
+            orderItemsThisMonth,
+            topCustomersRaw,
+            trendRowsRaw,
+            recentActivity,
         ] = await Promise.all([
-            prisma.receivingTransaction.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.wipCompletion.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.rmaReceipt.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.shipment.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.wipIssue.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.returnToSupplier.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.disposal.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.lossTransaction.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.foundTransaction.count({ where: { approvalStatus: 'PROPOSED', createdById: { not: userId } } }),
-            prisma.putawayLine.count({ where: { status: 'PENDING' } }),
-            prisma.pickLine.count({ where: { status: 'PENDING' } }),
-            prisma.receivingTransaction.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.wipCompletion.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.rmaReceipt.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.foundTransaction.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.shipment.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.wipIssue.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.returnToSupplier.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.disposal.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.lossTransaction.count({ where: { approvalStatus: 'DRAFT', createdById: userId } }),
-            prisma.activityLog.findMany({
-                where: { userId },
+            prisma.salesOrder.count({ where: { approvalStatus: { in: ['DRAFT', 'PROPOSED'] } } }),
+            prisma.salesOrder.count({ where: { approvalStatus: 'DRAFT' } }),
+            prisma.salesOrder.count({ where: { approvalStatus: 'PROPOSED' } }),
+            prisma.salesOrder.count({ where: { approvalStatus: 'APPROVED' } }),
+            prisma.salesOrder.count({ where: { approvalStatus: 'REJECTED' } }),
+            prisma.customer.count(),
+            prisma.sku.count(),
+            prisma.sku.count({ where: { status: 'ACTIVE' } }),
+            prisma.salesOrder.aggregate({
+                _sum: { grandTotal: true },
+                where: { approvalStatus: 'APPROVED', date: { gte: startOfMonth, lte: endOfMonth } },
+            }),
+            prisma.salesOrder.aggregate({
+                _sum: { grandTotal: true },
+                where: { approvalStatus: 'APPROVED', date: { gte: startOfPrevMonth, lte: endOfPrevMonth } },
+            }),
+            prisma.visitLog.count(),
+            prisma.salesOrderItem.count({
+                where: { salesOrder: { createdAt: { gte: startOfMonth, lte: endOfMonth } } },
+            }),
+            prisma.salesOrder.groupBy({
+                by: ['customerId'],
+                where: { approvalStatus: 'APPROVED', date: { gte: startOfMonth, lte: endOfMonth } },
+                _sum: { grandTotal: true },
+                orderBy: { _sum: { grandTotal: 'desc' } },
                 take: 5,
+            }),
+            prisma.salesOrder.findMany({
+                where: { createdAt: { gte: trendStart } },
+                select: { createdAt: true, grandTotal: true },
+            }),
+            prisma.activityLog.findMany({
+                take: 8,
                 orderBy: { createdAt: 'desc' },
-                select: { id: true, action: true, message: true, resource: true, resourceId: true, createdAt: true },
+                include: { user: { select: { id: true, name: true, email: true } } },
             }),
         ]);
 
-        const totalApprovals = approvableReceiving + approvableWipCompletion + approvableRmaReceipt
-            + approvableShipment + approvableWipIssue + approvableRts
-            + approvableDisposal + approvableLoss + approvableFound;
+        // Build 30-day revenue trend: bucket orders by local date
+        const dayKey = (d: Date) => {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        };
+        const buckets = new Map<string, { date: string; total: number; count: number }>();
+        for (let i = 0; i < 30; i++) {
+            const d = new Date(trendStart);
+            d.setDate(d.getDate() + i);
+            const k = dayKey(d);
+            buckets.set(k, { date: k, total: 0, count: 0 });
+        }
+        trendRowsRaw.forEach((row) => {
+            const k = dayKey(new Date(row.createdAt));
+            const bucket = buckets.get(k);
+            if (bucket) {
+                bucket.total += row.grandTotal ? Number(row.grandTotal) : 0;
+                bucket.count += 1;
+            }
+        });
+        const revenueTrend = Array.from(buckets.values());
 
-        const myDraftInbound = draftReceiving + draftWipCompletion + draftRmaReceipt + draftFound;
-        const myDraftOutbound = draftShipment + draftWipIssue + draftRts + draftDisposal + draftLoss;
+        // Top customers — need names
+        const topCustomerIds = topCustomersRaw.map((c) => c.customerId);
+        const topCustomerNames = await prisma.customer.findMany({
+            where: { id: { in: topCustomerIds } },
+            select: { id: true, name: true },
+        });
+        const nameMap = new Map(topCustomerNames.map((c) => [c.id, c.name]));
+        const topCustomers = topCustomersRaw.map((c) => ({
+            id: c.customerId,
+            name: nameMap.get(c.customerId) ?? 'Unknown',
+            total: c._sum.grandTotal ? Number(c._sum.grandTotal) : 0,
+        }));
+
+        const monthRevenue = monthRevenueRaw._sum.grandTotal ? Number(monthRevenueRaw._sum.grandTotal) : 0;
+        const prevMonthRevenue = prevMonthRevenueRaw._sum.grandTotal ? Number(prevMonthRevenueRaw._sum.grandTotal) : 0;
+        const revenueDelta = monthRevenue - prevMonthRevenue;
+        const revenueDeltaPercent = prevMonthRevenue > 0
+            ? Math.round((revenueDelta / prevMonthRevenue) * 1000) / 10
+            : null;
 
         return {
-            totalApprovals,
-            execution: { putawayPending, pickPending },
-            myDrafts: { inbound: myDraftInbound, outbound: myDraftOutbound, total: myDraftInbound + myDraftOutbound },
-            myRecentActivity,
+            kpis: {
+                openOrders,
+                draftOrders,
+                proposedOrders,
+                approvedOrders,
+                rejectedOrders,
+                monthRevenue,
+                prevMonthRevenue,
+                revenueDelta,
+                revenueDeltaPercent,
+                customerCount,
+                skuCount,
+                activeSkuCount,
+                visitCount,
+                orderItemsThisMonth,
+            },
+            revenueTrend,
+            topCustomers,
+            recentActivity: recentActivity.map((a) => ({
+                id: a.id,
+                action: a.action,
+                message: a.message,
+                resource: a.resource,
+                resourceId: a.resourceId,
+                createdAt: a.createdAt,
+                userName: a.user?.name ?? 'System',
+            })),
         };
     }),
 });

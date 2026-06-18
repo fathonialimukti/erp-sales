@@ -74,20 +74,6 @@ export const seedTestSku = async () => {
   });
 };
 
-export const seedTestPallet = async (options: {
-  skuId: string;
-  storageLocationId?: string | null;
-  status?: 'AVAILABLE' | 'NOT_AVAILABLE';
-}) => {
-  return prisma.pallet.create({
-    data: {
-      skuId: options.skuId,
-      storageLocationId: options.storageLocationId ?? null,
-      status: options.status ?? 'AVAILABLE',
-    },
-  });
-};
-
 export const deleteTestUser = async (userId: string) => {
   await prisma.user.delete({ where: { id: userId } });
 };
@@ -100,37 +86,44 @@ export const deleteTestSku = async (skuId: string) => {
   await prisma.sku.delete({ where: { id: skuId } });
 };
 
-export const seedTestWarehouse = async () => {
-  return prisma.warehouse.create({
-    data: {
-      name: randomName('TEST_WAREHOUSE'),
-      address: 'Test warehouse address',
-      totalCapacity: 1000,
-    },
+// --- CRM Helpers ---
+
+export const seedTestRegion = async () => {
+  return prisma.region.create({
+    data: { name: randomName('TEST_REGION'), code: randomName('R') },
   });
 };
 
-export const seedTestStorageLocation = async (warehouseId: string) => {
-  return prisma.storageLocation.create({
-    data: {
-      warehouseId,
-      status: 'ACTIVE',
-    },
+export const deleteTestRegion = async (id: string) => {
+  await prisma.region.delete({ where: { id } }).catch(() => {});
+};
+
+export const seedTestArea = async (regionId: string) => {
+  return prisma.area.create({
+    data: { name: randomName('TEST_AREA'), code: randomName('A'), regionId },
   });
 };
 
-export const deleteTestWarehouse = async (warehouseId: string) => {
-  await prisma.warehouse.delete({ where: { id: warehouseId } });
+export const deleteTestArea = async (id: string) => {
+  await prisma.area.delete({ where: { id } }).catch(() => {});
 };
 
-export const deleteTestStorageLocation = async (storageLocationId: string) => {
-  await prisma.storageLocation.delete({ where: { id: storageLocationId } });
-};
-
-export const seedTestSupplier = async () => {
-  return prisma.supplier.create({
-    data: {
-      name: randomName('TEST_SUPPLIER'),
-    },
+export const seedTestCustomer = async () => {
+  return prisma.customer.create({
+    data: { name: randomName('TEST_CUSTOMER'), status: 'ACTIVE' },
   });
+};
+
+export const deleteTestCustomer = async (id: string) => {
+  await prisma.customer.delete({ where: { id } }).catch(() => {});
+};
+
+export const seedTestOutlet = async (customerId: string, areaId: string) => {
+  return prisma.outlet.create({
+    data: { name: randomName('TEST_OUTLET'), customerId, areaId, status: 'ACTIVE' },
+  });
+};
+
+export const deleteTestOutlet = async (id: string) => {
+  await prisma.outlet.delete({ where: { id } }).catch(() => {});
 };
