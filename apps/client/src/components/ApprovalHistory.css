@@ -1,0 +1,116 @@
+/* ============================================================
+ * ApprovalHistory — timeline audit trail
+ * Prefix: .ah-
+ * ============================================================ */
+
+.ah-timeline {
+  position: relative;
+  border-left: 1px solid var(--color-slate-200);
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dark .ah-timeline {
+  border-left-color: var(--color-slate-800);
+}
+
+.ah-entry {
+  position: relative;
+}
+
+.ah-dot {
+  position: absolute;
+  left: -27px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 2px var(--color-surface-1);
+}
+
+.ah-dot--approved {
+  background: var(--color-state-success);
+}
+
+.ah-dot--rejected {
+  background: var(--color-state-danger);
+}
+
+.ah-dot--proposed {
+  background: var(--color-state-warning);
+}
+
+.ah-dot--default {
+  background: var(--color-slate-400);
+}
+
+.ah-entry__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ah-entry__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ah-badge {
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ah-badge--approved {
+  background: var(--color-state-success-bg);
+  color: var(--color-state-success);
+}
+
+.ah-badge--rejected {
+  background: var(--color-state-danger-bg);
+  color: var(--color-state-danger);
+}
+
+.ah-badge--proposed {
+  background: var(--color-state-warning-bg);
+  color: var(--color-state-warning);
+}
+
+.ah-badge--default {
+  background: var(--color-slate-200);
+  color: var(--color-slate-700);
+}
+
+.dark .ah-badge--default {
+  background: var(--color-slate-700);
+  color: var(--color-slate-200);
+}
+
+.ah-entry__time {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.ah-entry__user {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+
+.dark .ah-entry__user {
+  color: var(--color-slate-100);
+}
+
+.ah-entry__message {
+  font-size: 14px;
+  color: var(--color-slate-600);
+}
+
+.dark .ah-entry__message {
+  color: var(--color-slate-300);
+}

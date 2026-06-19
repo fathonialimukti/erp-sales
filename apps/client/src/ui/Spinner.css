@@ -1,0 +1,36 @@
+/* ============================================================
+ * Spinner — loading indicator with spin animation
+ * Prefix: .spin-
+ * ============================================================ */
+
+.spin-wrapper {
+  display: inline-block;
+}
+
+.spin {
+  display: block;
+  border-radius: 9999px;
+  border-style: solid;
+  border-color: currentColor;
+  border-top-color: transparent;
+  color: var(--color-accent-500);
+  animation: spin 600ms linear infinite;
+}
+
+.spin--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.spin--md {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+.spin--lg {
+  width: 36px;
+  height: 36px;
+  border-width: 3px;
+}

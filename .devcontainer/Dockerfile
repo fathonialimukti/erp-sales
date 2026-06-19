@@ -1,4 +1,4 @@
-FROM oven/bun:debian
+FROM oven/bun:1
 
 # Config Bun
 ENV PATH="~/.bun/bin:${PATH}"

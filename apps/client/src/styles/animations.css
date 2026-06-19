@@ -1,0 +1,199 @@
+/* ============================================================
+ * Animation Library — ERP Sales Redesign
+ *
+ * Rich entrance animations, stagger utilities, micro-interactions,
+ * and continuous effects. All guarded by prefers-reduced-motion.
+ *
+ * Usage patterns:
+ *   .animate-slideUp          → direct class
+ *   animation: slideUp        → keyframe reference
+ *   .stagger-1 .. .stagger-12 → staggered entrance delays
+ * ============================================================ */
+
+/* ===== Entrance animations ===== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeInSoft {
+  from { opacity: 0; filter: blur(4px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scaleInBounce {
+  0%   { opacity: 0; transform: scale(0.85); }
+  60%  { opacity: 1; transform: scale(1.03); }
+  80%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bounceIn {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.05); }
+  80%  { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes expandIn {
+  from { opacity: 0; transform: scaleY(0.8); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(100%) scaleY(0.6); transform-origin: bottom; }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+/* ===== Glass / overlay animations ===== */
+
+@keyframes glassFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; backdrop-filter: blur(var(--glass-blur)); }
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ===== Micro-interactions ===== */
+
+@keyframes gentlePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+
+@keyframes accentPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15); }
+}
+
+@keyframes subtleBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-2deg); }
+  75%      { transform: rotate(2deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* ===== Continuous / loading animations ===== */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes spinPulse {
+  0%   { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(180deg) scale(0.9); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes progressStripe {
+  0%   { background-position: 1rem 0; }
+  100% { background-position: 0 0; }
+}
+
+/* ===== Utility animation classes ===== */
+
+.animate-fadeIn       { animation: fadeIn var(--duration-slow) var(--ease-out) both; }
+.animate-fadeInSoft   { animation: fadeInSoft var(--duration-slower) var(--ease-out) both; }
+.animate-slideUp      { animation: slideUp var(--duration-slow) var(--ease-out) both; }
+.animate-slideDown    { animation: slideDown var(--duration-slow) var(--ease-out) both; }
+.animate-slideInLeft  { animation: slideInLeft var(--duration-slow) var(--ease-out) both; }
+.animate-slideInRight { animation: slideInRight var(--duration-slow) var(--ease-out) both; }
+.animate-scaleIn      { animation: scaleIn var(--duration-normal) var(--ease-spring) both; }
+.animate-scaleInBounce { animation: scaleInBounce var(--duration-slow) var(--ease-spring) both; }
+.animate-bounceIn     { animation: bounceIn var(--duration-slower) var(--ease-bounce) both; }
+.animate-expandIn     { animation: expandIn var(--duration-slow) var(--ease-out) both; }
+.animate-revealUp     { animation: revealUp var(--duration-slower) var(--ease-out) both; }
+
+.animate-pulse        { animation: pulse 2s var(--ease-in-out) infinite; }
+.animate-shimmer      { animation: shimmer 2s linear infinite; }
+.animate-spin         { animation: spin 1s linear infinite; }
+.animate-spinPulse    { animation: spinPulse 1.5s var(--ease-in-out) infinite; }
+.animate-gentlePulse  { animation: gentlePulse 2s var(--ease-in-out) infinite; }
+.animate-accentPulse  { animation: accentPulse 2s var(--ease-in-out) infinite; }
+.animate-subtleBounce { animation: subtleBounce 2s var(--ease-in-out) infinite; }
+.animate-wiggle       { animation: wiggle 0.3s var(--ease-in-out); }
+.animate-shake        { animation: shake 0.5s var(--ease-in-out); }
+
+.animate-overlayIn    { animation: overlayFadeIn var(--duration-normal) var(--ease-out) both; }
+.animate-overlayOut   { animation: overlayFadeOut var(--duration-fast) var(--ease-in) both; }
+
+/* ===== Stagger delay utilities ===== */
+.stagger-1  { animation-delay: 50ms; }
+.stagger-2  { animation-delay: 100ms; }
+.stagger-3  { animation-delay: 150ms; }
+.stagger-4  { animation-delay: 200ms; }
+.stagger-5  { animation-delay: 250ms; }
+.stagger-6  { animation-delay: 300ms; }
+.stagger-7  { animation-delay: 350ms; }
+.stagger-8  { animation-delay: 400ms; }
+.stagger-9  { animation-delay: 450ms; }
+.stagger-10 { animation-delay: 500ms; }
+.stagger-11 { animation-delay: 550ms; }
+.stagger-12 { animation-delay: 600ms; }
+
+/* ===== Reduced motion: disable all animations ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -3,7 +3,7 @@
 {
   "name": "erp_sales",
   "dockerFile": "Dockerfile",
-  "runArgs": ["--network=dev", "--name=erp_sales"],
+  "runArgs": ["--name=erp_sales"],
   "forwardPorts": [2022, 1420],
   "containerEnv": {
     "HOST": "0.0.0.0"

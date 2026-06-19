@@ -3,6 +3,7 @@ import { useIntl } from "react-intl";
 import { Icon } from "../ui";
 import { Button } from "../ui/Button";
 import { EntityPhoto } from "./EntityPhoto";
+import "./ImageUploadField.css";
 
 interface ImageUploadFieldProps {
   value?: string;
@@ -34,13 +35,12 @@ export const ImageUploadField = ({
   const [isReading, setIsReading] = useState(false);
 
   const helperTextValue =
-    helperText ??
-    intl.formatMessage({
+    helperText ?? intl.formatMessage({
       id: "imageupload_helpertext",
       defaultMessage: "JPG, PNG, WEBP, GIF, or SVG. Max 5 MB.",
     });
 
-  const handlePick = () => {
+  const handlePick = () => { 
     if (disabled) return;
     fileInputRef.current?.click();
   };
@@ -76,21 +76,21 @@ export const ImageUploadField = ({
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
-      <div className="flex items-center gap-4">
+    <div className="iuf">
+      <div className="iuf__row">
         <EntityPhoto
           src={value}
           alt={intl.formatMessage({ id: "imageupload_previewalt", defaultMessage: "Preview photo" })}
-          className="h-20 w-20 rounded-2xl border border-slate-200 dark:border-slate-700"
+          className="iuf__photo"
         />
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
+        <div className="iuf__info">
+          <div className="iuf__buttons">
             <Button
               variant="primary"
               type="button"
               onClick={handlePick}
               disabled={disabled || isReading}
-              leftIcon={<Icon icon="solar:camera-add-linear" className="h-4 w-4" />}
+              leftIcon={<Icon icon="solar:camera-add-linear" />}
             >
               {value
                 ? intl.formatMessage({ id: "imageupload_replacebutton", defaultMessage: "Replace Photo" })
@@ -107,8 +107,8 @@ export const ImageUploadField = ({
               </Button>
             )}
           </div>
-          <p className="text-xs text-slate-500">{helperTextValue}</p>
-          {errorMessage && <p className="text-xs text-state-danger">{errorMessage}</p>}
+          <p className="iuf__helper">{helperTextValue}</p>
+          {errorMessage && <p className="iuf__error">{errorMessage}</p>}
         </div>
       </div>
       <input
@@ -116,7 +116,7 @@ export const ImageUploadField = ({
         id={inputId}
         type="file"
         accept="image/*"
-        className="hidden"
+        className="iuf__file-input"
         onChange={handleFileChange}
       />
     </div>

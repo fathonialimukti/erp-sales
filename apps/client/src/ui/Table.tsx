@@ -1,61 +1,38 @@
-import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
-import { cn } from "./cn";
+import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
+import "./Table.css";
 
 export const Table = ({ className, ...rest }: HTMLAttributes<HTMLTableElement>) => (
-  <div className="overflow-x-auto">
-    <table
-      className={cn(
-        "w-full border-collapse text-left text-sm",
-        "[&_th]:px-4 [&_td]:px-4",
-        "[&_th]:py-3 [&_td]:py-3",
-        className,
-      )}
-      {...rest}
-    />
+  <div className="tbl-wrapper">
+    <table className={`tbl ${className ?? ""}`} {...rest} />
   </div>
 );
 
 export const THead = ({ className, ...rest }: HTMLAttributes<HTMLTableSectionElement>) => (
-  <thead
-    className={cn(
-      "border-b border-slate-200 bg-slate-50/50 text-xs uppercase tracking-wide text-slate-500",
-      "dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400",
-      className,
-    )}
-    {...rest}
-  />
+  <thead className={`tbl__head ${className ?? ""}`} {...rest} />
 );
 
-export const TBody = ({ className, ...rest }: HTMLAttributes<HTMLTableSectionElement>) => (
-  <tbody
-    className={cn(
-      "divide-y divide-slate-200 dark:divide-slate-800",
-      className,
-    )}
-    {...rest}
-  />
-);
+interface TBodyProps extends HTMLAttributes<HTMLTableSectionElement> {
+  /** HeroUI-style empty-state slot rendered when there are no children. */
+  emptyContent?: ReactNode;
+}
+
+export const TBody = ({ className, emptyContent, children, ...rest }: TBodyProps) => {
+  const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
+  return (
+    <tbody className={`tbl__body ${className ?? ""}`} {...rest}>
+      {hasChildren ? children : emptyContent}
+    </tbody>
+  );
+};
 
 export const TR = ({ className, ...rest }: HTMLAttributes<HTMLTableRowElement>) => (
-  <tr
-    className={cn(
-      "transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-900/30",
-      className,
-    )}
-    {...rest}
-  />
+  <tr className={`tbl__body-row ${className ?? ""}`} {...rest} />
 );
 
 export const TH = ({ className, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) => (
-  <th
-    className={cn("text-left font-semibold", className)}
-    {...rest}
-  />
+  <th className={`tbl__head-cell ${className ?? ""}`} {...rest} />
 );
 
 export const TD = ({ className, ...rest }: TdHTMLAttributes<HTMLTableCellElement>) => (
-  <td
-    className={cn("align-middle text-slate-700 dark:text-slate-200", className)}
-    {...rest}
-  />
+  <td className={`tbl__cell ${className ?? ""}`} {...rest} />
 );

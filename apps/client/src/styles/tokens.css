@@ -1,23 +1,31 @@
 /* =========================================================
- * Design tokens — 60-30-10 rule (Cool Slate + Emerald accent)
+ * Design Tokens — ERP Sales Redesign
+ *
+ * Style: Glassmorphism + Modern Minimalist
+ * Palette: 60-30-10 (Cool Slate + Emerald Accent)
+ * Typography: Plus Jakarta Sans
  *
  * 60%  --color-surface-*        Neutral page / card backgrounds
- * 30%  --color-slate-*          Chrome, borders, text, sidebar
- * 10%  --color-accent-*         Single brand accent (emerald)
+ * 30%  --color-slate-*           Chrome, borders, text, sidebar
+ * 10%  --color-accent-*          Single brand accent (emerald)
  *
- * Semantic state colors (--color-state-*) live separately so
+ * Semantic state colors live separately so
  * approval/danger/warning never compete with the brand accent.
- * =======================================================*/
+ * ========================================================= */
+
+/* --- Google Font: Plus Jakarta Sans --- */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* --- 60% neutral surfaces --- */
-  --color-surface-0: #f8fafc; /* page background */
-  --color-surface-1: #ffffff; /* default card */
-  --color-surface-2: #f1f5f9; /* sunken / table stripe */
-  --color-surface-3: #e2e8f0; /* hover / pressed */
+  /* ===== 60% neutral surfaces ===== */
+  --color-surface-0: #f8fafc;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-surface-3: #e2e8f0;
+  --color-surface-4: #cbd5e1;
 
-  /* --- 30% slate (chrome, text, borders) --- */
-  --color-slate-50: #f8fafc;
+  /* ===== 30% slate (chrome, text, borders) ===== */
+  --color-slate-50:  #f8fafc;
   --color-slate-100: #f1f5f9;
   --color-slate-200: #e2e8f0;
   --color-slate-300: #cbd5e1;
@@ -29,134 +37,192 @@
   --color-slate-900: #0f172a;
   --color-slate-950: #020617;
 
-  /* --- 10% accent (single brand color) --- */
-  --color-accent-50: #ecfdf5;
+  /* ===== 10% accent (single brand color — emerald) ===== */
+  --color-accent-50:  #ecfdf5;
   --color-accent-100: #d1fae5;
   --color-accent-200: #a7f3d0;
   --color-accent-300: #6ee7b7;
   --color-accent-400: #34d399;
-  --color-accent-500: #10b981; /* PRIMARY BRAND */
+  --color-accent-500: #10b981;
   --color-accent-600: #059669;
   --color-accent-700: #047857;
   --color-accent-800: #065f46;
   --color-accent-900: #064e3b;
 
-  /* --- Semantic state (not the accent) --- */
-  --color-state-success: #10b981;
-  --color-state-success-bg: #ecfdf5;
-  --color-state-warning: #f59e0b;
-  --color-state-warning-bg: #fffbeb;
-  --color-state-danger: #ef4444;
-  --color-state-danger-bg: #fef2f2;
-  --color-state-info: #3b82f6;
-  --color-state-info-bg: #eff6ff;
-  --color-state-neutral: #64748b;
-  --color-state-neutral-bg: #f1f5f9;
+  /* ===== Semantic state (not the accent) ===== */
+  --color-state-success:       #10b981;
+  --color-state-success-bg:    #ecfdf5;
+  --color-state-success-border: #a7f3d0;
+  --color-state-warning:       #f59e0b;
+  --color-state-warning-bg:    #fffbeb;
+  --color-state-warning-border: #fde68a;
+  --color-state-danger:        #ef4444;
+  --color-state-danger-bg:     #fef2f2;
+  --color-state-danger-border: #fecaca;
+  --color-state-info:          #3b82f6;
+  --color-state-info-bg:       #eff6ff;
+  --color-state-info-border:   #bfdbfe;
+  --color-state-neutral:       #64748b;
+  --color-state-neutral-bg:    #f1f5f9;
+  --color-state-neutral-border: #e2e8f0;
 
-  /* --- Semantic aliases (use these in components) --- */
-  --color-foreground: var(--color-slate-900);
-  --color-muted: var(--color-slate-500);
-  --color-border: var(--color-slate-200);
-  --color-border-strong: var(--color-slate-300);
-  --color-input: var(--color-surface-1);
-  --color-ring: var(--color-accent-500);
+  /* ===== Semantic aliases ===== */
+  --color-foreground:        var(--color-slate-900);
+  --color-muted:             var(--color-slate-500);
+  --color-muted-foreground:  var(--color-slate-400);
+  --color-border:            var(--color-slate-200);
+  --color-border-strong:     var(--color-slate-300);
+  --color-input:             var(--color-surface-1);
+  --color-ring:              var(--color-accent-500);
 
-  /* --- Spacing / radius / motion --- */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  /* ===== Glass effect tokens ===== */
+  --glass-bg:          rgba(255, 255, 255, 0.82);
+  --glass-bg-heavy:    rgba(255, 255, 255, 0.92);
+  --glass-bg-light:    rgba(255, 255, 255, 0.65);
+  --glass-border:      rgba(255, 255, 255, 0.25);
+  --glass-blur:        14px;
+  --glass-blur-heavy:  20px;
+  --glass-blur-light:  8px;
+  --glass-shadow:      0 8px 32px rgba(15, 23, 42, 0.08);
+  --glass-shadow-heavy: 0 16px 48px rgba(15, 23, 42, 0.12);
 
-  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
-  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.04);
-  --shadow-md: 0 4px 8px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
-  --shadow-lg: 0 12px 24px -6px rgb(15 23 42 / 0.12), 0 4px 8px -4px rgb(15 23 42 / 0.06);
+  /* ===== Spacing scale ===== */
+  --space-0:   0;
+  --space-0.5: 2px;
+  --space-1:   4px;
+  --space-1.5: 6px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
 
-  --font-sans: "Inter", "Poppins", ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* ===== Radius scale ===== */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-3xl:  24px;
+  --radius-full: 9999px;
 
-  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* ===== Shadow scale ===== */
+  --shadow-xs:    0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm:    0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md:    0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg:    0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl:    0 20px 25px -5px rgba(15, 23, 42, 0.10), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-2xl:   0 25px 50px -12px rgba(15, 23, 42, 0.20);
+  --shadow-inner: inset 0 2px 4px 0 rgba(15, 23, 42, 0.04);
+  --shadow-glow:  0 0 12px 2px rgba(16, 185, 129, 0.25);
+  --shadow-glow-strong: 0 0 20px 4px rgba(16, 185, 129, 0.35);
+
+  /* ===== Typography ===== */
+  --font-sans:  "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system,
+                "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text-xs:    11px;   --leading-xs:  16px;
+  --text-sm:    13px;   --leading-sm:  18px;
+  --text-base:  14px;   --leading-base: 20px;
+  --text-lg:    16px;   --leading-lg:  24px;
+  --text-xl:    18px;   --leading-xl:  28px;
+  --text-2xl:   22px;   --leading-2xl: 28px;
+  --text-3xl:   28px;   --leading-3xl: 34px;
+  --text-4xl:   34px;   --leading-4xl: 40px;
+
+  --weight-light:    300;
+  --weight-normal:   400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ===== Motion / Transitions ===== */
+  --ease-default:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in:         cubic-bezier(0.4, 0, 1, 1);
+  --ease-out:        cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out:     cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce:     cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  --duration-instant:  75ms;
+  --duration-fast:     120ms;
+  --duration-normal:   180ms;
+  --duration-slow:     250ms;
+  --duration-slower:   350ms;
+  --duration-slowest:  500ms;
+
+  --transition-fast:   var(--duration-fast) var(--ease-default);
+  --transition-base:   var(--duration-normal) var(--ease-default);
+  --transition-slow:   var(--duration-slow) var(--ease-default);
+  --transition-spring: var(--duration-slow) var(--ease-spring);
+
+  /* ===== Z-index scale ===== */
+  --z-base:     0;
+  --z-dropdown: 10;
+  --z-sticky:   20;
+  --z-overlay:  30;
+  --z-modal:    40;
+  --z-popover:  50;
+  --z-toast:    60;
+  --z-tooltip:  70;
+
+  /* ===== Layout constants ===== */
+  --sidebar-width:     260px;
+  --sidebar-collapsed: 64px;
+  --navbar-height:     56px;
+  --page-max-width:    1280px;
+  --content-padding:   24px;
 }
 
+/* ===== Dark mode overrides ===== */
 .dark {
-  /* 60% surfaces in dark mode */
   --color-surface-0: #020617;
   --color-surface-1: #0f172a;
   --color-surface-2: #1e293b;
   --color-surface-3: #334155;
+  --color-surface-4: #475569;
 
-  /* Borders & text in dark */
-  --color-border: var(--color-slate-800);
-  --color-border-strong: var(--color-slate-700);
-  --color-foreground: var(--color-slate-100);
-  --color-muted: var(--color-slate-400);
-  --color-input: var(--color-surface-2);
+  --color-border:            var(--color-slate-800);
+  --color-border-strong:     var(--color-slate-700);
+  --color-foreground:        var(--color-slate-100);
+  --color-muted:             var(--color-slate-400);
+  --color-muted-foreground:  var(--color-slate-500);
+  --color-input:             var(--color-surface-2);
 
-  /* Tinted state backgrounds (darker) */
-  --color-state-success-bg: rgba(16, 185, 129, 0.12);
-  --color-state-warning-bg: rgba(245, 158, 11, 0.12);
-  --color-state-danger-bg: rgba(239, 68, 68, 0.12);
-  --color-state-info-bg: rgba(59, 130, 246, 0.12);
-  --color-state-neutral-bg: var(--color-slate-800);
-}
+  --glass-bg:          rgba(15, 23, 42, 0.78);
+  --glass-bg-heavy:    rgba(15, 23, 42, 0.88);
+  --glass-bg-light:    rgba(15, 23, 42, 0.55);
+  --glass-border:      rgba(255, 255, 255, 0.08);
+  --glass-shadow:      0 8px 32px rgba(0, 0, 0, 0.20);
+  --glass-shadow-heavy: 0 16px 48px rgba(0, 0, 0, 0.30);
 
-/* Map tokens into Tailwind v4 theme so utilities work:
- *   bg-surface-1, text-slate-700, border-slate-200, text-accent-500, etc.
- */
-@theme inline {
-  --color-surface-0: var(--color-surface-0);
-  --color-surface-1: var(--color-surface-1);
-  --color-surface-2: var(--color-surface-2);
-  --color-surface-3: var(--color-surface-3);
+  --color-state-success-bg:    rgba(16, 185, 129, 0.12);
+  --color-state-success-border: rgba(16, 185, 129, 0.25);
+  --color-state-warning-bg:    rgba(245, 158, 11, 0.12);
+  --color-state-warning-border: rgba(245, 158, 11, 0.25);
+  --color-state-danger-bg:     rgba(239, 68, 68, 0.12);
+  --color-state-danger-border:  rgba(239, 68, 68, 0.25);
+  --color-state-info-bg:       rgba(59, 130, 246, 0.12);
+  --color-state-info-border:    rgba(59, 130, 246, 0.25);
+  --color-state-neutral-bg:    var(--color-slate-800);
+  --color-state-neutral-border: var(--color-slate-700);
 
-  --color-slate-50: var(--color-slate-50);
-  --color-slate-100: var(--color-slate-100);
-  --color-slate-200: var(--color-slate-200);
-  --color-slate-300: var(--color-slate-300);
-  --color-slate-400: var(--color-slate-400);
-  --color-slate-500: var(--color-slate-500);
-  --color-slate-600: var(--color-slate-600);
-  --color-slate-700: var(--color-slate-700);
-  --color-slate-800: var(--color-slate-800);
-  --color-slate-900: var(--color-slate-900);
-  --color-slate-950: var(--color-slate-950);
-
-  --color-accent-50: var(--color-accent-50);
-  --color-accent-100: var(--color-accent-100);
-  --color-accent-200: var(--color-accent-200);
-  --color-accent-300: var(--color-accent-300);
-  --color-accent-400: var(--color-accent-400);
-  --color-accent-500: var(--color-accent-500);
-  --color-accent-600: var(--color-accent-600);
-  --color-accent-700: var(--color-accent-700);
-  --color-accent-800: var(--color-accent-800);
-  --color-accent-900: var(--color-accent-900);
-
-  --color-foreground: var(--color-foreground);
-  --color-muted: var(--color-muted);
-  --color-border: var(--color-border);
-  --color-border-strong: var(--color-border-strong);
-  --color-input: var(--color-input);
-  --color-ring: var(--color-ring);
-
-  --color-state-success: var(--color-state-success);
-  --color-state-success-bg: var(--color-state-success-bg);
-  --color-state-warning: var(--color-state-warning);
-  --color-state-warning-bg: var(--color-state-warning-bg);
-  --color-state-danger: var(--color-state-danger);
-  --color-state-danger-bg: var(--color-state-danger-bg);
-  --color-state-info: var(--color-state-info);
-  --color-state-info-bg: var(--color-state-info-bg);
-  --color-state-neutral: var(--color-state-neutral);
-  --color-state-neutral-bg: var(--color-state-neutral-bg);
-
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
-
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --shadow-xs:    0 1px 2px 0 rgba(0, 0, 0, 0.08);
+  --shadow-sm:    0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+  --shadow-md:    0 4px 6px -1px rgba(0, 0, 0, 0.16), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
+  --shadow-lg:    0 10px 15px -3px rgba(0, 0, 0, 0.20), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
+  --shadow-xl:    0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  --shadow-2xl:   0 25px 50px -12px rgba(0, 0, 0, 0.40);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+  --shadow-glow:  0 0 12px 2px rgba(16, 185, 129, 0.30);
+  --shadow-glow-strong: 0 0 20px 4px rgba(16, 185, 129, 0.45);
 }

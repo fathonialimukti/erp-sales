@@ -1,8 +1,9 @@
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR } from '../../ui';
-import { Icon } from "../../ui";
+import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
+import './Area.css';
+
 import {
   type ColumnDef,
   type PaginationState,
@@ -88,7 +89,7 @@ function AreaIndexPage() {
         id: 'actions',
         header: '',
         cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-2">
+          <div className="area-index__actions">
             <Button
               size="sm"
               variant="ghost"
@@ -99,7 +100,7 @@ function AreaIndexPage() {
             {(canUpdate || canDelete) && (
               <Dropdown>
                 <DropdownTrigger>
-                  <Button size="sm" variant="ghost" isIconOnly>
+                  <Button size="icon" variant="ghost">
                     <Icon icon="solar:menu-dots-bold" />
                   </Button>
                 </DropdownTrigger>
@@ -115,7 +116,7 @@ function AreaIndexPage() {
                   {canDelete ? (
                     <DropdownItem
                       key="delete"
-                      color="danger"
+                      tone="danger"
                       onClick={() => {
                         setItemToDelete(row.original);
                         setDeleteModalOpen(true);
@@ -134,10 +135,12 @@ function AreaIndexPage() {
     [intl, navigate, canUpdate, canDelete],
   );
 
+  const totalPages = data?.meta?.totalPages ?? 0;
+
   const table = useReactTable({
     data: (data?.data ?? []) as AreaRow[],
     columns,
-    pageCount: data?.meta?.totalPages ?? 0,
+    pageCount: totalPages,
     state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -160,13 +163,13 @@ function AreaIndexPage() {
   };
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">
+    <section className="area-index">
+      <div className="area-index__header">
+        <h1 className="area-index__title">
           {intl.formatMessage({ id: 'area.index.title', defaultMessage: 'Areas' })}
         </h1>
         {canCreate && (
-          <Button color="primary" onClick={() => navigate('/area/create')}>
+          <Button variant="primary" onClick={() => navigate('/area/create')}>
             <Icon icon="solar:add-circle-linear" />
             {intl.formatMessage({ id: 'area.index.action_create', defaultMessage: 'Add Area' })}
           </Button>
@@ -174,18 +177,17 @@ function AreaIndexPage() {
       </div>
 
       <Card>
-        <div className="p-4">
+        <div className="area-index__search-bar">
           <Input
             placeholder={intl.formatMessage({ id: 'common.search.placeholder', defaultMessage: 'Search...' })}
             value={searchInput}
-            onChange={setSearchInput}
-            startContent={<Icon icon="solar:magnifer-linear" />}
-            isClearable
+            onValueChange={setSearchInput}
+            leftIcon={<Icon icon="solar:magnifer-linear" />}
           />
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
+          <div className="area-index__loading">
             <Spinner />
           </div>
         ) : (
@@ -215,11 +217,11 @@ function AreaIndexPage() {
               </TBody>
             </Table>
 
-            {data?.meta?.totalPages > 1 ? (
-              <div className="flex justify-end p-4">
+            {totalPages > 1 ? (
+              <div className="area-index__pagination-bar">
                 <Pagination
                   page={pagination.pageIndex + 1}
-                  total={data.meta.totalPages}
+                  totalPages={totalPages}
                   onChange={(p) => setPagination((prev) => ({ ...prev, pageIndex: p - 1 }))}
                 />
               </div>
@@ -228,7 +230,7 @@ function AreaIndexPage() {
         )}
       </Card>
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
         <ModalContent>
           <ModalHeader>
             {intl.formatMessage({ id: 'area.index.delete_title', defaultMessage: 'Delete Area' })}
@@ -243,7 +245,7 @@ function AreaIndexPage() {
             <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="danger" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting
                 ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
                 : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}

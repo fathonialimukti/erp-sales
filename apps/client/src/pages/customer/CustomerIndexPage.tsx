@@ -1,8 +1,8 @@
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR } from '../../ui';
-import { Icon } from "../../ui";
+import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
+
 import {
   type ColumnDef,
   type PaginationState,
@@ -104,7 +104,7 @@ function CustomerIndexPage() {
             {(canUpdate || canDelete) && (
               <Dropdown>
                 <DropdownTrigger>
-                  <Button size="sm" variant="ghost" isIconOnly>
+                  <Button size="icon" variant="ghost">
                     <Icon icon="solar:menu-dots-bold" />
                   </Button>
                 </DropdownTrigger>
@@ -120,7 +120,7 @@ function CustomerIndexPage() {
                   {canDelete ? (
                     <DropdownItem
                       key="delete"
-                      color="danger"
+                      tone="danger"
                       onClick={() => {
                         setItemToDelete(row.original);
                         setDeleteModalOpen(true);
@@ -176,7 +176,7 @@ function CustomerIndexPage() {
           </p>
         </div>
         {canCreate && (
-          <Button color="primary" onClick={() => navigate('/customer/create')}>
+          <Button variant="primary" onClick={() => navigate('/customer/create')}>
             <Icon icon="solar:add-circle-linear" />
             {intl.formatMessage({ id: 'customer.index.create_button', defaultMessage: 'Add Customer' })}
           </Button>
@@ -188,9 +188,8 @@ function CustomerIndexPage() {
           <Input
             placeholder={intl.formatMessage({ id: 'customer.index.search_placeholder', defaultMessage: 'Search customers by name, code, or tax ID...' })}
             value={searchInput}
-            onChange={setSearchInput}
-            startContent={<Icon icon="solar:magnifer-linear" />}
-            isClearable
+            onValueChange={setSearchInput}
+            leftIcon={<Icon icon="solar:magnifer-linear" />}
           />
         </div>
 
@@ -227,7 +226,7 @@ function CustomerIndexPage() {
             <div className="flex justify-center p-4">
               <Pagination
                 page={pagination.pageIndex + 1}
-                total={data?.meta?.totalPages ?? 1}
+                totalPages={data?.meta?.totalPages ?? 1}
                 onChange={(page) => setPagination({ pageIndex: page - 1, pageSize: pagination.pageSize })}
               />
             </div>
@@ -235,7 +234,7 @@ function CustomerIndexPage() {
         )}
       </Card>
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
         <ModalContent>
           <ModalHeader>
             {intl.formatMessage({ id: 'customer.index.delete_title', defaultMessage: 'Delete Customer' })}
@@ -250,7 +249,7 @@ function CustomerIndexPage() {
             <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="danger" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting
                 ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
                 : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}

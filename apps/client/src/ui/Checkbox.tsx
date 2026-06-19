@@ -1,43 +1,43 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { forwardRef, useId } from "react";
-import { cn } from "./cn";
+import "./Checkbox.css";
 
-interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "onChange" | "checked"> {
   label?: ReactNode;
   description?: ReactNode;
   error?: string;
+  checked?: boolean;
+  onChange?: (checked: boolean) => void;
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ label, description, error, id, className, ...rest }, ref) => {
+  ({ label, description, error, id, className, onChange, ...rest }, ref) => {
     const autoId = useId();
     const inputId = id ?? autoId;
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(e.target.checked);
+    };
+
     return (
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor={inputId}
-          className="inline-flex cursor-pointer items-start gap-2.5 text-sm"
-        >
+      <div className="chk-wrapper">
+        <label htmlFor={inputId} className="chk-label">
           <input
             ref={ref}
             id={inputId}
             type="checkbox"
-            className={cn(
-              "mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 text-accent-500 transition-colors focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 focus:ring-offset-surface-0",
-              "dark:border-slate-600 dark:bg-slate-800",
-              className,
-            )}
+            className={`chk-input ${className ?? ""}`}
+            onChange={handleChange}
             {...rest}
           />
           {(label || description) && (
-            <span className="flex flex-col gap-0.5">
-              {label && <span className="font-medium text-slate-900 dark:text-slate-100">{label}</span>}
-              {description && <span className="text-xs text-slate-500 dark:text-slate-400">{description}</span>}
+            <span className="chk-text">
+              {label && <span className="chk-text__label">{label}</span>}
+              {description && <span className="chk-text__desc">{description}</span>}
             </span>
           )}
         </label>
-        {error && <p className="text-xs text-state-danger">{error}</p>}
+        {error && <p className="chk-error">{error}</p>}
       </div>
     );
   },

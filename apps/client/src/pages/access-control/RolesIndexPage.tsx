@@ -1,3 +1,4 @@
+import './Role.css';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router';
@@ -9,25 +10,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
-import { Icon } from "../../ui";
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Chip,
-  EmptyState,
-  Input,
-  Pagination,
-  Spinner,
-  Table,
-  TBody,
-  TD,
-  TH,
-  THead,
-  TR,
-  useToast,
-} from '../../ui';
+import { Icon, Table, THead, TBody, TR, TH, TD, Button, Card, CardBody, CardHeader, Chip, EmptyState, Input, Pagination, Spinner, useToast } from '../../ui';
+
 import { trpcClient } from '../../lib/trpc';
 import { useAiFillForm } from '../../components/AiAssistant/useAiFillForm';
 import { useAtomValue } from 'jotai';
@@ -84,57 +68,54 @@ const RolesIndexPage = () => {
     if (isError) toast.error(error instanceof Error ? error.message : 'Failed to load roles');
   }, [isError, error, toast]);
 
-  const rows = (data?.data ?? []) as RoleRow[];
+  const rows = (data?.data ?? []) as unknown as RoleRow[];
   const totalPages = data?.meta?.totalPages ?? 0;
 
-  const columns = useMemo<ColumnDef<RoleRow>[]>(
-    () => [
-      {
-        id: 'name',
-        header: intl.formatMessage({ id: 'roles.index.header_name', defaultMessage: 'Name' }),
-        cell: ({ row }) => (
-          <div className="flex flex-col">
-            <span className="font-medium">{row.original.name}</span>
-            {row.original.description ? <span className="text-xs text-slate-500">{row.original.description}</span> : null}
+  const columns = useMemo<ColumnDef<RoleRow>[]>(() => [
+    {
+      id: 'name',
+      header: intl.formatMessage({ id: 'roles.index.header_name', defaultMessage: 'Name' }),
+      cell: ({ row }) => (
+        <div className="role-name-cell">
+          <span className="role-name-cell__name">{row.original.name}</span>
+          {row.original.description ? <span className="role-name-cell__desc">{row.original.description}</span> : null}
+        </div>
+      ),
+    },
+    {
+      id: 'isSystem',
+      header: intl.formatMessage({ id: 'roles.index.header_type', defaultMessage: 'Type' }),
+      cell: ({ row }) => (
+        <Chip tone={row.original.isSystem ? 'accent' : 'neutral'}>
+          {row.original.isSystem
+            ? intl.formatMessage({ id: 'roles.index.system', defaultMessage: 'System' })
+            : intl.formatMessage({ id: 'roles.index.custom', defaultMessage: 'Custom' })}
+        </Chip>
+      ),
+    },
+    {
+      id: 'users',
+      header: intl.formatMessage({ id: 'roles.index.header_users', defaultMessage: 'Users' }),
+      cell: ({ row }) => <span className="role-count">{row.original._count.users}</span>,
+    },
+    {
+      id: 'permissions',
+      header: intl.formatMessage({ id: 'roles.index.header_permissions', defaultMessage: 'Permissions' }),
+      cell: ({ row }) => <span className="role-count">{row.original._count.permissions}</span>,
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) =>
+        canUpdate && !row.original.isSystem ? (
+          <div className="role-actions">
+            <Button size="sm" variant="ghost" onClick={() => navigate(`/roles/${row.original.id}/edit`)} aria-label="Edit">
+              <Icon icon="solar:pen-linear" />
+            </Button>
           </div>
-        ),
-      },
-      {
-        id: 'isSystem',
-        header: intl.formatMessage({ id: 'roles.index.header_type', defaultMessage: 'Type' }),
-        cell: ({ row }) => (
-          <Chip tone={row.original.isSystem ? 'accent' : 'neutral'}>
-            {row.original.isSystem
-              ? intl.formatMessage({ id: 'roles.index.system', defaultMessage: 'System' })
-              : intl.formatMessage({ id: 'roles.index.custom', defaultMessage: 'Custom' })}
-          </Chip>
-        ),
-      },
-      {
-        id: 'users',
-        header: intl.formatMessage({ id: 'roles.index.header_users', defaultMessage: 'Users' }),
-        cell: ({ row }) => <span className="font-mono text-xs">{row.original._count.users}</span>,
-      },
-      {
-        id: 'permissions',
-        header: intl.formatMessage({ id: 'roles.index.header_permissions', defaultMessage: 'Permissions' }),
-        cell: ({ row }) => <span className="font-mono text-xs">{row.original._count.permissions}</span>,
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) =>
-          canUpdate && !row.original.isSystem ? (
-            <div className="flex items-center justify-end gap-2">
-              <Button size="sm" variant="ghost" onClick={() => navigate(`/roles/${row.original.id}/edit`)} aria-label="Edit">
-                <Icon icon="solar:pen-linear" />
-              </Button>
-            </div>
-          ) : null,
-      },
-    ],
-    [intl, navigate, canUpdate],
-  );
+        ) : null,
+    },
+  ], [intl, navigate, canUpdate]);
 
   const table = useReactTable({
     data: rows,
@@ -148,7 +129,7 @@ const RolesIndexPage = () => {
 
   return (
     <section
-      className="space-y-5"
+      className="role-page"
       data-ai-context={JSON.stringify({
         section: 'roles-index',
         page: pagination.pageIndex + 1,
@@ -156,17 +137,17 @@ const RolesIndexPage = () => {
         canCreate,
       })}
     >
-      <div className="flex items-center justify-between gap-4">
+      <div className="role-header">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
+          <h1 className="role-header__title">
             {intl.formatMessage({ id: 'roles.index.title', defaultMessage: 'Roles' })}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="role-header__desc">
             {intl.formatMessage({ id: 'roles.index.description', defaultMessage: 'Define what each role can do across the system.' })}
           </p>
         </div>
         {canCreate ? (
-          <Button color="primary" onClick={() => navigate('/roles/create')}>
+          <Button variant="primary" onClick={() => navigate('/roles/create')}>
             <Icon icon="solar:add-circle-linear" />
             {intl.formatMessage({ id: 'roles.index.create_button', defaultMessage: 'Create Role' })}
           </Button>
@@ -175,22 +156,22 @@ const RolesIndexPage = () => {
 
       <Card>
         <CardHeader className="flex items-center justify-between gap-3">
-          <div className="w-80">
+          <div className="role-search-wrap">
             <Input
               placeholder={intl.formatMessage({ id: 'roles.index.search_placeholder', defaultMessage: 'Search roles' })}
               value={searchInput}
-              onChange={(v: string) => setSearchInput(v)}
+              onValueChange={(v: string) => setSearchInput(v)}
               leftIcon={<Icon icon="solar:magnifer-linear" />}
             />
           </div>
         </CardHeader>
         <CardBody className="p-0">
           {isLoading ? (
-            <div className="flex justify-center py-12">
+            <div className="role-loading">
               <Spinner />
             </div>
           ) : rows.length === 0 ? (
-            <div className="px-6 py-10">
+            <div className="role-empty-wrap">
               <EmptyState
                 icon={<Icon icon="solar:shield-user-linear" className="size-8 text-slate-400" />}
                 title={intl.formatMessage({ id: 'roles.index.empty_title', defaultMessage: 'No roles' })}
@@ -220,10 +201,10 @@ const RolesIndexPage = () => {
             </Table>
           )}
           {totalPages > 1 ? (
-            <div className="flex justify-end p-4">
+            <div className="role-pagination-wrap">
               <Pagination
                 page={pagination.pageIndex + 1}
-                total={totalPages}
+                totalPages={totalPages}
                 onChange={(p) => setPagination((prev) => ({ ...prev, pageIndex: p - 1 }))}
               />
             </div>

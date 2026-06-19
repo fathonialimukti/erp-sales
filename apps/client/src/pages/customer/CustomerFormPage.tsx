@@ -136,7 +136,8 @@ function CustomerForm({
     },
   });
 
-  const isLoading= createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isPending = isLoading;
 
   return (
     <>
@@ -170,68 +171,63 @@ function CustomerForm({
                   return undefined;
                 }}}>
                   {(field) => (
-                    <TextField isRequired isInvalid={field.state.meta.errors.length > 0}>
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_name', defaultMessage: 'Name' })}
-                      </Label>
+                    <FormField
+                      isRequired
+                      label={intl.formatMessage({ id: 'customer.form.field_name', defaultMessage: 'Name' })}
+                      error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined}
+                    >
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'customer.form.field_name_placeholder', defaultMessage: 'e.g. PT Maju Bersama' })}
                       />
-                      {field.state.meta.errors.map((error) => (
-                        <FieldError key={error as string}>{error as string}</FieldError>
-                      ))}
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="code" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_code', defaultMessage: 'Code' })}
-                      </Label>
+                    <FormField
+                      label={intl.formatMessage({ id: 'customer.form.field_code', defaultMessage: 'Code' })}
+                    >
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'customer.form.field_code_placeholder', defaultMessage: 'e.g. CUST-001' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="taxId" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_tax_id', defaultMessage: 'Tax ID (NPWP)' })}
-                      </Label>
+                    <FormField
+                      label={intl.formatMessage({ id: 'customer.form.field_tax_id', defaultMessage: 'Tax ID (NPWP)' })}
+                    >
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'customer.form.field_tax_id_placeholder', defaultMessage: 'e.g. 12.345.678.9-123.000' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="status" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_status', defaultMessage: 'Status' })}
-                      </Label>
+                    <FormField
+                      label={intl.formatMessage({ id: 'customer.form.field_status', defaultMessage: 'Status' })}
+                    >
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder="ACTIVE"
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
               </div>
@@ -246,66 +242,64 @@ function CustomerForm({
               <div className="grid gap-4 md:grid-cols-2">
                 <form.Field name="paymentTerms" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_payment_terms', defaultMessage: 'Payment Terms' })}
-                      </Label>
+                    <FormField
+                      label={intl.formatMessage({ id: 'customer.form.field_payment_terms', defaultMessage: 'Payment Terms' })}
+                    >
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'customer.form.field_payment_terms_placeholder', defaultMessage: 'e.g. NET 30, 50/50' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="creditLimit" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_credit_limit', defaultMessage: 'Credit Limit' })}
-                      </Label>
+                    <FormField
+                      label={intl.formatMessage({ id: 'customer.form.field_credit_limit', defaultMessage: 'Credit Limit' })}
+                    >
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         type="number"
                         placeholder={intl.formatMessage({ id: 'customer.form.field_credit_limit_placeholder', defaultMessage: 'e.g. 50000000' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="billingAddress" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField className="md:col-span-2">
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_billing_address', defaultMessage: 'Billing Address' })}
-                      </Label>
-                      <TextArea
+                    <FormField
+                      className="md:col-span-2"
+                      label={intl.formatMessage({ id: 'customer.form.field_billing_address', defaultMessage: 'Billing Address' })}
+                    >
+                      <Textarea
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'customer.form.field_billing_address_placeholder', defaultMessage: 'Full billing address' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="notes" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField className="md:col-span-2">
-                      <Label>
-                        {intl.formatMessage({ id: 'customer.form.field_notes', defaultMessage: 'Notes' })}
-                      </Label>
-                      <TextArea
+                    <FormField
+                      className="md:col-span-2"
+                      label={intl.formatMessage({ id: 'customer.form.field_notes', defaultMessage: 'Notes' })}
+                    >
+                      <Textarea
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'customer.form.field_notes_placeholder', defaultMessage: 'Internal notes about this customer' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
               </div>
@@ -323,14 +317,14 @@ function CustomerForm({
             >
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="primary" type="submit" disabled={isPending}>
+            <Button variant="primary" type="submit" disabled={isPending}>
               {isPending ? <Spinner size="sm" /> : isEdit ? intl.formatMessage({ id: 'common.action.save', defaultMessage: 'Save' }) : intl.formatMessage({ id: 'common.action.create', defaultMessage: 'Create' })}
             </Button>
           </div>
         </section>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onOpenChange={() => { if (modalStage !== 'loading') setModalStage('idle'); }}>
+      <Modal isOpen={modalStage !== 'idle'} onClose={() => { if (modalStage !== 'loading') setModalStage('idle'); }}>
         <ModalContent>
           {modalStage === 'loading' ? (
             <ModalBody>
@@ -358,7 +352,7 @@ function CustomerForm({
                 <p className="text-sm text-danger">{resultMessage}</p>
               </ModalBody>
               <ModalFooter>
-                <Button onClick={() => setModalStage('idle')}>
+                <Button variant="secondary" onClick={() => setModalStage('idle')}>
                   {intl.formatMessage({ id: 'common.action.close', defaultMessage: 'Close' })}
                 </Button>
               </ModalFooter>

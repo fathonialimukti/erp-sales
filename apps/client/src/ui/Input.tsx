@@ -1,6 +1,6 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
 import { forwardRef, useId } from "react";
-import { cn } from "./cn";
+import "./Input.css";
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   label?: string;
@@ -8,55 +8,48 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">
   hint?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
-  startContent?: ReactNode;
-  isClearable?: boolean;
   isRequired?: boolean;
+  onValueChange?: (value: string) => void;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, leftIcon, rightIcon, startContent, isClearable, isRequired, id, className, ...rest }, ref) => {
+  ({ label, error, hint, leftIcon, rightIcon, isRequired, id, onValueChange, onChange, ...rest }, ref) => {
     const autoId = useId();
     const inputId = id ?? autoId;
     const hasError = Boolean(error);
 
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+      onChange?.(event);
+      onValueChange?.(event.target.value);
+    };
+
+    const boxClasses = [
+      "inp-box",
+      hasError ? "inp-box--error" : "",
+      rest.disabled ? "inp-box--disabled" : "",
+    ].filter(Boolean).join(" ");
+
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="inp-wrapper">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-sm font-medium text-slate-700 dark:text-slate-300"
-          >
+          <label htmlFor={inputId} className="inp-label">
             {label}
-            {isRequired && <span className="ml-0.5 text-state-danger">*</span>}
+            {isRequired && <span className="inp-label__required">*</span>}
           </label>
         )}
-        <div
-          className={cn(
-            "flex items-center gap-2 rounded-md border bg-surface-1 px-3 transition-colors",
-            "focus-within:border-accent-500 focus-within:ring-1 focus-within:ring-accent-500",
-            hasError
-              ? "border-state-danger"
-              : "border-slate-300 dark:border-slate-700",
-            rest.disabled && "bg-slate-50 dark:bg-slate-800/50 opacity-70",
-          )}
-        >
-          {(leftIcon || startContent) && <span className="text-slate-400">{leftIcon ?? startContent}</span>}
+        <div className={boxClasses}>
+          {leftIcon && <span className="inp-icon">{leftIcon}</span>}
           <input
             ref={ref}
             id={inputId}
-            className={cn(
-              "h-10 w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed dark:text-slate-100",
-              className,
-            )}
+            className="inp-field"
+            onChange={handleChange}
             {...rest}
           />
-          {rightIcon && <span className="text-slate-400">{rightIcon}</span>}
+          {rightIcon && <span className="inp-icon">{rightIcon}</span>}
         </div>
-        {hasError ? (
-          <p className="text-xs text-state-danger">{error}</p>
-        ) : hint ? (
-          <p className="text-xs text-slate-500">{hint}</p>
-        ) : null}
+        {hasError && <p className="inp-error">{error}</p>}
+        {!hasError && hint && <p className="inp-hint">{hint}</p>}
       </div>
     );
   },

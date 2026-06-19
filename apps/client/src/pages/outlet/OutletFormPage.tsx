@@ -145,7 +145,8 @@ function OutletForm({
     },
   });
 
-  const isLoading= createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isPending = isLoading;
 
   return (
     <>
@@ -179,36 +180,27 @@ function OutletForm({
                   return undefined;
                 }}}>
                   {(field) => (
-                    <TextField isRequired isInvalid={field.state.meta.errors.length > 0}>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_name', defaultMessage: 'Name' })}
-                      </Label>
+                    <FormField isRequired error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined} label={intl.formatMessage({ id: 'outlet.form.field_name', defaultMessage: 'Name' })}>
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'outlet.form.field_name_placeholder', defaultMessage: 'e.g. Toko Makmur Jaya' })}
                       />
-                      {field.state.meta.errors.map((error) => (
-                        <FieldError key={error as string}>{error as string}</FieldError>
-                      ))}
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="code" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_code', defaultMessage: 'Code' })}
-                      </Label>
+                    <FormField label={intl.formatMessage({ id: 'outlet.form.field_code', defaultMessage: 'Code' })}>
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'outlet.form.field_code_placeholder', defaultMessage: 'e.g. OUT-001' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
@@ -217,10 +209,7 @@ function OutletForm({
                   return undefined;
                 }}}>
                   {(field) => (
-                    <TextField isRequired isInvalid={field.state.meta.errors.length > 0}>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_customer', defaultMessage: 'Customer' })}
-                      </Label>
+                    <FormField isRequired error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined} label={intl.formatMessage({ id: 'outlet.form.field_customer', defaultMessage: 'Customer' })}>
                       <select
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -232,10 +221,7 @@ function OutletForm({
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
-                      {field.state.meta.errors.map((error) => (
-                        <FieldError key={error as string}>{error as string}</FieldError>
-                      ))}
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
@@ -244,10 +230,7 @@ function OutletForm({
                   return undefined;
                 }}}>
                   {(field) => (
-                    <TextField isRequired isInvalid={field.state.meta.errors.length > 0}>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_area', defaultMessage: 'Area' })}
-                      </Label>
+                    <FormField isRequired error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined} label={intl.formatMessage({ id: 'outlet.form.field_area', defaultMessage: 'Area' })}>
                       <select
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -259,42 +242,33 @@ function OutletForm({
                           <option key={a.id} value={a.id}>{a.name}</option>
                         ))}
                       </select>
-                      {field.state.meta.errors.map((error) => (
-                        <FieldError key={error as string}>{error as string}</FieldError>
-                      ))}
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="status" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_status', defaultMessage: 'Status' })}
-                      </Label>
+                    <FormField label={intl.formatMessage({ id: 'outlet.form.field_status', defaultMessage: 'Status' })}>
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder="ACTIVE"
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="address" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField className="md:col-span-2">
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_address', defaultMessage: 'Address' })}
-                      </Label>
-                      <TextArea
+                    <FormField className="md:col-span-2" label={intl.formatMessage({ id: 'outlet.form.field_address', defaultMessage: 'Address' })}>
+                      <Textarea
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'outlet.form.field_address_placeholder', defaultMessage: 'Full street address' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
               </div>
@@ -309,67 +283,55 @@ function OutletForm({
               <div className="grid gap-4 md:grid-cols-2">
                 <form.Field name="contactName" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_contact_name', defaultMessage: 'Contact Name' })}
-                      </Label>
+                    <FormField label={intl.formatMessage({ id: 'outlet.form.field_contact_name', defaultMessage: 'Contact Name' })}>
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'outlet.form.field_contact_name_placeholder', defaultMessage: 'e.g. Budi Santoso' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="contactPhone" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_contact_phone', defaultMessage: 'Contact Phone' })}
-                      </Label>
+                    <FormField label={intl.formatMessage({ id: 'outlet.form.field_contact_phone', defaultMessage: 'Contact Phone' })}>
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={intl.formatMessage({ id: 'outlet.form.field_contact_phone_placeholder', defaultMessage: 'e.g. 08123456789' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="latitude" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_latitude', defaultMessage: 'Latitude' })}
-                      </Label>
+                    <FormField label={intl.formatMessage({ id: 'outlet.form.field_latitude', defaultMessage: 'Latitude' })}>
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         type="number"
                         placeholder={intl.formatMessage({ id: 'outlet.form.field_latitude_placeholder', defaultMessage: 'e.g. -6.2088' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
 
                 <form.Field name="longitude" validators={{ onChange: ({ value }) => undefined }}>
                   {(field) => (
-                    <TextField>
-                      <Label>
-                        {intl.formatMessage({ id: 'outlet.form.field_longitude', defaultMessage: 'Longitude' })}
-                      </Label>
+                    <FormField label={intl.formatMessage({ id: 'outlet.form.field_longitude', defaultMessage: 'Longitude' })}>
                       <Input
                         value={field.state.value}
-                        onChange={field.handleChange}
+                        onValueChange={field.handleChange}
                         onBlur={field.handleBlur}
                         type="number"
                         placeholder={intl.formatMessage({ id: 'outlet.form.field_longitude_placeholder', defaultMessage: 'e.g. 106.8456' })}
                       />
-                    </TextField>
+                    </FormField>
                   )}
                 </form.Field>
               </div>
@@ -387,14 +349,14 @@ function OutletForm({
             >
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="primary" type="submit" disabled={isPending}>
+            <Button variant="primary" type="submit" disabled={isPending}>
               {isPending ? <Spinner size="sm" /> : isEdit ? intl.formatMessage({ id: 'common.action.save', defaultMessage: 'Save' }) : intl.formatMessage({ id: 'common.action.create', defaultMessage: 'Create' })}
             </Button>
           </div>
         </section>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onOpenChange={() => { if (modalStage !== 'loading') setModalStage('idle'); }}>
+      <Modal isOpen={modalStage !== 'idle'} onClose={() => { if (modalStage !== 'loading') setModalStage('idle'); }}>
         <ModalContent>
           {modalStage === 'loading' ? (
             <ModalBody>

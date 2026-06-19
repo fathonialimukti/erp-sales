@@ -1,0 +1,22 @@
+/* ============================================================
+ * Separator — horizontal/vertical divider
+ * Prefix: .sep-
+ * ============================================================ */
+
+.sep {
+  background: var(--color-slate-200);
+}
+
+.dark .sep {
+  background: var(--color-slate-800);
+}
+
+.sep--horizontal {
+  height: 1px;
+  width: 100%;
+}
+
+.sep--vertical {
+  height: 100%;
+  width: 1px;
+}

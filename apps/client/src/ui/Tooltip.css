@@ -1,0 +1,38 @@
+/* ============================================================
+ * Tooltip — CSS-only hover tooltip
+ * Prefix: .tip-
+ * ============================================================ */
+
+.tip {
+  position: relative;
+  display: inline-flex;
+}
+
+.tip__content {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  z-index: 50;
+  margin-top: 6px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-slate-200);
+  background: var(--color-slate-900);
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--color-slate-50);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.dark .tip__content {
+  border-color: var(--color-slate-700);
+}
+
+.tip:hover .tip__content,
+.tip:focus-within .tip__content {
+  opacity: 1;
+}

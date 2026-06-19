@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { forwardRef, useId } from "react";
 import { Icon } from "./";
-import { cn } from "./cn";
+import "./SearchField.css";
 
 interface SearchFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
   onClear?: () => void;
@@ -16,33 +16,21 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(
     const hasValue = Boolean(value);
 
     return (
-      <div
-        className={cn(
-          "flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-surface-1 px-3 transition-colors focus-within:border-accent-500 focus-within:ring-1 focus-within:ring-accent-500 dark:border-slate-700",
-        )}
-      >
-        <span className="text-slate-400">
-          {leftIcon ?? <Icon icon="solar:magnifer-linear" className="h-4 w-4" />}
+      <div className={`sf ${className ?? ""}`}>
+        <span className="sf__icon">
+          {leftIcon ?? <Icon icon="solar:magnifer-linear" />}
         </span>
         <input
           ref={ref}
           id={inputId}
           type="search"
           value={value}
-          className={cn(
-            "h-full w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-100",
-            className,
-          )}
+          className="sf__input"
           {...rest}
         />
         {hasValue && onClear && (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={onClear}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-          >
-            <Icon icon="solar:close-circle-linear" className="h-4 w-4" />
+          <button type="button" aria-label="Clear search" onClick={onClear} className="sf__clear">
+            <Icon icon="solar:close-circle-linear" />
           </button>
         )}
       </div>

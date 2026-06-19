@@ -1,0 +1,62 @@
+/* ============================================================
+ * PageHeader — page title + action buttons
+ * Prefix: .ph-
+ * ============================================================ */
+
+.ph {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .ph {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.ph__title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--color-slate-900);
+}
+
+.dark .ph__title {
+  color: var(--color-slate-100);
+}
+
+.ph__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ph__action-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ph__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-slate-200);
+}
+
+.dark .ph__divider {
+  background: var(--color-slate-800);
+}
+
+.ph__action-label {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .ph__action-label {
+    display: inline;
+  }
+}

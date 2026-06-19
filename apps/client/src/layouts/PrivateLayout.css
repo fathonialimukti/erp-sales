@@ -1,0 +1,68 @@
+/* ============================================================
+ * PrivateLayout — main app shell with sidebar + navbar
+ * Prefix: .priv-
+ * Responsive: sidebar overlay on mobile, inline on desktop
+ * ============================================================ */
+
+.priv-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-surface-0);
+}
+
+.priv-layout__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .priv-layout__body {
+    padding-top: 0;
+  }
+}
+
+.priv-layout__main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  transition: padding 200ms ease;
+}
+
+@media (min-width: 768px) {
+  .priv-layout__main {
+    padding: 24px 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .priv-layout__main {
+    padding: 24px 40px;
+  }
+}
+
+/* Scrollbar inside main content */
+.priv-layout__main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.priv-layout__main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.priv-layout__main::-webkit-scrollbar-thumb {
+  background: var(--color-slate-300);
+  border-radius: 999px;
+  border: 2px solid var(--color-surface-0);
+}
+
+.dark .priv-layout__main::-webkit-scrollbar-thumb {
+  background: var(--color-slate-700);
+}

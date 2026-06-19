@@ -10,31 +10,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Icon } from "../../ui";
-import {
-  Button,
-  Card,
-  CardBody,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  EmptyState,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Pagination,
-  Spinner,
-  Table,
-  TBody,
-  TD,
-  TH,
-  THead,
-  TR,
-  useToast,
-} from '../../ui';
+import { Icon, Table, THead, TBody, TR, TH, TD, Button, Card, CardBody, CardDescription, CardHeader, CardTitle, EmptyState, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, useToast } from '../../ui';
+
 import { EntityPhoto } from '../../components/EntityPhoto';
 import { hasPermissionAtom } from '../../lib/atoms';
 import { useAiFillForm } from '../../components/AiAssistant/useAiFillForm';
@@ -209,7 +186,7 @@ const UsersIndexPage = () => {
           </p>
         </div>
         {canCreate ? (
-          <Button color="primary" onClick={() => navigate('/users/create')}>
+          <Button variant="primary" onClick={() => navigate('/users/create')}>
             <Icon icon="solar:add-circle-linear" />
             {intl.formatMessage({ id: 'users.index.create_button', defaultMessage: 'Create User' })}
           </Button>
@@ -222,7 +199,7 @@ const UsersIndexPage = () => {
             <Input
               placeholder={intl.formatMessage({ id: 'users.index.search_placeholder', defaultMessage: 'Search by name, email, or role' })}
               value={searchInput}
-              onChange={(v: string) => setSearchInput(v)}
+              onValueChange={setSearchInput}
               leftIcon={<Icon icon="solar:magnifer-linear" />}
             />
           </div>
@@ -270,7 +247,7 @@ const UsersIndexPage = () => {
             <div className="flex justify-end p-4">
               <Pagination
                 page={pagination.pageIndex + 1}
-                total={totalPages}
+                totalPages={totalPages}
                 onChange={(p) => setPagination((prev) => ({ ...prev, pageIndex: p - 1 }))}
               />
             </div>
@@ -278,7 +255,7 @@ const UsersIndexPage = () => {
         </CardBody>
       </Card>
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
         <ModalContent>
           <ModalHeader>
             {intl.formatMessage({ id: 'users.index.delete_title', defaultMessage: 'Delete user' })}
@@ -293,7 +270,7 @@ const UsersIndexPage = () => {
             <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="danger" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting
                 ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
                 : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}

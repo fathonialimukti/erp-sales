@@ -1,33 +1,31 @@
 import { Icon } from "./";
-import { cn } from "./cn";
 import { Button } from "./Button";
+import "./Pagination.css";
 
 interface PaginationProps {
   page: number;
-  totalPages: number;
+  totalPages?: number;
   onChange: (page: number) => void;
   className?: string;
 }
 
-export const Pagination = ({ page, totalPages, onChange, className }: PaginationProps) => {
+export const Pagination = ({ page, totalPages = 1, onChange, className }: PaginationProps) => {
   if (totalPages <= 1) return null;
   const canPrev = page > 1;
   const canNext = page < totalPages;
+
   return (
-    <nav
-      aria-label="Pagination"
-      className={cn("flex items-center justify-center gap-1 py-3", className)}
-    >
+    <nav aria-label="Pagination" className={`pag ${className ?? ""}`}>
       <Button
         variant="outline"
         size="sm"
         onClick={() => onChange(page - 1)}
         disabled={!canPrev}
-        leftIcon={<Icon icon="solar:alt-arrow-left-linear" className="h-4 w-4" />}
+        leftIcon={<Icon icon="solar:alt-arrow-left-linear" />}
       >
         Prev
       </Button>
-      <span className="px-3 text-sm text-slate-600 dark:text-slate-400">
+      <span className="pag__info">
         Page {page} of {totalPages}
       </span>
       <Button
@@ -35,7 +33,7 @@ export const Pagination = ({ page, totalPages, onChange, className }: Pagination
         size="sm"
         onClick={() => onChange(page + 1)}
         disabled={!canNext}
-        rightIcon={<Icon icon="solar:alt-arrow-right-linear" className="h-4 w-4" />}
+        rightIcon={<Icon icon="solar:alt-arrow-right-linear" />}
       >
         Next
       </Button>

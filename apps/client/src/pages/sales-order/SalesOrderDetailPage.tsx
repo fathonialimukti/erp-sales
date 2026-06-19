@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
-import { Icon } from "../../ui";
+import { Table, THead, TBody, TR, TH, TD } from '../../ui';
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "../../components/PageHeader";
@@ -308,7 +308,7 @@ export const SalesOrderDetailPage = () => {
         </Card>
       )}
 
-      {record.approvalHistory && (
+      {!!record.approvalHistory && (
         <Card>
           <CardHeader>
             <CardTitle>
@@ -366,7 +366,7 @@ export const SalesOrderDetailPage = () => {
           <Textarea
             label={intl.formatMessage({ id: "sales_order.detail.decision_message", defaultMessage: "Message (optional)" })}
             value={decisionMessage}
-            onChange={(e) => setDecisionMessage(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDecisionMessage(e.target.value)}
             placeholder={intl.formatMessage({
               id: "sales_order.detail.decision_message_placeholder",
               defaultMessage: "Add an approval note…",
@@ -404,7 +404,7 @@ export const SalesOrderDetailPage = () => {
           <Textarea
             label={intl.formatMessage({ id: "sales_order.detail.decision_message", defaultMessage: "Reason" })}
             value={decisionMessage}
-            onChange={(e) => setDecisionMessage(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDecisionMessage(e.target.value)}
             placeholder={intl.formatMessage({
               id: "sales_order.detail.reject_reason_placeholder",
               defaultMessage: "Why are you rejecting this order?",

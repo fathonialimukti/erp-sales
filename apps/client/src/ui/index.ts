@@ -11,9 +11,8 @@ export {
   CardTitle,
   CardDescription,
   CardBody,
-  CardFooter,
-  // HeroUI-compatible alias
   CardContent,
+  CardFooter,
 } from "./Card";
 export { Checkbox } from "./Checkbox";
 export { Chip } from "./Chip";
@@ -28,8 +27,7 @@ export { FormField } from "./FormField";
 export { Input } from "./Input";
 export { Label } from "./Label";
 export { ListBox } from "./ListBox";
-export { Modal, ModalHeader, ModalBody, ModalFooter } from "./Modal";
-export { ModalContent } from "./ModalContent";
+export { Modal, ModalHeader, ModalBody, ModalContent, ModalFooter } from "./Modal";
 export { Pagination } from "./Pagination";
 export { SearchField } from "./SearchField";
 export { Select } from "./Select";

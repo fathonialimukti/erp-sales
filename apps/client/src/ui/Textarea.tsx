@@ -1,48 +1,54 @@
-import type { TextareaHTMLAttributes } from "react";
+import type { ChangeEvent, TextareaHTMLAttributes } from "react";
 import { forwardRef, useId } from "react";
-import { cn } from "./cn";
+import "./Textarea.css";
 
-interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextareaProps
+  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange"> {
   label?: string;
   error?: string;
   hint?: string;
   isRequired?: boolean;
+  onValueChange?: (value: string) => void;
+  onChange?: (event: ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, hint, isRequired, id, className, rows = 4, ...rest }, ref) => {
+  ({ label, error, hint, isRequired, id, className, rows = 4, onValueChange, onChange, ...rest }, ref) => {
     const autoId = useId();
     const inputId = id ?? autoId;
     const hasError = Boolean(error);
 
+    const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+      onChange?.(event);
+      onValueChange?.(event.target.value);
+    };
+
+    const textareaClasses = [
+      "txa",
+      hasError ? "txa--error" : "",
+      className ?? "",
+    ].filter(Boolean).join(" ");
+
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="txa-wrapper">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-sm font-medium text-slate-700 dark:text-slate-300"
-          >
+          <label htmlFor={inputId} className="txa-label">
             {label}
-            {isRequired && <span className="ml-0.5 text-state-danger">*</span>}
+            {isRequired && <span className="txa-label__required">*</span>}
           </label>
         )}
         <textarea
           ref={ref}
           id={inputId}
           rows={rows}
-          className={cn(
-            "w-full rounded-md border bg-surface-1 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-100",
-            hasError
-              ? "border-state-danger focus:border-state-danger focus:ring-state-danger"
-              : "border-slate-300 focus:border-accent-500 focus:ring-accent-500 dark:border-slate-700",
-            className,
-          )}
+          className={textareaClasses}
+          onChange={handleChange}
           {...rest}
         />
         {hasError ? (
-          <p className="text-xs text-state-danger">{error}</p>
+          <p className="txa-error">{error}</p>
         ) : hint ? (
-          <p className="text-xs text-slate-500">{hint}</p>
+          <p className="txa-hint">{hint}</p>
         ) : null}
       </div>
     );

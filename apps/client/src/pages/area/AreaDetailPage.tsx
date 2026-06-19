@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '../../components/PageHeader';
 import { hasPermissionAtom } from '../../lib/atoms';
 import { trpcClient } from '../../lib/trpc';
+import './Area.css';
 
 interface AreaDetail {
   id: string;
@@ -20,9 +21,9 @@ interface AreaDetail {
 
 function DetailField({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-sm font-medium text-muted">{label}</p>
-      <p>{value ?? '-'}</p>
+    <div className="area-detail__field">
+      <p className="area-detail__field-label">{label}</p>
+      <p className="area-detail__field-value">{value ?? '-'}</p>
     </div>
   );
 }
@@ -74,8 +75,8 @@ function AreaDetailPage() {
 
   if (!record) {
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-danger">
+      <div className="area-detail__not-found">
+        <p className="area-detail__not-found-msg">
           {intl.formatMessage({ id: 'area.detail.not_found', defaultMessage: 'Area not found.' })}
         </p>
         <Button variant="ghost" onClick={() => navigate('/area')}>
@@ -86,7 +87,7 @@ function AreaDetailPage() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="area-detail">
       <PageHeader
         title={record.name}
         onBack={() => navigate('/area')}
@@ -95,7 +96,7 @@ function AreaDetailPage() {
       />
 
       <Card>
-        <div className="grid gap-4 p-6 md:grid-cols-2">
+        <div className="area-detail__grid">
           <DetailField
             label={intl.formatMessage({ id: 'area.detail.code', defaultMessage: 'Code' })}
             value={record.code}
@@ -119,10 +120,10 @@ function AreaDetailPage() {
             </h3>
             <div className="space-y-2">
               {record.outlets.map((outlet) => (
-                <div key={outlet.id} className="flex items-center justify-between rounded-lg border p-3">
+                <div key={outlet.id} className="area-detail__item">
                   <div>
-                    <p className="font-medium">{outlet.name}</p>
-                    {outlet.code ? <p className="text-sm text-muted">{outlet.code}</p> : null}
+                    <p className="area-detail__item-name">{outlet.name}</p>
+                    {outlet.code ? <p className="area-detail__item-sub">{outlet.code}</p> : null}
                   </div>
                 </div>
               ))}
@@ -133,16 +134,16 @@ function AreaDetailPage() {
 
       {record.salesmen.length > 0 ? (
         <Card>
-          <div className="p-6">
-            <h3 className="mb-3 text-lg font-semibold">
+          <div className="area-detail__card-body">
+            <h3 className="area-detail__section-title">
               {intl.formatMessage({ id: 'area.detail.salesmen', defaultMessage: 'Salesmen' })}
             </h3>
-            <div className="space-y-2">
+            <div className="area-detail__item-list">
               {record.salesmen.map((user) => (
-                <div key={user.id} className="flex items-center justify-between rounded-lg border p-3">
+                <div key={user.id} className="area-detail__item">
                   <div>
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-muted">{user.email}</p>
+                    <p className="area-detail__item-name">{user.name}</p>
+                    <p className="area-detail__item-sub">{user.email}</p>
                   </div>
                 </div>
               ))}
@@ -151,7 +152,7 @@ function AreaDetailPage() {
         </Card>
       ) : null}
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
         <ModalContent>
           <ModalHeader>
             {intl.formatMessage({ id: 'area.detail.delete_title', defaultMessage: 'Delete Area' })}
@@ -166,7 +167,7 @@ function AreaDetailPage() {
             <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="danger" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting
                 ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
                 : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}

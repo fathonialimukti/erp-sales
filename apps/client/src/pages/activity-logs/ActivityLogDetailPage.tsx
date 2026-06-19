@@ -1,22 +1,7 @@
 import { type ReactNode } from 'react';
 import { useIntl } from 'react-intl';
-import {
-  Card,
-  CardBody,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Chip,
-  EmptyState,
-  Spinner,
-  Table,
-  TBody,
-  TD,
-  TH,
-  THead,
-  TR,
-} from '../../ui';
-import { Icon } from "../../ui";
+import { Card, CardBody, CardDescription, CardHeader, CardTitle, Chip, EmptyState, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
+
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
 import { PageHeader } from '../../components/PageHeader';

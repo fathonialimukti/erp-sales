@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
+import './Region.css';
 import { Button, Card, FieldError, Input, Label, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner, FormField } from '../../ui';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -111,7 +112,8 @@ function RegionForm({
     },
   });
 
-  const isLoading= createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isPending = isLoading;
 
   return (
     <>
@@ -122,7 +124,7 @@ function RegionForm({
           form.handleSubmit();
         }}
       >
-        <section className="space-y-6">
+        <section className="reg-form">
           <PageHeader
             title={
               isEdit
@@ -133,20 +135,17 @@ function RegionForm({
           />
 
           <Card>
-            <div className="grid gap-6 p-6 md:grid-cols-2">
+            <div className="reg-form__grid">
               <form.Field name="code" validators={{ onChange: ({ value }) => undefined }}>
                 {(field) => (
-                  <TextField isRequired>
-                    <Label>
-                      {intl.formatMessage({ id: 'region.form.code', defaultMessage: 'Code' })}
-                    </Label>
+                  <FormField isRequired label={intl.formatMessage({ id: 'region.form.code', defaultMessage: 'Code' })}>
                     <Input
                       value={field.state.value}
-                      onChange={field.handleChange}
+                      onValueChange={field.handleChange}
                       onBlur={field.handleBlur}
                       placeholder={intl.formatMessage({ id: 'region.form.code_placeholder', defaultMessage: 'e.g. REG-JKT' })}
                     />
-                  </TextField>
+                  </FormField>
                 )}
               </form.Field>
 
@@ -162,37 +161,31 @@ function RegionForm({
                 }}
               >
                 {(field) => (
-                  <TextField isRequired isInvalid={field.state.meta.errors.length > 0}>
-                    <Label>
-                      {intl.formatMessage({ id: 'region.form.name', defaultMessage: 'Name' })}
-                    </Label>
+                  <FormField isRequired error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined} label={intl.formatMessage({ id: 'region.form.name', defaultMessage: 'Name' })}>
                     <Input
                       value={field.state.value}
-                      onChange={field.handleChange}
+                      onValueChange={field.handleChange}
                       onBlur={field.handleBlur}
                       placeholder={intl.formatMessage({ id: 'region.form.name_placeholder', defaultMessage: 'e.g. Jakarta Region' })}
                     />
-                    {field.state.meta.errors.map((error) => (
-                      <FieldError key={error as string}>{error as string}</FieldError>
-                    ))}
-                  </TextField>
+                  </FormField>
                 )}
               </form.Field>
             </div>
           </Card>
 
           {formError ? (
-            <p className="text-sm text-danger">{formError}</p>
+            <p className="reg-form__error-msg">{formError}</p>
           ) : null}
 
-          <div className="flex justify-end gap-3">
+          <div className="reg-form__actions">
             <Button
               variant="ghost"
               onClick={() => navigate(isEdit && regionId ? `/region/${regionId}` : '/region')}
             >
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="primary" type="submit" disabled={isPending}>
+            <Button variant="primary" type="submit" disabled={isPending}>
               {isPending ? (
                 <Spinner size="sm" />
               ) : isEdit ? (
@@ -205,23 +198,23 @@ function RegionForm({
         </section>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onOpenChange={() => handleModalClose()}>
+      <Modal isOpen={modalStage !== 'idle'} onClose={() => handleModalClose()}>
         <ModalContent>
           {modalStage === 'loading' ? (
             <ModalBody>
-              <div className="flex justify-center py-8">
+              <div className="reg-form__modal-spinner">
                 <Spinner size="lg" />
               </div>
             </ModalBody>
           ) : modalStage === 'success' ? (
             <ModalBody>
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="flex size-12 items-center justify-center rounded-full bg-success-soft">
-                  <svg className="size-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="reg-form__modal-success">
+                <div className="reg-form__modal-success-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-center text-sm">{resultMessage}</p>
+                <p className="reg-form__modal-success-text">{resultMessage}</p>
               </div>
             </ModalBody>
           ) : modalStage === 'error' ? (
@@ -230,7 +223,7 @@ function RegionForm({
                 {intl.formatMessage({ id: 'common.error', defaultMessage: 'Error' })}
               </ModalHeader>
               <ModalBody>
-                <p className="text-sm text-danger">{resultMessage}</p>
+                <p className="reg-form__error-msg">{resultMessage}</p>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={handleModalClose}>
@@ -259,7 +252,7 @@ function RegionFormPage() {
 
   if (isEdit && isLoading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="reg-form__loading">
         <Spinner size="lg" />
       </div>
     );
@@ -267,8 +260,8 @@ function RegionFormPage() {
 
   if (isEdit && !data) {
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-danger">
+      <div className="reg-form__not-found">
+        <p className="reg-form__not-found-msg">
           {intl.formatMessage({ id: 'region.form.not_found', defaultMessage: 'Region not found.' })}
         </p>
         <Button variant="ghost" onClick={() => navigate('/region')}>

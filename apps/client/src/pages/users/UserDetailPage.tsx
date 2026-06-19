@@ -142,7 +142,7 @@ const UserDetailPage = () => {
             <CardTitle>{intl.formatMessage({ id: 'users.detail.profile', defaultMessage: 'Profile' })}</CardTitle>
           </CardHeader>
           <CardBody className="flex flex-col items-center gap-4 py-8 text-center">
-            <EntityPhoto src={record.photo ?? null} alt={record.name ?? record.email} size="lg" />
+            <EntityPhoto src={record.photo ?? null} alt={record.name ?? record.email} className="h-20 w-20 rounded-full" />
             <div>
               <p className="text-lg font-semibold">{record.name ?? '—'}</p>
               <p className="text-sm text-slate-500">{record.email}</p>
@@ -185,7 +185,7 @@ const UserDetailPage = () => {
         </Card>
       </div>
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
         <ModalContent>
           <ModalHeader>
             {intl.formatMessage({ id: 'users.detail.delete_title', defaultMessage: 'Delete user' })}
@@ -200,7 +200,7 @@ const UserDetailPage = () => {
             <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="danger" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting
                 ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
                 : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}

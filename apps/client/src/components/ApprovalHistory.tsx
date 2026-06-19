@@ -4,7 +4,7 @@ import { useIntl } from "react-intl";
 import { Button } from "../ui/Button";
 import { Modal, ModalHeader, ModalBody } from "../ui/Modal";
 import { EmptyState } from "../ui/EmptyState";
-import { cn } from "../ui/cn";
+import "./ApprovalHistory.css";
 
 interface ApprovalHistoryEntry {
   message: string | null;
@@ -20,6 +20,7 @@ interface TimelineTone {
 
 interface ApprovalHistoryProps {
   approvalHistory?: unknown;
+  history?: unknown;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -51,14 +52,10 @@ const parseApprovalHistory = (value: unknown): ApprovalHistoryEntry[] => {
 
 const getTimelineTone = (process: string): TimelineTone => {
   switch (process) {
-    case "APPROVED":
-      return { badgeClass: "bg-state-success-bg text-state-success", dotClass: "bg-state-success" };
-    case "REJECTED":
-      return { badgeClass: "bg-state-danger-bg text-state-danger", dotClass: "bg-state-danger" };
-    case "PROPOSED":
-      return { badgeClass: "bg-state-warning-bg text-state-warning", dotClass: "bg-state-warning" };
-    default:
-      return { badgeClass: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200", dotClass: "bg-slate-400" };
+    case "APPROVED": return { badgeClass: "ah-badge--approved", dotClass: "ah-dot--approved" };
+    case "REJECTED": return { badgeClass: "ah-badge--rejected", dotClass: "ah-dot--rejected" };
+    case "PROPOSED": return { badgeClass: "ah-badge--proposed", dotClass: "ah-dot--proposed" };
+    default: return { badgeClass: "ah-badge--default", dotClass: "ah-dot--default" };
   }
 };
 
@@ -69,7 +66,7 @@ const formatDate = (timeframe: string, fallback: string) => {
   return d.toLocaleString();
 };
 
-export const ApprovalHistory = ({ approvalHistory }: ApprovalHistoryProps) => {
+export const ApprovalHistory = ({ approvalHistory, history }: ApprovalHistoryProps) => {
   const intl = useIntl();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -79,7 +76,7 @@ export const ApprovalHistory = ({ approvalHistory }: ApprovalHistoryProps) => {
   });
 
   const entries = useMemo(() => {
-    const parsed = parseApprovalHistory(approvalHistory);
+    const parsed = parseApprovalHistory(approvalHistory ?? history);
     return [...parsed].sort((a, b) => {
       const aTime = new Date(a.timeframe).getTime();
       const bTime = new Date(b.timeframe).getTime();
@@ -88,7 +85,7 @@ export const ApprovalHistory = ({ approvalHistory }: ApprovalHistoryProps) => {
       if (Number.isNaN(bTime)) return -1;
       return aTime - bTime;
     });
-  }, [approvalHistory]);
+  }, [approvalHistory, history]);
 
   return (
     <>
@@ -96,7 +93,7 @@ export const ApprovalHistory = ({ approvalHistory }: ApprovalHistoryProps) => {
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(true)}
-        leftIcon={<Icon icon="solar:history-linear" className="h-4 w-4" />}
+        leftIcon={<Icon icon="solar:history-linear" />}
       >
         {intl.formatMessage({ id: "activitylog_audittraildetail", defaultMessage: "Audit Trail" })}
       </Button>
@@ -115,37 +112,19 @@ export const ApprovalHistory = ({ approvalHistory }: ApprovalHistoryProps) => {
               })}
             />
           ) : (
-            <ol className="relative space-y-4 border-l border-slate-200 pl-5 dark:border-slate-800">
+            <ol className="ah-timeline">
               {entries.map((entry, idx) => {
                 const tone = getTimelineTone(entry.process);
                 return (
-                  <li key={idx} className="relative">
-                    <span
-                      className={cn(
-                        "absolute -left-[27px] top-1 inline-block h-3 w-3 rounded-full ring-2 ring-surface-1",
-                        tone.dotClass,
-                      )}
-                    />
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-xs font-semibold",
-                            tone.badgeClass,
-                          )}
-                        >
-                          {entry.process}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {formatDate(entry.timeframe, unknownTime)}
-                        </span>
+                  <li key={idx} className="ah-entry">
+                    <span className={`ah-dot ${tone.dotClass}`} />
+                    <div className="ah-entry__content">
+                      <div className="ah-entry__header">
+                        <span className={`ah-badge ${tone.badgeClass}`}>{entry.process}</span>
+                        <span className="ah-entry__time">{formatDate(entry.timeframe, unknownTime)}</span>
                       </div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {entry.userName}
-                      </p>
-                      {entry.message && (
-                        <p className="text-sm text-slate-600 dark:text-slate-300">{entry.message}</p>
-                      )}
+                      <p className="ah-entry__user">{entry.userName}</p>
+                      {entry.message && <p className="ah-entry__message">{entry.message}</p>}
                     </div>
                   </li>
                 );

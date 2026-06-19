@@ -1,8 +1,9 @@
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR } from '../../ui';
-import { Icon } from "../../ui";
+import './Region.css';
+import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
+
 import {
   type ColumnDef,
   type PaginationState,
@@ -77,7 +78,7 @@ function RegionIndexPage() {
         id: 'actions',
         header: '',
         cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-2">
+          <div className="reg-index__row-actions">
             <Button
               size="sm"
               variant="ghost"
@@ -88,7 +89,7 @@ function RegionIndexPage() {
             {(canUpdate || canDelete) && (
               <Dropdown>
                 <DropdownTrigger>
-                  <Button size="sm" variant="ghost" isIconOnly>
+                  <Button size="icon" variant="ghost">
                     <Icon icon="solar:menu-dots-bold" />
                   </Button>
                 </DropdownTrigger>
@@ -104,7 +105,7 @@ function RegionIndexPage() {
                   {canDelete ? (
                     <DropdownItem
                       key="delete"
-                      color="danger"
+                      tone="danger"
                       onClick={() => {
                         setItemToDelete(row.original);
                         setDeleteModalOpen(true);
@@ -123,10 +124,12 @@ function RegionIndexPage() {
     [intl, navigate, canUpdate, canDelete],
   );
 
+  const totalPages = data?.meta?.totalPages ?? 0;
+
   const table = useReactTable({
     data: (data?.data ?? []) as RegionRow[],
     columns,
-    pageCount: data?.meta?.totalPages ?? 0,
+    pageCount: totalPages,
     state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -149,13 +152,13 @@ function RegionIndexPage() {
   };
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">
+    <section className="reg-index">
+      <div className="reg-index__header">
+        <h1 className="reg-index__title">
           {intl.formatMessage({ id: 'region.index.title', defaultMessage: 'Regions' })}
         </h1>
         {canCreate && (
-          <Button color="primary" onClick={() => navigate('/region/create')}>
+          <Button variant="primary" onClick={() => navigate('/region/create')}>
             <Icon icon="solar:add-circle-linear" />
             {intl.formatMessage({ id: 'region.index.action_create', defaultMessage: 'Add Region' })}
           </Button>
@@ -163,18 +166,17 @@ function RegionIndexPage() {
       </div>
 
       <Card>
-        <div className="p-4">
+        <div className="reg-index__search-bar">
           <Input
             placeholder={intl.formatMessage({ id: 'common.search.placeholder', defaultMessage: 'Search...' })}
             value={searchInput}
-            onChange={setSearchInput}
-            startContent={<Icon icon="solar:magnifer-linear" />}
-            isClearable
+            onValueChange={setSearchInput}
+            leftIcon={<Icon icon="solar:magnifer-linear" />}
           />
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
+          <div className="reg-index__loading">
             <Spinner />
           </div>
         ) : (
@@ -204,11 +206,11 @@ function RegionIndexPage() {
               </TBody>
             </Table>
 
-            {data?.meta?.totalPages > 1 ? (
-              <div className="flex justify-end p-4">
+            {totalPages > 1 ? (
+              <div className="reg-index__pagination-bar">
                 <Pagination
                   page={pagination.pageIndex + 1}
-                  total={data.meta.totalPages}
+                  totalPages={totalPages}
                   onChange={(p) => setPagination((prev) => ({ ...prev, pageIndex: p - 1 }))}
                 />
               </div>
@@ -217,7 +219,7 @@ function RegionIndexPage() {
         )}
       </Card>
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
         <ModalContent>
           <ModalHeader>
             {intl.formatMessage({ id: 'region.index.delete_title', defaultMessage: 'Delete Region' })}
@@ -232,7 +234,7 @@ function RegionIndexPage() {
             <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="danger" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting
                 ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
                 : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}

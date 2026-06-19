@@ -196,7 +196,7 @@ const InnerForm = ({
                       {intl.formatMessage({ id: 'users.form.name', defaultMessage: 'Name' })}
                       <span className="ml-0.5 text-red-500">*</span>
                     </Label>
-                    <Input value={field.state.value} onChange={field.handleChange} onBlur={field.handleBlur} />
+                    <Input value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} />
                     {field.state.meta.errors.map((error, i) => (
                       <FieldError key={i}>{String(error)}</FieldError>
                     ))}
@@ -211,7 +211,7 @@ const InnerForm = ({
                       {intl.formatMessage({ id: 'users.form.email', defaultMessage: 'Email' })}
                       <span className="ml-0.5 text-red-500">*</span>
                     </Label>
-                    <Input type="email" value={field.state.value} onChange={field.handleChange} onBlur={field.handleBlur} />
+                    <Input type="email" value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} />
                     {field.state.meta.errors.map((error, i) => (
                       <FieldError key={i}>{String(error)}</FieldError>
                     ))}
@@ -234,7 +234,7 @@ const InnerForm = ({
                       {intl.formatMessage({ id: 'users.form.password', defaultMessage: 'Password' })}
                       {!isEdit && <span className="ml-0.5 text-red-500">*</span>}
                     </Label>
-                    <Input type="password" value={field.state.value} onChange={field.handleChange} onBlur={field.handleBlur} placeholder={isEdit ? 'Leave blank to keep current' : ''} />
+                    <Input type="password" value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} placeholder={isEdit ? 'Leave blank to keep current' : ''} />
                     {field.state.meta.errors.map((error, i) => (
                       <FieldError key={i}>{String(error)}</FieldError>
                     ))}
@@ -251,8 +251,7 @@ const InnerForm = ({
                     </Label>
                     <Select
                       value={field.state.value}
-                      onChange={(v: string) => field.handleChange(v)}
-                      placeholder={intl.formatMessage({ id: 'users.form.role_placeholder', defaultMessage: 'Select a role' })}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => field.handleChange(e.target.value)}
                     >
                       {roleOptions.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
@@ -279,8 +278,7 @@ const InnerForm = ({
                 {(field) => (
                   <ImageUploadField
                     value={field.state.value}
-                    onChange={(v) => field.handleChange(v)}
-                    onBlur={field.handleBlur}
+                    onChange={(v) => field.handleChange(v ?? '')}
                   />
                 )}
               </form.Field>
@@ -294,7 +292,7 @@ const InnerForm = ({
             >
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="primary" type="submit" disabled={isPending}>
+            <Button variant="primary" type="submit" disabled={isPending}>
               {isPending ? <Spinner size="sm" /> : isEdit ? (
                 intl.formatMessage({ id: 'common.action.save', defaultMessage: 'Save' })
               ) : (
@@ -305,7 +303,7 @@ const InnerForm = ({
         </section>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onOpenChange={() => handleModalClose()}>
+      <Modal isOpen={modalStage !== 'idle'} onClose={() => handleModalClose()}>
         <ModalContent>
           {modalStage === 'loading' ? (
             <ModalBody>

@@ -1,0 +1,16 @@
+/* ============================================================
+ * PublicLayout — pass-through wrapper for auth pages
+ * Prefix: .pub-
+ * The login page handles its own full-screen layout.
+ * ============================================================ */
+
+.pub-layout {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.pub-layout__inner {
+  width: 100%;
+  height: 100%;
+}

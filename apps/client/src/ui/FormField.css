@@ -1,0 +1,15 @@
+/* ============================================================
+ * FormField — label + control + error wrapper
+ * Prefix: .ff-
+ * ============================================================ */
+
+.ff {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ff__desc {
+  font-size: 12px;
+  color: var(--color-muted);
+}

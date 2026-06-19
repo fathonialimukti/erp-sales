@@ -812,7 +812,7 @@ export const SalesOrderFormPage = () => {
                       isLoading={skusLoading}
                       placeholder="Select SKU…"
                       searchPlaceholder="Search SKUs…"
-                      getDescription={(o) => o.description}
+                      getDescription={(o: SearchOption) => o.description ?? undefined}
                     />
                   </div>
                   <div>

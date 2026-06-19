@@ -1,0 +1,115 @@
+/* ============================================================
+ * Card — surface container with variants
+ * Prefix: .card-
+ * 60-30-10: surface bg (60%), slate border (30%), accent for highlights
+ * ============================================================ */
+
+.card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow-xs);
+  overflow: visible;
+  transition: box-shadow 200ms ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card--elevated {
+  border: none;
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow-md);
+}
+
+.card--outline {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+.card--outline:hover {
+  box-shadow: var(--shadow-xs);
+}
+
+.card--secondary {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow-xs);
+}
+
+.dark .card {
+  border-color: var(--color-slate-800);
+}
+
+.dark .card--outline {
+  border-color: var(--color-slate-800);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+.dark .card__header {
+  border-bottom-color: var(--color-slate-800);
+}
+
+.card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-foreground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card__description {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.dark .card__description {
+  color: var(--color-slate-400);
+}
+
+.card__body {
+  padding: 20px;
+  overflow: visible;
+}
+
+.card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.dark .card__footer {
+  border-top-color: var(--color-slate-800);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card__header {
+    padding: 12px 16px;
+  }
+  .card__body {
+    padding: 16px;
+  }
+  .card__footer {
+    padding: 10px 16px;
+  }
+}

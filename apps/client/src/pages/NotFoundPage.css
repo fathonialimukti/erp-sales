@@ -1,0 +1,27 @@
+/* ============================================================
+ * NotFoundPage — 404 card
+ * Prefix: .nf-
+ * ============================================================ */
+
+.nf-card {
+  max-width: 512px;
+  margin: 48px auto 0;
+}
+
+.nf-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nf-code {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.nf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

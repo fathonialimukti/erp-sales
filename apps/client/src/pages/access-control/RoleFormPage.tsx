@@ -1,3 +1,4 @@
+import './Role.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate, useParams } from 'react-router';
@@ -178,7 +179,7 @@ const InnerForm = ({
   return (
     <>
       <form onSubmit={handleSubmit}>
-        <section className="space-y-6">
+        <section className="role-form-page">
           <PageHeader
             title={
               isEdit
@@ -193,19 +194,19 @@ const InnerForm = ({
               <CardTitle>{intl.formatMessage({ id: 'roles.form.identity', defaultMessage: 'Identity' })}</CardTitle>
               <CardDescription>{intl.formatMessage({ id: 'roles.form.identity_description', defaultMessage: 'Display name and description for the role.' })}</CardDescription>
             </CardHeader>
-            <CardBody className="grid gap-6 md:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
+            <CardBody className="role-identity-grid">
+              <div className="role-field">
                 <Label>
                   {intl.formatMessage({ id: 'roles.form.name', defaultMessage: 'Name' })}
-                  <span className="ml-0.5 text-red-500">*</span>
+                  <span className="role-field__required">*</span>
                 </Label>
-                <Input value={formState.name} onChange={(e) => setFormState((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Sales Manager" />
+                <Input value={formState.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Sales Manager" />
                 {nameError ? <FieldError>{nameError}</FieldError> : null}
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div className="role-field">
                 <Label>{intl.formatMessage({ id: 'roles.form.description', defaultMessage: 'Description' })}</Label>
-                <Input value={formState.description} onChange={(e) => setFormState((p) => ({ ...p, description: e.target.value }))} placeholder="What does this role do?" />
+                <Input value={formState.description} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState((p) => ({ ...p, description: e.target.value }))} placeholder="What does this role do?" />
               </div>
             </CardBody>
           </Card>
@@ -220,22 +221,22 @@ const InnerForm = ({
                 const allChecked = perms.every((p) => formState.permissions.includes(p.name));
                 const someChecked = perms.some((p) => formState.permissions.includes(p.name));
                 return (
-                  <div key={resource} className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="font-mono text-xs uppercase tracking-wide text-slate-500">{resource}</div>
+                  <div key={resource} className="role-perm-group">
+                    <div className="role-perm-group__header">
+                      <div className="role-perm-group__name">{resource}</div>
                       <Checkbox
                         checked={allChecked}
                         onChange={(checked) => toggleGroup(perms.map((p) => p.name), checked)}
                         label={allChecked ? 'All' : someChecked ? 'Some' : 'None'}
                       />
                     </div>
-                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="role-perm-grid">
                       {perms.map((p) => (
                         <Checkbox
                           key={p.id}
                           checked={formState.permissions.includes(p.name)}
                           onChange={(checked) => togglePermission(p.name, checked)}
-                          label={<span className="font-mono text-xs">{p.name}</span>}
+                          label={<span className="role-perm-label">{p.name}</span>}
                         />
                       ))}
                     </div>
@@ -245,11 +246,11 @@ const InnerForm = ({
             </CardBody>
           </Card>
 
-          <div className="flex justify-end gap-3">
+          <div className="role-form-actions">
             <Button variant="ghost" onClick={() => navigate('/roles')}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="primary" type="submit" disabled={isPending || !!nameError}>
+            <Button variant="primary" type="submit" disabled={isPending || !!nameError}>
               {isPending ? <Spinner size="sm" /> : isEdit ? (
                 intl.formatMessage({ id: 'common.action.save', defaultMessage: 'Save' })
               ) : (
@@ -260,28 +261,28 @@ const InnerForm = ({
         </section>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onOpenChange={() => handleModalClose()}>
+      <Modal isOpen={modalStage !== 'idle'} onClose={() => handleModalClose()}>
         <ModalContent>
           {modalStage === 'loading' ? (
             <ModalBody>
-              <div className="flex justify-center py-8">
+              <div className="role-modal-loading">
                 <Spinner size="lg" />
               </div>
             </ModalBody>
           ) : modalStage === 'success' ? (
             <ModalBody>
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="flex size-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+              <div className="role-modal-success">
+                <div className="role-modal-success__icon">
                   <Icon icon="solar:check-circle-bold" className="size-7 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <p className="text-center text-sm">{resultMessage}</p>
+                <p className="role-modal-success__text">{resultMessage}</p>
               </div>
             </ModalBody>
           ) : (
             <>
               <ModalHeader>{intl.formatMessage({ id: 'common.error', defaultMessage: 'Error' })}</ModalHeader>
               <ModalBody>
-                <p className="text-sm text-red-600">{resultMessage}</p>
+                <p className="role-error-text">{resultMessage}</p>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={handleModalClose}>
@@ -310,21 +311,21 @@ const RoleFormPage = () => {
   if (isEdit) {
     if (isLoading) {
       return (
-        <div className="flex justify-center py-12">
+        <div className="role-loading">
           <Spinner />
         </div>
       );
     }
     if (isError) {
       return (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+        <div className="role-error-banner">
           {error instanceof Error ? error.message : 'Failed to load role.'}
         </div>
       );
     }
     if (!data) {
       return (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+        <div className="role-warning-banner">
           {intl.formatMessage({ id: 'roles.form.not_found', defaultMessage: 'Role not found.' })}
         </div>
       );

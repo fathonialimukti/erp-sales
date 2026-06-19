@@ -1,14 +1,15 @@
-import { useNavigate } from 'react-router';
-import { Button } from '../ui/Button';
-import { Card, CardBody, CardFooter, CardHeader, CardTitle, CardDescription } from '../ui/Card';
+import { useNavigate } from "react-router";
+import { Button } from "../ui/Button";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "../ui/Card";
+import "./NotFoundPage.css";
 
 export const NotFoundPage = () => {
   const navigate = useNavigate();
   return (
-    <Card className="mx-auto mt-12 max-w-lg">
+    <Card className="nf-card">
       <CardHeader>
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-slate-500">404</p>
+        <div className="nf-header">
+          <p className="nf-code">404</p>
           <CardTitle>Page Not Found</CardTitle>
           <CardDescription>
             The page you are trying to access does not exist or has been moved.
@@ -16,11 +17,9 @@ export const NotFoundPage = () => {
         </div>
       </CardHeader>
       <CardFooter>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            Go back
-          </Button>
-          <Button onClick={() => navigate('/dashboard')}>Go to dashboard</Button>
+        <div className="nf-actions">
+          <Button variant="outline" onClick={() => navigate(-1)}>Go back</Button>
+          <Button onClick={() => navigate("/dashboard")}>Go to dashboard</Button>
         </div>
       </CardFooter>
     </Card>

@@ -1,16 +1,20 @@
-@import "tailwindcss";
+/* ============================================================
+ * Global styles — No Tailwind
+ * Imports: tokens, animations, utilities, react-day-picker
+ * ============================================================ */
+
 @import "./styles/tokens.css";
+@import "./styles/animations.css";
+@import "./styles/utilities.css";
 @import "react-day-picker/style.css";
 
-@variant dark (&:where(.dark, .dark *));
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
 /* Base resets layered on top of the design tokens */
-* {
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   border-color: var(--color-border);
 }
 
@@ -26,6 +30,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  margin: 0 !important;
 }
 
 /* Scrollbar — slate-30% themed */

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
-import { Icon } from "../../ui";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -18,6 +17,7 @@ import { Card, CardBody } from "../../ui/Card";
 import { Chip } from "../../ui/Chip";
 import { Dropdown, DropdownItem, DropdownSeparator } from "../../ui/Dropdown";
 import { EmptyState } from "../../ui/EmptyState";
+import { Icon } from "../../ui/Icon";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
 import { SearchField } from "../../ui/SearchField";
@@ -255,7 +255,7 @@ export const SalesOrderIndexPage = () => {
         <div className="border-b border-slate-200 p-4 dark:border-slate-800">
           <SearchField
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchInput(e.target.value)}
             onClear={() => setSearchInput("")}
             placeholder={intl.formatMessage({
               id: "sales_order.index.search_placeholder",

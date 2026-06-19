@@ -122,7 +122,8 @@ function AreaForm({
     },
   });
 
-  const isLoading= createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isPending = isLoading;
 
   return (
     <>
@@ -160,12 +161,8 @@ function AreaForm({
                   <Select
                     isRequired
                     label={intl.formatMessage({ id: 'area.form.region', defaultMessage: 'Region' })}
-                    selectedKeys={field.state.value ? [field.state.value] : []}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      field.handleChange(selected ?? '');
-                    }}
-                    placeholder={intl.formatMessage({ id: 'area.form.region_placeholder', defaultMessage: 'Select a region' })}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
                   >
                     {regions.map((r) => (
                       <SelectItem key={r.id}>{r.name}</SelectItem>
@@ -176,17 +173,16 @@ function AreaForm({
 
               <form.Field name="code" validators={{ onChange: ({ value }) => undefined }}>
                 {(field) => (
-                  <TextField>
-                    <Label>
-                      {intl.formatMessage({ id: 'area.form.code', defaultMessage: 'Code' })}
-                    </Label>
+                  <FormField
+                    label={intl.formatMessage({ id: 'area.form.code', defaultMessage: 'Code' })}
+                  >
                     <Input
                       value={field.state.value}
-                      onChange={field.handleChange}
+                      onValueChange={field.handleChange}
                       onBlur={field.handleBlur}
                       placeholder={intl.formatMessage({ id: 'area.form.code_placeholder', defaultMessage: 'e.g. JKT-PUSAT' })}
                     />
-                  </TextField>
+                  </FormField>
                 )}
               </form.Field>
 
@@ -202,20 +198,18 @@ function AreaForm({
                 }}
               >
                 {(field) => (
-                  <TextField isRequired isInvalid={field.state.meta.errors.length > 0}>
-                    <Label>
-                      {intl.formatMessage({ id: 'area.form.name', defaultMessage: 'Name' })}
-                    </Label>
+                  <FormField
+                    isRequired
+                    label={intl.formatMessage({ id: 'area.form.name', defaultMessage: 'Name' })}
+                    error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined}
+                  >
                     <Input
                       value={field.state.value}
-                      onChange={field.handleChange}
+                      onValueChange={field.handleChange}
                       onBlur={field.handleBlur}
                       placeholder={intl.formatMessage({ id: 'area.form.name_placeholder', defaultMessage: 'e.g. Jakarta Pusat' })}
                     />
-                    {field.state.meta.errors.map((error) => (
-                      <FieldError key={error as string}>{error as string}</FieldError>
-                    ))}
-                  </TextField>
+                  </FormField>
                 )}
               </form.Field>
             </div>
@@ -232,7 +226,7 @@ function AreaForm({
             >
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="primary" type="submit" disabled={isPending}>
+            <Button variant="primary" type="submit" disabled={isPending}>
               {isPending ? (
                 <Spinner size="sm" />
               ) : isEdit ? (
@@ -245,7 +239,7 @@ function AreaForm({
         </section>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onOpenChange={() => handleModalClose()}>
+      <Modal isOpen={modalStage !== 'idle'} onClose={() => handleModalClose()}>
         <ModalContent>
           {modalStage === 'loading' ? (
             <ModalBody>
@@ -273,7 +267,7 @@ function AreaForm({
                 <p className="text-sm text-danger">{resultMessage}</p>
               </ModalBody>
               <ModalFooter>
-                <Button onClick={handleModalClose}>
+                <Button variant="secondary" onClick={handleModalClose}>
                   {intl.formatMessage({ id: 'common.action.close', defaultMessage: 'Close' })}
                 </Button>
               </ModalFooter>

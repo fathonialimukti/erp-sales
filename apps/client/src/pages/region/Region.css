@@ -1,0 +1,210 @@
+/* Region pages — BEM prefix: .reg- */
+
+/* ── Index Page ── */
+.reg-index {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.reg-index__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.reg-index__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.reg-index__search-bar {
+  padding: 1rem;
+}
+
+.reg-index__loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.reg-index__row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.reg-index__pagination-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
+}
+
+/* ── Detail Page ── */
+.reg-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.reg-detail__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.reg-detail__field-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.reg-detail__loading-text {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.reg-detail__not-found {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reg-detail__not-found-msg {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.reg-detail__grid {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .reg-detail__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.reg-detail__card-body {
+  padding: 1.5rem;
+}
+
+.reg-detail__section-title {
+  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.reg-detail__item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reg-detail__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  padding: 0.75rem;
+}
+
+.reg-detail__item-name {
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+
+.reg-detail__item-sub {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+/* ── Form Page ── */
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.reg-form__grid {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .reg-form__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.reg-form__error-msg {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.reg-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.reg-form__loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.reg-form__not-found {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reg-form__not-found-msg {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.reg-form__modal-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.reg-form__modal-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+}
+
+.reg-form__modal-success-icon {
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-success-soft);
+}
+
+.reg-form__modal-success-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-success);
+}
+
+.reg-form__modal-success-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+}

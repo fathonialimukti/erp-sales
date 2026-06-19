@@ -1,0 +1,38 @@
+/* ============================================================
+ * RouteErrorPage — error card
+ * Prefix: .re-
+ * ============================================================ */
+
+.re-card {
+  max-width: 672px;
+  margin: 48px auto 0;
+}
+
+.re-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.re-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-state-danger);
+}
+
+.re-stack {
+  max-height: 288px;
+  overflow: auto;
+  border-radius: var(--radius-md);
+  background: var(--color-slate-900);
+  padding: 12px;
+  font-size: 12px;
+  color: var(--color-slate-200);
+  font-family: var(--font-mono);
+}
+
+.re-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

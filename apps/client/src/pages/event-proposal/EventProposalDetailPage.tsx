@@ -13,6 +13,11 @@ interface EventProposalDetail {
   area: { id: string; name: string }; createdBy: { id: string; name: string | null } | null;
   skus: { sku: { id: string; name: string; code: string | null } }[];
   payments: { id: string; amount: number; paymentDate: string; method: string | null; reference: string | null }[];
+  /** Per-tier approval timestamps. Surfaced once the server selects them. */
+  areaManagerApprovedAt?: string | Date | null;
+  regionManagerApprovedAt?: string | Date | null;
+  financeManagerApprovedAt?: string | Date | null;
+  directorApprovedAt?: string | Date | null;
 }
 
 function EventProposalDetailPage() {
@@ -46,13 +51,13 @@ function EventProposalDetailPage() {
       <PageHeader title={record.name} onBack={() => navigate('/event-proposal')} onEdit={canUpdate && record.approvalStatus === 'DRAFT' ? () => navigate(`/event-proposal/${record.id}/edit`) : undefined} onDelete={canDelete ? () => setDeleteModalOpen(true) : undefined} />
 
       <div className="flex flex-wrap gap-2">
-        <Chip size="sm" color={record.approvalStatus === 'APPROVED' ? 'success' : record.approvalStatus === 'REJECTED' ? 'danger' : record.approvalStatus === 'PROPOSED' ? 'primary' : 'default'} variant="flat">{record.approvalStatus}</Chip>
-        {record.eventType && <Chip size="sm" variant="flat">{record.eventType}</Chip>}
-        {canApproveArea && record.approvalStatus === 'DRAFT' && <Button size="sm" color="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Area)</Button>}
-        {canApproveRegion && record.approvalStatus === 'PROPOSED' && tierApproved(record.areaManagerApprovedAt) && !tierApproved(record.regionManagerApprovedAt) && <Button size="sm" color="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Region)</Button>}
-        {canApproveFinance && tierApproved(record.regionManagerApprovedAt) && !tierApproved(record.financeManagerApprovedAt) && <Button size="sm" color="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Finance)</Button>}
-        {canApproveDirector && tierApproved(record.financeManagerApprovedAt) && !tierApproved(record.directorApprovedAt) && <Button size="sm" color="success" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Director)</Button>}
-        <Button size="sm" color="danger" variant="flat" onClick={() => { setMessage(''); setActionModal('reject'); }}>Reject</Button>
+        <Chip size="sm" tone={record.approvalStatus === 'APPROVED' ? 'success' : record.approvalStatus === 'REJECTED' ? 'danger' : record.approvalStatus === 'PROPOSED' ? 'accent' : 'neutral'}>{record.approvalStatus}</Chip>
+        {record.eventType && <Chip size="sm">{record.eventType}</Chip>}
+        {canApproveArea && record.approvalStatus === 'DRAFT' && <Button size="sm" variant="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Area)</Button>}
+        {canApproveRegion && record.approvalStatus === 'PROPOSED' && tierApproved(record.areaManagerApprovedAt) && !tierApproved(record.regionManagerApprovedAt) && <Button size="sm" variant="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Region)</Button>}
+        {canApproveFinance && tierApproved(record.regionManagerApprovedAt) && !tierApproved(record.financeManagerApprovedAt) && <Button size="sm" variant="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Finance)</Button>}
+        {canApproveDirector && tierApproved(record.financeManagerApprovedAt) && !tierApproved(record.directorApprovedAt) && <Button size="sm" variant="success" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Director)</Button>}
+        <Button size="sm" variant="danger" onClick={() => { setMessage(''); setActionModal('reject'); }}>Reject</Button>
       </div>
 
       <Card><div className="p-4 flex gap-4 text-sm">
@@ -73,12 +78,12 @@ function EventProposalDetailPage() {
 
       {record.description && <Card><div className="p-6"><h3 className="mb-1 text-sm font-medium text-muted">Description</h3><p>{record.description}</p></div></Card>}
 
-      {record.skus.length > 0 && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Products ({record.skus.length})</h3><div className="flex flex-wrap gap-2">{record.skus.map((s) => <Chip key={s.sku.id} size="sm" variant="flat">{s.sku.name}</Chip>)}</div></div></Card>}
+      {record.skus.length > 0 && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Products ({record.skus.length})</h3><div className="flex flex-wrap gap-2">{record.skus.map((s) => <Chip key={s.sku.id} size="sm">{s.sku.name}</Chip>)}</div></div></Card>}
       {record.payments.length > 0 && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Payments</h3><div className="space-y-2">{record.payments.map((p) => <div key={p.id} className="flex justify-between text-sm"><span>IDR {p.amount.toLocaleString()} — {new Date(p.paymentDate).toLocaleDateString()}</span><span className="text-muted">{p.method} {p.reference}</span></div>)}</div></div></Card>}
 
       {record.approvalHistory && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Approval History</h3><ApprovalHistory history={Array.isArray(record.approvalHistory) ? record.approvalHistory : []} /></div></Card>}
 
-      <Modal isOpen={actionModal !== null} onOpenChange={() => setActionModal(null)}><ModalContent><ModalHeader>{actionModal === 'approve' ? 'Approve' : 'Reject'} Proposal</ModalHeader><ModalBody><TextArea label="Message" value={message} onChange={setMessage} placeholder="Enter note..." /></ModalBody><ModalFooter><Button variant="ghost" onClick={() => setActionModal(null)}>Cancel</Button><Button color={actionModal === 'approve' ? 'success' : 'danger'} onClick={() => {
+      <Modal isOpen={actionModal !== null} onClose={() => setActionModal(null)}><ModalContent><ModalHeader>{actionModal === 'approve' ? 'Approve' : 'Reject'} Proposal</ModalHeader><ModalBody><Textarea label="Message" value={message} onValueChange={setMessage} placeholder="Enter note..." /></ModalBody><ModalFooter><Button variant="ghost" onClick={() => setActionModal(null)}>Cancel</Button><Button variant={actionModal === 'approve' ? 'success' : 'danger'} onClick={() => {
         const p = { id: record!.id, message: message || undefined };
         if (actionModal === 'reject') rejectMutation.mutate(p);
         else if (!tierApproved(record!.areaManagerApprovedAt)) approveAreaMutation.mutate(p);
@@ -87,7 +92,7 @@ function EventProposalDetailPage() {
         else approveDirectorMutation.mutate(p);
       }}>{actionModal === 'approve' ? 'Approve' : 'Reject'}</Button></ModalFooter></ModalContent></Modal>
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}><ModalContent><ModalHeader>Delete Proposal</ModalHeader><ModalBody>Delete "{record.name}"?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button color="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}><ModalContent><ModalHeader>Delete Proposal</ModalHeader><ModalBody>Delete "{record.name}"?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button variant="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
     </section>
   );
 }

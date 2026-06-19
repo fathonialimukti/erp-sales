@@ -10,6 +10,7 @@ import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 import { Dropdown, DropdownItem, DropdownSeparator } from "../ui/Dropdown";
 import { Select } from "../ui/Select";
+import "./Navbar.css";
 
 type SupportedLocale = (typeof supportedLocales)[number];
 
@@ -32,71 +33,69 @@ export const Navbar = () => {
     setTheme((prev: "light" | "dark") => (prev === "dark" ? "light" : "dark"));
 
   return (
-    <header className="border-b border-slate-200 bg-surface-1 px-4 py-3 dark:border-slate-800">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            aria-label={intl.formatMessage({ id: "nav.toggle_sidebar", defaultMessage: "Toggle sidebar" })}
+    <header className="nav-bar">
+      <div className="nav-bar__left">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          aria-label={intl.formatMessage({ id: "nav.toggle_sidebar", defaultMessage: "Toggle sidebar" })}
+        >
+          <Icon icon="solar:hamburger-menu-linear" />
+        </Button>
+        <p className="nav-bar__brand">
+          {intl.formatMessage({ id: "nav.erp_sales", defaultMessage: "CRM" })}
+        </p>
+      </div>
+
+      <div className="nav-bar__right">
+        <div className="nav-bar__locale">
+          <Select
+            aria-label={intl.formatMessage({ id: "nav.language", defaultMessage: "Language" })}
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as SupportedLocale)}
           >
-            <Icon icon="solar:hamburger-menu-linear" className="h-5 w-5" />
-          </Button>
-          <p className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            {intl.formatMessage({ id: "nav.erp_sales", defaultMessage: "ERP SALES" })}
-          </p>
+            {supportedLocales.map((code) => (
+              <option key={code} value={code}>
+                {localeSymbols[code]} — {localeLabels[code]}
+              </option>
+            ))}
+          </Select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-32">
-            <Select
-              aria-label={intl.formatMessage({ id: "nav.language", defaultMessage: "Language" })}
-              value={locale}
-              onChange={(e) => setLocale(e.target.value as SupportedLocale)}
-            >
-              {supportedLocales.map((code) => (
-                <option key={code} value={code}>
-                  {localeSymbols[code]} — {localeLabels[code]}
-                </option>
-              ))}
-            </Select>
-          </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label={intl.formatMessage({ id: "nav.theme", defaultMessage: "Theme" })}
+        >
+          <Icon
+            icon={theme === "dark" ? "solar:sun-2-linear" : "solar:moon-linear"}
+          />
+        </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label={intl.formatMessage({ id: "nav.theme", defaultMessage: "Theme" })}
-          >
-            <Icon
-              icon={theme === "dark" ? "solar:sun-2-linear" : "solar:moon-linear"}
-              className="h-5 w-5"
-            />
-          </Button>
-
-          {user && (
-            <Dropdown
-              trigger={
-                <div className="flex items-center gap-3 rounded-md px-2 py-1 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
-                  <Avatar name={user.name} />
-                  <div className="hidden text-left md:block">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.roleName}</p>
-                  </div>
-                  <Icon icon="solar:alt-arrow-down-linear" className="hidden h-4 w-4 text-slate-400 md:block" />
+        {user && (
+          <Dropdown
+            trigger={
+              <div className="nav-bar__user-trigger">
+                <Avatar name={user.name} />
+                <div className="nav-bar__user-info">
+                  <p className="nav-bar__user-name">
+                    {user.name}
+                  </p>
+                  <p className="nav-bar__user-role">{user.roleName}</p>
                 </div>
-              }
-            >
-              <div className="px-3 py-2">
-                <p className="text-xs text-slate-500">
-                  {intl.formatMessage({ id: "nav.signed_in_as", defaultMessage: "Signed in as" })}
-                </p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.name}</p>
-                <p className="mt-0.5 text-xs text-slate-500">{user.email}</p>
+                <Icon icon="solar:alt-arrow-down-linear" className="nav-bar__user-arrow" />
               </div>
+            }
+          >
+            <div className="nav-bar__dropdown-user">
+              <p className="nav-bar__dropdown-label">
+                {intl.formatMessage({ id: "nav.signed_in_as", defaultMessage: "Signed in as" })}
+              </p>
+              <p className="nav-bar__dropdown-name">{user.name}</p>
+              <p className="nav-bar__dropdown-email">{user.email}</p>
+            </div>
               <DropdownSeparator />
               <DropdownItem
                 leftIcon={<Icon icon="solar:settings-linear" className="h-4 w-4" />}
@@ -119,8 +118,7 @@ export const Navbar = () => {
                 {intl.formatMessage({ id: "nav.logout", defaultMessage: "Log Out" })}
               </DropdownItem>
             </Dropdown>
-          )}
-        </div>
+        )}
       </div>
     </header>
   );

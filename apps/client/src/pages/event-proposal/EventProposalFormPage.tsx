@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Card, Input, Label, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner, Textarea, FormField } from '../../ui';
-import { Icon } from "../../ui";
+import { Button, Card, Input, Label, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner, Textarea, FormField, Icon } from '../../ui';
+
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
@@ -53,16 +53,16 @@ function EventProposalFormPage() {
       <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
         <PageHeader title={isEdit ? 'Edit Proposal' : 'Create Event Proposal'} onBack={() => navigate(isEdit && id ? `/event-proposal/${id}` : '/event-proposal')} />
         <Card><div className="p-6"><div className="grid gap-4 md:grid-cols-2">
-          <form.Field name="name" validators={{ onChange: ({ value }) => !value?.trim() ? 'Required' : undefined }}>{(f) => <TextField isRequired isInvalid={!!f.state.meta.errors.length}><Label>Name</Label><Input value={f.state.value} onChange={f.handleChange} placeholder="e.g. Ramadan Bazaar" /></TextField>}</form.Field>
-          <form.Field name="eventType">{(f) => <TextField><Label>Event Type</Label><Input value={f.state.value} onChange={f.handleChange} placeholder="e.g. Exhibition" /></TextField>}</form.Field>
+          <form.Field name="name" validators={{ onChange: ({ value }) => !value?.trim() ? 'Required' : undefined }}>{(f) => <FormField isRequired label="Name" error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}><Input value={f.state.value} onValueChange={f.handleChange} placeholder="e.g. Ramadan Bazaar" /></FormField>}</form.Field>
+          <form.Field name="eventType">{(f) => <FormField label="Event Type"><Input value={f.state.value} onValueChange={f.handleChange} placeholder="e.g. Exhibition" /></FormField>}</form.Field>
           <form.Field name="areaId" validators={{ onChange: ({ value }) => !value ? 'Required' : undefined }}>{(f) => <div><label className="text-sm font-medium">Area *</label><select value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} className="w-full rounded-lg border border-default-200 bg-content1 px-3 py-2 text-sm mt-1"><option value="">Select...</option>{areaList.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>}</form.Field>
-          <form.Field name="venue">{(f) => <TextField><Label>Venue</Label><Input value={f.state.value} onChange={f.handleChange} placeholder="e.g. Mall Kelapa Gading" /></TextField>}</form.Field>
-          <form.Field name="eventDate">{(f) => <TextField><Label>Event Date</Label><Input type="date" value={f.state.value} onChange={f.handleChange} /></TextField>}</form.Field>
-          <form.Field name="eventEndDate">{(f) => <TextField><Label>End Date</Label><Input type="date" value={f.state.value} onChange={f.handleChange} /></TextField>}</form.Field>
-          <form.Field name="organizerName">{(f) => <TextField><Label>Organizer</Label><Input value={f.state.value} onChange={f.handleChange} placeholder="Organizer name" /></TextField>}</form.Field>
-          <form.Field name="organizerContact">{(f) => <TextField><Label>Contact</Label><Input value={f.state.value} onChange={f.handleChange} placeholder="Phone/email" /></TextField>}</form.Field>
-          <form.Field name="proposedBudget">{(f) => <TextField><Label>Budget</Label><Input type="number" value={f.state.value} onChange={f.handleChange} placeholder="50000000" /></TextField>}</form.Field>
-          <form.Field name="description">{(f) => <TextField className="md:col-span-2"><Label>Description</Label><TextArea value={f.state.value} onChange={f.handleChange} placeholder="Event description" /></TextField>}</form.Field>
+          <form.Field name="venue">{(f) => <FormField label="Venue"><Input value={f.state.value} onValueChange={f.handleChange} placeholder="e.g. Mall Kelapa Gading" /></FormField>}</form.Field>
+          <form.Field name="eventDate">{(f) => <FormField label="Event Date"><Input type="date" value={f.state.value} onValueChange={f.handleChange} /></FormField>}</form.Field>
+          <form.Field name="eventEndDate">{(f) => <FormField label="End Date"><Input type="date" value={f.state.value} onValueChange={f.handleChange} /></FormField>}</form.Field>
+          <form.Field name="organizerName">{(f) => <FormField label="Organizer"><Input value={f.state.value} onValueChange={f.handleChange} placeholder="Organizer name" /></FormField>}</form.Field>
+          <form.Field name="organizerContact">{(f) => <FormField label="Contact"><Input value={f.state.value} onValueChange={f.handleChange} placeholder="Phone/email" /></FormField>}</form.Field>
+          <form.Field name="proposedBudget">{(f) => <FormField label="Budget"><Input type="number" value={f.state.value} onValueChange={f.handleChange} placeholder="50000000" /></FormField>}</form.Field>
+          <form.Field name="description">{(f) => <FormField className="md:col-span-2" label="Description"><Textarea value={f.state.value} onValueChange={f.handleChange} placeholder="Event description" /></FormField>}</form.Field>
         </div></div></Card>
 
         <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Products (SKUs)</h3>
@@ -84,19 +84,19 @@ function EventProposalFormPage() {
             const p = (f.state.value as any[]) ?? [];
             return <div className="space-y-2">{p.map((pmt, idx) => (
               <div key={idx} className="grid grid-cols-4 gap-2 items-end p-2 border rounded-lg">
-                <div><label className="text-xs text-muted">Amount</label><Input size="sm" type="number" value={pmt.amount} onChange={(v) => { const n = [...p]; n[idx] = { ...n[idx], amount: v }; f.handleChange(n); }} /></div>
-                <div><label className="text-xs text-muted">Date</label><Input size="sm" type="date" value={pmt.paymentDate} onChange={(v) => { const n = [...p]; n[idx] = { ...n[idx], paymentDate: v }; f.handleChange(n); }} /></div>
-                <div><label className="text-xs text-muted">Method</label><Input size="sm" value={pmt.method} onChange={(v) => { const n = [...p]; n[idx] = { ...n[idx], method: v }; f.handleChange(n); }} /></div>
-                <div className="flex items-end gap-1"><div className="flex-1"><label className="text-xs text-muted">Ref</label><Input size="sm" value={pmt.reference} onChange={(v) => { const n = [...p]; n[idx] = { ...n[idx], reference: v }; f.handleChange(n); }} /></div><Button size="sm" variant="ghost" color="danger" isIconOnly onClick={() => removePayment(idx)}><Icon icon="solar:trash-bin-trash-linear" /></Button></div>
+                <div><label className="text-xs text-muted">Amount</label><Input type="number" value={pmt.amount} onValueChange={(v: string) => { const n = [...p]; n[idx] = { ...n[idx], amount: v }; f.handleChange(n); }} /></div>
+                <div><label className="text-xs text-muted">Date</label><Input type="date" value={pmt.paymentDate} onValueChange={(v: string) => { const n = [...p]; n[idx] = { ...n[idx], paymentDate: v }; f.handleChange(n); }} /></div>
+                <div><label className="text-xs text-muted">Method</label><Input value={pmt.method} onValueChange={(v: string) => { const n = [...p]; n[idx] = { ...n[idx], method: v }; f.handleChange(n); }} /></div>
+                <div className="flex items-end gap-1"><div className="flex-1"><label className="text-xs text-muted">Ref</label><Input value={pmt.reference} onValueChange={(v: string) => { const n = [...p]; n[idx] = { ...n[idx], reference: v }; f.handleChange(n); }} /></div><Button size="icon" variant="danger" onClick={() => removePayment(idx)}><Icon icon="solar:trash-bin-trash-linear" /></Button></div>
               </div>
             ))}</div>;
           }}</form.Field>
         </div></Card>
 
         {formError && <p className="text-sm text-danger">{formError}</p>}
-        <div className="flex justify-end gap-3 mt-4"><Button variant="ghost" onClick={() => navigate(isEdit && id ? `/event-proposal/${id}` : '/event-proposal')}>Cancel</Button><Button color="primary" type="submit" disabled={createMutation.isPending || updateMutation.isPending}>{createMutation.isPending || updateMutation.isPending ? <Spinner size="sm" /> : isEdit ? 'Save' : 'Create'}</Button></div>
+        <div className="flex justify-end gap-3 mt-4"><Button variant="ghost" onClick={() => navigate(isEdit && id ? `/event-proposal/${id}` : '/event-proposal')}>Cancel</Button><Button variant="primary" type="submit" disabled={createMutation.isPending || updateMutation.isPending}>{createMutation.isPending || updateMutation.isPending ? <Spinner size="sm" /> : isEdit ? 'Save' : 'Create'}</Button></div>
       </form>
-      <Modal isOpen={modalStage !== 'idle'} onOpenChange={() => { if (modalStage !== 'loading') setModalStage('idle'); }}><ModalContent>{modalStage === 'loading' ? <div className="flex justify-center py-8"><Spinner size="lg" /></div> : modalStage === 'success' ? <div className="flex flex-col items-center gap-3 py-6"><div className="flex size-12 items-center justify-center rounded-full bg-success-soft">✓</div><p>{resultMessage}</p></div> : <><ModalHeader>Error</ModalHeader><ModalBody><p className="text-sm text-danger">{resultMessage}</p></ModalBody><ModalFooter><Button onClick={() => setModalStage('idle')}>Close</Button></ModalFooter></>}</ModalContent></Modal>
+      <Modal isOpen={modalStage !== 'idle'} onClose={() => { if (modalStage !== 'loading') setModalStage('idle'); }}><ModalContent>{modalStage === 'loading' ? <div className="flex justify-center py-8"><Spinner size="lg" /></div> : modalStage === 'success' ? <div className="flex flex-col items-center gap-3 py-6"><div className="flex size-12 items-center justify-center rounded-full bg-success-soft">✓</div><p>{resultMessage}</p></div> : <><ModalHeader>Error</ModalHeader><ModalBody><p className="text-sm text-danger">{resultMessage}</p></ModalBody><ModalFooter><Button onClick={() => setModalStage('idle')}>Close</Button></ModalFooter></>}</ModalContent></Modal>
     </section>
   );
 }

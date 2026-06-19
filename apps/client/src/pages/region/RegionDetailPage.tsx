@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
+import './Region.css';
 import { Button, Card, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '../../ui';
 import { useNavigate, useParams } from 'react-router';
 import { useAtomValue } from 'jotai';
@@ -18,8 +19,8 @@ interface RegionDetail {
 
 function DetailField({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-sm font-medium text-muted">{label}</p>
+    <div className="reg-detail__field">
+      <p className="reg-detail__field-label">{label}</p>
       <p>{value ?? '-'}</p>
     </div>
   );
@@ -64,7 +65,7 @@ function RegionDetailPage() {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-muted">
+      <p className="reg-detail__loading-text">
         {intl.formatMessage({ id: 'region.detail.loading', defaultMessage: 'Loading details...' })}
       </p>
     );
@@ -72,8 +73,8 @@ function RegionDetailPage() {
 
   if (!record) {
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-danger">
+      <div className="reg-detail__not-found">
+        <p className="reg-detail__not-found-msg">
           {intl.formatMessage({ id: 'region.detail.not_found', defaultMessage: 'Region not found.' })}
         </p>
         <Button variant="ghost" onClick={() => navigate('/region')}>
@@ -84,7 +85,7 @@ function RegionDetailPage() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="reg-detail">
       <PageHeader
         title={record.name}
         onBack={() => navigate('/region')}
@@ -93,7 +94,7 @@ function RegionDetailPage() {
       />
 
       <Card>
-        <div className="grid gap-4 p-6 md:grid-cols-2">
+        <div className="reg-detail__grid">
           <DetailField
             label={intl.formatMessage({ id: 'region.detail.code', defaultMessage: 'Code' })}
             value={record.code}
@@ -107,16 +108,16 @@ function RegionDetailPage() {
 
       {record.areas.length > 0 ? (
         <Card>
-          <div className="p-6">
-            <h3 className="mb-3 text-lg font-semibold">
+          <div className="reg-detail__card-body">
+            <h3 className="reg-detail__section-title">
               {intl.formatMessage({ id: 'region.detail.areas', defaultMessage: 'Areas' })}
             </h3>
-            <div className="space-y-2">
+            <div className="reg-detail__item-list">
               {record.areas.map((area) => (
-                <div key={area.id} className="flex items-center justify-between rounded-lg border p-3">
+                <div key={area.id} className="reg-detail__item">
                   <div>
-                    <p className="font-medium">{area.name}</p>
-                    {area.code ? <p className="text-sm text-muted">{area.code}</p> : null}
+                    <p className="reg-detail__item-name">{area.name}</p>
+                    {area.code ? <p className="reg-detail__item-sub">{area.code}</p> : null}
                   </div>
                 </div>
               ))}
@@ -125,7 +126,7 @@ function RegionDetailPage() {
         </Card>
       ) : null}
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
         <ModalContent>
           <ModalHeader>
             {intl.formatMessage({ id: 'region.detail.delete_title', defaultMessage: 'Delete Region' })}
@@ -140,7 +141,7 @@ function RegionDetailPage() {
             <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
               {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
             </Button>
-            <Button color="danger" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting
                 ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
                 : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}

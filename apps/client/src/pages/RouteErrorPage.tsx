@@ -1,18 +1,19 @@
-import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router';
-import { Button } from '../ui/Button';
-import { Card, CardBody, CardFooter, CardHeader, CardTitle, CardDescription } from '../ui/Card';
+import { isRouteErrorResponse, useNavigate, useRouteError } from "react-router";
+import { Button } from "../ui/Button";
+import { Card, CardHeader, CardTitle, CardDescription, CardBody, CardFooter } from "../ui/Card";
+import "./RouteErrorPage.css";
 
 const getErrorDetail = (error: unknown) => {
   if (isRouteErrorResponse(error)) {
     return {
       title: `${error.status} ${error.statusText}`,
-      detail: typeof error.data === 'string' ? error.data : JSON.stringify(error.data, null, 2),
+      detail: typeof error.data === "string" ? error.data : JSON.stringify(error.data, null, 2),
     };
   }
   if (error instanceof Error) {
-    return { title: 'Unexpected Error', detail: error.message, stack: error.stack };
+    return { title: "Unexpected Error", detail: error.message, stack: error.stack };
   }
-  return { title: 'Unknown Error', detail: 'An unknown error occurred while loading this page.' };
+  return { title: "Unknown Error", detail: "An unknown error occurred while loading this page." };
 };
 
 export const RouteErrorPage = () => {
@@ -25,23 +26,22 @@ export const RouteErrorPage = () => {
   };
 
   return (
-    <Card className="mx-auto mt-12 max-w-2xl">
+    <Card className="re-card">
       <CardHeader>
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-state-danger">Route Error</p>
+        <div className="re-header">
+          <p className="re-label">Route Error</p>
           <CardTitle>{title}</CardTitle>
           <CardDescription>{detail}</CardDescription>
         </div>
       </CardHeader>
       {stack && (
         <CardBody>
-          <pre className="max-h-72 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-200">
-            {stack}
-          </pre>
+          <pre className="re-stack">{stack}</pre>
         </CardBody>
       )}
       <CardFooter>
-        <Button onClick={() => navigate('/dashboard')}>Go to dashboard</Button>
+        <Button variant="outline" onClick={() => navigate(-1)}>Go back</Button>
+        <Button onClick={() => navigate("/dashboard")}>Go to dashboard</Button>
       </CardFooter>
     </Card>
   );

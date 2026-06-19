@@ -1,12 +1,11 @@
-import { cn } from "./cn";
+import type { CSSProperties } from "react";
+import "./Skeleton.css";
 
 interface SkeletonProps {
   className?: string;
+  style?: CSSProperties;
 }
 
-export const Skeleton = ({ className }: SkeletonProps) => (
-  <span
-    aria-hidden
-    className={cn("block animate-pulse rounded-md bg-slate-200 dark:bg-slate-800", className)}
-  />
+export const Skeleton = ({ className, style }: SkeletonProps) => (
+  <span aria-hidden className={`skel ${className ?? ""}`} style={style} />
 );

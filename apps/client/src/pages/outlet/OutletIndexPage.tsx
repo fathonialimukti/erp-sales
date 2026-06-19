@@ -1,8 +1,8 @@
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR } from '../../ui';
-import { Icon } from "../../ui";
+import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
+
 import {
   type ColumnDef,
   type PaginationState,
@@ -102,7 +102,7 @@ function OutletIndexPage() {
             {(canUpdate || canDelete) && (
               <Dropdown>
                 <DropdownTrigger>
-                  <Button size="sm" variant="ghost" isIconOnly>
+                  <Button size="icon" variant="ghost">
                     <Icon icon="solar:menu-dots-bold" />
                   </Button>
                 </DropdownTrigger>
@@ -118,7 +118,7 @@ function OutletIndexPage() {
                   {canDelete ? (
                     <DropdownItem
                       key="delete"
-                      color="danger"
+                      tone="danger"
                       onClick={() => {
                         setItemToDelete(row.original);
                         setDeleteModalOpen(true);
@@ -174,7 +174,7 @@ function OutletIndexPage() {
           </p>
         </div>
         {canCreate && (
-          <Button color="primary" onClick={() => navigate('/outlet/create')}>
+          <Button variant="primary" onClick={() => navigate('/outlet/create')}>
             <Icon icon="solar:add-circle-linear" />
             {intl.formatMessage({ id: 'outlet.index.create_button', defaultMessage: 'Add Outlet' })}
           </Button>
@@ -186,9 +186,8 @@ function OutletIndexPage() {
           <Input
             placeholder={intl.formatMessage({ id: 'outlet.index.search_placeholder', defaultMessage: 'Search outlets by name, code, or address...' })}
             value={searchInput}
-            onChange={setSearchInput}
-            startContent={<Icon icon="solar:magnifer-linear" />}
-            isClearable
+            onValueChange={setSearchInput}
+            leftIcon={<Icon icon="solar:magnifer-linear" />}
           />
         </div>
 
@@ -225,7 +224,7 @@ function OutletIndexPage() {
             <div className="flex justify-center p-4">
               <Pagination
                 page={pagination.pageIndex + 1}
-                total={data?.meta?.totalPages ?? 1}
+                totalPages={data?.meta?.totalPages ?? 1}
                 onChange={(page) => setPagination({ pageIndex: page - 1, pageSize: pagination.pageSize })}
               />
             </div>

@@ -61,15 +61,18 @@ const NotificationsPage = () => {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['notifications', page, unreadOnly],
-    queryFn: () => trpcClient.notification.list.query({ page, limit: 20, unreadOnly: unreadOnly || undefined }),
+    queryFn: () => {
+      const p = trpcClient.notification.list.query({ page, limit: 20, unreadOnly: unreadOnly || undefined }) as Promise<unknown>;
+      return p as Promise<{ data: Notification[]; meta: { totalPages: number } }>;
+    },
   });
 
   useEffect(() => {
     if (isError) toast.error(error instanceof Error ? error.message : 'Failed to load notifications');
   }, [isError, error, toast]);
 
-  const rows = ((data as { data?: Notification[] } | undefined)?.data ?? []) as Notification[];
-  const totalPages = ((data as { meta?: { totalPages?: number } } | undefined)?.meta?.totalPages ?? 0);
+  const rows = useMemo(() => ((data ?? {}) as { data?: Notification[] }).data ?? [] as Notification[], [data]);
+const totalPages = ((data ?? {}) as { meta?: { totalPages?: number } }).meta?.totalPages ?? 0;
 
   const handleMarkAsRead = async (id: string) => {
     try {
@@ -82,7 +85,11 @@ const NotificationsPage = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await Promise.all(rows.filter((n) => !n.isRead).map((n) => trpcClient.notification.markAsRead.mutate({ id: n.id })));
+      const unreadRows = rows.filter((n) => !n.isRead);
+      const markRead = (id: string) => trpcClient.notification.markAsRead.mutate({ id });
+      const promises: Promise<unknown>[] = [];
+      for (const n of unreadRows) promises.push(markRead(n.id));
+      await Promise.all(promises);
       await queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('All notifications marked as read');
     } catch (e) {
@@ -177,7 +184,7 @@ const NotificationsPage = () => {
           )}
           {totalPages > 1 ? (
             <div className="flex justify-end p-4">
-              <Pagination page={page} total={totalPages} onChange={setPage} />
+              <Pagination page={page} totalPages={totalPages} onChange={setPage} />
             </div>
           ) : null}
         </CardBody>

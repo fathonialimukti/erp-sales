@@ -1,5 +1,4 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cn } from "./cn";
 
 interface ModalContentProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -12,13 +11,7 @@ interface ModalContentProps extends HTMLAttributes<HTMLDivElement> {
  * and focus trapping.
  */
 export const ModalContent = ({ children, className, ...rest }: ModalContentProps) => (
-  <div
-    className={cn(
-      "relative max-h-[85vh] overflow-y-auto",
-      className,
-    )}
-    {...rest}
-  >
+  <div className={`modal-body ${className ?? ""}`} {...rest}>
     {children}
   </div>
 );

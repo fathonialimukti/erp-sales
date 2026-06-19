@@ -1,5 +1,5 @@
 import type { LabelHTMLAttributes, ReactNode } from "react";
-import { cn } from "./cn";
+import "./Label.css";
 
 interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   children: ReactNode;
@@ -7,11 +7,8 @@ interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
 }
 
 export const Label = ({ children, required, className, ...rest }: LabelProps) => (
-  <label
-    className={cn("text-sm font-medium text-slate-700 dark:text-slate-300", className)}
-    {...rest}
-  >
+  <label className={`lbl ${className ?? ""}`} {...rest}>
     {children}
-    {required && <span className="ml-0.5 text-state-danger">*</span>}
+    {required && <span className="lbl__required">*</span>}
   </label>
 );

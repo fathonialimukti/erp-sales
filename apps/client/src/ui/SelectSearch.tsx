@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Icon } from "./";
 import { Spinner } from "./Spinner";
-import { cn } from "./cn";
+import "./SelectSearch.css";
 
 type SelectSearchQueryParams<TDependencies> = {
   search: string;
@@ -81,17 +81,6 @@ const hashToHue = (input: string): number => {
   return Math.abs(h) % 360;
 };
 
-/**
- * Searchable select with:
- *   • header label + required indicator
- *   • trigger showing the selected option's label (or placeholder)
- *   • native <details> popover containing search + list + footer
- *   • keyboard: ↑/↓ to move highlight, Enter to select, Esc to close
- *   • clear (×) button when a value is set
- *   • per-option leading initial circle (deterministic hue)
- *   • result count footer + loading/empty states
- *   • selected option shows a check mark
- */
 export const SelectSearch = <
   TOption extends Record<string, unknown>,
   TDependencies = Record<string, unknown>,
@@ -143,7 +132,7 @@ export const SelectSearch = <
     gcTime: 300_000,
   });
 
-  const options = data ?? [];
+  const options = useMemo(() => data ?? [], [data]);
   const totalCount = options.length;
 
   const selected = useMemo(() => {
@@ -162,7 +151,6 @@ export const SelectSearch = <
     return initialOf(renderLabel(option));
   };
 
-  // Close on outside click / Escape
   useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
@@ -214,7 +202,7 @@ export const SelectSearch = <
     }
   };
 
-  const handleListKey = (e: React.KeyboardEvent<HTMLUListElement>) => {
+  const handleListKey = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setHighlight((h) => Math.min(h + 1, options.length - 1));
@@ -244,35 +232,33 @@ export const SelectSearch = <
   const displayText = selected ? selectedLabel : placeholder;
   const isPlaceholder = !selected;
 
+  const triggerClasses = [
+    "ss-trigger",
+    isInvalid ? "ss-trigger--error" : "",
+    isDisabled ? "ss-trigger--disabled" : "",
+    selected ? "ss-trigger--selected" : "",
+  ].filter(Boolean).join(" ");
+
+  const wrapperClasses = [
+    "ss-wrapper",
+    fullWidth ? "ss-wrapper--full" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <div className={cn("flex flex-col gap-1.5", fullWidth && "w-full")}>
+    <div className={wrapperClasses}>
       {label && (
-        <label
-          htmlFor={autoId}
-          className="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-300"
-        >
+        <label htmlFor={autoId} className="ss-label">
           {label}
-          {isRequired && <span className="text-state-danger">*</span>}
+          {isRequired && <span className="ss-label__required">*</span>}
         </label>
       )}
 
       <details
         ref={detailsRef}
-        className="relative"
+        className="ss-details"
         onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
       >
-        <summary
-          className={cn(
-            "flex h-10 cursor-pointer list-none items-center gap-2 rounded-md border bg-surface-1 px-3 text-sm transition-colors",
-            "[&::-webkit-details-marker]:hidden",
-            "focus:outline-none focus:ring-1",
-            isInvalid
-              ? "border-state-danger focus:border-state-danger focus:ring-state-danger"
-              : "border-slate-300 focus-within:border-accent-500 focus-within:ring-accent-500 dark:border-slate-700",
-            isDisabled && "cursor-not-allowed bg-slate-50 opacity-70 dark:bg-slate-800/50",
-            !isPlaceholder && "pl-2",
-          )}
-        >
+        <summary className={triggerClasses}>
           <button
             ref={triggerRef}
             id={autoId}
@@ -282,65 +268,40 @@ export const SelectSearch = <
             aria-label={ariaLabel ?? label}
             disabled={isDisabled}
             onKeyDown={handleTriggerKey}
-            onClick={(e) => {
-              e.preventDefault();
-              toggleOpen();
-            }}
-            className="flex flex-1 items-center gap-2 text-left"
+            onClick={(e) => { e.preventDefault(); toggleOpen(); }}
+            className="ss-trigger__btn"
           >
             {selected ? (
               <span
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                className="ss-trigger__initial"
                 style={{ backgroundColor: `hsl(${selectedHue} 60% 45%)` }}
                 aria-hidden
               >
                 {selectedInitial}
               </span>
             ) : (
-              <span
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800"
-                aria-hidden
-              >
-                <Icon icon="solar:user-circle-linear" className="h-4 w-4" />
+              <span className="ss-trigger__initial ss-trigger__initial--empty" aria-hidden>
+                <Icon icon="solar:user-circle-linear" />
               </span>
             )}
-            <span className={cn("flex-1 truncate", isPlaceholder && "text-slate-400")}>
+            <span className={`ss-trigger__text ${isPlaceholder ? "ss-trigger__text--placeholder" : ""}`}>
               {displayText}
             </span>
           </button>
 
           {selected && !isDisabled && (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label="Clear selection"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            >
-              <Icon icon="solar:close-circle-linear" className="h-4 w-4" />
+            <button type="button" onClick={handleClear} aria-label="Clear selection" className="ss-trigger__clear">
+              <Icon icon="solar:close-circle-linear" />
             </button>
           )}
 
-          <Icon
-            icon="solar:alt-arrow-down-linear"
-            className={cn(
-              "h-4 w-4 shrink-0 text-slate-400 transition-transform",
-              open && "rotate-180",
-            )}
-          />
+          <Icon icon="solar:alt-arrow-down-linear" className={`ss-trigger__arrow ${open ? "ss-trigger__arrow--open" : ""}`} />
         </summary>
 
-        <div
-          role="listbox"
-          className={cn(
-            "absolute left-0 right-0 z-50 mt-1.5 overflow-hidden rounded-md border border-slate-200 bg-surface-1 shadow-lg",
-            "dark:border-slate-800",
-            "animate-[fadeIn_120ms_ease-out]",
-          )}
-        >
-          {/* Search input */}
-          <div className="border-b border-slate-200 p-2 dark:border-slate-800">
-            <div className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-surface-0 px-2 focus-within:border-accent-500 focus-within:ring-1 focus-within:ring-accent-500 dark:border-slate-700">
-              <Icon icon="solar:magnifer-linear" className="h-4 w-4 shrink-0 text-slate-400" />
+        <div role="listbox" className="ss-panel">
+          <div className="ss-search-bar">
+            <div className="ss-search-inner">
+              <Icon icon="solar:magnifer-linear" className="ss-search-inner__icon" />
               <input
                 ref={searchRef}
                 type="search"
@@ -348,36 +309,26 @@ export const SelectSearch = <
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleListKey}
                 placeholder={searchPlaceholder}
-                className="h-full w-full bg-transparent text-sm focus:outline-none"
+                className="ss-search-inner__input"
               />
               {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  aria-label="Clear search"
-                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                >
-                  <Icon icon="solar:close-circle-linear" className="h-4 w-4" />
+                <button type="button" onClick={() => setSearchTerm("")} aria-label="Clear search" className="ss-search-inner__clear">
+                  <Icon icon="solar:close-circle-linear" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Options list */}
-          <ul
-            tabIndex={0}
-            onKeyDown={handleListKey}
-            className="max-h-64 overflow-y-auto py-1"
-          >
+          <ul tabIndex={0} onKeyDown={handleListKey} className="ss-options">
             {isLoading ? (
-              <li className="flex items-center justify-center gap-2 px-3 py-6 text-sm text-slate-500">
+              <li className="ss-loading">
                 <Spinner size="sm" />
                 {loadingLabel}
               </li>
             ) : options.length === 0 ? (
-              <li className="flex flex-col items-center justify-center gap-2 px-3 py-8 text-sm text-slate-500">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-                  <Icon icon="solar:minimalistic-magnifer-linear" className="h-5 w-5 text-slate-400" />
+              <li className="ss-empty">
+                <div className="ss-empty__icon-wrapper">
+                  <Icon icon="solar:minimalistic-magnifer-linear" className="ss-empty__icon" />
                 </div>
                 {emptyLabel}
               </li>
@@ -390,6 +341,15 @@ export const SelectSearch = <
                 const isHighlighted = idx === highlight;
                 const isSelected = idVal === value;
                 const description = getOptionDescription?.(option);
+                const optionClasses = [
+                  "ss-option",
+                  isHighlighted ? "ss-option--highlighted" : "",
+                  isSelected ? "ss-option--selected" : "",
+                ].filter(Boolean).join(" ");
+                const initialClasses = [
+                  "ss-option__initial",
+                  isSelected ? "ss-option__initial--selected" : "",
+                ].filter(Boolean).join(" ");
                 return (
                   <li
                     key={idVal || idx}
@@ -397,67 +357,38 @@ export const SelectSearch = <
                     aria-selected={isSelected}
                     onMouseEnter={() => setHighlight(idx)}
                     onClick={() => handleSelect(option)}
-                    className={cn(
-                      "mx-1 flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-                      isHighlighted && "bg-slate-100 dark:bg-slate-800",
-                      isSelected && "bg-accent-50 text-accent-800 dark:bg-accent-900/30 dark:text-accent-100",
-                    )}
+                    className={optionClasses}
                   >
-                    <span
-                      className={cn(
-                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white",
-                        isSelected ? "ring-2 ring-accent-300 dark:ring-accent-700" : "",
-                      )}
-                      style={{ backgroundColor: `hsl(${optHue} 60% 45%)` }}
-                      aria-hidden
-                    >
+                    <span className={initialClasses} style={{ backgroundColor: `hsl(${optHue} 60% 45%)` }} aria-hidden>
                       {optInitial}
                     </span>
-                    <span className="min-w-0 flex-1 truncate">
-                      <span className="block truncate font-medium">{optLabel}</span>
-                      {description && (
-                        <span className="block truncate text-xs text-slate-500">{description}</span>
-                      )}
+                    <span className="ss-option__text">
+                      <span className="ss-option__label">{optLabel}</span>
+                      {description && <span className="ss-option__desc">{description}</span>}
                     </span>
-                    {isSelected && (
-                      <Icon
-                        icon="solar:check-circle-bold"
-                        className="h-4 w-4 shrink-0 text-accent-600 dark:text-accent-400"
-                      />
-                    )}
+                    {isSelected && <Icon icon="solar:check-circle-bold" className="ss-option__check" />}
                   </li>
                 );
               })
             )}
           </ul>
 
-          {/* Footer with result count + keyboard hint */}
           {!isLoading && options.length > 0 && (
-            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+            <div className="ss-footer">
               <span>
                 {totalCount} {totalCount === 1 ? "result" : "results"}
                 {debouncedSearchTerm ? ` for "${debouncedSearchTerm}"` : ""}
               </span>
-              <span className="flex items-center gap-1.5">
-                <kbd className="rounded border border-slate-200 bg-surface-1 px-1 font-mono text-[10px] dark:border-slate-700">
-                  ↑↓
-                </kbd>
-                navigate
-                <kbd className="ml-1 rounded border border-slate-200 bg-surface-1 px-1 font-mono text-[10px] dark:border-slate-700">
-                  ↵
-                </kbd>
-                select
+              <span>
+                <kbd className="ss-footer__kbd">↑↓</kbd> navigate
+                <kbd className="ss-footer__kbd">↵</kbd> select
               </span>
             </div>
           )}
         </div>
       </details>
 
-      {isInvalid && errorMessage && (
-        <p className="text-xs text-state-danger" role="alert">
-          {errorMessage}
-        </p>
-      )}
+      {isInvalid && errorMessage && <p className="ss-error" role="alert">{errorMessage}</p>}
     </div>
   );
 };

@@ -9,24 +9,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
-import { Icon } from "../../ui";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Chip,
-  EmptyState,
-  Input,
-  Pagination,
-  Spinner,
-  Table,
-  TBody,
-  TD,
-  TH,
-  THead,
-  TR,
-  useToast,
-} from '../../ui';
+import { Icon, Table, THead, TBody, TR, TH, TD, Card, CardBody, CardHeader, Chip, EmptyState, Input, Pagination, Spinner, useToast } from '../../ui';
+
 import { trpcClient } from '../../lib/trpc';
 import { useAiFillForm } from '../../components/AiAssistant/useAiFillForm';
 
@@ -198,7 +182,7 @@ const ActivityLogsIndexPage = () => {
                 defaultMessage: 'Search activity logs (user, message, resource, etc.)',
               })}
               value={searchInput}
-              onChange={(v: string) => setSearchInput(v)}
+              onValueChange={(v: string) => setSearchInput(v)}
               leftIcon={<Icon icon="solar:magnifer-linear" />}
             />
           </div>
@@ -252,7 +236,7 @@ const ActivityLogsIndexPage = () => {
             <div className="flex justify-end p-4">
               <Pagination
                 page={pagination.pageIndex + 1}
-                total={totalPages}
+                totalPages={totalPages}
                 onChange={(p) => setPagination((prev) => ({ ...prev, pageIndex: p - 1 }))}
               />
             </div>

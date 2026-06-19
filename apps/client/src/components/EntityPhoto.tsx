@@ -1,4 +1,5 @@
 import { Icon } from "../ui";
+import "./EntityPhoto.css";
 
 interface EntityPhotoProps {
   src?: string | null;
@@ -7,21 +8,27 @@ interface EntityPhotoProps {
   icon?: string;
 }
 
+const SIZE_CLASS: Record<string, string> = {
+  sm: "ep--sm",
+  md: "ep--md",
+  lg: "ep--lg",
+};
+
 export const EntityPhoto = ({
   src,
   alt,
-  className = "h-14 w-14 rounded-2xl",
+  className,
   icon = "solar:camera-linear",
 }: EntityPhotoProps) => {
+  // Default to medium size
+  const sizeClass = className ? "" : SIZE_CLASS.md;
+
   if (src) {
-    return <img src={src} alt={alt} className={`${className} object-cover`} />;
+    return <img src={src} alt={alt} className={`ep ${sizeClass}`} style={{ objectFit: "cover" }} />;
   }
   return (
-    <div
-      className={`${className} flex items-center justify-center bg-slate-100 text-slate-400 dark:bg-slate-800`}
-      aria-label={alt}
-    >
-      <Icon icon={icon} className="h-5 w-5" />
+    <div className={`ep ep--fallback ${sizeClass}`} aria-label={alt}>
+      <Icon icon={icon} className="ep__icon" />
     </div>
   );
 };

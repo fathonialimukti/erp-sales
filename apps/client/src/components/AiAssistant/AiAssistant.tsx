@@ -1,5 +1,7 @@
+import "./AiAssistant.css";
+
 import { Icon } from "../../ui";
-import { Button, Card, CardContent, CardFooter, CardHeader, Chip, Spinner, Textarea } from '../../ui';
+import { Button, Chip, Spinner, Textarea } from '../../ui';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -159,30 +161,28 @@ const resolveToolInput = (part: Record<string, unknown>): unknown => {
   return direct;
 };
 
-// Hand-rolled markdown component map. Keeps the chat bubble compact (13px) and
-// avoids the @tailwindcss/typography prose plugin, which is designed for
-// long-form articles and fights HeroUI's design system at small sizes.
+// Markdown component map using BEM CSS classes from AiAssistant.css
+// instead of Tailwind utility classes.
 const markdownComponents: Components = {
-  h1: ({ children }) => <h1 className="text-[15px] font-bold mt-3 mb-1.5">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-[14px] font-bold mt-3 mb-1.5">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-[13px] font-semibold mt-2 mb-1">{children}</h3>,
-  p: ({ children }) => <p className="my-1.5 leading-relaxed">{children}</p>,
-  ul: ({ children }) => <ul className="list-disc pl-5 my-1.5 space-y-0.5">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal pl-5 my-1.5 space-y-0.5">{children}</ol>,
+  h1: ({ children }) => <h1>{children}</h1>,
+  h2: ({ children }) => <h2>{children}</h2>,
+  h3: ({ children }) => <h3>{children}</h3>,
+  p: ({ children }) => <p>{children}</p>,
+  ul: ({ children }) => <ul>{children}</ul>,
+  ol: ({ children }) => <ol>{children}</ol>,
   li: ({ children }) => <li>{children}</li>,
-  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-  em: ({ children }) => <em className="italic">{children}</em>,
+  strong: ({ children }) => <strong>{children}</strong>,
+  em: ({ children }) => <em>{children}</em>,
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+    <a href={href} target="_blank" rel="noreferrer">
       {children}
     </a>
   ),
-  // Inline code: no className. Block code: has language-xxx from GFM and renders inside <pre>.
   code: ({ className, children, ...rest }) => {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="bg-black/10 rounded px-1 py-0.5 font-mono text-[12px]" {...rest}>
+        <code className="ai-markdown code--inline" {...rest}>
           {children}
         </code>
       );
@@ -194,29 +194,24 @@ const markdownComponents: Components = {
     );
   },
   pre: ({ children }) => (
-    <pre
-      aria-label="Code block"
-      className="bg-black/10 rounded p-2 my-2 overflow-x-auto text-[12px] font-mono whitespace-pre"
-    >
+    <pre aria-label="Code block">
       {children}
     </pre>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-black/20 pl-3 my-2 text-default-600">
+    <blockquote>
       {children}
     </blockquote>
   ),
-  hr: () => <hr className="my-3 border-default-200" />,
+  hr: () => <hr />,
   table: ({ children }) => (
-    <div className="overflow-x-auto my-2">
-      <table className="min-w-full text-[12px] border-collapse">{children}</table>
+    <div className="ai-md-table-wrap">
+      <table>{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="bg-black/5">{children}</thead>,
-  th: ({ children }) => (
-    <th className="border border-black/10 px-2 py-1 text-left font-semibold">{children}</th>
-  ),
-  td: ({ children }) => <td className="border border-black/10 px-2 py-1">{children}</td>,
+  thead: ({ children }) => <thead>{children}</thead>,
+  th: ({ children }) => <th>{children}</th>,
+  td: ({ children }) => <td>{children}</td>,
 };
 
 // Whitelist safe URL protocols. Blocks javascript: / data: / vbscript: URIs.
@@ -259,11 +254,11 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
     detail = ` (${count} field${count !== 1 ? 's' : ''})`;
   }
 
-  const color =
+  const tone =
     state === 'output-available' ? 'success' :
       state === 'output-error' ? 'danger' :
         state === 'input-streaming' ? 'warning' :
-          ('neutral' as const);
+          'neutral';
 
   const prefix =
     state === 'output-available' ? '✓' :
@@ -275,7 +270,7 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
     : `${prefix} ${meta.label}${detail}`;
 
   return (
-    <Chip size="sm" tone={color}>
+    <Chip size="sm" tone={tone}>
       <Icon icon={meta.icon} className="h-3 w-3" style={{ marginRight: '3px', verticalAlign: 'middle' }} />
       {labelText}
     </Chip>
@@ -581,183 +576,146 @@ export const AiAssistant = () => {
   });
 
   return (
-    <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000 }}>
+    <div className="ai-anchor">
       {open && (
-        <Card style={{ width: isExpanded ? '680px' : '360px', marginBottom: '12px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease' }} variant="default">
-          <CardHeader>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icon icon="solar:magic-stick-3-bold" width={18} />
-                <span style={{ fontWeight: 600, fontSize: '14px' }}>ERP Assistant</span>
-              </div>
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <Button isIconOnly size="sm" variant="ghost" onClick={clearChat} aria-label="Clear chat history">
-                  <Icon icon="solar:trash-bin-minimalistic-linear" width={16} />
-                </Button>
-                <Button isIconOnly size="sm" variant="ghost" onClick={() => setIsExpanded((v) => !v)} aria-label="Expand chat">
-                  <Icon icon={isExpanded ? 'solar:minimize-square-linear' : 'solar:maximize-square-linear'} width={16} />
-                </Button>
-                <Button isIconOnly size="sm" variant="ghost" onClick={() => { setOpen(false); setIsExpanded(false); }}>
-                  <Icon icon="solar:close-circle-linear" width={16} />
-                </Button>
-              </div>
+        <div className={`ai-panel ${isExpanded ? 'ai-panel--expanded' : 'ai-panel--compact'}`}>
+          <div className="ai-header">
+            <div className="ai-header__brand">
+              <Icon icon="solar:magic-stick-3-bold" width={18} />
+              <span className="ai-header__brand-text">ERP Assistant</span>
             </div>
-          </CardHeader>
+            <div className="ai-header__actions">
+              <Button size="icon" variant="ghost" onClick={clearChat} aria-label="Clear chat history">
+                <Icon icon="solar:trash-bin-minimalistic-linear" width={16} />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={() => setIsExpanded((v) => !v)} aria-label="Expand chat">
+                <Icon icon={isExpanded ? 'solar:minimize-square-linear' : 'solar:maximize-square-linear'} width={16} />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={() => { setOpen(false); setIsExpanded(false); }}>
+                <Icon icon="solar:close-circle-linear" width={16} />
+              </Button>
+            </div>
+          </div>
 
-          <CardContent className='p-0'>
-            <div className={isExpanded ? 'h-[75vh] overflow-y-auto px-4' : 'h-[60vh] overflow-y-auto px-4'}>
-              {messages.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '24px', color: '#888', fontSize: '13px' }}>
-                  <Icon icon="solar:chat-round-dots-linear" width={32} style={{ display: 'block', margin: '0 auto 8px' }} />
-                  Ask me anything about this ERP system or ask me to navigate somewhere.
-                </div>
-              )}
-              {messages.map((message, messageIdx) => {
-                if (message.role !== 'user' && message.role !== 'assistant') return null;
-                const isUser = message.role === 'user';
+          <div className={`ai-messages ${isExpanded ? 'ai-messages--expanded' : 'ai-messages--compact'}`}>
+            {messages.length === 0 && (
+              <div className="ai-empty">
+                <Icon icon="solar:chat-round-dots-linear" width={32} className="ai-empty__icon" />
+                Ask me anything about this ERP system or ask me to navigate somewhere.
+              </div>
+            )}
+            {messages.map((message, messageIdx) => {
+              if (message.role !== 'user' && message.role !== 'assistant') return null;
+              const isUser = message.role === 'user';
 
-                // Check if there's anything visible to render
-                const hasVisible = message.parts.some(
-                  p => p.type === 'text' || p.type.startsWith('tool-') || p.type === 'dynamic-tool',
-                );
-                if (!hasVisible) return null;
+              const hasVisible = message.parts.some(
+                p => p.type === 'text' || p.type.startsWith('tool-') || p.type === 'dynamic-tool',
+              );
+              if (!hasVisible) return null;
 
-                return (
-                  <div
-                    key={message.id}
-                    style={{
-                      marginBottom: '12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: isUser ? 'flex-end' : 'flex-start',
-                      gap: '4px',
-                    }}
-                  >
-                    {(() => {
-                      // Single-pass render: walk parts in original order, accumulating
-                      // consecutive text parts into a buffer that gets flushed as a
-                      // markdown bubble only when a non-text part is encountered. This
-                      // preserves step-by-step interleaving (text → tool → text renders
-                      // as [text bubble] [tool chip] [text bubble]) while still merging
-                      // back-to-back text parts that have no tool between them.
-                      const bubbleStyle: React.CSSProperties = {
-                        maxWidth: '85%',
-                        padding: '8px 12px',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        lineHeight: '1.5',
-                        background: isUser ? '#006FEE' : '#f4f4f5',
-                        color: isUser ? '#fff' : '#11181c',
-                        whiteSpace: isUser ? 'pre-wrap' : 'normal',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'anywhere',
-                        minWidth: 0,
-                      };
+              return (
+                <div
+                  key={message.id}
+                  className={`ai-msg ${isUser ? 'ai-msg--user' : 'ai-msg--assistant'}`}
+                >
+                  {(() => {
+                    const elements: ReactNode[] = [];
+                    let textBuffer: string[] = [];
+                    let isFirstTextSegment = true;
+                    let segKey = 0;
 
-                      const elements: ReactNode[] = [];
-                      let textBuffer: string[] = [];
-                      let isFirstTextSegment = true;
-                      let segKey = 0;
+                    const flushText = (): void => {
+                      if (textBuffer.length === 0) return;
+                      const merged = textBuffer.join('\n\n');
+                      const textToRender = isUser || !isFirstTextSegment
+                        ? merged
+                        : merged.replace(/^\n+/, '');
+                      textBuffer = [];
+                      isFirstTextSegment = false;
+                      if (!textToRender.trim()) return;
+                      elements.push(
+                        <div key={`text-${segKey++}`} className={`ai-bubble ${isUser ? 'ai-bubble--user' : 'ai-bubble--assistant'}`}>
+                          {isUser ? textToRender : <MarkdownBubble text={textToRender} />}
+                        </div>,
+                      );
+                    };
 
-                      const flushText = (): void => {
-                        if (textBuffer.length === 0) return;
-                        const merged = textBuffer.join('\n\n');
-                        // Trim leading newlines only on the FIRST text segment of an
-                        // assistant message, matching the original per-part behavior.
-                        const textToRender = isUser || !isFirstTextSegment
-                          ? merged
-                          : merged.replace(/^\n+/, '');
-                        textBuffer = [];
-                        isFirstTextSegment = false;
-                        if (!textToRender.trim()) return;
-                        elements.push(
-                          <div key={`text-${segKey++}`} style={bubbleStyle}>
-                            {isUser ? textToRender : <MarkdownBubble text={textToRender} />}
-                          </div>,
-                        );
-                      };
-
-                      message.parts.forEach((part, partIdx) => {
-                        if (part.type === 'text') {
-                          if (typeof part.text === 'string' && part.text.length > 0) {
-                            textBuffer.push(part.text);
-                          }
-                          return;
+                    message.parts.forEach((part, partIdx) => {
+                      if (part.type === 'text') {
+                        if (typeof part.text === 'string' && part.text.length > 0) {
+                          textBuffer.push(part.text);
                         }
-                        // step-start is structural — flush text but render nothing.
-                        if (part.type === 'step-start') {
-                          flushText();
-                          return;
-                        }
-                        if (!part.type.startsWith('tool-') && part.type !== 'dynamic-tool') return;
-
-                        // Flush any pending text BEFORE the chip so order is preserved.
+                        return;
+                      }
+                      if (part.type === 'step-start') {
                         flushText();
+                        return;
+                      }
+                      if (!part.type.startsWith('tool-') && part.type !== 'dynamic-tool') return;
 
-                        const p = part as Record<string, unknown>;
-                        const toolCallId = String(p.toolCallId ?? '');
-                        if (toolCallId) {
-                          const currentPosition = `${messageIdx}:${partIdx}`;
-                          const latestPosition = latestToolPartPositionByCallId.get(toolCallId);
-                          if (latestPosition && latestPosition !== currentPosition) return;
-                        }
-                        const toolName = part.type === 'dynamic-tool'
-                          ? String(p.toolName)
-                          : part.type.slice('tool-'.length);
-                        elements.push(<ToolChip key={`tool-${partIdx}`} toolName={toolName} part={p} />);
-                      });
-
-                      // Flush any trailing text after the last part.
                       flushText();
 
-                      if (elements.length === 0) return null;
-                      return <>{elements}</>;
-                    })()}
-                  </div>
-                );
-              })}
-              {isLoading && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-                  <div style={{ padding: '8px 12px', borderRadius: '12px', background: '#f4f4f5' }}>
-                    <Spinner size="sm" />
-                  </div>
-                </div>
-              )}
-              {error && (
-                <div style={{ fontSize: '12px', color: '#f31260', padding: '8px', background: '#fee7ef', borderRadius: '8px' }}>
-                  Something went wrong. Please try again.
-                </div>
-              )}
-              {/* Sentinel for auto-scroll */}
-              <div ref={messagesEndRef} />
-            </div>
-          </CardContent>
+                      const p = part as Record<string, unknown>;
+                      const toolCallId = String(p.toolCallId ?? '');
+                      if (toolCallId) {
+                        const currentPosition = `${messageIdx}:${partIdx}`;
+                        const latestPosition = latestToolPartPositionByCallId.get(toolCallId);
+                        if (latestPosition && latestPosition !== currentPosition) return;
+                      }
+                      const toolName = part.type === 'dynamic-tool'
+                        ? String(p.toolName)
+                        : part.type.slice('tool-'.length);
+                      elements.push(<ToolChip key={`tool-${partIdx}`} toolName={toolName} part={p} />);
+                    });
 
-          <CardFooter>
-            <div style={{ display: 'flex', gap: '8px', width: '100%', alignItems: 'flex-end' }}>
-              <Textarea
-                placeholder="Ask a question..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isLoading}
-                style={{ flex: 1, minWidth: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}
-              />
-              <Button isIconOnly variant="primary" size="sm" onClick={handleSend} isDisabled={isLoading || !input.trim()}>
+                    flushText();
+
+                    if (elements.length === 0) return null;
+                    return <>{elements}</>;
+                  })()}
+                </div>
+              );
+            })}
+            {isLoading && (
+              <div className="ai-loading">
+                <div className="ai-loading__bubble">
+                  <Spinner size="sm" />
+                </div>
+              </div>
+            )}
+            {error && (
+              <div className="ai-error">
+                Something went wrong. Please try again.
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="ai-footer">
+            <div className="ai-footer__row">
+              <div className="ai-footer__textarea">
+                <Textarea
+                  placeholder="Ask a question..."
+                  value={input}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isLoading}
+                />
+              </div>
+              <Button size="icon" variant="primary" onClick={handleSend} disabled={isLoading || !input.trim()}>
                 <Icon icon="solar:plain-bold" width={16} />
               </Button>
             </div>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="ai-toggle">
         <Button
-          isIconOnly
+          size="icon"
           variant="primary"
-          size="lg"
-          onPress={() => setOpen((v) => !v)}
-          style={{ boxShadow: '0 4px 20px rgba(0,111,238,0.4)', borderRadius: '50%' }}
+          onClick={() => setOpen((v) => !v)}
+          className="ai-toggle__btn"
         >
           {open ? (
             <Icon icon="solar:close-circle-bold" width={22} />

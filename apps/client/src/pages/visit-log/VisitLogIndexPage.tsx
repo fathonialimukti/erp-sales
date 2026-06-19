@@ -1,13 +1,14 @@
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Button, Card, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR } from '../../ui';
-import { Icon } from "../../ui";
+import { Button, Card, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
+
 import { type ColumnDef, type PaginationState, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { hasPermissionAtom } from '../../lib/atoms';
 import { trpcClient } from '../../lib/trpc';
+import './VisitLog.css';
 
 type VisitLogRow = {
   id: string; date: string; purpose: string | null; approvalStatus: string;
@@ -15,8 +16,8 @@ type VisitLogRow = {
   outlet: { id: string; name: string };
 };
 
-const statusColor: Record<string, 'default' | 'primary' | 'success' | 'danger'> = {
-  DRAFT: 'default', PROPOSED: 'primary', APPROVED: 'success', REJECTED: 'danger',
+const statusColor: Record<string, 'neutral' | 'info' | 'success' | 'danger'> = {
+  DRAFT: 'neutral', PROPOSED: 'info', APPROVED: 'success', REJECTED: 'danger',
 };
 
 function VisitLogIndexPage() {
@@ -37,11 +38,11 @@ function VisitLogIndexPage() {
     { id: 'salesman', header: 'Salesman', cell: ({ row }) => <span>{row.original.salesman.name ?? '-'}</span> },
     { id: 'outlet', header: 'Outlet', cell: ({ row }) => <span>{row.original.outlet.name}</span> },
     { id: 'purpose', header: 'Purpose', cell: ({ row }) => <span>{row.original.purpose ?? '-'}</span> },
-    { id: 'status', header: 'Status', cell: ({ row }) => <Chip size="sm" color={statusColor[row.original.approvalStatus] ?? 'default'} variant="flat">{row.original.approvalStatus}</Chip> },
+    { id: 'status', header: 'Status', cell: ({ row }) => <Chip size="sm" tone={statusColor[row.original.approvalStatus] ?? 'neutral'}>{row.original.approvalStatus}</Chip> },
     { id: 'actions', header: '', cell: ({ row }) => (
-      <div className="flex items-center justify-end gap-2">
+      <div className="vl-actions">
         <Button size="sm" variant="ghost" onClick={() => navigate(`/visit-log/${row.original.id}`)}><Icon icon="solar:eye-linear" /></Button>
-        {canDelete && <Dropdown><DropdownTrigger><Button size="sm" variant="ghost" isIconOnly><Icon icon="solar:menu-dots-bold" /></Button></DropdownTrigger><DropdownMenu><DropdownItem key="delete" color="danger" onClick={() => { setItemToDelete(row.original); setDeleteModalOpen(true); }}>Delete</DropdownItem></DropdownMenu></Dropdown>}
+        {canDelete && <Dropdown><DropdownTrigger><Button size="icon" variant="ghost"><Icon icon="solar:menu-dots-bold" /></Button></DropdownTrigger><DropdownMenu><DropdownItem key="delete" color="danger" onClick={() => { setItemToDelete(row.original); setDeleteModalOpen(true); }}>Delete</DropdownItem></DropdownMenu></Dropdown>}
       </div>) },
   ], [navigate, canDelete]);
 
@@ -49,10 +50,10 @@ function VisitLogIndexPage() {
   const handleDelete = async () => { if (!itemToDelete || isDeleting) return; setIsDeleting(true); try { await trpcClient.visitLog.delete.mutate({ id: itemToDelete.id }); await queryClient.invalidateQueries({ queryKey: ['visitLogList'] }); setDeleteModalOpen(false); setItemToDelete(null); } catch (e) { console.error(e); } finally { setIsDeleting(false); } };
 
   return (
-    <section className="space-y-5" data-ai-context={JSON.stringify({ section: 'visit-log-index', itemCount: data?.meta?.total ?? 0 })}>
-      <div className="flex items-center justify-between gap-4"><div><h1 className="text-2xl font-semibold">Visit Logs</h1></div>{canCreate && <Button color="primary" onClick={() => navigate('/visit-log/create')}><Icon icon="solar:add-circle-linear" />New Visit</Button>}</div>
-      <Card>{isLoading ? <div className="flex justify-center py-12"><Spinner /></div> : (<><Table aria-label="Visit Logs"><THead>{table.getHeaderGroups().map((hg) => hg.headers.map((h) => <TH key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TH>))}</THead><TBody emptyContent="No visits found.">{table.getRowModel().rows.map((row) => <TR key={row.id}>{row.getVisibleCells().map((c) => <TD key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</TD>)}</TR>)}</TBody></Table><div className="flex justify-center p-4"><Pagination page={pagination.pageIndex + 1} total={data?.meta?.totalPages ?? 1} onChange={(page) => setPagination({ pageIndex: page - 1, pageSize: pagination.pageSize })} /></div></>)}</Card>
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}><ModalContent><ModalHeader>Delete Visit</ModalHeader><ModalBody>Delete this visit log?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button color="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
+    <section className="vl-page" data-ai-context={JSON.stringify({ section: 'visit-log-index', itemCount: data?.meta?.total ?? 0 })}>
+      <div className="vl-header"><div><h1 className="vl-header__title">Visit Logs</h1></div>{canCreate && <Button variant="primary" onClick={() => navigate('/visit-log/create')}><Icon icon="solar:add-circle-linear" />New Visit</Button>}</div>
+      <Card>{isLoading ? <div className="vl-loading"><Spinner /></div> : (<><Table aria-label="Visit Logs"><THead>{table.getHeaderGroups().map((hg) => hg.headers.map((h) => <TH key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TH>))}</THead><TBody emptyContent="No visits found.">{table.getRowModel().rows.map((row) => <TR key={row.id}>{row.getVisibleCells().map((c) => <TD key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</TD>)}</TR>)}</TBody></Table><div className="vl-pagination-wrap"><Pagination page={pagination.pageIndex + 1} totalPages={data?.meta?.totalPages ?? 1} onChange={(page) => setPagination({ pageIndex: page - 1, pageSize: pagination.pageSize })} /></div></>)}</Card>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}><ModalContent><ModalHeader>Delete Visit</ModalHeader><ModalBody>Delete this visit log?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button variant="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
     </section>
   );
 }

@@ -6,6 +6,7 @@ import { Sidebar } from '../components/Sidebar';
 import { AiAssistant } from '../components/AiAssistant/AiAssistant';
 import { sidebarOpenAtom } from '../lib/atoms';
 import { requestPushPermission, setupTauriNotifications } from '../lib/push-notification';
+import './PrivateLayout.css';
 
 export const PrivateLayout = () => {
   const sidebarOpen = useAtomValue(sidebarOpenAtom);
@@ -26,11 +27,11 @@ export const PrivateLayout = () => {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-surface-0">
+    <div className="priv-layout">
       <Navbar />
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="priv-layout__body">
         <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-        <main className="h-full min-w-0 flex-1 overflow-y-auto p-4 transition-all duration-200 md:px-6 lg:px-8">
+        <main className="priv-layout__main">
           <Outlet />
         </main>
       </div>

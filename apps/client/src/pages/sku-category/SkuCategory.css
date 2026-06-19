@@ -1,0 +1,140 @@
+/* ─────────────────────────────────────────────────────────────────────
+   SKU Category Pages — BEM with `.skuc-` prefix
+   60-30-10 color rule: 60% neutral, 30% slate chrome, 10% emerald accent
+   ───────────────────────────────────────────────────────────────────── */
+
+.skuc-index {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.skuc-index__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.skuc-index__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.skuc-index__search-bar {
+  padding: 1rem;
+}
+
+.skuc-index__loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.skuc-index__pagination-bar {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.skuc-index__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ── Form Page ── */
+
+.skuc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.skuc-form__grid {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .skuc-form__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.skuc-form__grid--full {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .skuc-form__grid--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.skuc-form__error-msg {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.skuc-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.skuc-form__modal-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.skuc-form__modal-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+}
+
+.skuc-form__modal-success-icon {
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.skuc-form__modal-success-text {
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.skuc-form__modal-error-text {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.skuc-form__loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.skuc-form__not-found {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skuc-form__not-found-msg {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}

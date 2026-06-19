@@ -1,50 +1,45 @@
-import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router';
-import { useForm } from '@tanstack/react-form';
+import { useMemo, useState } from "react";
+import { Navigate, useNavigate } from "react-router";
+import { useForm } from "@tanstack/react-form";
+import { useIntl } from "react-intl";
 import { Icon } from "../ui";
-import { useAtomValue } from 'jotai';
-import { useAuthActions } from '../lib/useAuth';
-import { isAuthenticatedAtom } from '../lib/atoms';
-import { Button } from '../ui/Button';
-import { Card, CardBody, CardFooter, CardHeader, CardTitle, CardDescription } from '../ui/Card';
-import { Input } from '../ui/Input';
-import { useToast } from '../ui/useToast';
+import { useAtomValue } from "jotai";
+import { useAuthActions } from "../lib/useAuth";
+import { isAuthenticatedAtom } from "../lib/atoms";
+import { useLocale } from "../lib/useLocale";
+import { isLocale, type Locale } from "../lib/i18n";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import { useToast } from "../ui/useToast";
+import "./LoginPage.css";
+
+const LOCALE_OPTIONS: Array<{ value: Locale; label: string }> = [
+  { value: "en", label: "English" },
+  { value: "id", label: "Bahasa Indonesia" },
+];
 
 export const LoginPage = () => {
+  const intl = useIntl();
   const navigate = useNavigate();
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
   const { login } = useAuthActions();
+  const { locale, setLocale } = useLocale();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const toast = useToast();
 
-  const highlights = [
-    {
-      title: 'Centralized Operations',
-      description: 'Monitor warehouse activity, SKU movement, and access control from one place.',
-      icon: 'solar:buildings-2-linear',
-    },
-    {
-      title: 'Secure Role Access',
-      description: 'Permission-driven modules keep operators, approvers, and admins in the right workflow.',
-      icon: 'solar:shield-user-linear',
-    },
-    {
-      title: 'Reliable Audit Trail',
-      description: 'Every critical action is traceable, reducing ambiguity during daily operations.',
-      icon: 'solar:clipboard-check-linear',
-    },
-  ];
+  const copyrightYear = useMemo(() => new Date().getFullYear(), []);
 
   const form = useForm({
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: "", password: "", remember: true },
     onSubmit: async ({ value }) => {
       setSubmitError(null);
       try {
-        await login(value);
-        toast.success('Welcome back');
-        navigate('/dashboard', { replace: true });
+        await login({ email: value.email, password: value.password });
+        toast.success(intl.formatMessage({ id: "login.submit" }));
+        navigate("/dashboard", { replace: true });
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Login failed';
+        const message = error instanceof Error ? error.message : "Login failed";
         setSubmitError(message);
       }
     },
@@ -53,130 +48,322 @@ export const LoginPage = () => {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <Card className="grid w-full overflow-hidden md:grid-cols-2">
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white md:p-10">
-        <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-accent-500/20 blur-3xl" />
-        <div className="relative flex h-full flex-col justify-between gap-8">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-              <Icon icon="solar:shield-keyhole-linear" className="h-4 w-4" />
-              Secure ERP Access
+    <div className="login-page" data-ai-context={JSON.stringify({ section: "login-page" })}>
+      <div className="login-shell">
+        {/* ── LEFT: Aurora brand panel ── */}
+        <aside className="login-brand" aria-label="Brand">
+          <div className="login-brand__mesh" aria-hidden="true">
+            <span className="login-brand__glow login-brand__glow--a" />
+            <span className="login-brand__glow login-brand__glow--b" />
+            <span className="login-brand__glow login-brand__glow--c" />
+            <span className="login-brand__grid" />
+            <span className="login-brand__noise" />
+          </div>
+
+          <div className="login-brand__inner">
+            <div className="login-brand__top">
+              <div className="login-brand__mark">
+                <Icon icon="solar:chart-2-bold" />
+              </div>
+              <span className="login-brand__name">ERP Sales</span>
             </div>
-            <div className="space-y-3">
-              <p className="text-sm font-medium uppercase tracking-[0.22em] text-white/55">
-                Warehouse Control Center
-              </p>
-              <h1 className="max-w-md text-3xl font-semibold leading-tight sm:text-4xl">
-                Professional operations start with a disciplined sign-in flow.
+
+            <div className="login-brand__hero">
+              <span className="login-brand__kicker">
+                {intl.formatMessage({ id: "login.brand_kicker" })}
+              </span>
+              <h1 className="login-brand__title">
+                {intl.formatMessage({ id: "login.brand_title" })}
               </h1>
-              <p className="max-w-lg text-sm leading-6 text-white/70 sm:text-base">
-                Access inventory, warehouse master data, approvals, and activity logs from one operational dashboard.
+              <p className="login-brand__subtitle">
+                {intl.formatMessage({ id: "login.brand_subtitle" })}
               </p>
             </div>
-          </div>
-          <div className="grid gap-3">
-            {highlights.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white">
-                    <Icon icon={item.icon} className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{item.title}</p>
-                    <p className="mt-1 text-sm leading-5 text-white/70">{item.description}</p>
-                  </div>
+
+            <div className="login-brand__stats" role="list">
+              <div className="login-stat" role="listitem">
+                <span className="login-stat__icon">
+                  <Icon icon="solar:bag-check-linear" />
+                </span>
+                <span className="login-stat__value">2,481</span>
+                <span className="login-stat__label">
+                  {intl.formatMessage({ id: "login.stat_orders_label" })}
+                </span>
+              </div>
+              <div className="login-stat" role="listitem">
+                <span className="login-stat__icon">
+                  <Icon icon="solar:map-point-wave-linear" />
+                </span>
+                <span className="login-stat__value">312</span>
+                <span className="login-stat__label">
+                  {intl.formatMessage({ id: "login.stat_visits_label" })}
+                </span>
+              </div>
+              <div className="login-stat" role="listitem">
+                <span className="login-stat__icon">
+                  <Icon icon="solar:check-circle-linear" />
+                </span>
+                <span className="login-stat__value">98.4%</span>
+                <span className="login-stat__label">
+                  {intl.formatMessage({ id: "login.stat_approvals_label" })}
+                </span>
+              </div>
+            </div>
+
+            <ul className="login-brand__features">
+              <li className="login-feature">
+                <span className="login-feature__icon">
+                  <Icon icon="solar:shield-keyhole-linear" />
+                </span>
+                <div className="login-feature__body">
+                  <span className="login-feature__title">
+                    {intl.formatMessage({ id: "login.feature_audit_title" })}
+                  </span>
+                  <span className="login-feature__desc">
+                    {intl.formatMessage({ id: "login.feature_audit_desc" })}
+                  </span>
                 </div>
-              </div>
-            ))}
+              </li>
+              <li className="login-feature">
+                <span className="login-feature__icon">
+                  <Icon icon="solar:users-group-rounded-linear" />
+                </span>
+                <div className="login-feature__body">
+                  <span className="login-feature__title">
+                    {intl.formatMessage({ id: "login.feature_role_title" })}
+                  </span>
+                  <span className="login-feature__desc">
+                    {intl.formatMessage({ id: "login.feature_role_desc" })}
+                  </span>
+                </div>
+              </li>
+              <li className="login-feature">
+                <span className="login-feature__icon">
+                  <Icon icon="solar:bolt-circle-linear" />
+                </span>
+                <div className="login-feature__body">
+                  <span className="login-feature__title">
+                    {intl.formatMessage({ id: "login.feature_realtime_title" })}
+                  </span>
+                  <span className="login-feature__desc">
+                    {intl.formatMessage({ id: "login.feature_realtime_desc" })}
+                  </span>
+                </div>
+              </li>
+            </ul>
+
+            <figure className="login-brand__quote">
+              <Icon icon="solar:quote-up-square-linear" className="login-brand__quote-mark" />
+              <blockquote className="login-brand__quote-text">
+                {intl.formatMessage({ id: "login.testimonial_quote" })}
+              </blockquote>
+              <figcaption className="login-brand__quote-author">
+                {intl.formatMessage({ id: "login.testimonial_author" })}
+              </figcaption>
+            </figure>
           </div>
-        </div>
+        </aside>
+
+        {/* ── RIGHT: Form panel ── */}
+        <main className="login-form-panel">
+          <div className="login-form-panel__top">
+            <label className="login-locale" htmlFor="login-locale">
+              <span className="login-locale__label">
+                <Icon icon="solar:global-linear" />
+                {intl.formatMessage({ id: "login.language_label" })}
+              </span>
+              <select
+                id="login-locale"
+                className="login-locale__select"
+                value={locale}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (isLocale(next)) setLocale(next);
+                }}
+              >
+                {LOCALE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="login-form-panel__center">
+            <div className="login-form-card">
+              <header className="login-form-card__head">
+                <span className="login-form-card__kicker">
+                  {intl.formatMessage({ id: "login.form_kicker" })}
+                </span>
+                <h2 className="login-form-card__title">
+                  {intl.formatMessage({ id: "login.form_title" })}
+                </h2>
+                <p className="login-form-card__subtitle">
+                  {intl.formatMessage({ id: "login.form_subtitle" })}
+                </p>
+              </header>
+
+              <form
+                className="login-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void form.handleSubmit();
+                }}
+              >
+                <form.Field
+                  name="email"
+                  validators={{
+                    onChange: ({ value }) =>
+                      value
+                        ? undefined
+                        : intl.formatMessage({ id: "login.error_required_email" }),
+                  }}
+                >
+                  {(field) => (
+                    <Input
+                      id="email"
+                      type="email"
+                      label={intl.formatMessage({ id: "login.email_label" })}
+                      placeholder={intl.formatMessage({ id: "login.email_placeholder" })}
+                      value={field.state.value}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                        field.handleChange(event.target.value)
+                      }
+                      autoComplete="email"
+                      leftIcon={<Icon icon="solar:letter-linear" />}
+                      error={
+                        field.state.meta.errors[0]
+                          ? String(field.state.meta.errors[0])
+                          : undefined
+                      }
+                    />
+                  )}
+                </form.Field>
+
+                <form.Field
+                  name="password"
+                  validators={{
+                    onChange: ({ value }) =>
+                      value
+                        ? undefined
+                        : intl.formatMessage({ id: "login.error_required_password" }),
+                  }}
+                >
+                  {(field) => (
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      label={intl.formatMessage({ id: "login.password_label" })}
+                      placeholder={intl.formatMessage({ id: "login.password_placeholder" })}
+                      value={field.state.value}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                        field.handleChange(event.target.value)
+                      }
+                      autoComplete="current-password"
+                      leftIcon={<Icon icon="solar:lock-keyhole-linear" />}
+                      rightIcon={
+                        <button
+                          type="button"
+                          className="login-password-toggle"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          aria-label={intl.formatMessage({
+                            id: showPassword ? "login.password_hide" : "login.password_show",
+                          })}
+                        >
+                          <Icon
+                            icon={showPassword ? "solar:eye-closed-linear" : "solar:eye-linear"}
+                          />
+                        </button>
+                      }
+                      error={
+                        field.state.meta.errors[0]
+                          ? String(field.state.meta.errors[0])
+                          : undefined
+                      }
+                    />
+                  )}
+                </form.Field>
+
+                <div className="login-form-row">
+                  <form.Field name="remember">
+                    {(field) => (
+                      <label className="login-check">
+                        <input
+                          type="checkbox"
+                          checked={field.state.value}
+                          onChange={(event) => field.handleChange(event.target.checked)}
+                        />
+                        <span className="login-check__box" aria-hidden="true">
+                          <Icon icon="solar:check-linear" />
+                        </span>
+                        <span className="login-check__label">
+                          {intl.formatMessage({ id: "login.remember_me" })}
+                        </span>
+                      </label>
+                    )}
+                  </form.Field>
+
+                  <button
+                    type="button"
+                    className="login-link"
+                    onClick={() =>
+                      toast.info(
+                        `${intl.formatMessage({ id: "login.forgot_password" })} — Please contact your workspace administrator.`,
+                      )
+                    }
+                  >
+                    {intl.formatMessage({ id: "login.forgot_password" })}
+                  </button>
+                </div>
+
+                {submitError && (
+                  <div className="login-error" role="alert">
+                    <span className="login-error__icon">
+                      <Icon icon="solar:danger-triangle-linear" />
+                    </span>
+                    <div className="login-error__body">
+                      <span className="login-error__title">
+                        {intl.formatMessage({ id: "login.error_title" })}
+                      </span>
+                      <span className="login-error__msg">{submitError}</span>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  isLoading={form.state.isSubmitting}
+                  rightIcon={
+                    !form.state.isSubmitting ? (
+                      <Icon icon="solar:arrow-right-linear" />
+                    ) : undefined
+                  }
+                >
+                  {form.state.isSubmitting
+                    ? intl.formatMessage({ id: "login.submit_loading" })
+                    : intl.formatMessage({ id: "login.submit" })}
+                </Button>
+              </form>
+
+              <footer className="login-form-card__foot">
+                <Icon icon="solar:shield-check-linear" />
+                <span>{intl.formatMessage({ id: "login.secure_note" })}</span>
+              </footer>
+            </div>
+          </div>
+
+          <div className="login-form-panel__bottom">
+            <span>
+              {intl.formatMessage({ id: "login.copyright" }, { year: copyrightYear })}
+            </span>
+          </div>
+        </main>
       </div>
-
-      <CardBody className="p-8 md:p-10">
-        <CardHeader className="border-b-0 px-0 pb-0">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent-700">
-              <Icon icon="solar:login-2-linear" className="h-4 w-4" />
-              Sign In
-            </div>
-            <div>
-              <CardTitle>Welcome back</CardTitle>
-              <CardDescription>Use your company credentials to continue to the ERP workspace.</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            void form.handleSubmit();
-          }}
-          className="mt-8 space-y-5"
-        >
-          <form.Field
-            name="email"
-            validators={{ onChange: ({ value }) => (!value ? 'Email is required' : undefined) }}
-          >
-            {(field) => (
-              <Input
-                id="email"
-                type="email"
-                label="Email"
-                placeholder="you@company.com"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                autoComplete="email"
-                error={field.state.meta.errors[0] ? String(field.state.meta.errors[0]) : undefined}
-              />
-            )}
-          </form.Field>
-
-          <form.Field
-            name="password"
-            validators={{ onChange: ({ value }) => (!value ? 'Password is required' : undefined) }}
-          >
-            {(field) => (
-              <Input
-                id="password"
-                type="password"
-                label="Password"
-                placeholder="Enter your password"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                autoComplete="current-password"
-                error={field.state.meta.errors[0] ? String(field.state.meta.errors[0]) : undefined}
-              />
-            )}
-          </form.Field>
-
-          {submitError && (
-            <div className="rounded-md border border-state-danger/30 bg-state-danger-bg px-4 py-3 text-sm text-state-danger">
-              <div className="flex items-start gap-2">
-                <Icon icon="solar:danger-triangle-linear" className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{submitError}</span>
-              </div>
-            </div>
-          )}
-
-          <Button type="submit" variant="primary" fullWidth isLoading={form.state.isSubmitting}>
-            {form.state.isSubmitting ? 'Signing in…' : 'Sign in to dashboard'}
-          </Button>
-        </form>
-
-        <CardFooter className="mt-8 border-t border-slate-200 px-0 pt-5">
-          <div className="flex w-full items-center justify-between gap-3 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <Icon icon="solar:lock-keyhole-linear" className="h-4 w-4" />
-              Session is protected and permission-aware.
-            </div>
-          </div>
-        </CardFooter>
-      </CardBody>
-    </Card>
+    </div>
   );
 };

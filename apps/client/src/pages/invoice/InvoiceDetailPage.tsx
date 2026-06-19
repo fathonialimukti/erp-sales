@@ -46,8 +46,8 @@ function InvoiceDetailPage() {
       <PageHeader title={record.documentNumber ?? `INV #${record.id.slice(0, 8)}`} onBack={() => navigate('/invoice')} onEdit={canUpdate ? () => navigate(`/invoice/${record.id}/edit`) : undefined} onDelete={canDelete ? () => setDeleteModalOpen(true) : undefined} />
 
       <div className="flex flex-wrap gap-2">
-        <Chip size="sm" color={record.balanceDue === 0 ? 'success' : record.balanceDue < record.grandTotal ? 'warning' : 'danger'} variant="flat">{record.status}</Chip>
-        {canCreatePayment && record.balanceDue > 0 && <Button size="sm" color="success" onClick={() => setPaymentModalOpen(true)}>Record Payment</Button>}
+        <Chip size="sm" tone={record.balanceDue === 0 ? 'success' : record.balanceDue < record.grandTotal ? 'warning' : 'danger'}>{record.status}</Chip>
+        {canCreatePayment && record.balanceDue > 0 && <Button size="sm" variant="success" onClick={() => setPaymentModalOpen(true)}>Record Payment</Button>}
       </div>
 
       <Card>
@@ -64,19 +64,19 @@ function InvoiceDetailPage() {
       </Card>
 
       {record.payments.length > 0 && (
-        <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Payments</h3><div className="space-y-2">{record.payments.map((p) => (<div key={p.id} className="flex items-center justify-between rounded-lg border p-3"><div><p className="font-medium">IDR {p.amount.toLocaleString()}</p><p className="text-sm text-muted">{new Date(p.date).toLocaleDateString()} {p.method ? `· ${p.method}` : ''} {p.reference ? `· ${p.reference}` : ''}</p></div>{canDeletePayment && <Button size="sm" variant="ghost" color="danger" onClick={() => deletePaymentMutation.mutate(p.id)} disabled={deletePaymentMutation.isPending}>Void</Button>}</div>))}</div></div></Card>
+        <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Payments</h3><div className="space-y-2">{record.payments.map((p) => (<div key={p.id} className="flex items-center justify-between rounded-lg border p-3"><div><p className="font-medium">IDR {p.amount.toLocaleString()}</p><p className="text-sm text-muted">{new Date(p.date).toLocaleDateString()} {p.method ? `· ${p.method}` : ''} {p.reference ? `· ${p.reference}` : ''}</p></div>{canDeletePayment && <Button size="sm" variant="danger" onClick={() => deletePaymentMutation.mutate(p.id)} disabled={deletePaymentMutation.isPending}>Void</Button>}</div>))}</div></div></Card>
       )}
 
       {record.notes && <Card><div className="p-6"><h3 className="mb-2 text-sm font-medium text-muted">Notes</h3><p className="text-sm">{record.notes}</p></div></Card>}
 
       {/* Payment Modal */}
-      <Modal isOpen={paymentModalOpen} onOpenChange={setPaymentModalOpen}><ModalContent><ModalHeader>Record Payment</ModalHeader><ModalBody><div className="space-y-3"><p className="text-sm">Balance due: <strong>IDR {record.balanceDue.toLocaleString()}</strong></p>
-        <TextField><Label>Amount</Label><Input type="number" value={paymentAmount} onChange={setPaymentAmount} placeholder={String(record.balanceDue)} /></TextField>
-        <TextField><Label>Method</Label><Input value={paymentMethod} onChange={setPaymentMethod} placeholder="e.g. Transfer" /></TextField>
-        <TextField><Label>Reference</Label><Input value={paymentRef} onChange={setPaymentRef} placeholder="e.g. receipt number" /></TextField>
-      </div></ModalBody><ModalFooter><Button variant="ghost" onClick={() => setPaymentModalOpen(false)}>Cancel</Button><Button color="success" onClick={handlePayment} disabled={isPaying || !paymentAmount}>{isPaying ? 'Processing...' : 'Record Payment'}</Button></ModalFooter></ModalContent></Modal>
+      <Modal isOpen={paymentModalOpen} onClose={() => setPaymentModalOpen(false)}><ModalContent><ModalHeader>Record Payment</ModalHeader><ModalBody><div className="space-y-3"><p className="text-sm">Balance due: <strong>IDR {record.balanceDue.toLocaleString()}</strong></p>
+        <FormField label="Amount"><Input type="number" value={paymentAmount} onValueChange={setPaymentAmount} placeholder={String(record.balanceDue)} /></FormField>
+        <FormField label="Method"><Input value={paymentMethod} onValueChange={setPaymentMethod} placeholder="e.g. Transfer" /></FormField>
+        <FormField label="Reference"><Input value={paymentRef} onValueChange={setPaymentRef} placeholder="e.g. receipt number" /></FormField>
+      </div></ModalBody><ModalFooter><Button variant="ghost" onClick={() => setPaymentModalOpen(false)}>Cancel</Button><Button variant="success" onClick={handlePayment} disabled={isPaying || !paymentAmount}>{isPaying ? 'Processing...' : 'Record Payment'}</Button></ModalFooter></ModalContent></Modal>
 
-      <Modal isOpen={deleteModalOpen} onOpenChange={setDeleteModalOpen}><ModalContent><ModalHeader>Delete Invoice</ModalHeader><ModalBody>Delete "{record.documentNumber}"?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button color="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}><ModalContent><ModalHeader>Delete Invoice</ModalHeader><ModalBody>Delete "{record.documentNumber}"?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button variant="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
     </section>
   );
 }

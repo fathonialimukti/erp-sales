@@ -1,0 +1,73 @@
+/* ============================================================
+ * SearchField — search input with clear button
+ * Prefix: .sf-
+ * ============================================================ */
+
+.sf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-slate-300);
+  background: var(--color-surface-1);
+  padding: 0 12px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.sf:focus-within {
+  border-color: var(--color-accent-500);
+  box-shadow: 0 0 0 1px var(--color-accent-500);
+}
+
+.dark .sf {
+  border-color: var(--color-slate-700);
+}
+
+.sf__icon {
+  color: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sf__input {
+  height: 100%;
+  width: 100%;
+  background: transparent;
+  font-size: 14px;
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  outline: none;
+}
+
+.sf__input::placeholder {
+  color: var(--color-muted);
+}
+
+.dark .sf__input {
+  color: var(--color-slate-100);
+}
+
+.sf__clear {
+  color: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.sf__clear:hover {
+  color: var(--color-foreground);
+}
+
+.dark .sf__clear:hover {
+  color: var(--color-slate-200);
+}
+
+@media (max-width: 768px) {
+  .sf {
+    height: 44px;
+  }
+}
