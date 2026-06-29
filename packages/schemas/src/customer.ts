@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createListInputSchema } from './common';
 
-export const customerListInputSchema = createListInputSchema();
+export const customerListInputSchema = createListInputSchema({});
 
 export const createCustomerSchema = z.object({
   code: z.string().optional(),

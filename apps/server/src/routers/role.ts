@@ -6,7 +6,7 @@ import { hasPermission, protectedProcedure, router } from '../trpc.js';
 
 export const roleRouter = router({
   list: protectedProcedure
-    .use(hasPermission('user@read'))
+    .use(hasPermission('role@read'))
     .input(createListInputSchema())
     .query(async ({ input }) => {
       const { page, limit, skip } = buildPaginationParams(input);
@@ -29,7 +29,7 @@ export const roleRouter = router({
     }),
 
   detail: protectedProcedure
-    .use(hasPermission('user@read'))
+    .use(hasPermission('role@read'))
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       const record = await prisma.role.findUnique({
@@ -44,7 +44,7 @@ export const roleRouter = router({
     }),
 
   create: protectedProcedure
-    .use(hasPermission('user@create'))
+    .use(hasPermission('role@create'))
     .input(z.object({
       name: z.string().min(1),
       description: z.string().optional(),
@@ -65,7 +65,7 @@ export const roleRouter = router({
     }),
 
   update: protectedProcedure
-    .use(hasPermission('user@update'))
+    .use(hasPermission('role@update'))
     .input(z.object({
       currentId: z.string(),
       name: z.string().min(1).optional(),
@@ -96,7 +96,7 @@ export const roleRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(hasPermission('user@delete'))
+    .use(hasPermission('role@delete'))
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const existing = await prisma.role.findUnique({ where: { id: input.id } });

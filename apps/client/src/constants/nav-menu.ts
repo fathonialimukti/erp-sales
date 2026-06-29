@@ -1,3 +1,5 @@
+import { ICONS } from "../assets/chrome-icons";
+
 export interface NavMenuItem {
   name: string;
   icon?: string;
@@ -9,46 +11,46 @@ export interface NavMenuItem {
 export const NAV_MENU: NavMenuItem[] = [
   {
     name: "nav.dashboard",
-    icon: "solar:home-2-linear",
+    icon: ICONS.nav.dashboard,
     href: "/dashboard",
   },
   {
     name: "nav.master_data",
-    icon: "solar:database-linear",
+    icon: ICONS.nav.region,
     children: [
       {
         name: "nav.region",
-        icon: "solar:map-point-linear",
+        icon: ICONS.nav.region,
         href: "/region",
         permission: "region@read",
       },
       {
         name: "nav.area",
-        icon: "solar:map-linear",
+        icon: ICONS.nav.area,
         href: "/area",
         permission: "area@read",
       },
       {
         name: "nav.customer",
-        icon: "solar:users-group-rounded-linear",
+        icon: ICONS.nav.customer,
         href: "/customer",
         permission: "customer@read",
       },
       {
         name: "nav.outlet",
-        icon: "solar:shop-linear",
+        icon: ICONS.nav.outlet,
         href: "/outlet",
         permission: "outlet@read",
       },
       {
         name: "nav.sku_category",
-        icon: "solar:folder-with-files-linear",
+        icon: ICONS.nav.skuCategory,
         href: "/sku-category",
         permission: "sku@read",
       },
       {
         name: "nav.sku",
-        icon: "solar:box-linear",
+        icon: ICONS.nav.sku,
         href: "/sku",
         permission: "sku@read",
       },
@@ -56,29 +58,23 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.sales",
-    icon: "solar:cart-5-linear",
+    icon: ICONS.nav.salesOrder,
     children: [
       {
         name: "nav.sales_order",
-        icon: "solar:document-add-linear",
+        icon: ICONS.nav.salesOrder,
         href: "/sales-order",
         permission: "sales-order@read",
-      },
-      {
-        name: "nav.invoice",
-        icon: "solar:bill-list-linear",
-        href: "/invoice",
-        permission: "invoice@read",
       },
     ],
   },
   {
     name: "nav.field_ops",
-    icon: "solar:map-point-wave-linear",
+    icon: ICONS.nav.visit,
     children: [
       {
         name: "nav.visit_log",
-        icon: "solar:clipboard-list-linear",
+        icon: ICONS.nav.visit,
         href: "/visit-log",
         permission: "visit-log@read",
       },
@@ -86,17 +82,17 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.programs",
-    icon: "solar:lightning-linear",
+    icon: ICONS.nav.program,
     children: [
       {
         name: "nav.action_program",
-        icon: "solar:ticket-sale-linear",
+        icon: ICONS.nav.program,
         href: "/action-program",
         permission: "action-program@read",
       },
       {
         name: "nav.event_proposal",
-        icon: "solar:calendar-mark-linear",
+        icon: ICONS.nav.event,
         href: "/event-proposal",
         permission: "event-proposal@read",
       },
@@ -104,29 +100,29 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.system",
-    icon: "solar:settings-linear",
+    icon: ICONS.nav.users,
     children: [
       {
         name: "nav.users",
-        icon: "solar:users-group-two-rounded-linear",
+        icon: ICONS.nav.users,
         href: "/users",
         permission: "user@read",
       },
       {
-        name: "nav.roles",
-        icon: "solar:shield-check-linear",
-        href: "/roles",
-        permission: "user@read",
+        name: "nav.access_control",
+        icon: ICONS.nav.roles,
+        href: "/access-control",
+        permission: "role@read",
       },
       {
         name: "nav.activity_logs",
-        icon: "solar:history-linear",
+        icon: ICONS.nav.activity,
         href: "/activity-logs",
         permission: "activity_log@read",
       },
       {
         name: "nav.notifications_admin",
-        icon: "solar:bell-bing-linear",
+        icon: ICONS.nav.notifications,
         href: "/notifications",
         permission: "notification@read",
       },

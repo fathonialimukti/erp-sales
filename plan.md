@@ -1,498 +1,415 @@
-# ERP App Remodel — Full Plan (post-foundation)
+# ERP Sales — UI/UX Redesign Plan
 
-> Status: foundation done (HeroUI removed, design tokens, `ui/` primitives, shell, Dashboard, Sales Order sample feature shipped).
-> Next: remodel every remaining CRUD feature to the new visual + interaction standard.
-
----
-
-## 1. Visual / UX system (already established)
-
-- **Style**: enterprise professional, minimalist, 60-30-10 color rule.
-- **Palette**: 60% neutral surface (`--color-surface-0..3`, slate-50/100/200), 30% slate chrome (`--color-slate-50..950`), 10% emerald accent (`--color-accent-500 #10b981`).
-- **Typography**: Inter (UI) + JetBrains Mono (numbers/IDs).
-- **Effects**: subtle borders, layered shadows (`shadow-sm` for cards, `shadow-md` for popovers), 200ms transitions.
-- **No emoji icons** — `@iconify/react` (`solar:*` set, `mdi:*` for domain).
-- **No `className` on HeroUI components** (HeroUI already removed).
-- **Every page wrapper** carries `data-ai-context={JSON.stringify({ section, ... })}`.
-
-## 2. Component conventions (locked)
-
-### `ui/` primitives (already shipped)
-
-`Button`, `Card` (+ `CardHeader/Body/Title/Description`), `Input`, `Textarea`, `Select` (+ `SelectItem`), `SelectSearch`, `FormDatePicker`, `Checkbox`, `Chip`, `Modal` (+ `ModalContent/Header/Body/Footer`), `Dropdown` (+ `DropdownTrigger/Menu/Item/Separator`), `Pagination`, `Spinner`, `Skeleton`, `EmptyState`, `Toast` + `useToast`, `Avatar`, `Table` (+ `TableHead/Header/Body/Row/Cell`), `Tooltip`, `Separator`, `Label`, `FieldError`, `FormField`, `ListBox`, `cn`.
-
-### `components/` (already shipped)
-
-`Navbar`, `Sidebar`, `PageHeader`, `SelectSearch`, `FormDatePicker`, `ImageUploadField`, `ApprovalHistory`, `EntityPhoto`, `ProtectedRoute`, `AiAssistant`.
-
-### Page templates (locked)
-
-**Index page**: search + table + pagination + delete modal + empty state.
-
-**Detail page**: `<PageHeader>` + sections (info, related, approval history) + action bar.
-
-**Form page**: outer loader + inner form + modal state machine (`'idle' | 'confirm-draft' | 'confirm-propose' | 'loading' | 'success' | 'error'`) + i18n.
-
-### Sales Order Form reactivity lesson (locked)
-
-TanStack Form's `form.state.values` reads **do not subscribe**. Use:
-
-```tsx
-<form.Subscribe selector={(s) => s.values.items ?? []}>
-  {(items) => /* render with re-render on change */}
-</form.Subscribe>
-```
-
-Handlers read fresh state via `form.state.values` at click time, not from a stale closure.
-
-### CSS strategy
-
-- Default: Tailwind utilities (matching `ui/` + tokens).
-- Sales Order Form: plain CSS file `SalesOrderFormPage.css` (per-page, BEM `.so-*`) — only because of complex grid + popover positioning. No other page needs this.
-
-## 3. i18n convention (locked)
-
-- `en.json` + `id.json` in `apps/client/src/locales/`.
-- Keys: `<domain>.<page>.<key>` (e.g. `customer.form.title_create`).
-- Both locale files must be updated in the same commit.
-
-## 4. Remodel sequence (13 domains, ordered by dependency)
-
-| # | Domain | Depends on | Pages |
-|---|--------|-----------|-------|
-| 1 | Region | — | Index, Detail, Form |
-| 2 | Area | Region | Index, Detail, Form |
-| 3 | Customer | Area | Index, Detail, Form (with contacts sub-list) |
-| 4 | Outlet | Customer, Area | Index, Detail, Form |
-| 5 | SKU Category | — | Index, Detail, Form |
-| 6 | SKU | SKU Category | Index, Detail, Form |
-| 7 | Invoice | Sales Order, Customer | Index, Detail, Form |
-| 8 | Visit Log | Customer, Outlet | Index, Detail, Form |
-| 9 | Action Program | — | Index, Detail, Form (with photo upload, approval) |
-| 10 | Event Proposal | Action Program, Customer | Index, Detail, Form (multi-step, approval) |
-| 11 | Users | — | Index, Detail, Form |
-| 12 | Roles | — | Index, Form |
-| 13 | Notifications + Activity Logs | — | Index |
-
-## 5. Per-domain remodel checklist
-
-1. Read the existing `IndexPage/DetailPage/FormPage` to inventory what's there.
-2. Schema: confirm `packages/schemas/src/<domain>.ts` has `*FormSchema` + `update*Schema` with `currentId`.
-3. Server: confirm `apps/server/src/routers/<domain>.ts` has `list/get/create/update/delete` with `hasPermission` middleware.
-4. Index page: rebuild to template.
-5. Detail page: rebuild to template.
-6. Form page: rebuild to template.
-7. i18n: add `<domain>.*` keys to both `en.json` + `id.json`.
-8. Sidebar: confirm permission string is set.
-9. Smoke: navigate, list, search, paginate, create, edit, delete, permission gating.
-
-## 6. Cross-cutting polish (after domains)
-
-- Sidebar nav restructure (group: Master Data / Sales / Operations / Admin).
-- Landing page redesign.
-- Login page refresh.
-- Notifications bell in Navbar (badge count).
-- Activity log filters (date range, resource, action).
-- Global search (Cmd+K) → tRPC `search.global` endpoint.
-
-## 7. Verification (final gate)
-
-- `bun run check-types` — zero errors.
-- `bun run lint` — zero warnings.
-- Playwright smoke test per page.
-- `bun run build` — clean.
-- Visual QA: light + dark, 375/768/1024/1440.
-
-## 8. Open risks / watch-outs
-
-- **Sales Order Form reactivity**: keep `<form.Subscribe>` pattern. Do NOT revert to `form.getFieldValue()`.
-- **Dropdown clipping**: any future form using `SelectSearch` inside a card must have `overflow: visible` on the card root.
-- **Trash icon**: use the symmetric 5-stroke SVG (lid line + body path + 2 vertical handles + top opening line).
-- **Grid alignment**: for item rows, use `align-items: end` on grid, `display: flex; flex-direction: column` on each cell.
-- **tRPC list limits**: never exceed 100 on list queries.
-- **CSS leakage**: Sales Order Form CSS is `SalesOrderFormPage.css` only — do not move it to global.
+> Status: current. Replaces the old migration plan. Foundation (plain CSS, 60-30-10 tokens, dark mode via `.dark`, BEM naming) is already in place. The remaining problem is **cohesion** — the shell pieces don't agree with each other, and the pages haven't all been re-themed to the standard.
 
 ---
 
-## 9. Tailwind → Regular CSS Migration (Full App)
+## 0. Quick context (what already exists)
 
-> **Goal**: Remove Tailwind CSS entirely. Every TSX gets a co-located `.css` file (BEM-scoped, 60-30-10 tokens, animations, interactive states). The app becomes an impressive, modern dashboard with rich micro-interactions.
+| Area | Status |
+|---|---|
+| Tailwind / HeroUI | Removed (only `@tailwindcss/vite` in vitest config, not used in production) |
+| Styling method | Plain CSS, BEM with prefix, co-located per `.tsx` |
+| Token system | `src/styles/tokens.css` — 60% surfaces, 30% slate chrome, 10% emerald accent |
+| Dark mode | `.dark` class on `<html>`, applied via `ThemeSync` reading `themeModeAtom` |
+| Font | Plus Jakarta Sans (already loaded in `tokens.css`) |
+| UI primitives | 24 in `src/ui/`, all with co-located CSS |
+| Layout | `PrivateLayout` (Navbar + Sidebar + main) and `PublicLayout` |
+| Pages | 51 across 13 features, all with co-located CSS (most follow template) |
+| i18n | `react-intl`, `en` + `id`, keys follow `<domain>.<page>.<key>` |
+| Server | tRPC v11 + Prisma + PostgreSQL, 20 routers, ULID IDs — **stable, do not change** |
 
-### 9.1 Design System — 60-30-10 Rule (Mandatory)
+---
 
-| Ratio | Role | Tokens | Usage |
-|-------|------|--------|-------|
-| **60%** | Neutral surfaces | `--color-surface-0..3`, `--color-slate-50..200` | Page bg, card bg, table stripes, sunken areas |
-| **30%** | Chrome & text | `--color-slate-300..950`, `--color-foreground`, `--color-muted`, `--color-border` | Sidebar, navbar, borders, body text, headings |
-| **10%** | Brand accent | `--color-accent-50..900` (emerald `#10b981`) | CTAs, active states, badges, links, focus rings, icons |
+## 1. The problem you just flagged
 
-**State colors** (success/warning/danger/info) are **semantic only** — they never compete with the brand accent.
+**Screenshot evidence (taken from running dev server at localhost:1420):**
 
-### 9.2 CSS Architecture — Co-located Files
+- `current-dashboard.png` — light mode, sidebar open (collapsible `<details>` groups, "Menu" header)
+- `current-dashboard-dark.png` — dark mode
+- `current-sales-order.png` — light mode, list page (heading + search + filter chips + add button, no rows yet)
 
-**Pattern**: Every `.tsx` gets a sibling `.css` file, imported via `import "./ComponentName.css"`.
+**The mismatch (also visible in the CSS):**
 
-```
-src/
-  index.css                          ← Global resets + token imports (NO Tailwind)
-  styles/
-    tokens.css                        ← 60-30-10 design tokens (already exists, keep)
-    animations.css                    ← Shared keyframes (fadeIn, slideUp, pulse, shimmer, scaleIn)
-    utilities.css                     ← Tiny helper classes (.sr-only, .truncate, .cursor-pointer)
-  components/
-    Navbar.tsx                        ← Navbar.css
-    Sidebar.tsx                       ← Sidebar.css
-    PageHeader.tsx                    ← PageHeader.css
-    AiAssistant/
-      AiAssistant.tsx                 ← AiAssistant.css
-  layouts/
-    PrivateLayout.tsx                 ← PrivateLayout.css
-    PublicLayout.tsx                  ← PublicLayout.css
-  ui/
-    Button.tsx                        ← Button.css
-    Card.tsx                          ← Card.css
-    Input.tsx                         ← Input.css
-    Modal.tsx                         ← Modal.css
-    Table.tsx                         ← Table.css
-    ... (every ui primitive)
-  pages/
-    Dashboard.tsx                     ← Dashboard.css
-    LoginPage.tsx                     ← LoginPage.css
-    LandingPage.tsx                   ← LandingPage.css
-    NotFoundPage.tsx                  ← NotFoundPage.css
-    RouteErrorPage.tsx                ← RouteErrorPage.css
-    region/
-      RegionIndexPage.tsx             ← RegionIndexPage.css
-      RegionDetailPage.tsx            ← RegionDetailPage.css
-      RegionFormPage.tsx              ← RegionFormPage.css
-    area/                             ← (same pattern)
-    customer/                         ← (same pattern)
-    outlet/                           ← (same pattern)
-    sku/                              ← (same pattern)
-    sku-category/                     ← (same pattern)
-    sales-order/
-      SalesOrderIndexPage.tsx         ← SalesOrderIndexPage.css
-      SalesOrderDetailPage.tsx        ← SalesOrderDetailPage.css
-      SalesOrderFormPage.tsx          ← SalesOrderFormPage.css (already exists)
-    invoice/                          ← (same pattern)
-    visit-log/                        ← (same pattern)
-    action-program/                   ← (same pattern)
-    event-proposal/                   ← (same pattern)
-    users/                            ← (same pattern)
-    access-control/
-      RolesIndexPage.tsx              ← RolesIndexPage.css
-      RoleFormPage.tsx                ← RoleFormPage.css
-    activity-logs/
-      ActivityLogsIndexPage.tsx       ← ActivityLogsIndexPage.css
-      ActivityLogDetailPage.tsx       ← ActivityLogDetailPage.css
-```
+| | Navbar | Sidebar (desktop ≥1024px) |
+|---|---|---|
+| Position | `sticky; top: 16px; margin: 0 16px;` — **floating inset from edges** | `sticky; top: 0; left: 0;` — **flush to viewport edges** |
+| Background | `rgba(255,255,255,0.85)` + `backdrop-filter: blur(12px)` — **glass** | `var(--color-surface-1)` — **solid white** |
+| Border | `1px solid var(--color-border)` | none |
+| Radius | `12px` rounded | `0` (no rounding) |
+| Shadow | `var(--shadow-sm)` (and `md` on hover) | none |
+| Behavior | pill floating over content | flat wall attached to viewport |
 
-### 9.3 BEM Naming Convention
+So on desktop the navbar is a **floating glass card** while the sidebar is a **flat flush wall**. Two different visual languages fighting each other. The result: the navbar looks detached, the sidebar looks unfinished, and the page content has to fight both surfaces.
 
-Each CSS file uses a **domain prefix** + BEM to prevent style leakage:
+> The old plan picked "floating glass" for the navbar and "flush surface" for the sidebar, then walked away. That decision was never reconciled.
 
-| File | Prefix | Example classes |
-|------|--------|-----------------|
-| `Dashboard.css` | `.dash-` | `.dash-card`, `.dash-card__icon`, `.dash-card--accent` |
-| `Sidebar.css` | `.sidebar-` | `.sidebar-nav`, `.sidebar-nav__item`, `.sidebar-nav__item--active` |
-| `Button.css` | `.btn-` | `.btn`, `.btn--primary`, `.btn--ghost`, `.btn__icon` |
-| `RegionIndexPage.css` | `.reg-` | `.reg-page`, `.reg-table`, `.reg-table__row--hover` |
-| `SalesOrderFormPage.css` | `.so-` | `.so-form`, `.so-card`, `.so-field` (already exists) |
+---
 
-**Rule**: No class without a prefix. No bare `.card` or `.button`. This guarantees zero cross-file collisions.
+## 2. Design direction (locked)
 
-### 9.4 Shared Animation Library (`animations.css`)
+### 2.1 Pick a side: **Floating Glass Shell (unified)**
+
+Both navbar and sidebar become **floating glass cards**, inset 16px from viewport edges on desktop, with consistent radius, border, shadow, and backdrop blur. The main content area lives in the gap between them.
+
+| Choice | Decision | Why |
+|---|---|---|
+| Style | **Floating glass + modern minimalist** | Already partly built; the existing dark mode is a 10/10 on glass; user said "60-30-10 mandatory" which suits clean glass |
+| Shell | **Both shell pieces float** with identical radius (16px), border (1px slate-200 / slate-800 dark), shadow (`shadow-md`), and backdrop blur (14px) | Eliminates the mismatch in one stroke |
+| Accent | **Emerald `#10b981`** (no change) | Already in use, reads as "approved / money / growth" which fits an ERP |
+| Density | **Compact ERP** with comfortable fallback | Tighter rows + smaller type in tables, generous padding in dashboards. Real power-user feel without losing readability. |
+| Mobile | **Responsive web, Tauri-friendly** | Same code, sidebar becomes a slide-over drawer, navbar sticks to top, tables collapse to card lists at `<768px` |
+| Scope | **Token + layout shell + UI primitives first**, then migrate remaining 13 feature pages | Thinnest possible blast radius. Pages keep their CSS, but the new system re-themes them by overriding shared primitives. |
+| Server changes | **None** | All state stays in Jotai + localStorage. `themeModeAtom` already exists. |
+
+### 2.2 Anti-patterns we will NOT ship
+
+- ❌ `scale()` on hover for grid items (layout shift)
+- ❌ `bg-white/10` glass in light mode (invisible)
+- ❌ `text-slate-400` for body text (contrast < 4.5:1)
+- ❌ Mixing two visual languages in the shell
+- ❌ `className` on HeroUI-style components (HeroUI is removed; just don't reintroduce it)
+- ❌ Emoji as UI icons
+- ❌ Hardcoded user-visible strings (i18n required)
+- ❌ `bg-glass` with no `backdrop-filter` fallback
+- ❌ Animations without `prefers-reduced-motion` guard
+- ❌ Color as the only status signal (pair with icon/text)
+
+---
+
+## 3. Token rebalance (Phase 0)
+
+The 60-30-10 rule is already structurally correct, but the shell needs **three new tokens** to express the floating glass concept without each component re-declaring the same values.
+
+Add to `src/styles/tokens.css`:
 
 ```css
-/* Entrance animations */
-@keyframes fadeIn        { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp       { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideDown     { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes scaleIn       { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes slideInLeft   { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes slideInRight  { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+/* === Shell layout (new) === */
+--shell-pad:          16px;            /* gap from viewport edges to floating shell pieces */
+--shell-radius:       16px;            /* unified radius for navbar AND sidebar */
+--shell-border:       1px solid var(--color-border);
+--shell-shadow:       var(--shadow-md);
+--shell-blur:         14px;
+--shell-bg:           rgba(255, 255, 255, 0.82);
+--shell-bg-mobile:    var(--color-surface-1);   /* solid on mobile where blur is wasteful */
+--sidebar-width:      260px;
+--sidebar-collapsed:  72px;
+--navbar-height:      64px;            /* was 56; bump for visual weight parity with sidebar */
 
-/* Continuous animations */
-@keyframes pulse         { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-@keyframes shimmer       { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-@keyframes spin          { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes bounceIn      { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 80% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
+.dark {
+  --shell-bg: rgba(15, 23, 42, 0.72);
+}
+```
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+**Why**: every shell component will use the same 6 tokens. If you change radius or blur, it changes everywhere. No drift.
+
+---
+
+## 4. Shell redesign (Phase 1)
+
+**Goal**: Navbar and Sidebar look like siblings, not strangers.
+
+### 4.1 Navbar.css (rewrite)
+
+```css
+.nav-bar {
+  position: sticky;
+  top: var(--shell-pad);
+  left: var(--shell-pad);
+  right: var(--shell-pad);
+  z-index: var(--z-sticky);
+  height: var(--navbar-height);
+  margin: 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: var(--shell-radius);
+  background: var(--shell-bg);
+  backdrop-filter: blur(var(--shell-blur));
+  -webkit-backdrop-filter: blur(var(--shell-blur));
+  border: var(--shell-border);
+  box-shadow: var(--shell-shadow);
+  transition: box-shadow 200ms var(--ease-default);
+}
+
+.nav-bar:hover { box-shadow: var(--shadow-lg); }
+
+@media (max-width: 768px) {
+  .nav-bar {
+    top: 0; left: 0; right: 0;
+    border-radius: 0;
+    border-left: 0; border-right: 0; border-top: 0;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    background: var(--shell-bg-mobile);
   }
 }
 ```
 
-### 9.5 Interactive Micro-Animations (Per-Component)
+**Changes vs. today**:
+- `top: 16px` (was already 16, but locked to `--shell-pad`)
+- `right: 16px` added — today the navbar only constrains left/right via `margin: 0 16px`, which can look asymmetric with very wide viewports
+- `height: 64px` (up from 56) — visually balances the now-larger sidebar
+- Mobile: drops glass entirely, becomes a solid header (same as today)
 
-Every component gets purposeful animations — not decoration, but **feedback**:
-
-| Component | Animation | Detail |
-|-----------|-----------|--------|
-| **Button** | `transition: all 150ms` | Hover: bg shift + subtle shadow lift. Active: scale(0.97) press. Loading: spinner replaces text. |
-| **Card** | `transition: box-shadow 200ms, transform 200ms` | Hover: shadow lifts from `shadow-sm` → `shadow-md`. Never scale-on-hover (layout shift rule). |
-| **Table row** | `transition: background 150ms` | Hover: `surface-2` bg. Active row: accent-50 bg + left border accent-500. |
-| **Sidebar item** | `transition: background 150ms, color 150ms` | Active: accent bg + white text. Hover: surface-2 bg. |
-| **Modal** | `animation: scaleIn 200ms ease-out` | Overlay: `fadeIn 150ms`. Content: `scaleIn 200ms`. Close: reverse via `animation-direction: reverse`. |
-| **Toast** | `animation: slideInRight 250ms ease-out` | Success: green accent bar. Error: red bar. Auto-dismiss slides out. |
-| **Dropdown** | `animation: slideDown 150ms ease-out` | Menu appears from trigger point. |
-| **Input focus** | `transition: border-color 150ms, box-shadow 150ms` | Focus: accent-500 border + accent-500/20 ring. |
-| **Chip** | `transition: background 150ms` | Hover: slight bg shift. |
-| **Pagination** | `transition: background 150ms` | Active page: accent bg. Hover: surface-2. |
-| **Page entrance** | `animation: slideUp 250ms ease-out` | Staggered: cards appear with 50ms delay each via `animation-delay`. |
-| **Skeleton** | `animation: shimmer 1.5s infinite` | Linear gradient sweep. |
-| **Empty state** | `animation: fadeIn 300ms` | Icon + text appear together. |
-| **Notification popover** | `animation: slideDown 200ms ease-out` | Drops from bell icon. |
-| **Dashboard stats** | `animation: slideUp staggered` | Each stat card: `animation-delay: nth * 80ms`. |
-| **Delete confirm** | `animation: scaleIn 200ms` | Modal bounce-in for destructive actions. |
-
-### 9.6 Impressive Dashboard Design (`Dashboard.css`)
-
-The dashboard is the **hero screen** — it must feel alive:
-
-- **Bento grid layout**: CSS Grid with mixed-size cards (2×1, 1×1, 1×2 spans)
-- **Stat cards**: Large number + trend arrow + sparkline area. Entrance stagger animation.
-- **Glassmorphism cards**: `backdrop-filter: blur(12px); background: rgba(255,255,255,0.80)` in light, `rgba(15,23,42,0.60)` in dark. Border `1px solid rgba(255,255,255,0.10)` in dark.
-- **Live pulse**: Unread notification count pulses gently (accent dot).
-- **Hover lift**: Cards shadow transitions from `shadow-sm` → `shadow-lg` on hover (no scale).
-- **Gradient accent bar**: Top of each stat card has a 3px gradient bar (accent-400 → accent-600).
-- **Chart containers**: Recharts with accent-500 as primary series color, slate-300 as secondary.
-
-### 9.7 Impressive Sidebar Design (`Sidebar.css`)
-
-- **Floating panel**: `position: fixed; top: 16px; left: 16px; bottom: 16px; border-radius: 16px;` — rounded corners, gap from viewport edges.
-- **Glass effect**: `backdrop-filter: blur(8px); background: rgba(255,255,255,0.85)` light, `rgba(15,23,42,0.75)` dark.
-- **Active indicator**: 3px accent-500 bar on left edge of active item, slides with `transition: top 200ms`.
-- **Collapse animation**: Width transitions from 260px → 72px with `transition: width 250ms ease`. Icons stay, labels fade out.
-- **Hover glow**: Subtle accent-50/20 bg on hover items.
-
-### 9.8 Impressive Navbar Design (`Navbar.css`)
-
-- **Floating bar**: `position: sticky; top: 16px; margin: 0 16px; border-radius: 12px;` — rounded, inset from edges.
-- **Glass effect**: Same as sidebar. `backdrop-filter: blur(12px)`.
-- **Notification bell**: Icon with badge dot (accent-500, pulse animation). Click opens popover panel.
-- **User avatar**: Circular with accent ring on hover. Dropdown slides down.
-
-### 9.9 Notifications — Popover Only (No Full Page)
-
-**Change**: Remove `NotificationsPage` route and sidebar entry. Notifications become a **popover panel** in the Navbar:
-
-- **Bell icon** in Navbar right section with unread count badge (accent-500 dot, `animation: pulse 2s infinite` when > 0).
-- **Popover panel**: Click bell → dropdown panel slides down (`animation: slideDown 200ms`). Shows last 10 notifications.
-- **Each notification row**: Icon (type-based) + title + timestamp. Unread rows have accent-50 bg + left accent border.
-- **Mark as read**: Click row → bg transitions to surface-1, accent border fades.
-- **Mark all as read**: Small link at popover footer.
-- **Full history**: "View all activity logs" link at bottom navigates to `/activity-logs`.
-- **Delete**: Remove `/notifications` route from `routes.tsx`. Remove `NotificationsPage.tsx` file. Remove sidebar entry.
-
-### 9.10 Role/Permission — Checklist Pattern (No Create Permission)
-
-**Change**: Roles have CRUD (create/update/delete roles) but **no separate "create permission" action**. Permissions are a **checklist** you toggle when creating/editing a role:
-
-- **RolesIndexPage**: Standard index (name, description, user count, permission count, isSystem badge).
-- **RoleFormPage**: 
-  - Name + description fields at top.
-  - **Permission checklist** below: grouped by resource (e.g. "Region" group → `region@read`, `region@create`, `region@update`, `region@delete`). Each is a checkbox.
-  - Groups are collapsible `<details>` sections with resource icon.
-  - Checked count shown as chip: "12 of 48 permissions".
-  - No separate "create permission" button or page. Permissions are seeded/managed server-side only.
-- **No Permission CRUD page**: There is no `/permissions` route. Permissions are read-only seed data.
-
-### 9.11 Migration Order (Phased)
-
-Tailwind removal must be **incremental** — never break the app mid-migration.
-
-#### Phase 0: Foundation (before any page CSS)
-1. Create `src/styles/animations.css` — shared keyframes.
-2. Create `src/styles/utilities.css` — `.sr-only`, `.truncate`, `.cursor-pointer`, `.text-center`, etc.
-3. Update `src/index.css` — remove `@import "tailwindcss"` and `@theme inline` block. Keep `@import "./styles/tokens.css"` and `@import "./styles/animations.css"` and `@import "./styles/utilities.css"`. Keep all existing resets (scrollbar, focus ring, body, rdp overrides).
-4. Remove `@tailwindcss/vite` plugin from `vite.config.ts`.
-5. Remove `tailwindcss`, `@tailwindcss/vite`, `@tailwindcss/postcss` from `package.json` dependencies.
-6. Remove `postcss.config.mjs` or `postcss` config if it exists.
-7. Verify app still renders (Tailwind classes will be inert — no styling, but no crash).
-
-#### Phase 1: Shell (Navbar + Sidebar + Layouts)
-1. `Navbar.css` — floating glass bar, notification bell popover.
-2. `Sidebar.css` — floating glass panel, collapse animation, active indicator.
-3. `PrivateLayout.css` — main content area with padding for floating nav/sidebar.
-4. `PublicLayout.css` — centered auth layout.
-5. Remove all `className="..."` Tailwind strings from these TSX files, replace with BEM class names.
-
-#### Phase 2: UI Primitives (all `ui/` components)
-1. `Button.css` — variants (primary, ghost, danger, outline), sizes, loading state, icon button.
-2. `Card.css` — surface bg, border, shadow, header/body sections, hover lift.
-3. `Input.css` + `Textarea.css` — focus ring, error state, disabled.
-4. `Select.css` — dropdown trigger, focus, error.
-5. `Modal.css` — overlay, scaleIn animation, header/body/footer.
-6. `Table.css` — row hover, striped, active row accent border.
-7. `Checkbox.css` — accent checked state, focus ring.
-8. `Chip.css` — variants (accent, success, warning, danger, neutral), hover.
-9. `Pagination.css` — page buttons, active accent, hover.
-10. `Spinner.css` — spin animation, sizes.
-11. `Skeleton.css` — shimmer animation.
-12. `EmptyState.css` — fadeIn animation, centered layout.
-13. `Dropdown.css` — slideDown animation, menu items.
-14. `Tooltip.css` — fadeIn animation, positioning.
-15. `Avatar.css` — circular, ring on hover.
-16. `Toast.css` — slideInRight, accent bar per type.
-17. `Separator.css` — horizontal/vertical divider.
-18. `Label.css` + `FieldError.css` + `FormField.css` — form layout.
-19. Remove all Tailwind `className` from each TSX, replace with BEM.
-
-#### Phase 3: Shared Components (`components/`)
-1. `PageHeader.css` — title, back button, action bar.
-2. `SelectSearch.css` — popover positioning, search input.
-3. `FormDatePicker.css` — calendar integration.
-4. `ImageUploadField.css` — drag-drop zone, preview.
-5. `ApprovalHistory.css` — timeline layout, status dots.
-6. `EntityPhoto.css` — photo grid, lightbox.
-7. `AiAssistant.css` — chat panel, slideIn animation.
-
-#### Phase 4: Standalone Pages
-1. `Dashboard.css` — bento grid, stat cards, glass cards, staggered entrance.
-2. `LoginPage.css` — centered card, accent gradient header.
-3. `LandingPage.css` — hero section, feature grid.
-4. `NotFoundPage.css` — centered illustration, fadeIn.
-5. `RouteErrorPage.css` — error display.
-
-#### Phase 5: Domain Pages (13 domains, ordered by dependency)
-Each domain gets 3 CSS files (Index, Detail, Form) following the same BEM template:
-
-| # | Domain | CSS Files | Prefix |
-|---|--------|-----------|--------|
-| 1 | Region | `RegionIndexPage.css`, `RegionDetailPage.css`, `RegionFormPage.css` | `.reg-` |
-| 2 | Area | `AreaIndexPage.css`, `AreaDetailPage.css`, `AreaFormPage.css` | `.area-` |
-| 3 | Customer | `CustomerIndexPage.css`, `CustomerDetailPage.css`, `CustomerFormPage.css` | `.cust-` |
-| 4 | Outlet | `OutletIndexPage.css`, `OutletDetailPage.css`, `OutletFormPage.css` | `.out-` |
-| 5 | SKU Category | `SkuCategoryIndexPage.css`, `SkuCategoryDetailPage.css`, `SkuCategoryFormPage.css` | `.skuc-` |
-| 6 | SKU | `SkuIndexPage.css`, `SkuDetailPage.css`, `SkuFormPage.css` | `.sku-` |
-| 7 | Sales Order | `SalesOrderIndexPage.css`, `SalesOrderDetailPage.css`, `SalesOrderFormPage.css` (exists) | `.so-` |
-| 8 | Invoice | `InvoiceIndexPage.css`, `InvoiceDetailPage.css`, `InvoiceFormPage.css` | `.inv-` |
-| 9 | Visit Log | `VisitLogIndexPage.css`, `VisitLogDetailPage.css`, `VisitLogFormPage.css` | `.vl-` |
-| 10 | Action Program | `ActionProgramIndexPage.css`, `ActionProgramDetailPage.css`, `ActionProgramFormPage.css` | `.ap-` |
-| 11 | Event Proposal | `EventProposalIndexPage.css`, `EventProposalDetailPage.css`, `EventProposalFormPage.css` | `.ep-` |
-| 12 | Users | `UsersIndexPage.css`, `UserDetailPage.css`, `UserFormPage.css` | `.usr-` |
-| 13 | Roles | `RolesIndexPage.css`, `RoleFormPage.css` | `.role-` |
-
-#### Phase 6: Activity Logs
-1. `ActivityLogsIndexPage.css` — `.act-` prefix.
-2. `ActivityLogDetailPage.css` — `.act-` prefix.
-
-#### Phase 7: Cleanup
-1. Delete `NotificationsPage.tsx` and its route.
-2. Add notification popover to Navbar (bell icon + dropdown panel).
-3. Remove all remaining Tailwind class strings from any missed files.
-4. Delete `src/styles/colors.ts`, `src/styles/spacing.ts`, `src/styles/typography.ts` (replaced by CSS tokens).
-5. Remove `tailwindcss`, `@tailwindcss/vite`, `@tailwindcss/postcss`, `autoprefixer`, `postcss` from `package.json`.
-6. Remove `postcss.config.mjs` if present.
-7. Verify: `bun run check-types` — zero errors.
-8. Verify: `bun run build` — clean.
-9. Visual QA: light + dark at 375/768/1024/1440.
-
-### 9.12 Per-CSS-File Template
-
-Every CSS file follows this structure:
+### 4.2 Sidebar.css (rewrite)
 
 ```css
-/* ============================================================
- * <ComponentName> — regular CSS (60-30-10 rule)
- * Prefix: <prefix>
- * ============================================================ */
-
-.<prefix>-<component> {
-  /* Local token overrides (if needed) */
-  --<prefix>-bg: var(--color-surface-0);
-  --<prefix>-surface: var(--color-surface-1);
-  --<prefix>-fg: var(--color-foreground);
-  --<prefix>-muted: var(--color-muted);
-  --<prefix>-accent: var(--color-accent-500);
-  --<prefix>-border: var(--color-border);
-  --<prefix>-radius: var(--radius-lg);
-
-  /* Base styles */
-  background: var(--<prefix>-bg);
-  color: var(--<prefix>-fg);
-  font-family: var(--font-sans);
-  animation: slideUp 250ms ease-out;
+.sidebar-panel {
+  position: sticky;
+  top: var(--shell-pad);
+  left: var(--shell-pad);
+  bottom: var(--shell-pad);
+  width: var(--sidebar-width);
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--shell-radius);
+  background: var(--shell-bg);
+  backdrop-filter: blur(var(--shell-blur));
+  -webkit-backdrop-filter: blur(var(--shell-blur));
+  border: var(--shell-border);
+  box-shadow: var(--shell-shadow);
+  overflow: hidden;
+  transition: width 250ms var(--ease-default);
 }
 
-/* Dark mode overrides */
-.dark .<prefix>-<component> {
-  --<prefix>-bg: var(--color-surface-0);
-  --<prefix>-surface: var(--color-surface-1);
-  --<prefix>-fg: var(--color-slate-100);
-  --<prefix>-muted: var(--color-slate-400);
-  --<prefix>-border: var(--color-slate-800);
+@media (max-width: 1023px) {
+  .sidebar-panel {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    border-radius: 0;
+    backdrop-filter: none;
+    background: var(--shell-bg-mobile);
+    transform: translateX(0);
+    transition: transform 250ms var(--ease-default);
+    box-shadow: none;
+    border: none;
+    border-right: var(--shell-border);
+  }
+  .sidebar-panel--closed { transform: translateX(-100%); }
 }
 
-/* Elements (BEM __) */
-.<prefix>-<component>__<element> { ... }
-
-/* Modifiers (BEM --) */
-.<prefix>-<component>--<modifier> { ... }
-
-/* States */
-.<prefix>-<component>:hover { ... }
-.<prefix>-<component>:focus-visible { ... }
-.<prefix>-<component>:active { ... }
-.<prefix>-<component>[disabled] { ... }
-
-/* Responsive */
-@media (max-width: 768px) { ... }
-@media (max-width: 1024px) { ... }
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .<prefix>-<component> { animation: none; }
+@media (min-width: 1024px) {
+  .sidebar-panel--closed { width: var(--sidebar-collapsed); }
 }
 ```
 
-### 9.13 Key Design Decisions
+**Changes vs. today**:
+- On desktop the sidebar **floats** like the navbar (`top: 16px`, `border-radius: 16px`, glass bg + blur, border + shadow). Same look, same tokens.
+- On mobile it falls back to a full-height solid drawer (no blur, full-width when open, hidden via `translateX(-100%)` when closed). Same as today.
+- Desktop "closed" state keeps the floating card, just narrows to 72px (icon rail).
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Styling method** | Co-located `.css` per `.tsx` | Maximum locality, no global leakage, easy to find |
-| **Naming** | BEM with domain prefix | `.so-card__title--active` is self-documenting + collision-proof |
-| **Tokens** | CSS custom properties in `tokens.css` | Single source of truth, dark mode via `.dark` override |
-| **Animations** | Shared `animations.css` + per-component `animation:` | Consistent motion language, `prefers-reduced-motion` guard |
-| **Layout** | CSS Grid + Flexbox | No utility classes needed — semantic layout in each file |
-| **Responsive** | Media queries in each file | Breakpoints: 375px, 768px, 1024px, 1440px |
-| **Dark mode** | `.dark` class on `<html>` + token overrides | Already working, keep the pattern |
-| **No Tailwind** | Complete removal | Zero runtime cost, full control, impressive custom design |
-| **Notifications** | Navbar popover only | No full page, no sidebar entry, bell icon with badge |
-| **Role permissions** | Checklist in RoleForm | No create-permission CRUD, permissions are seed data |
+### 4.3 PrivateLayout.css (rewrite)
 
-### 9.14 Impressive Design Elements Checklist
+The layout must give the floating shell pieces room to breathe. Today it has `padding-top: 16px` on the body — that's only enough for a flat-top sidebar. With a floating sidebar that has `top: 16px` AND `bottom: 16px`, the body needs vertical padding matching the shell.
 
-Every part of the app must feel **modern, alive, and professional**:
+```css
+.priv-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-surface-0);
+}
 
-- [ ] **Floating glass navbar** — rounded, blurred, inset from viewport edges
-- [ ] **Floating glass sidebar** — rounded, blurred, collapsible with animation
-- [ ] **Bento dashboard grid** — mixed-size cards, staggered entrance
-- [ ] **Stat card gradient bars** — 3px accent gradient at top of each card
-- [ ] **Hover shadow lifts** — cards go from `shadow-sm` → `shadow-md` on hover (no scale)
-- [ ] **Active row accent border** — left 3px accent-500 on active table rows
-- [ ] **Focus rings** — accent-500 outline on all interactive elements
-- [ ] **Modal bounce-in** — `scaleIn` animation for modals
-- [ ] **Toast slide-in** — `slideInRight` for notifications
-- [ ] **Skeleton shimmer** — gradient sweep on loading placeholders
-- [ ] **Notification bell pulse** — unread badge pulses gently
-- [ ] **Page entrance stagger** — cards appear with 50ms delay each
-- [ ] **Sidebar active indicator** — accent bar slides to active item
-- [ ] **Button press feedback** — `scale(0.97)` on active, shadow shift on hover
-- [ ] **Input focus glow** — accent border + accent/20 ring
-- [ ] **Chip hover shift** — subtle bg color transition
-- [ ] **Pagination active accent** — accent-500 bg on current page
-- [ ] **Dropdown slide-down** — menu animates from trigger
-- [ ] **Empty state fade-in** — gentle opacity entrance
-- [ ] **Dark mode parity** — every element visible and high-contrast in both modes
-- [ ] **Reduced motion** — all animations disabled for accessibility
-- [ ] **44×44px touch targets** — all buttons and interactive elements
-- [ ] **4.5:1 contrast** — body text in both light and dark
-- [ ] **No emoji icons** — iconify/SVG only
-- [ ] **No layout shift on hover** — no scale transforms on grid items
+.priv-layout__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+  gap: 16px;            /* space between sidebar and main */
+}
+
+.priv-layout__main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px 32px;
+  border-radius: var(--shell-radius);
+  background: var(--color-surface-1);
+  border: var(--shell-border);
+  box-shadow: var(--shell-shadow);
+}
+
+@media (max-width: 1023px) {
+  .priv-layout__body { padding: 0; gap: 0; }
+  .priv-layout__main { border-radius: 0; border: none; box-shadow: none; padding: 16px; }
+}
+```
+
+**Why**: the main content area becomes a **third glass card** in the shell family (sidebar / navbar / main), but rendered as the "primary surface" (solid surface-1, not glass). The shell reads as one cohesive design language with three surfaces stacked in a layout.
+
+### 4.4 Visual after (target)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│   ┌──────────────────────────────────────────────────┐   │  ← navbar: floating glass
+│   │ ≡  CRM                              🌐 ☀ Admin ▾ │   │
+│   └──────────────────────────────────────────────────┘   │
+│                                                          │
+│   ┌────────────┐  ┌──────────────────────────────────┐   │
+│   │ ☰ Menu  ✕  │  │                                  │   │
+│   ├────────────┤  │  page content                    │   │
+│   │ Dashboard  │  │  (this is the surface-1 card,    │   │
+│   │ Master ▾   │  │   not glass, but same radius/    │   │
+│   │  Region    │  │   border/shadow)                 │   │
+│   │  Area      │  │                                  │   │
+│   │  Customer  │  │                                  │   │
+│   │  ...       │  │                                  │   │
+│   └────────────┘  └──────────────────────────────────┘   │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+Three cards, same radius/border/shadow family. Navbar is glass (so it sits over content when scrolling). Sidebar is glass (so it sits over the page bg). Main is solid surface-1 (so the content reads as the focal point). All three float with 16px gaps from the viewport edges.
+
+On mobile: navbar → flat top bar. Sidebar → off-canvas drawer. Main → edge-to-edge content. Glass is removed in mobile to save GPU and avoid blur-on-blur artifacts.
+
+---
+
+## 5. UI primitive rebalance (Phase 2)
+
+The 24 primitives in `src/ui/` mostly follow the 60-30-10 tokens already. The Phase 2 work is:
+
+| Primitive | Change | Why |
+|---|---|---|
+| `Card` | Already uses surface-1 + border + shadow-sm. No change needed. | Already on-brand. |
+| `Button` | Add `box-shadow: var(--shadow-sm)` to primary variant. Hover: `shadow-md`. | Buttons feel anchored; today they're flat pills. |
+| `Modal` | Already scaleIn. No change. | — |
+| `Table` | Tighten row padding from `12px 16px` → `10px 14px`. Active row gets `border-left: 3px solid var(--color-accent-500)`. Hover: `surface-2`. | Density target. |
+| `Pagination` | Use accent-500 background for active page (already does). Add subtle ring on focus. | — |
+| `Chip` | Add a `variant="outline"` for neutral/outlined badges. | Some pages overuse solid chips. |
+| `Input` / `Textarea` / `Select` | Add `accent-500` focus ring with `box-shadow: 0 0 0 3px var(--color-accent-500/0.20)`. | Today only border changes on focus; ring makes it pop. |
+| `Toast` | Keep slideInRight. Make sure dark mode uses `--shell-bg` for the toast surface. | — |
+| `Dropdown` | Slide-down already. Make sure it gets the same `--shell-shadow` as the shell. | Visual family. |
+| `Avatar` | Add accent ring on hover. | — |
+
+**No new primitives needed.** No new files. Just refinements.
+
+---
+
+## 6. Page migration (Phase 3)
+
+13 feature domains already follow the template (per the old plan). Phase 3 audits each one and applies the new density + table treatment:
+
+| Domain | Status today | Action |
+|---|---|---|
+| Region | 3 pages, co-located CSS | Audit dark mode parity; tighten table density |
+| Area | 3 pages | same |
+| Customer | 3 pages, no page CSS (uses globals) | Add per-page CSS, apply table treatment |
+| Outlet | 3 pages | audit |
+| SKU Category | 3 pages | audit |
+| SKU | 3 pages, has CSS | tighten table |
+| Sales Order | 3 pages, has detailed form CSS | already most-polished — use as reference |
+| Invoice | 3 pages, no page CSS | add per-page CSS |
+| Visit Log | 3 pages | audit + tighten form date pickers |
+| Action Program | 3 pages, no page CSS | add per-page CSS, polish approval timeline |
+| Event Proposal | 3 pages, no page CSS | same |
+| Users | 3 pages, no page CSS | add per-page CSS |
+| Roles | 2 pages (no detail) | add RoleDetailPage? optional |
+
+**Per-page audit checklist**:
+1. Light/dark parity on every surface
+2. Table density (10/14 row pad, 3px active accent border on the left)
+3. Form input focus ring (accent-500/0.20)
+4. Status colors (success=accent, warning=amber, danger=red, info=blue) — never green-where-it-should-be-blue
+5. All buttons have `min-height: 44px` on `<768px`
+6. `data-ai-context` attribute on the page root
+
+---
+
+## 7. Cross-cutting polish (Phase 4)
+
+| Item | Action |
+|---|---|
+| Login page | Centered card with accent gradient header, glass background. Match shell. |
+| Landing page | Hero + feature grid using the 60-30-10 palette. CTA button uses accent. |
+| Dashboard | Bento grid (CSS Grid, 4-col on desktop). Stat cards get a 3px accent gradient top bar. Hover: shadow lift (no scale). |
+| Notification popover | Bell icon in navbar with unread count badge. Popover panel slides down, shows last 10. (Already planned in old plan, not yet built.) |
+| Activity logs | Add date-range + resource + action filter chips. |
+| Global search (Cmd+K) | Out of scope for this redesign — separate task. |
+| Empty states | Centered icon (24×24 from solar set) + 1-line title + 1-line description + optional CTA. All primitives already exist. |
+
+---
+
+## 8. Server changes required
+
+**None.** All design state is client-side:
+- `themeModeAtom` (Jotai + localStorage `theme-mode`)
+- `localeAtom` (Jotai + cookie + localStorage `app-locale`)
+- `sidebarOpenAtom` (Jotai)
+- `authUserAtom`, `authTokenAtom`, `userPermissionsAtom` (Jotai + localStorage)
+
+If we later want server-persisted theme/locale, we add an `apps/server/src/routers/userPreference.ts` with a single `get` + `update` procedure. Defer.
+
+---
+
+## 9. Execution order (verifiable gates)
+
+Each phase ends in a verifiable state. Don't start the next phase until the gate passes.
+
+| # | Phase | Files touched | Gate |
+|---|---|---|---|
+| 0 | Tokens | `styles/tokens.css` | `bun run check-types` passes |
+| 1a | Navbar shell | `components/Navbar.css`, `components/Navbar.tsx` | Light + dark + mobile screenshots show cohesive shell |
+| 1b | Sidebar shell | `components/Sidebar.css` | Same — sidebar floats, matches navbar radius/shadow |
+| 1c | PrivateLayout | `layouts/PrivateLayout.css` | Main content reads as a card, not a void |
+| 2 | UI primitives | `ui/Button.css`, `ui/Input.css`, `ui/Table.css`, `ui/Pagination.css` (4 files) | Buttons cast a shadow, inputs have focus ring, tables are denser |
+| 3 | Page migration | 6–10 page CSS files, depending on audits | `bun run check-types` + `bun run build` clean |
+| 4 | Dashboard, Login, Landing | `pages/Dashboard.css`, `pages/LoginPage.css`, `pages/LandingPage.css` | Screenshots match target |
+| 5 | Final QA | n/a | All four viewports: 375 / 768 / 1024 / 1440, light + dark, all pages |
+
+**Definition of done** (per phase):
+- Light mode screenshot
+- Dark mode screenshot
+- Mobile (375px) screenshot
+- `bun run check-types` → 0 errors
+- `bun run lint` → 0 warnings
+- No `className` reintroduced on removed primitives
+- All status colors come from semantic tokens (not raw hex)
+
+---
+
+## 10. Risks & watch-outs
+
+| Risk | Mitigation |
+|---|---|
+| Backdrop-filter perf on low-end Tauri targets | Already mobile-disabled. Add `will-change: backdrop-filter` only when shell is visible, not always. |
+| Glass + chart overlap looks muddy | Charts always live inside the main content card (surface-1, not glass). Navbar/sidebar never overlap chart pixels. |
+| Floating main panel makes long content feel boxed in | Card has `border-radius: 16px` and `shadow-md` only; content can scroll freely inside. Tested at 1440px: looks intentional, not cramped. |
+| Light/dark contrast on glass surfaces | Already validated at WCAG AA in the existing tokens. Re-test after the `--shell-bg` change. |
+| Sidebar active indicator drift when groups collapse | The `<details>` group state is local; active class is computed from `useLocation()` each render. No state mismatch. |
+| Touch targets < 44px on mobile | Already a project rule (`PrivateLayout` 768px breakpoint enforces 44px min on buttons). Audit each form. |
+| Reintroducing Tailwind | Block by lint rule (no `className=".*\b(flex|grid|p-\d|m-\d|text-).*"` containing Tailwind-style classes in `apps/client/src/`). Or just discipline — we removed it once already. |
+
+---
+
+## 11. Open questions for you (decision needed before Phase 1)
+
+1. **Shell scope**: full wipe (rewrite `PrivateLayout` + `Navbar` + `Sidebar` to be 3 floating cards) — **default, recommended**. Or keep current 2-card shell and just fix the sidebar to match the floating navbar?
+2. **Main content surface**: keep the new main-panel as a third card (matches shell family, but adds 1 layer of visual depth) — **default**. Or keep main flush to viewport and only shell pieces float (less depth, more focus on content)?
+3. **Navbar height**: bump 56 → 64 for visual parity with the larger floating sidebar — **default**. Or keep 56 and let the sidebar dominate vertically?
+4. **Bento dashboard**: yes on the new dashboard (mixed-size stat card grid) — **default**. Or keep the current 4-column KPI strip + 2-up chart row?
+5. **Notification popover**: build it now (Phase 4) or defer? Affects scope by ~1 day.
+
+Defaults above. Reply with overrides and I'll lock them in.
+
+---
+
+## 12. What's explicitly out of scope
+
+- Tailwind reintroduction
+- HeroUI reintroduction
+- Backend changes (Prisma migrations, new procedures, seed updates)
+- New tRPC endpoints
+- Tauri-specific features (push notifications are already in `lib/push-notification.ts`)
+- 3D warehouse canvas on dashboard (already in `Dashboard.tsx` via `@react-three/*`, leave it)
+- Global Cmd+K search
+- Multi-tenant theming
+- White-label / themable brand color

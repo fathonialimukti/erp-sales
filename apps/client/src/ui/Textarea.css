@@ -1,28 +1,7 @@
 /* ============================================================
- * Textarea — multi-line text input
+ * Textarea — bare multi-line text input
  * Prefix: .txa-
  * ============================================================ */
-
-.txa-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.txa-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-slate-700);
-}
-
-.dark .txa-label {
-  color: var(--color-slate-300);
-}
-
-.txa-label__required {
-  margin-left: 2px;
-  color: var(--color-state-danger);
-}
 
 .txa {
   width: 100%;
@@ -43,15 +22,6 @@
   box-shadow: 0 0 0 1px var(--color-accent-500);
 }
 
-.txa--error {
-  border-color: var(--color-state-danger);
-}
-
-.txa--error:focus {
-  border-color: var(--color-state-danger);
-  box-shadow: 0 0 0 1px var(--color-state-danger);
-}
-
 .dark .txa {
   border-color: var(--color-slate-700);
   color: var(--color-slate-100);
@@ -64,14 +34,4 @@
 
 .txa::placeholder {
   color: var(--color-slate-400);
-}
-
-.txa-error {
-  font-size: 12px;
-  color: var(--color-state-danger);
-}
-
-.txa-hint {
-  font-size: 12px;
-  color: var(--color-muted);
 }

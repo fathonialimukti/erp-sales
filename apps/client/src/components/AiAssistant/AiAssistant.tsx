@@ -1,7 +1,6 @@
 import "./AiAssistant.css";
 
-import { Icon } from "../../ui";
-import { Button, Chip, Spinner, Textarea } from '../../ui';
+import { Chip, Spinner, Textarea } from '../../ui';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -236,15 +235,15 @@ function MarkdownBubble({ text }: { text: string }) {
 }
 
 // Metadata for rendering tool activity chips
-const TOOL_META: Record<string, { icon: string; label: string }> = {
-  navigateTo: { icon: 'solar:arrow-right-up-linear', label: 'Navigate' },
-  fillFormFields: { icon: 'solar:pen-2-linear', label: 'Fill form' },
-  getPageContext: { icon: 'solar:eye-linear', label: 'Read page' },
-  queryDatabase: { icon: 'solar:database-linear', label: 'Query DB' },
+const TOOL_META: Record<string, { label: string }> = {
+  navigateTo: { label: 'Navigate' },
+  fillFormFields: { label: 'Fill form' },
+  getPageContext: { label: 'Read page' },
+  queryDatabase: { label: 'Query DB' },
 };
 
 function ToolChip({ toolName, part }: { toolName: string; part: Record<string, unknown> }) {
-  const meta = TOOL_META[toolName] ?? { icon: 'solar:bolt-circle-linear', label: toolName };
+  const meta = TOOL_META[toolName] ?? { label: toolName };
   const state = String(part.state ?? 'input-available');
   const input = part.input as Record<string, unknown> | undefined;
 
@@ -271,7 +270,6 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
 
   return (
     <Chip size="sm" tone={tone}>
-      <Icon icon={meta.icon} className="h-3 w-3" style={{ marginRight: '3px', verticalAlign: 'middle' }} />
       {labelText}
     </Chip>
   );
@@ -581,27 +579,56 @@ export const AiAssistant = () => {
         <div className={`ai-panel ${isExpanded ? 'ai-panel--expanded' : 'ai-panel--compact'}`}>
           <div className="ai-header">
             <div className="ai-header__brand">
-              <Icon icon="solar:magic-stick-3-bold" width={18} />
+              <span className="ai-header__brand-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 3v4M3 5h4M6 17v4M4 19h4" />
+                  <path d="M13 3l2.5 5.5L21 11l-5.5 2.5L13 19l-2.5-5.5L5 11l5.5-2.5z" />
+                </svg>
+              </span>
               <span className="ai-header__brand-text">ERP Assistant</span>
             </div>
             <div className="ai-header__actions">
-              <Button size="icon" variant="ghost" onClick={clearChat} aria-label="Clear chat history">
-                <Icon icon="solar:trash-bin-minimalistic-linear" width={16} />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={() => setIsExpanded((v) => !v)} aria-label="Expand chat">
-                <Icon icon={isExpanded ? 'solar:minimize-square-linear' : 'solar:maximize-square-linear'} width={16} />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={() => { setOpen(false); setIsExpanded(false); }}>
-                <Icon icon="solar:close-circle-linear" width={16} />
-              </Button>
+              <button type="button" className="ai-header__btn" onClick={clearChat} aria-label="Clear chat history">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+              <button type="button" className="ai-header__btn" onClick={() => setIsExpanded((v) => !v)} aria-label="Expand chat">
+                {isExpanded ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="8 4 4 4 4 8" />
+                    <polyline points="16 4 20 4 20 8" />
+                    <polyline points="8 20 4 20 4 16" />
+                    <polyline points="16 20 20 20 20 16" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 3 21 3 21 9" />
+                    <polyline points="9 21 3 21 3 15" />
+                    <line x1="21" y1="3" x2="14" y2="10" />
+                    <line x1="3" y1="21" x2="10" y2="14" />
+                  </svg>
+                )}
+              </button>
+              <button type="button" className="ai-header__btn" onClick={() => { setOpen(false); setIsExpanded(false); }} aria-label="Close chat">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
             </div>
           </div>
 
           <div className={`ai-messages ${isExpanded ? 'ai-messages--expanded' : 'ai-messages--compact'}`}>
             {messages.length === 0 && (
               <div className="ai-empty">
-                <Icon icon="solar:chat-round-dots-linear" width={32} className="ai-empty__icon" />
-                Ask me anything about this ERP system or ask me to navigate somewhere.
+                <span className="ai-empty__icon" aria-hidden="true">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                  </svg>
+                </span>
+                <span className="ai-empty__text">Ask me anything about this ERP system or ask me to navigate somewhere.</span>
               </div>
             )}
             {messages.map((message, messageIdx) => {
@@ -702,27 +729,46 @@ export const AiAssistant = () => {
                   disabled={isLoading}
                 />
               </div>
-              <Button size="icon" variant="primary" onClick={handleSend} disabled={isLoading || !input.trim()}>
-                <Icon icon="solar:plain-bold" width={16} />
-              </Button>
+              <button
+                type="button"
+                className="ai-send-btn"
+                onClick={handleSend}
+                disabled={isLoading || !input.trim()}
+                aria-label="Send message"
+              >
+                {isLoading ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         </div>
       )}
 
       <div className="ai-toggle">
-        <Button
-          size="icon"
-          variant="primary"
-          onClick={() => setOpen((v) => !v)}
+        <button
+          type="button"
           className="ai-toggle__btn"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Close AI assistant" : "Open AI assistant"}
         >
           {open ? (
-            <Icon icon="solar:close-circle-bold" width={22} />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           ) : (
-            <Icon icon="solar:magic-stick-3-bold" width={22} />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 3v4M3 5h4M6 17v4M4 19h4" />
+              <path d="M13 3l2.5 5.5L21 11l-5.5 2.5L13 19l-2.5-5.5L5 11l5.5-2.5z" />
+            </svg>
           )}
-        </Button>
+        </button>
       </div>
     </div>
   );

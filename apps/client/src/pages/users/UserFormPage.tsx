@@ -20,7 +20,6 @@ import {
   ModalFooter,
   ModalHeader,
   Select,
-  SelectItem,
   Spinner,
   useToast,
 } from '../../ui';
@@ -251,14 +250,9 @@ const InnerForm = ({
                     </Label>
                     <Select
                       value={field.state.value}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => field.handleChange(e.target.value)}
-                    >
-                      {roleOptions.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.name}
-                        </SelectItem>
-                      ))}
-                    </Select>
+                      onChange={(value) => field.handleChange(value as string)}
+                      options={roleOptions.map((r) => ({ value: r.id, label: r.name }))}
+                    />
                     {field.state.meta.errors.map((error, i) => (
                       <FieldError key={i}>{String(error)}</FieldError>
                     ))}
@@ -353,23 +347,38 @@ const UserFormPage = () => {
   if (isEdit) {
     if (isLoading) {
       return (
-        <div className="flex justify-center py-12">
-          <Spinner />
-        </div>
+        <section className="m-page">
+          <div className="m-state m-state--loading">
+            <Spinner size="lg" />
+            <span className="m-state__title">{intl.formatMessage({ id: 'common.loading', defaultMessage: 'Loading…' })}</span>
+          </div>
+        </section>
       );
     }
     if (isError) {
       return (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
-          {error instanceof Error ? error.message : 'Failed to load user.'}
-        </div>
+        <section className="m-page">
+          <div className="m-card">
+            <div className="m-card__body">
+              <p style={{ color: 'var(--ios-state-danger, #DC2626)', margin: 0 }}>
+                {error instanceof Error ? error.message : 'Failed to load user.'}
+              </p>
+            </div>
+          </div>
+        </section>
       );
     }
     if (!data) {
       return (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
-          {intl.formatMessage({ id: 'users.form.not_found', defaultMessage: 'User not found.' })}
-        </div>
+        <section className="m-page">
+          <div className="m-card">
+            <div className="m-card__body">
+              <p style={{ color: 'var(--ios-state-warning, #D97706)', margin: 0 }}>
+                {intl.formatMessage({ id: 'users.form.not_found', defaultMessage: 'User not found.' })}
+              </p>
+            </div>
+          </div>
+        </section>
       );
     }
   }

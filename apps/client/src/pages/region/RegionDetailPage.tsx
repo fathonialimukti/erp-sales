@@ -1,63 +1,55 @@
-import { useState } from 'react';
-import { useIntl } from 'react-intl';
-import './Region.css';
-import { Button, Card, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '../../ui';
-import { useNavigate, useParams } from 'react-router';
-import { useAtomValue } from 'jotai';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '../../components/PageHeader';
-import { hasPermissionAtom } from '../../lib/atoms';
-import { trpcClient } from '../../lib/trpc';
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate, useParams } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { ButtonGroup } from "../../components/ButtonGroup";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { RegionIcon } from "./RegionIcons";
 
-interface RegionDetail {
+type RegionDetail = {
   id: string;
   code: string | null;
   name: string;
-  areas: { id: string; name: string; code: string | null }[];
-  createdAt: string;
-}
+  areas: { id: string; code: string | null; name: string }[];
+};
 
-function DetailField({ label, value }: { label: string; value: string | number | null | undefined }) {
-  return (
-    <div className="reg-detail__field">
-      <p className="reg-detail__field-label">{label}</p>
-      <p>{value ?? '-'}</p>
-    </div>
-  );
-}
-
-function RegionDetailPage() {
-  const { id } = useParams();
+export const RegionDetailPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canUpdate = hasPermission('region@update');
-  const canDelete = hasPermission('region@delete');
+  const canUpdate = hasPermission("region@update");
+  const canDelete = hasPermission("region@delete");
+  const toast = useToast();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['regionDetail', id],
+    queryKey: ["regionDetail", id],
     enabled: Boolean(id),
-    queryFn: () => trpcClient.region.detail.query({ id: id ?? '' }),
+    queryFn: () => trpcClient.region.detail.query({ id: id ?? "" }),
   });
 
-  const record = data as RegionDetail | undefined;
+  const region = data as RegionDetail | undefined;
 
   const handleDelete = async () => {
-    if (!record || isDeleting) return;
+    if (!region || isDeleting) return;
     setIsDeleting(true);
     try {
-      await trpcClient.region.delete.mutate({ id: record.id });
-      await queryClient.invalidateQueries({ queryKey: ['regionList'] });
-      queryClient.removeQueries({ queryKey: ['regionDetail', record.id] });
+      await trpcClient.region.delete.mutate({ id: region.id });
+      await queryClient.invalidateQueries({ queryKey: ["regionList"] });
       setDeleteModalOpen(false);
-      navigate('/region');
-    } catch (error) {
-      console.error(error);
-      setDeleteModalOpen(false);
+      toast.success(intl.formatMessage({ id: "region.detail.delete_success", defaultMessage: "Region deleted" }));
+      navigate("/region");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
     } finally {
       setIsDeleting(false);
     }
@@ -65,92 +57,159 @@ function RegionDetailPage() {
 
   if (isLoading) {
     return (
-      <p className="reg-detail__loading-text">
-        {intl.formatMessage({ id: 'region.detail.loading', defaultMessage: 'Loading details...' })}
-      </p>
+      <div className="m-page">
+        <div className="m-state m-state--loading">
+          <Spinner size="lg" />
+          <span className="m-state__title">{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
+        </div>
+      </div>
     );
   }
 
-  if (!record) {
+  if (!region) {
     return (
-      <div className="reg-detail__not-found">
-        <p className="reg-detail__not-found-msg">
-          {intl.formatMessage({ id: 'region.detail.not_found', defaultMessage: 'Region not found.' })}
-        </p>
-        <Button variant="ghost" onClick={() => navigate('/region')}>
-          {intl.formatMessage({ id: 'region.detail.back', defaultMessage: 'Back to Regions' })}
-        </Button>
+      <div className="m-page">
+        <div className="m-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
+          <div className="m-card">
+            <div className="m-card__body">
+              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
+                {intl.formatMessage({ id: "region.detail.not_found", defaultMessage: "Region not found" })}
+              </p>
+              <button type="button" className="m-btn m-btn--ghost" style={{ marginTop: 12 }} onClick={() => navigate("/region")}>
+                <RegionIcon name="back" size={14} />
+                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <section className="reg-detail">
-      <PageHeader
-        title={record.name}
-        onBack={() => navigate('/region')}
-        onEdit={canUpdate ? () => navigate(`/region/${record.id}/edit`) : undefined}
-        onDelete={canDelete ? () => setDeleteModalOpen(true) : undefined}
-      />
-
-      <Card>
-        <div className="reg-detail__grid">
-          <DetailField
-            label={intl.formatMessage({ id: 'region.detail.code', defaultMessage: 'Code' })}
-            value={record.code}
+    <section className="m-page" data-ai-context={JSON.stringify({ section: "region-detail", id: region.id, name: region.name, areaCount: region.areas.length })}>
+      {/* ── Hero ── */}
+      <header className="m-detail-hero">
+        <div className="m-detail-hero__top">
+          <ButtonGroup
+            size="md"
+            items={[{ key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <RegionIcon name="back" size={14} />, to: "/region" }]}
           />
-          <DetailField
-            label={intl.formatMessage({ id: 'region.detail.name', defaultMessage: 'Name' })}
-            value={record.name}
+          <ButtonGroup
+            size="md"
+            items={[
+              ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <RegionIcon name="edit" size={14} />, to: `/region/${region.id}/edit` }] : []),
+              ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <RegionIcon name="delete" size={14} />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
+            ]}
           />
         </div>
-      </Card>
 
-      {record.areas.length > 0 ? (
-        <Card>
-          <div className="reg-detail__card-body">
-            <h3 className="reg-detail__section-title">
-              {intl.formatMessage({ id: 'region.detail.areas', defaultMessage: 'Areas' })}
-            </h3>
-            <div className="reg-detail__item-list">
-              {record.areas.map((area) => (
-                <div key={area.id} className="reg-detail__item">
-                  <div>
-                    <p className="reg-detail__item-name">{area.name}</p>
-                    {area.code ? <p className="reg-detail__item-sub">{area.code}</p> : null}
-                  </div>
-                </div>
-              ))}
+        <div className="m-detail-hero__title-block">
+          <div className="m-detail-hero__title-row">
+            <div className="m-detail-hero__title-stack">
+              <span className="m-detail-hero__kicker">{intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}</span>
+              <h1 className="m-detail-hero__title">{region.name}</h1>
+              <span className="m-detail-hero__sub">{region.code ?? "—"}</span>
             </div>
           </div>
-        </Card>
-      ) : null}
+        </div>
+      </header>
 
-      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
-        <ModalContent>
-          <ModalHeader>
-            {intl.formatMessage({ id: 'region.detail.delete_title', defaultMessage: 'Delete Region' })}
-          </ModalHeader>
-          <ModalBody>
-            {intl.formatMessage(
-              { id: 'region.detail.delete_confirm', defaultMessage: 'Are you sure you want to delete "{name}"? All areas under this region will also be deleted.' },
-              { name: record.name },
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
-              {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
-            </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting
-                ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
-                : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* ── Summary ── */}
+      <section className="m-card">
+        <div className="m-card__header">
+          <h2 className="m-card__title">
+            <span className="m-card__icon"><RegionIcon name="map" size={14} /></span>
+            {intl.formatMessage({ id: "region.detail.summary", defaultMessage: "Summary" })}
+          </h2>
+        </div>
+        <div className="m-card__body">
+          <div className="m-section m-section--2">
+            <div className="m-field">
+              <span className="m-field__label">{intl.formatMessage({ id: "region.detail.code_label", defaultMessage: "Code" })}</span>
+              <span className="m-field__value">{region.code ?? "—"}</span>
+            </div>
+            <div className="m-field">
+              <span className="m-field__label">{intl.formatMessage({ id: "region.detail.name_label", defaultMessage: "Name" })}</span>
+              <span className="m-field__value">{region.name}</span>
+            </div>
+            <div className="m-field">
+              <span className="m-field__label">{intl.formatMessage({ id: "region.detail.areas_label", defaultMessage: "Areas" })}</span>
+              <span className="m-field__value">{region.areas.length}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Areas ── */}
+      <section className="m-card">
+        <div className="m-card__header">
+          <h2 className="m-card__title">
+            <span className="m-card__icon"><RegionIcon name="area" size={14} /></span>
+            {intl.formatMessage({ id: "region.detail.areas_title", defaultMessage: "Areas" })}
+          </h2>
+          <p className="m-card__hint">{region.areas.length} areas</p>
+        </div>
+        <div className="m-card__body" style={{ padding: 0 }}>
+          {region.areas.length === 0 ? (
+            <div className="m-card__body" style={{ textAlign: "center", padding: "2rem" }}>
+              <RegionIcon name="area" size={48} />
+              <p style={{ marginTop: 12, color: "var(--ios-label-2)" }}>{intl.formatMessage({ id: "region.detail.no_areas", defaultMessage: "No areas yet" })}</p>
+            </div>
+          ) : (
+            <div className="m-items-table">
+              <div className="m-items-table__body">
+                {region.areas.map((area) => (
+                  <div key={area.id} className="m-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/area/${area.id}`)}>
+                    <div className="m-items-table__td m-items-table__td--product">
+                      <span className="m-items-table__icon" data-tint="blue" aria-hidden="true"><RegionIcon name="area" size={16} /></span>
+                      <div className="m-items-table__product">
+                        <span className="m-items-table__product-name">{area.name}</span>
+                        {area.code && <span className="m-items-table__product-code">{area.code}</span>}
+                      </div>
+                    </div>
+                    <div className="m-items-table__td m-items-table__td--num m-items-table__td--muted">
+                      <RegionIcon name="chevron-right" size={16} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Delete Modal ── */}
+      {deleteModalOpen && createPortal(
+        <div className="m-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
+          <div className="m-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="m-modal__header">
+              <h3><RegionIcon name="delete" size={16} /> {intl.formatMessage({ id: "region.detail.delete_title", defaultMessage: "Delete region" })}</h3>
+              <button className="m-btn m-btn--ghost m-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close">
+                <RegionIcon name="close" size={14} />
+              </button>
+            </div>
+            <div className="m-modal__body">
+              <div className="m-modal__icon m-modal__icon--error"><RegionIcon name="delete" size={28} /></div>
+              <h3 className="m-modal__title">{intl.formatMessage({ id: "region.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}</h3>
+              <p className="m-modal__msg">
+                {intl.formatMessage({ id: "region.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: region.name })}
+              </p>
+            </div>
+            <div className="m-modal__footer">
+              <button className="m-btn m-btn--ghost" onClick={() => setDeleteModalOpen(false)}>
+                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+              </button>
+              <button className="m-btn m-btn--danger" onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting && <span className="m-spinner" />}
+                <RegionIcon name="delete" size={14} />
+                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </section>
   );
-}
-
-export { RegionDetailPage };
+};

@@ -1,148 +1,92 @@
-import { useAtomValue } from 'jotai';
-import { useEffect, useMemo, useState } from 'react';
-import { useIntl } from 'react-intl';
-import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
-
+import { useEffect, useMemo, useState } from "react";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type ColumnDef,
   type PaginationState,
-  flexRender,
   getCoreRowModel,
   useReactTable,
-} from '@tanstack/react-table';
-import { useNavigate } from 'react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { hasPermissionAtom } from '../../lib/atoms';
-import { trpcClient } from '../../lib/trpc';
+} from "@tanstack/react-table";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { RowActions } from "../../components/RowActions";
+import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
+import { CustomerIcon } from "./CustomerIcons";
 
-type CustomerRow = {
-  id: string;
-  code: string | null;
-  name: string;
-  taxId: string | null;
-  status: string;
-  _count: { outlets: number; salesOrders: number; contacts: number };
-  createdAt: string;
-};
+type CustomerRow = { id: string; code: string | null; name: string; _count: { outlets: number } };
 
-function CustomerIndexPage() {
+export const CustomerIndexPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canCreate = hasPermission('customer@create');
-  const canUpdate = hasPermission('customer@update');
-  const canDelete = hasPermission('customer@delete');
+  const canCreate = hasPermission("customer@create");
+  const canUpdate = hasPermission("customer@update");
+  const canDelete = hasPermission("customer@delete");
+  const toast = useToast();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<CustomerRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim());
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    }, 300);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPagination((p) => ({ ...p, pageIndex: 0 })); }, 300);
+    return () => clearTimeout(t);
   }, [searchInput]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['customerList', pagination.pageIndex, pagination.pageSize, search],
-    queryFn: () =>
-      trpcClient.customer.list.query({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        search: search || undefined,
-      }),
+    queryKey: ["customerList", pagination.pageIndex, pagination.pageSize, search],
+    queryFn: () => trpcClient.customer.list.query({ page: pagination.pageIndex + 1, limit: pagination.pageSize, search: search || undefined }),
   });
 
-  const columns = useMemo<ColumnDef<CustomerRow>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: intl.formatMessage({ id: 'customer.index.header_name', defaultMessage: 'Name' }),
-      },
-      {
-        accessorKey: 'code',
-        header: intl.formatMessage({ id: 'customer.index.header_code', defaultMessage: 'Code' }),
-        cell: ({ row }) => <span>{row.original.code ?? '-'}</span>,
-      },
-      {
-        accessorKey: 'taxId',
-        header: intl.formatMessage({ id: 'customer.index.header_tax_id', defaultMessage: 'Tax ID' }),
-        cell: ({ row }) => <span>{row.original.taxId ?? '-'}</span>,
-      },
-      {
-        accessorKey: 'status',
-        header: intl.formatMessage({ id: 'customer.index.header_status', defaultMessage: 'Status' }),
-        cell: ({ row }) => (
-          <span className={row.original.status === 'ACTIVE' ? 'text-success' : 'text-muted'}>
-            {row.original.status}
+  const rows = (data?.data ?? []) as CustomerRow[];
+  const totalPages = data?.meta?.totalPages ?? 1;
+  const totalRows = data?.meta?.total ?? 0;
+
+  const columns = useMemo<ColumnDef<CustomerRow>[]>(() => [
+    {
+      id: "code", header: intl.formatMessage({ id: "customer.index.header_code", defaultMessage: "Code" }),
+      cell: ({ row }) => (
+        <span className="m-doc">
+          <span className="m-doc__text">
+            <span className="m-doc__code">{row.original.code ?? "—"}</span>
           </span>
-        ),
-      },
-      {
-        id: 'outlets',
-        header: intl.formatMessage({ id: 'customer.index.header_outlets', defaultMessage: 'Outlets' }),
-        cell: ({ row }) => <span>{row.original._count.outlets}</span>,
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => navigate(`/customer/${row.original.id}`)}
-            >
-              <Icon icon="solar:eye-linear" />
-            </Button>
-            {(canUpdate || canDelete) && (
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button size="icon" variant="ghost">
-                    <Icon icon="solar:menu-dots-bold" />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu>
-                  {canUpdate ? (
-                    <DropdownItem
-                      key="edit"
-                      onClick={() => navigate(`/customer/${row.original.id}/edit`)}
-                    >
-                      {intl.formatMessage({ id: 'common.action.edit', defaultMessage: 'Edit' })}
-                    </DropdownItem>
-                  ) : null}
-                  {canDelete ? (
-                    <DropdownItem
-                      key="delete"
-                      tone="danger"
-                      onClick={() => {
-                        setItemToDelete(row.original);
-                        setDeleteModalOpen(true);
-                      }}
-                    >
-                      {intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}
-                    </DropdownItem>
-                  ) : null}
-                </DropdownMenu>
-              </Dropdown>
-            )}
-          </div>
-        ),
-      },
-    ],
-    [intl, navigate, canUpdate, canDelete],
-  );
+        </span>
+      ),
+    },
+    {
+      id: "name", header: intl.formatMessage({ id: "customer.index.header_name", defaultMessage: "Name" }),
+      cell: ({ row }) => <span className="m-cell m-cell--single"><span className="m-cell__primary">{row.original.name}</span></span>,
+    },
+    {
+      id: "outlets", header: intl.formatMessage({ id: "customer.index.header_outlets", defaultMessage: "Outlets" }),
+      cell: ({ row }) => <span className="m-badge">{row.original._count.outlets > 0 ? row.original._count.outlets : "—"}</span>,
+    },
+    {
+      id: "actions", header: "",
+      cell: ({ row }) => (
+        <RowActions
+          ariaLabel={intl.formatMessage({ id: "common.action.actions", defaultMessage: "Actions" })}
+          items={[
+            { key: "view", label: intl.formatMessage({ id: "common.action.view", defaultMessage: "View" }), icon: <CustomerIcon name="eye" size={16} />, onClick: () => navigate(`/customer/${row.original.id}`) },
+            ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <CustomerIcon name="edit" size={16} />, onClick: () => navigate(`/customer/${row.original.id}/edit`) }] : []),
+            ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <CustomerIcon name="delete" size={16} />, tone: "danger" as const, separator: true, onClick: () => { setItemToDelete(row.original); setDeleteModalOpen(true); } }] : []),
+          ]}
+        />
+      ),
+    },
+  ], [intl, navigate, canUpdate, canDelete]);
 
   const table = useReactTable({
-    data: (data?.data ?? []) as CustomerRow[],
-    columns,
-    pageCount: data?.meta?.totalPages ?? 0,
+    data: rows, columns, pageCount: totalPages,
     state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -154,111 +98,60 @@ function CustomerIndexPage() {
     setIsDeleting(true);
     try {
       await trpcClient.customer.delete.mutate({ id: itemToDelete.id });
-      await queryClient.invalidateQueries({ queryKey: ['customerList'] });
-      setDeleteModalOpen(false);
-      setItemToDelete(null);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsDeleting(false);
-    }
+      await queryClient.invalidateQueries({ queryKey: ["customerList"] });
+      setDeleteModalOpen(false); setItemToDelete(null);
+      toast.success(intl.formatMessage({ id: "customer.index.delete_success", defaultMessage: "Region deleted" }));
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed to delete"); }
+    finally { setIsDeleting(false); }
   };
 
+
   return (
-    <section className="space-y-5" data-ai-context={JSON.stringify({ section: 'customer-index', itemCount: data?.meta?.total ?? 0 })}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            {intl.formatMessage({ id: 'customer.index.title', defaultMessage: 'Customers' })}
-          </h1>
-          <p className="text-sm text-muted">
-            {intl.formatMessage({ id: 'customer.index.description', defaultMessage: 'Manage your customer accounts, outlets, and contacts.' })}
-          </p>
-        </div>
-        {canCreate && (
-          <Button variant="primary" onClick={() => navigate('/customer/create')}>
-            <Icon icon="solar:add-circle-linear" />
-            {intl.formatMessage({ id: 'customer.index.create_button', defaultMessage: 'Add Customer' })}
-          </Button>
-        )}
+    <ModulePage accent="#AF52DE" accentEnd="#5856D6" aiContext={{ section: "customer-index", itemCount: totalRows, page: pagination.pageIndex + 1, search }}>
+      <ModuleHero
+        kicker={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+        title={intl.formatMessage({ id: "customer.index.title", defaultMessage: "Customer" })}
+        subtitle={intl.formatMessage({ id: "customer.index.subtitle", defaultMessage: "Manage geographical customers and their areas." })}
+        cta={canCreate ? { label: intl.formatMessage({ id: "customer.index.create_button", defaultMessage: "New customer" }), icon: <CustomerIcon name="plus" size={18} />, onClick: () => navigate("/customer/create") } : undefined}
+        stats={[{ value: totalRows, label: intl.formatMessage({ id: "customer.hero.total", defaultMessage: "Total" }) }]}
+      />
+
+      <div className="m-toolbar">
+        <ModuleSearch
+          value={searchInput} onChange={setSearchInput}
+          placeholder={intl.formatMessage({ id: "customer.index.search_placeholder", defaultMessage: "Search customers…" })}
+          searchIcon={<CustomerIcon name="search" size={16} />}
+          clearIcon={<CustomerIcon name="close" size={12} />}
+          clearLabel={intl.formatMessage({ id: "common.action.clear", defaultMessage: "Clear" })}
+        />
+        <span className="m-count">
+          {intl.formatMessage({ id: "customer.index.count_label", defaultMessage: "{count, plural, one {# customer} other {# customers}}" }, { count: totalRows })}
+        </span>
       </div>
 
-      <Card>
-        <div className="p-4">
-          <Input
-            placeholder={intl.formatMessage({ id: 'customer.index.search_placeholder', defaultMessage: 'Search customers by name, code, or tax ID...' })}
-            value={searchInput}
-            onValueChange={setSearchInput}
-            leftIcon={<Icon icon="solar:magnifer-linear" />}
+      <ModuleTable
+        table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
+        pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
+        onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}
+        onRowClick={(row) => navigate(`/customer/${row.id}`)}
+        paginationLabel={intl.formatMessage({ id: "common.pagination_info", defaultMessage: "Page {page} of {total}" }, { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) })}
+        emptyState={
+          <ModuleEmpty
+                        title={search ? intl.formatMessage({ id: "customer.index.empty_search", defaultMessage: "No customers found" }) : intl.formatMessage({ id: "customer.index.empty_title", defaultMessage: "No customers yet" })}
+            description={search ? intl.formatMessage({ id: "customer.index.empty_search_sub", defaultMessage: "Try adjusting your search terms." }) : intl.formatMessage({ id: "customer.index.empty_desc", defaultMessage: "Create your first customer to get started." })}
+            cta={canCreate && !search ? { label: intl.formatMessage({ id: "customer.index.create_button", defaultMessage: "New customer" }), icon: <CustomerIcon name="plus" size={16} />, onClick: () => navigate("/customer/create") } : undefined}
           />
-        </div>
+        }
+      />
 
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Spinner />
-          </div>
-        ) : (
-          <>
-            <Table aria-label={intl.formatMessage({ id: 'customer.index.title', defaultMessage: 'Customers' })}>
-              <THead>
-                {table.getHeaderGroups().map((hg) =>
-                  hg.headers.map((header) => (
-                    <TH key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TH>
-                  )),
-                )}
-              </THead>
-              <TBody emptyContent={intl.formatMessage({ id: 'customer.index.empty_state', defaultMessage: 'No customers found.' })}>
-                {table.getRowModel().rows.map((row) => (
-                  <TR key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TD key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TD>
-                    ))}
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-            <div className="flex justify-center p-4">
-              <Pagination
-                page={pagination.pageIndex + 1}
-                totalPages={data?.meta?.totalPages ?? 1}
-                onChange={(page) => setPagination({ pageIndex: page - 1, pageSize: pagination.pageSize })}
-              />
-            </div>
-          </>
-        )}
-      </Card>
-
-      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
-        <ModalContent>
-          <ModalHeader>
-            {intl.formatMessage({ id: 'customer.index.delete_title', defaultMessage: 'Delete Customer' })}
-          </ModalHeader>
-          <ModalBody>
-            {intl.formatMessage(
-              { id: 'customer.index.delete_confirm_body', defaultMessage: 'Are you sure you want to delete "{name}"? All outlets and associated data will also be removed.' },
-              { name: itemToDelete?.name ?? '' },
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
-              {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
-            </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting
-                ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
-                : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} size="sm">
+        <ModalHeader>{intl.formatMessage({ id: "customer.index.delete_title", defaultMessage: "Delete customer" })}</ModalHeader>
+        <ModalBody>{intl.formatMessage({ id: "customer.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: itemToDelete?.name ?? "" })}</ModalBody>
+        <ModalFooter>
+          <button type="button" className="btn btn-secondary" onClick={() => setDeleteModalOpen(false)} disabled={isDeleting}>{intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}</button>
+          <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? <Spinner size="sm" /> : intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}</button>
+        </ModalFooter>
       </Modal>
-    </section>
+    </ModulePage>
   );
-}
-
-export { CustomerIndexPage };
+};

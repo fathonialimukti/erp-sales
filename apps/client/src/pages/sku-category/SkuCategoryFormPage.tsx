@@ -1,75 +1,288 @@
-import { useState } from 'react';
-import { useIntl } from 'react-intl';
-import { Button, Card, FieldError, Input, Label, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner, Textarea, FormField } from '../../ui';
-import { useNavigate, useParams } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from '@tanstack/react-form';
-import type { inferProcedureInput } from '@trpc/server';
-import type { AppRouter } from '../../lib/trpc';
-import { PageHeader } from '../../components/PageHeader';
-import { useAiFillForm } from '../../components/AiAssistant/useAiFillForm';
-import { trpcClient } from '../../lib/trpc';
-import './SkuCategory.css';
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate, useParams } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { ButtonGroup } from "../../components/ButtonGroup";
+import { ModulePage } from "../../components/ModulePage";
+import { SkuCategoryIcon } from "./SkuCategoryIcons";
 
-type FormValues = { code: string; name: string; description: string };
-type DetailData = { id: string; code: string | null; name: string; description: string | null };
-
-const defaults = (): FormValues => ({ code: '', name: '', description: '' });
-const fromDetail = (d: DetailData): FormValues => ({ code: d.code ?? '', name: d.name, description: d.description ?? '' });
-
-function SkuCategoryFormPage() {
-  const { id } = useParams(); const intl = useIntl(); const navigate = useNavigate(); const queryClient = useQueryClient();
-  const isEdit = Boolean(id);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [modalStage, setModalStage] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [resultMessage, setResultMessage] = useState('');
-
-  const { data, isLoading } = useQuery({ queryKey: ['skuCategoryDetail', id], enabled: isEdit, queryFn: () => trpcClient.skuCategory.detail.query({ id: id ?? '' }) });
-
-  const createMutation = useMutation<any, unknown, inferProcedureInput<AppRouter['skuCategory']['create']>>({
-    mutationFn: (p) => trpcClient.skuCategory.create.mutate(p),
-    onSuccess: async (r) => { await queryClient.invalidateQueries({ queryKey: ['skuCategoryList'] }); setResultMessage('Created.'); setModalStage('success'); setTimeout(() => navigate(`/sku-category/${r.id}`), 1500); },
-    onError: () => { setResultMessage('Failed.'); setModalStage('error'); },
-  });
-  const updateMutation = useMutation<any, unknown, inferProcedureInput<AppRouter['skuCategory']['update']>>({
-    mutationFn: (p) => trpcClient.skuCategory.update.mutate(p),
-    onSuccess: async (r) => { await queryClient.invalidateQueries({ queryKey: ['skuCategoryList'] }); queryClient.removeQueries({ queryKey: ['skuCategoryDetail', id] }); setResultMessage('Updated.'); setModalStage('success'); setTimeout(() => navigate(`/sku-category/${r.id}`), 1500); },
-    onError: () => { setResultMessage('Failed.'); setModalStage('error'); },
-  });
-
-  const form = useForm({ defaultValues: (isEdit && data ? fromDetail(data as DetailData) : defaults()), onSubmit: async ({ value }) => { setFormError(null); setModalStage('loading'); if (isEdit && id) updateMutation.mutate({ currentId: id, ...value }); else createMutation.mutate(value); } });
-
-  useAiFillForm({ name: (v: unknown) => form.setFieldValue('name', String(v)), code: (v: unknown) => form.setFieldValue('code', String(v)), description: (v: unknown) => form.setFieldValue('description', String(v)) });
-
-  if (isEdit && isLoading) return <div className="skuc-form__loading"><Spinner size="lg" /></div>;
-  if (isEdit && !data) return <div className="skuc-form__not-found"><p className="skuc-form__not-found-msg">Not found.</p><Button variant="ghost" onClick={() => navigate('/sku-category')}>Back</Button></div>;
-
-  return (
-    <section className="skuc-form" data-ai-context={JSON.stringify({ section: 'sku-category-form', mode: isEdit ? 'edit' : 'create', categoryId: id ?? null })}>
-      <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
-        <PageHeader title={isEdit ? 'Edit Category' : 'Create Category'} onBack={() => navigate(isEdit && id ? `/sku-category/${id}` : '/sku-category')} />
-        <Card>
-          <div className="skuc-form__grid">
-            <form.Field name="name" validators={{ onChange: ({ value }) => !value?.trim() ? 'Required' : undefined }}>
-              {(field) => <FormField isRequired error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] as string : undefined}><Label>Name</Label><Input value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} placeholder="e.g. Beverages" />{field.state.meta.errors.map((e) => <FieldError key={e as string}>{e as string}</FieldError>)}</FormField>}
-            </form.Field>
-            <form.Field name="code">
-              {(field) => <FormField><Label>Code</Label><Input value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} placeholder="e.g. BEV" /></FormField>}
-            </form.Field>
-            <form.Field name="description">
-              {(field) => <FormField className="skuc-form__grid--full"><Label>Description</Label><Textarea value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} placeholder="Optional description" /></FormField>}
-            </form.Field>
-          </div>
-        </Card>
-        {formError && <p className="skuc-form__error-msg">{formError}</p>}
-        <div className="skuc-form__actions">
-          <Button variant="ghost" onClick={() => navigate(isEdit && id ? `/sku-category/${id}` : '/sku-category')}>Cancel</Button>
-          <Button variant="primary" type="submit" disabled={createMutation.isPending || updateMutation.isPending}>{createMutation.isPending || updateMutation.isPending ? <Spinner size="sm" /> : isEdit ? 'Save' : 'Create'}</Button>
-        </div>
-      </form>
-      <Modal isOpen={modalStage !== 'idle'} onClose={() => { if (modalStage !== 'loading') setModalStage('idle'); }}><ModalContent>{modalStage === 'loading' ? <ModalBody><div className="skuc-form__modal-spinner"><Spinner size="lg" /></div></ModalBody> : modalStage === 'success' ? <ModalBody><div className="skuc-form__modal-success"><div className="skuc-form__modal-success-icon"><svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></div><p className="skuc-form__modal-success-text">{resultMessage}</p></div></ModalBody> : <><ModalHeader>Error</ModalHeader><ModalBody><p className="skuc-form__modal-error-text">{resultMessage}</p></ModalBody><ModalFooter><Button onClick={() => setModalStage('idle')}>Close</Button></ModalFooter></>}</ModalContent></Modal>
-    </section>
-  );
+interface FormValues {
+  code: string;
+  name: string;
 }
 
-export { SkuCategoryFormPage };
+type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
+
+const defaults = (): FormValues => ({ code: "", name: "" });
+
+export const SkuCategoryFormPage = () => {
+  const intl = useIntl();
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const hasPermission = useAtomValue(hasPermissionAtom);
+  const canSave = hasPermission(id ? "skuCategory@update" : "skuCategory@create");
+  const toast = useToast();
+
+  const isEdit = Boolean(id);
+  const [modalStage, setModalStage] = useState<ModalStage>("idle");
+  const [resultMessage, setResultMessage] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["skuCategoryDetail", id],
+    enabled: isEdit && Boolean(id),
+    queryFn: () => trpcClient.skuCategory.detail.query({ id: id ?? "" }),
+  });
+
+  const form = useForm({
+    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    onSubmit: async () => {
+      setModalStage("confirm");
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (d: FormValues) => trpcClient.skuCategory.create.mutate(d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skuCategoryList"] });
+      setResultMessage(intl.formatMessage({ id: "sku_category.form.success.created", defaultMessage: "Region created" }));
+      setModalStage("success");
+      setTimeout(() => navigate("/skuCategory"), 1200);
+    },
+    onError: (e) => {
+      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setModalStage("error");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (d: FormValues & { currentId: string }) => trpcClient.skuCategory.update.mutate(d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skuCategoryList"] });
+      queryClient.invalidateQueries({ queryKey: ["skuCategoryDetail", id] });
+      setResultMessage(intl.formatMessage({ id: "sku_category.form.success.updated", defaultMessage: "Region updated" }));
+      setModalStage("success");
+      setTimeout(() => navigate(`/skuCategory/${id}`), 1200);
+    },
+    onError: (e) => {
+      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setModalStage("error");
+    },
+  });
+
+  const runSave = () => {
+    setModalStage("loading");
+    const values = form.state.values as FormValues;
+    if (isEdit && id) {
+      updateMutation.mutate({ ...values, currentId: id });
+    } else {
+      createMutation.mutate(values);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (modalStage === "idle") form.handleSubmit();
+      }
+      if (e.key === "Escape" && modalStage !== "idle") setModalStage("idle");
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [form, modalStage]);
+
+  if (isLoading) {
+    return (
+      <ModulePage accent="#F59E0B" accentEnd="#D97706" aiContext={{ section: "skuCategory-form", loading: true }}>
+        <div className="m-loading"><Spinner size="lg" /></div>
+      </ModulePage>
+    );
+  }
+
+  return (
+    <ModulePage accent="#F59E0B" accentEnd="#D97706" aiContext={{ section: "skuCategory-form", isEdit, id: id ?? null }}>
+      <form
+        className="m-page"
+        onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+        style={{ gap: "1.25rem" }}
+      >
+        {/* ── Header ── */}
+        <div className="so-form__header">
+          <div>
+            <h1 className="so-form__title">
+              {isEdit
+                ? intl.formatMessage({ id: "sku_category.form.title_edit", defaultMessage: "Edit skuCategory" })
+                : intl.formatMessage({ id: "sku_category.form.title_create", defaultMessage: "New skuCategory" })}
+            </h1>
+            <p className="so-form__subtitle">
+              {isEdit ? "Update skuCategory details" : "Create a new geographical skuCategory"}
+            </p>
+          </div>
+          <button type="button" className="so-form__back" onClick={() => navigate(isEdit && id ? `/skuCategory/${id}` : "/skuCategory")}>
+            <SkuCategoryIcon name="back" size={14} />
+            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
+          </button>
+        </div>
+
+        {/* ── Fields ── */}
+        <section className="so-card">
+          <div className="so-card__header">
+            <h2 className="so-card__title">
+              <span className="so-card__icon"><SkuCategoryIcon name="tag" size={14} /></span>
+              {intl.formatMessage({ id: "sku_category.form.section_basic", defaultMessage: "Basic information" })}
+            </h2>
+          </div>
+          <div className="so-card__body">
+            <div className="so-section">
+              <form.Field name="code">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "sku_category.form.field_code", defaultMessage: "Code" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "sku_category.form.field_code_placeholder", defaultMessage: "Optional" })}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "sku_category.form.field_name", defaultMessage: "Name" })} *
+                    </label>
+                    <input
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "sku_category.form.field_name_placeholder", defaultMessage: "Region name" })}
+                    />
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Actions ── */}
+        <div className="so-actions">
+          <ButtonGroup
+            items={[
+              {
+                key: "save",
+                label: intl.formatMessage({ id: "sku_category.form.save_button", defaultMessage: "Save" }),
+                icon: <SkuCategoryIcon name="check" size={14} />,
+                onClick: () => { form.handleSubmit(); },
+                disabled: !canSave || createMutation.isPending || updateMutation.isPending,
+                isLoading: createMutation.isPending || updateMutation.isPending,
+                variant: "primary",
+              },
+            ]}
+          />
+        </div>
+      </form>
+
+      {/* ── Modal ── */}
+      {modalStage !== "idle" && createPortal(
+        <div className="so-modal__backdrop" onClick={() => modalStage !== "loading" && modalStage !== "confirm" && setModalStage("idle")}>
+          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
+            {modalStage === "confirm" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({ id: "sku_category.form.modal.confirm_title", defaultMessage: "Confirm save" })}
+                  </h3>
+                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
+                    <SkuCategoryIcon name="close" size={14} />
+                  </button>
+                </div>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--success">
+                    <SkuCategoryIcon name="check" size={28} />
+                  </div>
+                  <h3 className="so-modal__title">
+                    {intl.formatMessage({ id: "sku_category.form.modal.confirm_body", defaultMessage: "Save changes to this skuCategory?" })}
+                  </h3>
+                </div>
+                <div className="so-modal__footer">
+                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
+                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+                  </button>
+                  <button className="so-btn so-btn--primary" onClick={runSave}>
+                    {intl.formatMessage({ id: "common.action.confirm", defaultMessage: "Confirm" })}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {modalStage === "loading" && (
+              <div className="so-modal__body">
+                <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
+                  <span className="so-spinner so-spinner--lg" />
+                </div>
+                <p className="so-modal__msg">{intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}</p>
+              </div>
+            )}
+
+            {modalStage === "success" && (
+              <>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--success">
+                    <SkuCategoryIcon name="check" size={28} />
+                  </div>
+                  <h3 className="so-modal__title">
+                    {intl.formatMessage({ id: "sku_category.form.modal.success", defaultMessage: "Success!" })}
+                  </h3>
+                  <p className="so-modal__msg">{resultMessage}</p>
+                </div>
+              </>
+            )}
+
+            {modalStage === "error" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({ id: "sku_category.form.modal.error_title", defaultMessage: "Error" })}
+                  </h3>
+                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
+                    <SkuCategoryIcon name="close" size={14} />
+                  </button>
+                </div>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--error">
+                    <SkuCategoryIcon name="close" size={28} />
+                  </div>
+                  <p className="so-modal__msg">{resultMessage}</p>
+                </div>
+                <div className="so-modal__footer">
+                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
+                    {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </ModulePage>
+  );
+};

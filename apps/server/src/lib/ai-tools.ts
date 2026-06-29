@@ -43,11 +43,14 @@ export const clientTools = {
     }),
     queryDatabase: tool({
         description:
-            'Execute a read-only SQL query against the warehouse ERP database. ' +
+            'Execute a read-only SQL query against the CRM database. ' +
             'Use this when the user asks about inventory levels, transaction records, stock movements, ' +
-            'pallet information, warehouse capacity, supplier data, user activity, or any warehouse data. ' +
+            'pallet information, warehouse capacity, supplier data, user activity, ' +
+            'sales orders, customers, outlets, invoices, payments, action programs, event proposals, or visit logs. ' +
             'Only SELECT statements are allowed (no INSERT/UPDATE/DELETE). ' +
             'Use PostgreSQL syntax with snake_case table and column names. ' +
+            'CRM tables use the prefix "crm_" (e.g. crm_sales_orders, crm_customers, crm_outlets). ' +
+            'Warehouse tables have no prefix (e.g. skus, pallets, receiving_transactions). ' +
             'Refer to the database schema documentation for table and column names. ' +
             'Always include a LIMIT clause for safety.',
         inputSchema: z.object({
@@ -55,9 +58,12 @@ export const clientTools = {
                 .string()
                 .describe(
                     "SQL SELECT query using PostgreSQL syntax. Table and column names are snake_case. " +
-                    "Example: SELECT s.code, s.name, COUNT(p.id) as pallet_count " +
-                    "FROM skus s LEFT JOIN pallets p ON s.id = p.sku_id AND p.status = 'AVAILABLE' " +
-                    "GROUP BY s.id, s.code, s.name LIMIT 10",
+                    "CRM tables: crm_sales_orders, crm_customers, crm_outlets, crm_areas, crm_regions, " +
+                    "crm_invoices, crm_payments, crm_action_programs, crm_event_proposals, crm_visit_logs. " +
+                    "Warehouse tables: skus, pallets, receiving_transactions, shipments, stock_movements, etc. " +
+                    "Example: SELECT so.document_number, so.date, so.grand_total, c.name as customer_name " +
+                    "FROM crm_sales_orders so JOIN crm_customers c ON so.customer_id = c.id " +
+                    "WHERE so.approval_status = 'APPROVED' ORDER BY so.date DESC LIMIT 10",
                 ),
             limit: z
                 .number()

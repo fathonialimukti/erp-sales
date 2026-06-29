@@ -8,6 +8,7 @@ import { createActionProgramSchema } from '@repo/schemas/action-program';
 import { z } from 'zod';
 import { updateActionProgramSchema, actionProgramIdSchema, actionProgramListInputSchema } from '@repo/schemas/action-program';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
+import { validateActionProgram } from '../lib/ai-validation.js';
 import type { ActionProgramType } from '../prisma/generated/client';
 
 export const actionProgramRouter = router({
@@ -53,6 +54,7 @@ export const actionProgramRouter = router({
           createdBy: { select: { id: true, name: true } },
           outlets: { include: { outlet: { select: { id: true, name: true, code: true } } } },
           skus: { include: { sku: { select: { id: true, name: true, code: true } } } },
+          items: true,
           payments: { orderBy: { paymentDate: 'asc' } },
         },
       });
@@ -64,7 +66,7 @@ export const actionProgramRouter = router({
     .use(hasPermission('action-program@create'))
     .input(createActionProgramSchema)
     .mutation(async ({ input, ctx }) => {
-      const { outletIds, skuIds, payments, startDate, endDate, ...header } = input;
+      const { outletIds, skus, items, payments, startDate, endDate, ...header } = input;
 
       const created = await prisma.$transaction(async (tx) => {
         const program = await tx.actionProgram.create({
@@ -83,10 +85,35 @@ export const actionProgramRouter = router({
           data: outletIds.map((outletId) => ({ actionProgramId: program.id, outletId })),
         });
 
-        // Connect SKUs
-        if (skuIds.length > 0) {
+        // Create SKUs with pricing details
+        if (skus.length > 0) {
           await tx.actionProgramSku.createMany({
-            data: skuIds.map((skuId) => ({ actionProgramId: program.id, skuId })),
+            data: skus.map((sku) => ({
+              actionProgramId: program.id,
+              skuId: sku.skuId,
+              quantity: sku.quantity,
+              price: sku.price,
+              discount: sku.discount,
+              priceAfterDiscount: sku.priceAfterDiscount,
+              cost: sku.cost,
+              tax: sku.tax,
+              total: sku.total,
+              notes: sku.notes,
+            })),
+          });
+        }
+
+        // Create items
+        if (items.length > 0) {
+          await tx.actionProgramItem.createMany({
+            data: items.map((item) => ({
+              actionProgramId: program.id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              cost: item.cost,
+              notes: item.notes,
+            })),
           });
         }
 
@@ -120,7 +147,7 @@ export const actionProgramRouter = router({
     .use(hasPermission('action-program@update'))
     .input(updateActionProgramSchema)
     .mutation(async ({ input, ctx }) => {
-      const { currentId, outletIds, skuIds, payments, startDate, endDate, ...header } = input;
+      const { currentId, outletIds, skus, items, payments, startDate, endDate, ...header } = input;
       const existing = await prisma.actionProgram.findUnique({ where: { id: currentId } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Action program not found.' });
       if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT programs can be edited.' });
@@ -145,9 +172,35 @@ export const actionProgramRouter = router({
 
         // Replace SKUs
         await tx.actionProgramSku.deleteMany({ where: { actionProgramId: currentId } });
-        if (skuIds.length > 0) {
+        if (skus.length > 0) {
           await tx.actionProgramSku.createMany({
-            data: skuIds.map((skuId) => ({ actionProgramId: program.id, skuId })),
+            data: skus.map((sku) => ({
+              actionProgramId: program.id,
+              skuId: sku.skuId,
+              quantity: sku.quantity,
+              price: sku.price,
+              discount: sku.discount,
+              priceAfterDiscount: sku.priceAfterDiscount,
+              cost: sku.cost,
+              tax: sku.tax,
+              total: sku.total,
+              notes: sku.notes,
+            })),
+          });
+        }
+
+        // Replace items
+        await tx.actionProgramItem.deleteMany({ where: { actionProgramId: currentId } });
+        if (items.length > 0) {
+          await tx.actionProgramItem.createMany({
+            data: items.map((item) => ({
+              actionProgramId: program.id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              cost: item.cost,
+              notes: item.notes,
+            })),
           });
         }
 
@@ -199,6 +252,48 @@ export const actionProgramRouter = router({
       return { success: true };
     }),
 
+  validate: protectedProcedure
+    .use(hasPermission('action-program@validate'))
+    .input(actionProgramIdSchema)
+    .mutation(async ({ input, ctx }) => {
+      const existing = await prisma.actionProgram.findUnique({ where: { id: input.id } });
+      if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Action program not found.' });
+      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT programs can be validated.' });
+
+      const validation = await validateActionProgram(input.id);
+      if (!validation.valid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Validation failed: ${validation.issues.join(', ')}`,
+        });
+      }
+
+      const history = pushApprovalHistory((existing as any).approvalHistory, {
+        process: 'AI Validation',
+        name: ctx.user.name ?? 'Unknown',
+        dateTime: new Date().toISOString(),
+        message: 'Document validated successfully',
+      });
+
+      const updated = await prisma.actionProgram.update({
+        where: { id: input.id },
+        data: {
+          approvalStatus: 'VALIDATING',
+          approvalHistory: history as any,
+        },
+      });
+
+      await logActivity(prisma, {
+        action: 'APPROVE',
+        userId: ctx.user.userId,
+        resource: 'action_program',
+        resourceId: updated.id,
+        message: `Validated action program ${updated.name}`,
+      });
+
+      return updated;
+    }),
+
   // ---- 4-tier approval flow: Area Manager → Regional Manager → Finance → Director ----
 
   approveArea: protectedProcedure
@@ -208,7 +303,7 @@ export const actionProgramRouter = router({
       const { message, ...idInput } = input;
       const existing = await prisma.actionProgram.findUnique({ where: { id: idInput.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Action program not found.' });
-      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT programs can start approval.' });
+      if (existing.approvalStatus !== 'VALIDATING') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING programs can start approval.' });
 
       const history = pushApprovalHistory((existing as any).approvalHistory, {
         process: 'Area Manager',

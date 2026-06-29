@@ -1,0 +1,391 @@
+/* ============================================================
+ * SearchPalette — iOS Spotlight-style command palette
+ *
+ * Centered floating glass panel that opens on Cmd/Ctrl+K or
+ * when the sidebar search is clicked.
+ *
+ * Searches across:
+ *   - Nav pages (filtered by permission)
+ *   - Customers (tRPC customer.list)
+ *   - SKUs       (tRPC sku.list)
+ *   - Sales orders (tRPC salesOrder.list)
+ *
+ * Prefix: .ios-search-
+ * ============================================================ */
+
+.ios-search {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10vh 16px 16px;
+  animation: iosSearchIn 180ms var(--ease-out);
+}
+
+@keyframes iosSearchIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ios-search__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 17, 21, 0.30);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 0;
+}
+
+.dark .ios-search__backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.ios-search__panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 640px;
+  max-height: min(70vh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: var(--ios-sp-bg);
+  backdrop-filter: blur(var(--ios-sp-blur, 32px)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--ios-sp-blur, 32px)) saturate(200%);
+  border: 1px solid var(--ios-sp-border);
+  border-radius: 22px;
+  box-shadow: var(--ios-sp-shadow);
+  overflow: hidden;
+  animation: iosSearchPanelIn 220ms var(--ease-spring);
+}
+
+@keyframes iosSearchPanelIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- Input row ---------- */
+
+.ios-search__input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ios-sp-divider);
+}
+
+.ios-search__input-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ios-sp-label-3);
+  flex-shrink: 0;
+}
+
+.ios-search__input-icon img {
+  width: 20px;
+  height: 20px;
+  filter: var(--ios-sp-icon-filter);
+}
+
+.ios-search__input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--ios-sp-label-1);
+  font: inherit;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.ios-search__input::placeholder {
+  color: var(--ios-sp-label-3);
+}
+
+.ios-search__esc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--ios-sp-pill-bg);
+  border: 1px solid var(--ios-sp-pill-border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ios-sp-label-2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ---------- Result list ---------- */
+
+.ios-search__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 8px;
+  scrollbar-gutter: stable;
+}
+
+.ios-search__list::-webkit-scrollbar {
+  width: 8px;
+}
+.ios-search__list::-webkit-scrollbar-thumb {
+  background: var(--ios-sp-scrollbar);
+  border-radius: 999px;
+}
+
+.ios-search__result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms var(--ease-default);
+}
+
+.ios-search__result--active,
+.ios-search__result:hover {
+  background: var(--ios-sp-row-active);
+}
+
+.ios-search__result-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: var(--ios-sp-icon-shadow);
+}
+
+.ios-search__result-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ios-search__result-icon[data-tint="pink"]    { background: linear-gradient(135deg, #F472B6, #DB2777); }
+.ios-search__result-icon[data-tint="orange"]  { background: linear-gradient(135deg, #FB923C, #EA580C); }
+.ios-search__result-icon[data-tint="blue"]    { background: linear-gradient(135deg, #60A5FA, #2563EB); }
+.ios-search__result-icon[data-tint="violet"]  { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
+.ios-search__result-icon[data-tint="green"]   { background: linear-gradient(135deg, #34D399, #059669); }
+.ios-search__result-icon[data-tint="yellow"]  { background: linear-gradient(135deg, #FBBF24, #D97706); }
+
+.ios-search__result-glyph {
+  font-size: 18px;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.ios-search__result-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.ios-search__result-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ios-sp-label-1);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ios-search__result-hint {
+  font-size: 12.5px;
+  color: var(--ios-sp-label-3);
+  font-weight: 500;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ios-search__result-kind {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--ios-sp-pill-bg);
+  border: 1px solid var(--ios-sp-pill-border);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ios-sp-label-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.ios-search__mark {
+  background: transparent;
+  color: inherit;
+  font-weight: 800;
+  box-shadow: inset 0 -2px 0 0 var(--ios-sp-mark);
+  border-radius: 0;
+  padding: 0;
+}
+
+/* ---------- Empty state ---------- */
+
+.ios-search__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 4px;
+  text-align: center;
+}
+
+.ios-search__empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ios-sp-label-1);
+}
+
+.ios-search__empty-text {
+  font-size: 13px;
+  color: var(--ios-sp-label-3);
+  max-width: 36ch;
+}
+
+/* ---------- Footer hints ---------- */
+
+.ios-search__footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--ios-sp-divider);
+  background: var(--ios-sp-footer-bg);
+  flex-shrink: 0;
+}
+
+.ios-search__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ios-sp-label-3);
+  letter-spacing: 0.02em;
+}
+
+.ios-search__kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--ios-sp-pill-bg);
+  border: 1px solid var(--ios-sp-pill-border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ios-sp-label-2);
+  margin-right: 2px;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 640px) {
+  .ios-search {
+    padding: 8vh 8px 8px;
+  }
+  .ios-search__panel {
+    border-radius: 18px;
+    max-height: 80vh;
+  }
+  .ios-search__input-row {
+    padding: 12px 12px;
+    gap: 10px;
+  }
+  .ios-search__input {
+    font-size: 16px; /* avoid iOS zoom */
+  }
+  .ios-search__esc {
+    display: none;
+  }
+  .ios-search__footer {
+    padding: 8px 12px;
+    gap: 10px;
+  }
+  .ios-search__result {
+    padding: 8px 10px;
+  }
+}
+
+/* ============================================================
+ * THEME TOKENS — light + dark
+ * ============================================================ */
+
+:root {
+  --ios-sp-bg:        rgba(255, 255, 255, 0.85);
+  --ios-sp-blur:      32px;
+  --ios-sp-border:    rgba(15, 23, 42, 0.08);
+  --ios-sp-shadow:    0 1px 3px rgba(15, 23, 42, 0.04), 0 24px 64px -8px rgba(15, 23, 42, 0.25);
+
+  --ios-sp-divider:   rgba(15, 23, 42, 0.08);
+  --ios-sp-label-1:   #0B0B14;
+  --ios-sp-label-2:   rgba(15, 23, 42, 0.65);
+  --ios-sp-label-3:   rgba(15, 23, 42, 0.45);
+
+  --ios-sp-pill-bg:     rgba(15, 23, 42, 0.06);
+  --ios-sp-pill-border: rgba(15, 23, 42, 0.10);
+  --ios-sp-icon-filter: invert(0%) brightness(0.20);
+  --ios-sp-icon-shadow: 0 2px 6px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+
+  --ios-sp-footer-bg: rgba(255, 255, 255, 0.45);
+  --ios-sp-scrollbar: rgba(15, 23, 42, 0.18);
+
+  --ios-sp-mark:     rgba(124, 58, 237, 0.30);
+  --ios-sp-row-active: rgba(124, 58, 237, 0.10);
+}
+
+.dark {
+  --ios-sp-bg:        rgba(28, 28, 30, 0.78);
+  --ios-sp-border:    rgba(255, 255, 255, 0.08);
+  --ios-sp-shadow:    0 1px 3px rgba(0, 0, 0, 0.50), 0 24px 64px -8px rgba(0, 0, 0, 0.65);
+
+  --ios-sp-divider:   rgba(255, 255, 255, 0.08);
+  --ios-sp-label-1:   #FFFFFF;
+  --ios-sp-label-2:   rgba(235, 235, 245, 0.75);
+  --ios-sp-label-3:   rgba(235, 235, 245, 0.50);
+
+  --ios-sp-pill-bg:     rgba(255, 255, 255, 0.10);
+  --ios-sp-pill-border: rgba(255, 255, 255, 0.12);
+  --ios-sp-icon-filter: invert(100%) brightness(2);
+  --ios-sp-icon-shadow: 0 2px 6px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+  --ios-sp-footer-bg: rgba(0, 0, 0, 0.30);
+  --ios-sp-scrollbar: rgba(255, 255, 255, 0.18);
+
+  --ios-sp-mark:     rgba(167, 139, 250, 0.45);
+  --ios-sp-row-active: rgba(167, 139, 250, 0.18);
+}

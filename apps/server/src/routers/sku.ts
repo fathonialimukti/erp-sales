@@ -27,6 +27,8 @@ export const skuRouter = router({
             category: { select: { id: true, name: true } },
             _count: { select: { salesOrderItems: true } },
           },
+          // basePrice and baseUnit are scalar fields on the model — they're
+          // returned automatically by findMany, no need to select them explicitly.
         }),
         prisma.sku.count({ where }),
       ]);

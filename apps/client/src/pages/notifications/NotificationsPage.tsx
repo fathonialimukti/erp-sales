@@ -1,20 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useIntl } from 'react-intl';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Icon } from "../../ui";
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Checkbox,
-  EmptyState,
-  Pagination,
-  Spinner,
-  useToast,
-} from '../../ui';
-import { trpcClient } from '../../lib/trpc';
-import { useAiFillForm } from '../../components/AiAssistant/useAiFillForm';
+import { useEffect, useMemo, useState } from "react";
+import { useIntl } from "react-intl";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { trpcClient } from "../../lib/trpc";
+import { useToast } from "../../ui/useToast";
+import { Pagination } from "../../ui/Pagination";
+import { ModulePage, ModuleHero, ModuleEmpty } from "../../components/ModulePage";
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 
 type Notification = {
   id: string;
@@ -26,25 +17,25 @@ type Notification = {
   createdBy: { id: string; name: string | null } | null;
 };
 
-const TYPE_ICON: Record<string, string> = {
-  INFO: 'solar:info-circle-linear',
-  WARNING: 'solar:shield-warning-linear',
-  SUCCESS: 'solar:check-circle-linear',
-  ERROR: 'solar:close-circle-linear',
-  APPROVAL: 'solar:check-read-linear',
-};
-
-const TYPE_TONE: Record<string, 'neutral' | 'info' | 'warning' | 'success' | 'danger' | 'accent'> = {
-  INFO: 'info',
-  WARNING: 'warning',
-  SUCCESS: 'success',
-  ERROR: 'danger',
-  APPROVAL: 'accent',
-};
-
 const formatDate = (iso: string) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+};
+
+const TYPE_COLOR: Record<string, string> = {
+  INFO: "var(--ios-state-info, #2563EB)",
+  WARNING: "var(--ios-state-warning, #D97706)",
+  SUCCESS: "var(--ios-state-success, #047857)",
+  ERROR: "var(--ios-state-danger, #DC2626)",
+  APPROVAL: "var(--ios-state-success, #047857)",
+};
+
+const TYPE_BG: Record<string, string> = {
+  INFO: "var(--ios-state-info-bg, rgba(59, 130, 246, 0.10))",
+  WARNING: "var(--ios-state-warning-bg, rgba(245, 158, 11, 0.10))",
+  SUCCESS: "var(--ios-state-success-bg, rgba(16, 185, 129, 0.10))",
+  ERROR: "var(--ios-state-danger-bg, rgba(239, 68, 68, 0.10))",
+  APPROVAL: "var(--ios-state-success-bg, rgba(16, 185, 129, 0.10))",
 };
 
 const NotificationsPage = () => {
@@ -59,137 +50,121 @@ const NotificationsPage = () => {
     unreadOnly: (v: unknown) => setUnreadOnly(Boolean(v)),
   });
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['notifications', page, unreadOnly],
+  const { data, isLoading } = useQuery({
+    queryKey: ["notifications", page, unreadOnly],
     queryFn: () => {
       const p = trpcClient.notification.list.query({ page, limit: 20, unreadOnly: unreadOnly || undefined }) as Promise<unknown>;
-      return p as Promise<{ data: Notification[]; meta: { totalPages: number } }>;
+      return p as Promise<{ data: Notification[]; meta: { totalPages: number; total: number } }>;
     },
   });
 
-  useEffect(() => {
-    if (isError) toast.error(error instanceof Error ? error.message : 'Failed to load notifications');
-  }, [isError, error, toast]);
-
   const rows = useMemo(() => ((data ?? {}) as { data?: Notification[] }).data ?? [] as Notification[], [data]);
-const totalPages = ((data ?? {}) as { meta?: { totalPages?: number } }).meta?.totalPages ?? 0;
+  const totalPages = ((data ?? {}) as { meta?: { totalPages?: number } }).meta?.totalPages ?? 1;
+  const totalRows = ((data ?? {}) as { meta?: { total?: number } }).meta?.total ?? 0;
+  const unreadCount = useMemo(() => rows.filter((n) => !n.isRead).length, [rows]);
 
   const handleMarkAsRead = async (id: string) => {
     try {
       await trpcClient.notification.markAsRead.mutate({ id });
-      await queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to mark as read');
+      toast.error(e instanceof Error ? e.message : "Failed to mark as read");
     }
   };
 
   const handleMarkAllAsRead = async () => {
     try {
-      const unreadRows = rows.filter((n) => !n.isRead);
-      const markRead = (id: string) => trpcClient.notification.markAsRead.mutate({ id });
-      const promises: Promise<unknown>[] = [];
-      for (const n of unreadRows) promises.push(markRead(n.id));
-      await Promise.all(promises);
-      await queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('All notifications marked as read');
+      await trpcClient.notification.markAllAsRead.mutate();
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success(intl.formatMessage({ id: "notifications.mark_all_read", defaultMessage: "All notifications marked as read" }));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to mark all as read');
+      toast.error(e instanceof Error ? e.message : "Failed to mark all as read");
     }
   };
 
-  const unreadCount = useMemo(() => rows.filter((n) => !n.isRead).length, [rows]);
-
   return (
-    <section
-      className="space-y-5"
-      data-ai-context={JSON.stringify({
-        section: 'notifications',
-        unreadCount,
-        totalRows: rows.length,
-        unreadOnly,
-      })}
-    >
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
-            {intl.formatMessage({ id: 'notifications.title', defaultMessage: 'Notifications' })}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {intl.formatMessage({ id: 'notifications.description', defaultMessage: 'System alerts and updates.' })}
-          </p>
-        </div>
+    <ModulePage accent="#F472B6" accentEnd="#9D174D" aiContext={{ section: "notifications-page", unreadCount, totalRows, unreadOnly }}>
+      <ModuleHero
+        kicker={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+        title={intl.formatMessage({ id: "notifications.title", defaultMessage: "Notifications" })}
+        subtitle={intl.formatMessage({ id: "notifications.description", defaultMessage: "System alerts and updates." })}
+        stats={[
+          { value: totalRows, label: intl.formatMessage({ id: "notifications.hero.total", defaultMessage: "Total" }) },
+          { value: unreadCount, color: "info" as const, label: intl.formatMessage({ id: "notifications.hero.unread", defaultMessage: "Unread" }) },
+        ]}
+      />
+
+      <div className="m-toolbar">
+        <label className="m-search" style={{ cursor: "pointer", padding: "0 1rem", height: "2.5rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--ios-label-2)" }}>
+          <input
+            type="checkbox"
+            checked={unreadOnly}
+            onChange={(e) => { setUnreadOnly(e.target.checked); setPage(1); }}
+            style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
+          />
+          {intl.formatMessage({ id: "notifications.unread_only", defaultMessage: "Unread only" })}
+        </label>
         {unreadCount > 0 ? (
-          <Button variant="outline" onClick={handleMarkAllAsRead}>
-            <Icon icon="solar:check-read-linear" />
-            {intl.formatMessage({ id: 'notifications.mark_all_read', defaultMessage: 'Mark all as read' })}
-          </Button>
+          <button type="button" className="m-btn m-btn--ghost m-btn--sm" onClick={handleMarkAllAsRead}>
+            {intl.formatMessage({ id: "notifications.mark_all_read", defaultMessage: "Mark all as read" })}
+          </button>
         ) : null}
+        <span className="m-count">
+          {intl.formatMessage({ id: "notifications.count_label", defaultMessage: "{count, plural, one {# notification} other {# notifications}}" }, { count: totalRows })}
+        </span>
       </div>
 
-      <Card>
-        <CardHeader className="flex items-center justify-between gap-3">
-          <Checkbox
-            checked={unreadOnly}
-            onChange={(checked) => {
-              setUnreadOnly(checked);
-              setPage(1);
-            }}
-            label={intl.formatMessage({ id: 'notifications.unread_only', defaultMessage: 'Unread only' })}
-          />
-        </CardHeader>
-        <CardBody className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner />
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="px-6 py-10">
-              <EmptyState
-                icon={<Icon icon="solar:bell-off-linear" className="size-8 text-slate-400" />}
-                title={intl.formatMessage({ id: 'notifications.empty_title', defaultMessage: 'No notifications' })}
-                description={intl.formatMessage({ id: 'notifications.empty_state', defaultMessage: 'You are all caught up.' })}
-              />
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+      {isLoading ? (
+        <div className="m-state m-state--loading">
+          <span className="spin spin--md" />
+          <span className="m-state__title">{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
+        </div>
+      ) : rows.length === 0 ? (
+        <ModuleEmpty
+          title={intl.formatMessage({ id: "notifications.empty_title", defaultMessage: "No notifications" })}
+          description={intl.formatMessage({ id: "notifications.empty_state", defaultMessage: "You are all caught up." })}
+        />
+      ) : (
+        <div className="m-table-card">
+          <div className="m-items-table">
+            <div className="m-items-table__body">
               {rows.map((n) => (
-                <li
+                <div
                   key={n.id}
-                  className={`flex items-start gap-4 px-6 py-4 transition-colors ${n.isRead ? '' : 'bg-emerald-50/30 dark:bg-emerald-950/10'}`}
+                  className="m-items-table__row"
+                  style={{ cursor: "pointer", background: n.isRead ? "transparent" : "var(--ios-row-active-bg, rgba(124, 58, 237, 0.04))" }}
+                  onClick={() => !n.isRead && handleMarkAsRead(n.id)}
                 >
-                  <div className={`flex size-9 shrink-0 items-center justify-center rounded-full bg-${TYPE_TONE[n.type] ?? 'neutral'}-100 text-${TYPE_TONE[n.type] ?? 'neutral'}-600 dark:bg-${TYPE_TONE[n.type] ?? 'neutral'}-900/30`}>
-                    <Icon icon={TYPE_ICON[n.type] ?? 'solar:bell-linear'} className="size-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm ${n.isRead ? 'text-slate-700 dark:text-slate-300' : 'font-semibold text-slate-900 dark:text-slate-50'}`}>
-                        {n.title}
-                      </p>
-                      <span className="font-mono text-xs text-slate-400">{formatDate(n.createdAt)}</span>
+                  <div className="m-items-table__td m-items-table__td--product">
+                    <span className="m-items-table__icon" style={{ background: TYPE_BG[n.type] ?? TYPE_BG.INFO, color: TYPE_COLOR[n.type] ?? TYPE_COLOR.INFO }} aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4 M12 8h.01" />
+                      </svg>
+                    </span>
+                    <div className="m-items-table__product">
+                      <span className="m-items-table__product-name">{n.title}</span>
+                      <span className="m-items-table__product-code">{n.body}</span>
                     </div>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{n.body}</p>
-                    {!n.isRead ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleMarkAsRead(n.id)}
-                        className="mt-2 text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400"
-                      >
-                        {intl.formatMessage({ id: 'notifications.mark_read', defaultMessage: 'Mark as read' })}
-                      </button>
-                    ) : null}
                   </div>
-                </li>
+                  <div className="m-items-table__td m-items-table__td--num m-items-table__td--muted">
+                    {formatDate(n.createdAt)}
+                  </div>
+                </div>
               ))}
-            </ul>
-          )}
+            </div>
+          </div>
           {totalPages > 1 ? (
-            <div className="flex justify-end p-4">
+            <div className="m-pagination">
+              <span className="m-pagination__info">
+                {intl.formatMessage({ id: "common.pagination_info", defaultMessage: "Page {page} of {total}" }, { page, total: totalPages })}
+              </span>
               <Pagination page={page} totalPages={totalPages} onChange={setPage} />
             </div>
           ) : null}
-        </CardBody>
-      </Card>
-    </section>
+        </div>
+      )}
+    </ModulePage>
   );
 };
 

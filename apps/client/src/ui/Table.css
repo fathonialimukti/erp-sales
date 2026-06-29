@@ -1,6 +1,7 @@
 /* ============================================================
- * Table — data table with hover, stripes, responsive
+ * Table — data table with hover, clickable rows, responsive
  * Prefix: .tbl-
+ * 60-30-10: surface bg, slate chrome, accent for active row only
  * ============================================================ */
 
 .tbl-wrapper {
@@ -12,28 +13,30 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .tbl__head {
   border-bottom: 1px solid var(--color-border);
-  background: rgba(248, 250, 252, 0.50);
-  font-size: 12px;
+  background: var(--color-surface-2);
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--color-muted);
+  font-weight: 600;
 }
 
 .dark .tbl__head {
-  background: rgba(15, 23, 42, 0.30);
+  background: var(--color-slate-800);
   color: var(--color-slate-400);
-  border-bottom-color: var(--color-slate-800);
+  border-bottom-color: var(--color-slate-700);
 }
 
 .tbl__head-cell {
-  padding: 12px 16px;
+  padding: 10px 16px;
   font-weight: 600;
   text-align: left;
+  white-space: nowrap;
 }
 
 .tbl__body {
@@ -41,32 +44,48 @@
 }
 
 .tbl__body-row {
-  transition: background 150ms ease;
-}
-
-.tbl__body-row:hover {
-  background: rgba(241, 245, 249, 0.60);
-}
-
-.dark .tbl__body-row:hover {
-  background: rgba(15, 23, 42, 0.30);
-}
-
-.tbl__body-row + .tbl__body-row {
+  transition: background 120ms var(--ease-default);
   border-top: 1px solid var(--color-border);
 }
 
-.dark .tbl__body-row + .tbl__body-row {
+.dark .tbl__body-row {
   border-top-color: var(--color-slate-800);
+}
+
+.tbl__body-row:first-child {
+  border-top: 0;
+}
+
+.tbl__body-row:hover {
+  background: var(--color-surface-2);
+}
+
+.dark .tbl__body-row:hover {
+  background: var(--color-slate-800);
+}
+
+/* Clickable rows (used with onClick + cursor-pointer) */
+.tbl__body-row--clickable {
+  cursor: pointer;
 }
 
 .tbl__body-row--active {
   background: var(--color-accent-50);
-  border-left: 3px solid var(--color-accent-500);
+  position: relative;
+}
+
+.tbl__body-row--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--color-accent-500);
 }
 
 .dark .tbl__body-row--active {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.10);
 }
 
 .tbl__cell {
@@ -77,6 +96,13 @@
 
 .dark .tbl__cell {
   color: var(--color-slate-200);
+}
+
+/* Action column: tighter right-aligned */
+.tbl__cell--actions {
+  text-align: right;
+  width: 1%;
+  white-space: nowrap;
 }
 
 /* Responsive: horizontal scroll on mobile */

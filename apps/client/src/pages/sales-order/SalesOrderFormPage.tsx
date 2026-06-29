@@ -1,12 +1,19 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useAtomValue } from "jotai";
 import type { inferProcedureInput } from "@trpc/server";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { ButtonGroup } from "../../components/ButtonGroup";
+import { DatePicker } from "../../components/DatePicker";
+import { SelectSearch } from "../../ui/SelectSearch";
+import { SOIcon } from "./SalesOrderIcons";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import "./SalesOrderFormPage.css";
 
@@ -25,11 +32,11 @@ interface LineItem {
 }
 
 interface FormValues {
-  customerId: string;
+  documentNumber: string;
   outletId: string;
-  areaId: string;
   currency: string;
   paymentTerms: string;
+  date: string;
   expectedDeliveryDate: string;
   notes: string;
   subtotal: number;
@@ -41,11 +48,13 @@ interface FormValues {
 
 interface DetailData {
   id: string;
-  customer: { id: string };
-  outlet: { id: string } | null;
-  area: { id: string };
+  documentNumber: string | null;
+  customer: { id: string; name: string } | null;
+  outlet: { id: string; name: string };
+  area: { id: string; name: string };
   currency: string;
   paymentTerms: string | null;
+  date: string | null;
   expectedDeliveryDate: string | null;
   notes: string | null;
   subtotal: number | null;
@@ -74,11 +83,11 @@ const emptyItem = (): LineItem => ({
 });
 
 const defaults = (): FormValues => ({
-  customerId: "",
+  documentNumber: "",
   outletId: "",
-  areaId: "",
   currency: "IDR",
   paymentTerms: "",
+  date: new Date().toISOString().slice(0, 10),
   expectedDeliveryDate: "",
   notes: "",
   subtotal: 0,
@@ -109,14 +118,12 @@ const recalcTotals = (items: LineItem[]) => {
 };
 
 const fromDetail = (d: DetailData): FormValues => ({
-  customerId: d.customer.id,
+  documentNumber: d.documentNumber ?? "",
   outletId: d.outlet?.id ?? "",
-  areaId: d.area.id,
   currency: d.currency,
   paymentTerms: d.paymentTerms ?? "",
-  expectedDeliveryDate: d.expectedDeliveryDate
-    ? new Date(d.expectedDeliveryDate).toISOString().slice(0, 10)
-    : "",
+  date: d.date ? new Date(d.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+  expectedDeliveryDate: d.expectedDeliveryDate ? new Date(d.expectedDeliveryDate).toISOString().slice(0, 10) : "",
   notes: d.notes ?? "",
   subtotal: d.subtotal ?? 0,
   discountTotal: d.discountTotal ?? 0,
@@ -135,21 +142,6 @@ const fromDetail = (d: DetailData): FormValues => ({
 
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(v);
-
-const initials = (name: string) => {
-  const parts = name.trim().split(/\s+/).slice(0, 2);
-  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
-};
-
-const HUE_PALETTE = [
-  "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b",
-  "#ef4444", "#14b8a6", "#6366f1", "#84cc16", "#f97316",
-];
-const colorFromId = (id: string) => {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  return HUE_PALETTE[Math.abs(hash) % HUE_PALETTE.length];
-};
 
 /* ----------------------------------------------------------------
  * Icons (inline SVG — no external icon font)
@@ -257,220 +249,6 @@ const IconArrowLeft = ({ size = 14 }: { size?: number }) => (
 );
 
 /* ----------------------------------------------------------------
- * Custom SelectSearch — built fresh with regular CSS
- * ---------------------------------------------------------------- */
-
-interface SearchOption {
-  id: string;
-  name: string;
-  description?: string | null;
-}
-
-interface SelectSearchProps {
-  label?: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: SearchOption[];
-  isLoading?: boolean;
-  isRequired?: boolean;
-  isInvalid?: boolean;
-  errorMessage?: string;
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyLabel?: string;
-  loadingLabel?: string;
-  getDescription?: (opt: SearchOption) => string | undefined;
-  showInitial?: boolean;
-}
-
-const SelectSearch = ({
-  label,
-  value,
-  onChange,
-  options,
-  isLoading,
-  isRequired,
-  isInvalid,
-  errorMessage,
-  placeholder = "Select…",
-  searchPlaceholder = "Search…",
-  emptyLabel = "No options",
-  loadingLabel = "Loading…",
-  getDescription,
-  showInitial = true,
-}: SelectSearchProps) => {
-  const autoId = useId();
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [highlight, setHighlight] = useState(0);
-
-  const filtered = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return options;
-    return options.filter((o) => o.name.toLowerCase().includes(term));
-  }, [options, searchTerm]);
-
-  const selected = options.find((o) => o.id === value) ?? null;
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 0);
-      setHighlight(0);
-    }
-  }, [open]);
-
-  const select = (id: string) => {
-    onChange(id);
-    setOpen(false);
-    setSearchTerm("");
-  };
-
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlight((h) => Math.max(h - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const opt = filtered[highlight];
-      if (opt) select(opt.id);
-    }
-  };
-
-  return (
-    <div className="so-field" style={{ position: "relative" }}>
-      {label && (
-        <label className="so-field__label" htmlFor={autoId}>
-          {label}
-          {isRequired && <span className="so-field__required">*</span>}
-        </label>
-      )}
-      <div className="so-select" ref={wrapRef}>
-        <button
-          id={autoId}
-          type="button"
-          className={`so-select__trigger ${isInvalid ? "so-select__trigger--error" : ""} ${
-            !selected ? "so-select__trigger--placeholder" : ""
-          }`}
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
-              e.preventDefault();
-              setOpen(true);
-            }
-          }}
-        >
-          {selected && showInitial && (
-            <span className="so-select__initial" style={{ background: colorFromId(selected.id) }}>
-              {initials(selected.name)}
-            </span>
-          )}
-          <span className="so-select__value">{selected ? selected.name : placeholder}</span>
-          <span className="so-select__caret">
-            <IconCaret />
-          </span>
-        </button>
-        {open && (
-          <div className="so-select__popover" role="listbox">
-            <div className="so-select__search">
-              <div className="so-select__search-wrap">
-                <span className="so-select__search-icon">
-                  <IconSearch />
-                </span>
-                <input
-                  ref={inputRef}
-                  type="search"
-                  className="so-select__search-input"
-                  placeholder={searchPlaceholder}
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setHighlight(0);
-                  }}
-                  onKeyDown={onKey}
-                />
-              </div>
-            </div>
-            <ul className="so-select__list">
-              {isLoading ? (
-                <li className="so-select__empty">{loadingLabel}</li>
-              ) : filtered.length === 0 ? (
-                <li className="so-select__empty">{emptyLabel}</li>
-              ) : (
-                filtered.map((opt, idx) => {
-                  const isSelected = opt.id === value;
-                  const isHighlighted = idx === highlight;
-                  const desc = getDescription?.(opt);
-                  return (
-                    <li
-                      key={opt.id}
-                      role="option"
-                      aria-selected={isSelected}
-                      className={`so-select__item ${isHighlighted ? "so-select__item--highlighted" : ""} ${
-                        isSelected ? "so-select__item--selected" : ""
-                      }`}
-                      onMouseEnter={() => setHighlight(idx)}
-                      onClick={() => select(opt.id)}
-                    >
-                      {showInitial && (
-                        <span className="so-select__initial" style={{ background: colorFromId(opt.id) }}>
-                          {initials(opt.name)}
-                        </span>
-                      )}
-                      <div className="so-select__item-main">
-                        <span className="so-select__item-label">{opt.name}</span>
-                        {desc && <span className="so-select__item-desc">{desc}</span>}
-                      </div>
-                      {isSelected && (
-                        <span className="so-select__check">
-                          <IconCheck />
-                        </span>
-                      )}
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-            <div className="so-select__footer">
-              <span>
-                {filtered.length} of {options.length} result{options.length === 1 ? "" : "s"}
-              </span>
-              <span className="so-select__hint">
-                <span className="so-select__kbd">↑↓</span> navigate
-                <span className="so-select__kbd">↵</span> select
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-      {isInvalid && errorMessage && <p className="so-field__error">{errorMessage}</p>}
-    </div>
-  );
-};
-
-/* ----------------------------------------------------------------
  * Page
  * ---------------------------------------------------------------- */
 
@@ -479,9 +257,52 @@ export const SalesOrderFormPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const hasPermission = useAtomValue(hasPermissionAtom);
+  const canPropose = hasPermission("sales-order@propose");
   const isEdit = Boolean(id);
-  const [modalStage, setModalStage] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  // Modal state machine:
+  //   idle                — no modal
+  //   draft-confirm       — confirm save as draft
+  //   propose-confirm     — confirm propose with message textarea
+  //   loading             — mutation in flight
+  //   success             — saved, auto-navigating
+  //   error               — show error, allow dismiss
+  type ModalStage = "idle" | "draft-confirm" | "propose-confirm" | "loading" | "success" | "error";
+  type SaveMode = "DRAFT" | "PROPOSED";
+  const [modalStage, setModalStage] = useState<ModalStage>("idle");
+  const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode>("DRAFT");
+  const [proposeMessage, setProposeMessage] = useState("");
   const [resultMessage, setResultMessage] = useState("");
+  const [formValid, setFormValid] = useState(true);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S → Save as draft
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (modalStage === "idle") {
+          setPendingSaveMode("DRAFT");
+          setModalStage("draft-confirm");
+        }
+      }
+      // Ctrl+Enter or Cmd+Enter → Propose
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (modalStage === "idle") {
+          const formEl = document.querySelector(".so-form__shell") as HTMLFormElement | null;
+          formEl?.requestSubmit();
+        }
+      }
+      // Escape → Close modals
+      if (e.key === "Escape" && modalStage !== "idle") {
+        setModalStage("idle");
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [modalStage]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["salesOrderDetail", id],
@@ -489,14 +310,23 @@ export const SalesOrderFormPage = () => {
     queryFn: () => trpcClient.salesOrder.detail.query({ id: id ?? "" }),
   });
 
-  const { data: customers, isLoading: customersLoading } = useQuery({
-    queryKey: ["customerSelect"],
-    queryFn: () => trpcClient.customer.list.query({ page: 1, limit: 100 }),
-    staleTime: 5 * 60 * 1000,
+  const form = useForm({
+    defaultValues: (isEdit && data ? fromDetail(data as unknown as DetailData) : defaults()) as FormValues,
+    onSubmit: async ({ value }) => {
+      // Don't mutate yet — open the propose confirmation modal.
+      setPendingSaveMode("PROPOSED");
+      setProposeMessage("");
+      setModalStage("propose-confirm");
+    },
   });
-  const { data: areas, isLoading: areasLoading } = useQuery({
-    queryKey: ["areaSelect"],
-    queryFn: () => trpcClient.area.list.query({ page: 1, limit: 100 }),
+
+  // Read directly from form.state.values so the component re-renders
+  // when the form store updates.
+  const formValues = form.state.values as FormValues;
+
+  const { data: outlets, isLoading: outletsLoading } = useQuery({
+    queryKey: ["outletSelect"],
+    queryFn: () => trpcClient.outlet.list.query({ page: 1, limit: 100 }),
     staleTime: 5 * 60 * 1000,
   });
   const { data: skus, isLoading: skusLoading } = useQuery({
@@ -505,8 +335,7 @@ export const SalesOrderFormPage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const custList = ((customers as { data?: SearchOption[] } | undefined)?.data ?? []) as SearchOption[];
-  const areaList = ((areas as { data?: SearchOption[] } | undefined)?.data ?? []) as SearchOption[];
+  const outletList = ((outlets as { data?: { id: string; name: string; customerName?: string; areaName?: string }[] } | undefined)?.data ?? []) as { id: string; name: string; customerName?: string; areaName?: string }[];
   const skuList = ((skus as { data?: { id: string; name: string; basePrice?: number | null; code?: string | null }[] } | undefined)
     ?.data ?? []) as { id: string; name: string; basePrice?: number | null; code?: string | null }[];
 
@@ -518,7 +347,20 @@ export const SalesOrderFormPage = () => {
     mutationFn: (p) => trpcClient.salesOrder.create.mutate(p),
     onSuccess: async (r) => {
       await queryClient.invalidateQueries({ queryKey: ["salesOrderList"] });
-      setResultMessage(intl.formatMessage({ id: "sales_order.form.success.created", defaultMessage: "Order created" }));
+      if (pendingSaveMode === "PROPOSED" && canPropose) {
+        // Chain the propose call after a successful create
+        try {
+          await trpcClient.salesOrder.propose.mutate({ id: r.id, message: proposeMessage || undefined });
+          setResultMessage(
+            intl.formatMessage({ id: "sales_order.form.proposed_toast", defaultMessage: "Order proposed for approval" }),
+          );
+        } catch (e) {
+          setResultMessage(e instanceof Error ? e.message : "Failed to propose");
+        }
+      } else {
+        setResultMessage(intl.formatMessage({ id: "sales_order.form.success.created", defaultMessage: "Order created" }));
+      }
+      await queryClient.invalidateQueries({ queryKey: ["salesOrderList"] });
       setModalStage("success");
       setTimeout(() => navigate(`/sales-order/${r.id}`), 1200);
     },
@@ -537,7 +379,19 @@ export const SalesOrderFormPage = () => {
     onSuccess: async (r) => {
       await queryClient.invalidateQueries({ queryKey: ["salesOrderList"] });
       queryClient.removeQueries({ queryKey: ["salesOrderDetail", id] });
-      setResultMessage(intl.formatMessage({ id: "sales_order.form.success.updated", defaultMessage: "Order updated" }));
+      if (pendingSaveMode === "PROPOSED" && canPropose) {
+        try {
+          await trpcClient.salesOrder.propose.mutate({ id: r.id, message: proposeMessage || undefined });
+          setResultMessage(
+            intl.formatMessage({ id: "sales_order.form.proposed_toast", defaultMessage: "Order proposed for approval" }),
+          );
+        } catch (e) {
+          setResultMessage(e instanceof Error ? e.message : "Failed to propose");
+        }
+      } else {
+        setResultMessage(intl.formatMessage({ id: "sales_order.form.success.updated", defaultMessage: "Order updated" }));
+      }
+      await queryClient.invalidateQueries({ queryKey: ["salesOrderList"] });
       setModalStage("success");
       setTimeout(() => navigate(`/sales-order/${r.id}`), 1200);
     },
@@ -547,26 +401,34 @@ export const SalesOrderFormPage = () => {
     },
   });
 
-  const form = useForm({
-    defaultValues: (isEdit && data ? fromDetail(data as unknown as DetailData) : defaults()) as FormValues,
-    onSubmit: async ({ value }) => {
+  // Build the payload once and run the appropriate mutation.
+  // `mode` controls whether to also propose after saving.
+  const runSave = useCallback(
+    (values: FormValues, mode: SaveMode) => {
+      setPendingSaveMode(mode);
       setModalStage("loading");
-      const items = value.items.map((it) => ({
-        ...it,
+      const items = values.items.map((it) => ({
+        skuId: it.skuId,
+        quantity: Number(it.quantity) || 0,
+        unitPrice: Number(it.unitPrice) || 0,
+        discountPercent: it.discountPercent != null ? Number(it.discountPercent) : null,
+        taxPercent: it.taxPercent != null ? Number(it.taxPercent) : null,
         lineTotal: Math.round(
-          it.quantity *
-            it.unitPrice *
-            (1 - (it.discountPercent ?? 0) / 100) *
-            (1 + (it.taxPercent ?? 0) / 100),
+          Number(it.quantity) *
+            Number(it.unitPrice) *
+            (1 - (Number(it.discountPercent) ?? 0) / 100) *
+            (1 + (Number(it.taxPercent) ?? 0) / 100),
         ),
+        notes: it.notes,
       }));
       const totals = recalcTotals(items);
       const payload = {
-        ...value,
+        ...values,
+        source: 'MANUAL',
         items,
         ...totals,
-        outletId: value.outletId || null,
-        expectedDeliveryDate: value.expectedDeliveryDate || undefined,
+        outletId: values.outletId || null,
+        expectedDeliveryDate: values.expectedDeliveryDate || undefined,
       };
       if (isEdit && id) {
         updateMutation.mutate({ currentId: id, ...payload } as never);
@@ -574,10 +436,19 @@ export const SalesOrderFormPage = () => {
         createMutation.mutate(payload as never);
       }
     },
-  });
+    [createMutation, updateMutation, id, isEdit, canPropose, intl],
+  );
+
+  // When the user picks an option in the chooser, run the actual save.
+  const handleChooseSaveMode = useCallback(
+    (mode: SaveMode) => {
+      const values = form.state.values as FormValues;
+      runSave(values, mode);
+    },
+    [form, runSave],
+  );
 
   useAiFillForm({
-    customerId: (v: unknown) => form.setFieldValue("customerId" as never, String(v) as never),
     notes: (v: unknown) => form.setFieldValue("notes" as never, String(v) as never),
   });
 
@@ -585,9 +456,18 @@ export const SalesOrderFormPage = () => {
   // when the form store updates. form.getFieldValue() is a snapshot read
   // and does NOT trigger re-renders, which is why the add/remove
   // buttons appeared to do nothing.
-  const formValues = form.state.values as FormValues;
   const itemsVal = (formValues.items ?? []) as LineItem[];
-  const grandTotal = (formValues.grandTotal as number | undefined) ?? 0;
+  // Compute grand total directly from items to ensure it's always in sync
+  const computedTotals = recalcTotals(itemsVal);
+  const grandTotal = computedTotals.grandTotal;
+
+  // When the user picks an outlet, do NOT auto-fill area (area is selected first)
+  const handleOutletChange = useCallback(
+    (outletId: string) => {
+      form.setFieldValue("outletId" as never, outletId as never);
+    },
+    [form],
+  );
 
   const handleAddItem = () => {
     const current = ((form.state.values as FormValues).items ?? []) as LineItem[];
@@ -601,6 +481,10 @@ export const SalesOrderFormPage = () => {
     form.setFieldValue("items" as never, (next.length > 0 ? next : [emptyItem()]) as never);
   };
 
+  // Track which line items have auto-filled discounts (by index).
+  // Keyed by item index → { programName, discountPercent }.
+  const [autoDiscounts, setAutoDiscounts] = useState<Record<number, { programName: string; discountPercent: number }>>({});
+
   const handleItemChange = useCallback(
     (idx: number, field: keyof LineItem, val: LineItem[keyof LineItem]) => {
       const current = ((form.state.values as FormValues).items ?? []) as LineItem[];
@@ -608,6 +492,47 @@ export const SalesOrderFormPage = () => {
       if (field === "skuId") {
         const sku = skuList.find((s) => s.id === val);
         if (sku?.basePrice) next[idx]!.unitPrice = Number(sku.basePrice);
+
+        // Look up the best discount from Action Programs.
+        const fv = form.state.values as FormValues;
+        const outletId = fv.outletId;
+        const orderDate = fv.expectedDeliveryDate || new Date().toISOString().slice(0, 10);
+        if (outletId && val) {
+          trpcClient.salesOrder.lookupDiscount
+            .query({ skuId: val as string, outletId, date: orderDate })
+            .then((discount) => {
+              if (discount && typeof discount.discountPercent === "number") {
+                // Apply the auto-filled discount.
+                const items = ((form.state.values as FormValues).items ?? []) as LineItem[];
+                const updated = items.map((it, i) => {
+                  if (i !== idx) return it;
+                  const lineSub = it.quantity * it.unitPrice;
+                  const newLineTotal = Math.round(
+                    lineSub * (1 - discount.discountPercent / 100) * (1 + (it.taxPercent ?? 0) / 100),
+                  );
+                  return { ...it, discountPercent: discount.discountPercent, lineTotal: newLineTotal };
+                });
+                form.setFieldValue("items" as never, updated as never);
+                const totals = recalcTotals(updated);
+                form.setFieldValue("subtotal" as never, totals.subtotal as never);
+                form.setFieldValue("discountTotal" as never, totals.discountTotal as never);
+                form.setFieldValue("taxTotal" as never, totals.taxTotal as never);
+                form.setFieldValue("grandTotal" as never, totals.grandTotal as never);
+                setAutoDiscounts((prev) => ({
+                  ...prev,
+                  [idx]: { programName: discount.actionProgramName, discountPercent: discount.discountPercent },
+                }));
+              }
+            })
+            .catch(() => {
+              // Discount lookup failed — leave the field editable.
+              setAutoDiscounts((prev) => {
+                const next = { ...prev };
+                delete next[idx];
+                return next;
+              });
+            });
+        }
       }
       const it = next[idx]!;
       next[idx] = {
@@ -661,11 +586,41 @@ export const SalesOrderFormPage = () => {
     );
   }
 
-  const skuOptions: SearchOption[] = skuList.map((s) => ({
-    id: s.id,
-    name: s.name,
-    description: s.basePrice ? formatCurrency(Number(s.basePrice)) : (s.code ?? undefined),
-  }));
+  // Validation warnings
+  const validationWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    
+    // Check delivery date
+    if (formValues.expectedDeliveryDate) {
+      const deliveryDate = new Date(formValues.expectedDeliveryDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (deliveryDate < today) {
+        warnings.push("Delivery date is in the past");
+      }
+    }
+    
+    // Check order total
+    if (grandTotal > 0 && grandTotal < 100000) {
+      warnings.push("Order total is very small (< Rp 100.000)");
+    }
+    if (grandTotal > 100000000) {
+      warnings.push("Order total is very large (> Rp 100.000.000) - may require manual review");
+    }
+    
+    // Check item prices vs base price
+    itemsVal.forEach((item, idx) => {
+      const sku = skuList.find(s => s.id === item.skuId);
+      if (sku?.basePrice && item.unitPrice > 0) {
+        const diff = Math.abs(item.unitPrice - Number(sku.basePrice)) / Number(sku.basePrice);
+        if (diff > 0.3) {
+          warnings.push(`Item ${idx + 1}: Price differs ${Math.round(diff * 100)}% from base price`);
+        }
+      }
+    });
+    
+    return warnings;
+  }, [formValues.expectedDeliveryDate, grandTotal, itemsVal, skuList]);
 
   return (
     <div
@@ -674,8 +629,6 @@ export const SalesOrderFormPage = () => {
         section: "sales-order-form",
         mode: isEdit ? "edit" : "create",
         orderId: id ?? null,
-        availableCustomers: custList.map((c) => ({ id: c.id, name: c.name })),
-        availableAreas: areaList.map((a) => ({ id: a.id, name: a.name })),
         availableSkus: skuList.map((s) => ({ id: s.id, name: s.name, basePrice: s.basePrice })),
       })}
     >
@@ -706,76 +659,95 @@ export const SalesOrderFormPage = () => {
           </button>
         </div>
 
-        {/* Customer & Location */}
+        {/* Validation Warnings */}
+        {validationWarnings.length > 0 && (
+          <div className="so-validation-warnings">
+            <div className="so-validation-warnings__header">
+              <SOIcon name="alert" size={16} />
+              <span>Validation Warnings</span>
+            </div>
+            <ul className="so-validation-warnings__list">
+              {validationWarnings.map((warning, idx) => (
+                <li key={idx}>{warning}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Outlet & Location */}
         <section className="so-card">
           <div className="so-card__header">
             <h2 className="so-card__title">
               <span className="so-card__icon"><IconUser /></span>
-              Customer &amp; Location
+              Outlet &amp; Location
             </h2>
-            <p className="so-card__hint">Required to identify the order recipient and delivery area</p>
+            <p className="so-card__hint">Select outlet to auto-fill customer and area</p>
           </div>
           <div className="so-card__body">
             <div className="so-section">
-              <form.Field
-                name="customerId"
-                validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
-              >
-                {(f) => (
-                  <SelectSearch
-                    label="Customer"
-                    isRequired
-                    isInvalid={Boolean(f.state.meta.errors[0])}
-                    errorMessage={String(f.state.meta.errors[0] ?? "")}
-                    value={f.state.value}
-                    onChange={f.handleChange}
-                    options={custList}
-                    isLoading={customersLoading}
-                    placeholder="Select customer…"
-                    searchPlaceholder="Search customers…"
-                  />
-                )}
-              </form.Field>
-
-              <form.Field
-                name="areaId"
-                validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
-              >
-                {(f) => (
-                  <SelectSearch
-                    label="Area"
-                    isRequired
-                    isInvalid={Boolean(f.state.meta.errors[0])}
-                    errorMessage={String(f.state.meta.errors[0] ?? "")}
-                    value={f.state.value}
-                    onChange={f.handleChange}
-                    options={areaList}
-                    isLoading={areasLoading}
-                    placeholder="Select area…"
-                    searchPlaceholder="Search areas…"
-                    showInitial={false}
-                  />
-                )}
-              </form.Field>
-
-              <form.Field name="expectedDeliveryDate">
+              {/* Document Number */}
+              <form.Field name="documentNumber">
                 {(f) => (
                   <div className="so-field">
-                    <label className="so-field__label">Delivery date</label>
-                    <div className="so-datepicker">
-                      <div className="so-datepicker__trigger">
-                        <input
-                          type="date"
-                          className="so-datepicker__input"
-                          value={f.state.value ?? ""}
-                          onChange={(e) => f.handleChange(e.target.value)}
-                        />
-                        <span className="so-datepicker__icon">
-                          <IconCalendar />
-                        </span>
-                      </div>
-                    </div>
+                    <label className="so-field__label">Document Number</label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder="Auto-generated if empty"
+                    />
                   </div>
+                )}
+              </form.Field>
+
+              {/* Outlet - shows customer name and area */}
+              <form.Field
+                name="outletId"
+                validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              >
+                {(f) => (
+                  <SelectSearch
+                    label="Outlet"
+                    isRequired
+                    isInvalid={Boolean(f.state.meta.errors[0])}
+                    errorMessage={String(f.state.meta.errors[0] ?? "")}
+                    value={f.state.value}
+                    onChange={(v) => handleOutletChange(Array.isArray(v) ? v[0] ?? "" : v)}
+                    sourceData={async () => outletList}
+                    optionsKey="id"
+                    queryKeyBase="outletSelect"
+                    getOptionLabel={(o) => o.name}
+                    getOptionDescription={(o) => `${o.customerName} • ${o.areaName}`}
+                    placeholder="Select outlet…"
+                    searchPlaceholder="Search outlets…"
+                    isLoading={outletsLoading}
+                  />
+                )}
+              </form.Field>
+
+              {/* Order Date */}
+              <form.Field name="date">
+                {(f) => (
+                  <DatePicker
+                    label="Order date"
+                    value={f.state.value ?? ""}
+                    onChange={(v) => f.handleChange(v as string)}
+                    placeholder="Select order date"
+                  />
+                )}
+              </form.Field>
+
+              {/* ETA */}
+              <form.Field name="expectedDeliveryDate">
+                {(f) => (
+                  <DatePicker
+                    label="ETA"
+                    value={f.state.value ?? ""}
+                    onChange={(v) => f.handleChange(v as string)}
+                    placeholder="Select delivery date"
+                    min={f.state.value || undefined}
+                  />
                 )}
               </form.Field>
             </div>
@@ -807,12 +779,15 @@ export const SalesOrderFormPage = () => {
                     {idx === 0 && <div className="so-item__label">Product</div>}
                     <SelectSearch
                       value={item.skuId}
-                      onChange={(v) => handleItemChange(idx, "skuId", v)}
-                      options={skuOptions}
-                      isLoading={skusLoading}
+                      onChange={(v) => handleItemChange(idx, "skuId", Array.isArray(v) ? v[0] ?? "" : v)}
+                      sourceData={async () => skuList}
+                      optionsKey="id"
+                      queryKeyBase="skuSelect"
+                      getOptionLabel={(o) => o.name}
+                      getOptionDescription={(o) => o.code ?? undefined}
                       placeholder="Select SKU…"
                       searchPlaceholder="Search SKUs…"
-                      getDescription={(o: SearchOption) => o.description ?? undefined}
+                      isLoading={skusLoading}
                     />
                   </div>
                   <div>
@@ -838,14 +813,29 @@ export const SalesOrderFormPage = () => {
                   <div>
                     {idx === 0 && <div className="so-item__label">Disc %</div>}
                     <input
-                      className="so-field__input"
+                      className={`so-field__input ${autoDiscounts[idx] ? "so-field__input--auto" : ""}`}
                       type="number"
                       min={0}
                       value={String(item.discountPercent ?? "")}
                       onChange={(e) =>
                         handleItemChange(idx, "discountPercent", e.target.value ? Number(e.target.value) : null)
                       }
+                      readOnly={Boolean(autoDiscounts[idx])}
+                      title={
+                        autoDiscounts[idx]
+                          ? intl.formatMessage(
+                              { id: "sales_order.form.discount_auto_filled", defaultMessage: "Auto-filled from {program}" },
+                              { program: autoDiscounts[idx].programName },
+                            )
+                          : undefined
+                      }
                     />
+                    {autoDiscounts[idx] && (
+                      <span className="so-item__auto-badge" title={`${autoDiscounts[idx].programName} - ${autoDiscounts[idx].discountPercent}%`}>
+                        <SOIcon name="check" size={12} />
+                        {intl.formatMessage({ id: "sales_order.form.discount_auto_filled_short", defaultMessage: "Auto" })}
+                      </span>
+                    )}
                   </div>
                   <div>
                     {idx === 0 && <div className="so-item__label">Tax %</div>}
@@ -894,10 +884,19 @@ export const SalesOrderFormPage = () => {
             </div>
 
             <div className="so-totals">
-              <div className="so-totals__card">
-                <p className="so-totals__label">Grand total</p>
-                <p className="so-totals__value">{formatCurrency(grandTotal)}</p>
-              </div>
+              <form.Subscribe
+                selector={(s) => (s.values.items ?? []) as LineItem[]}
+              >
+                {(items) => {
+                  const totals = recalcTotals(items);
+                  return (
+                    <div className="so-totals__card">
+                      <p className="so-totals__label">Grand total</p>
+                      <p className="so-totals__value">{formatCurrency(totals.grandTotal)}</p>
+                    </div>
+                  );
+                }}
+              </form.Subscribe>
             </div>
           </div>
         </section>
@@ -944,30 +943,168 @@ export const SalesOrderFormPage = () => {
 
         {/* Actions */}
         <div className="so-actions">
-          <button
-            type="button"
-            className="so-btn so-btn--ghost"
-            onClick={() => navigate(isEdit && id ? `/sales-order/${id}` : "/sales-order")}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="so-btn so-btn--primary"
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
-            {(createMutation.isPending || updateMutation.isPending) && <span className="so-spinner" />}
-            {isEdit
-              ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save changes" })
-              : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create order" })}
-          </button>
+          <ButtonGroup
+            items={[
+              {
+                key: "draft",
+                label: intl.formatMessage({ id: "sales_order.form.save_draft", defaultMessage: "Save as draft" }),
+                icon: <SOIcon name="check" size={14} />,
+                onClick: () => {
+                  setPendingSaveMode("DRAFT");
+                  setModalStage("draft-confirm");
+                },
+                disabled: createMutation.isPending || updateMutation.isPending,
+                isLoading: createMutation.isPending || updateMutation.isPending,
+                variant: "primary",
+              },
+              {
+                key: "submit",
+                label: intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" }),
+                icon: <SOIcon name="propose" size={14} />,
+                onClick: () => {
+                  const form = document.querySelector(".so-form__shell") as HTMLFormElement | null;
+                  form?.requestSubmit();
+                },
+                disabled: createMutation.isPending || updateMutation.isPending,
+                isLoading: createMutation.isPending || updateMutation.isPending,
+                variant: "warning",
+              },
+            ]}
+          />
         </div>
       </form>
 
-      {/* Result modal */}
-      {modalStage !== "idle" && (
-        <div className="so-modal__backdrop" onClick={() => modalStage !== "loading" && setModalStage("idle")}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
+      {/* Result modal — rendered into a portal at the document root so
+          position:fixed anchors to the viewport regardless of any
+          ancestor's overflow or transform (the form lives inside a
+          scrollable container). */}
+      {modalStage !== "idle" && createPortal(
+        <div
+          className="so-modal__backdrop"
+          onClick={() => modalStage !== "loading" && modalStage !== "propose-confirm" && modalStage !== "draft-confirm" && setModalStage("idle")}
+        >
+          <div
+            className={`so-modal ${modalStage === "propose-confirm" || modalStage === "draft-confirm" ? "so-modal--choose" : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {modalStage === "draft-confirm" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({
+                      id: "sales_order.form.draft_title",
+                      defaultMessage: "Save as draft",
+                    })}
+                  </h3>
+                  <button
+                    className="so-btn so-btn--ghost so-btn--sm"
+                    onClick={() => setModalStage("idle")}
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--success">
+                    <IconCheckCircle />
+                  </div>
+                  <h3 className="so-modal__title">
+                    {intl.formatMessage({
+                      id: "sales_order.form.draft_confirm",
+                      defaultMessage: "Save this order as draft?",
+                    })}
+                  </h3>
+                  <p className="so-modal__msg so-modal__msg--lead">
+                    {intl.formatMessage({
+                      id: "sales_order.form.draft_body",
+                      defaultMessage:
+                        "You can continue editing this order later. It will not be submitted for approval.",
+                    })}
+                  </p>
+                </div>
+                <div className="so-modal__footer">
+                  <button
+                    className="so-btn so-btn--ghost"
+                    onClick={() => setModalStage("idle")}
+                  >
+                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+                  </button>
+                  <button
+                    className="so-btn so-btn--primary"
+                    onClick={() => {
+                      const values = form.state.values as FormValues;
+                      runSave(values, "DRAFT");
+                    }}
+                  >
+                    {intl.formatMessage({ id: "sales_order.form.save_draft", defaultMessage: "Save as draft" })}
+                  </button>
+                </div>
+              </>
+            )}
+            {modalStage === "propose-confirm" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({
+                      id: "sales_order.form.propose_title",
+                      defaultMessage: "Propose order",
+                    })}
+                  </h3>
+                  <button
+                    className="so-btn so-btn--ghost so-btn--sm"
+                    onClick={() => setModalStage("idle")}
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="so-modal__body">
+                  <p className="so-modal__msg so-modal__msg--lead">
+                    {intl.formatMessage({
+                      id: "sales_order.form.propose_body",
+                      defaultMessage:
+                        "This will submit the order for AI validation. Add an optional message for the approval history.",
+                    })}
+                  </p>
+                  <div style={{ width: "100%", marginTop: "1rem" }}>
+                    <label className="so-field__label" htmlFor="propose-message">
+                      {intl.formatMessage({
+                        id: "sales_order.form.propose_message_label",
+                        defaultMessage: "Message (optional)",
+                      })}
+                    </label>
+                    <textarea
+                      id="propose-message"
+                      className="so-field__input so-field__textarea"
+                      placeholder={intl.formatMessage({
+                        id: "sales_order.form.propose_message_placeholder",
+                        defaultMessage: "Add a note about this submission…",
+                      })}
+                      value={proposeMessage}
+                      onChange={(e) => setProposeMessage(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="so-modal__footer">
+                  <button
+                    className="so-btn so-btn--ghost"
+                    onClick={() => setModalStage("idle")}
+                  >
+                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+                  </button>
+                  <button
+                    className="so-btn so-btn--primary"
+                    onClick={() => {
+                      const values = form.state.values as FormValues;
+                      runSave(values, "PROPOSED");
+                    }}
+                  >
+                    {intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" })}
+                  </button>
+                </div>
+              </>
+            )}
             {modalStage === "loading" && (
               <div className="so-modal__body">
                 <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
@@ -1015,7 +1152,8 @@ export const SalesOrderFormPage = () => {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

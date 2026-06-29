@@ -1,413 +1,288 @@
-import { useEffect, useState } from 'react';
-import { useIntl } from 'react-intl';
-import { Button, Card, FieldError, Input, Label, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner, Textarea, FormField } from '../../ui';
-import { useNavigate, useParams } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from '@tanstack/react-form';
-import type { inferProcedureInput } from '@trpc/server';
-import type { AppRouter } from '../../lib/trpc';
-import { PageHeader } from '../../components/PageHeader';
-import { trpcClient } from '../../lib/trpc';
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate, useParams } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { ButtonGroup } from "../../components/ButtonGroup";
+import { ModulePage } from "../../components/ModulePage";
+import { CustomerIcon } from "./CustomerIcons";
 
-type CustomerFormValues = {
+interface FormValues {
   code: string;
   name: string;
-  taxId: string;
-  paymentTerms: string;
-  creditLimit: string;
-  status: string;
-  billingAddress: string;
-  notes: string;
-};
+}
 
-type CustomerDetail = {
-  id: string;
-  code: string | null;
-  name: string;
-  taxId: string | null;
-  paymentTerms: string | null;
-  creditLimit: number | null;
-  status: string;
-  billingAddress: string | null;
-  notes: string | null;
-};
+type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
-const defaultFormValues = (): CustomerFormValues => ({
-  code: '',
-  name: '',
-  taxId: '',
-  paymentTerms: '',
-  creditLimit: '',
-  status: 'ACTIVE',
-  billingAddress: '',
-  notes: '',
-});
+const defaults = (): FormValues => ({ code: "", name: "" });
 
-const transformDetailToFormValues = (detail: CustomerDetail): CustomerFormValues => ({
-  code: detail.code ?? '',
-  name: detail.name,
-  taxId: detail.taxId ?? '',
-  paymentTerms: detail.paymentTerms ?? '',
-  creditLimit: detail.creditLimit?.toString() ?? '',
-  status: detail.status,
-  billingAddress: detail.billingAddress ?? '',
-  notes: detail.notes ?? '',
-});
-
-function CustomerForm({
-  initialValues,
-  isEdit,
-  customerId,
-}: {
-  initialValues: CustomerFormValues;
-  isEdit: boolean;
-  customerId?: string;
-}) {
+export const CustomerFormPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [modalStage, setModalStage] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [resultMessage, setResultMessage] = useState('');
-  const successRedirectIdRef = useState<string | null>(null)[0] ?? null;
-  const [redirectId, setRedirectId] = useState<string | null>(null);
-  const resultTimerRef = useState<number | null>(null)[0] ?? null;
+  const hasPermission = useAtomValue(hasPermissionAtom);
+  const canSave = hasPermission(id ? "customer@update" : "customer@create");
+  const toast = useToast();
 
-  const clearResultTimer = () => {
-    // no-op; using setTimeout pattern
-  };
+  const isEdit = Boolean(id);
+  const [modalStage, setModalStage] = useState<ModalStage>("idle");
+  const [resultMessage, setResultMessage] = useState("");
 
-  useEffect(() => () => {
-    // cleanup
-  }, []);
-
-  const handleNavSuccess = (newId: string) => {
-    setTimeout(() => {
-      navigate(`/customer/${newId}`);
-    }, 1500);
-  };
-
-  const createMutation = useMutation<{ id: string }, unknown, inferProcedureInput<AppRouter['customer']['create']>>({
-    mutationFn: (payload) => trpcClient.customer.create.mutate(payload),
-    onSuccess: async (created) => {
-      await queryClient.invalidateQueries({ queryKey: ['customerList'] });
-      queryClient.removeQueries({ queryKey: ['customerDetail', created.id] });
-      setRedirectId(created.id);
-      setResultMessage(intl.formatMessage({ id: 'customer.form.success_created', defaultMessage: 'Customer created successfully.' }));
-      setModalStage('success');
-      handleNavSuccess(created.id);
-    },
-    onError: () => {
-      setResultMessage(intl.formatMessage({ id: 'customer.form.error_create_failed', defaultMessage: 'Failed to create customer.' }));
-      setModalStage('error');
-    },
-  });
-
-  const updateMutation = useMutation<{ id: string }, unknown, inferProcedureInput<AppRouter['customer']['update']>>({
-    mutationFn: (payload) => trpcClient.customer.update.mutate(payload),
-    onSuccess: async (updated) => {
-      await queryClient.invalidateQueries({ queryKey: ['customerList'] });
-      queryClient.removeQueries({ queryKey: ['customerDetail', customerId] });
-      setRedirectId(updated.id);
-      setResultMessage(intl.formatMessage({ id: 'customer.form.success_updated', defaultMessage: 'Customer updated successfully.' }));
-      setModalStage('success');
-      handleNavSuccess(updated.id);
-    },
-    onError: () => {
-      setResultMessage(intl.formatMessage({ id: 'customer.form.error_update_failed', defaultMessage: 'Failed to update customer.' }));
-      setModalStage('error');
-    },
+  const { data, isLoading } = useQuery({
+    queryKey: ["customerDetail", id],
+    enabled: isEdit && Boolean(id),
+    queryFn: () => trpcClient.customer.detail.query({ id: id ?? "" }),
   });
 
   const form = useForm({
-    defaultValues: initialValues,
-    onSubmit: async ({ value }) => {
-      setFormError(null);
-      setModalStage('loading');
-      const payload = {
-        ...value,
-        creditLimit: value.creditLimit ? Number(value.creditLimit) : null,
-      };
-      if (isEdit && customerId) {
-        updateMutation.mutate({ currentId: customerId, ...payload });
-      } else {
-        createMutation.mutate(payload);
-      }
+    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    onSubmit: async () => {
+      setModalStage("confirm");
     },
   });
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
-  const isPending = isLoading;
-
-  return (
-    <>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
-        <section className="space-y-6">
-          <PageHeader
-            title={
-              isEdit
-                ? intl.formatMessage({ id: 'customer.form.title_edit', defaultMessage: 'Edit Customer' })
-                : intl.formatMessage({ id: 'customer.form.title_create', defaultMessage: 'Create Customer' })
-            }
-            onBack={() => navigate(isEdit && customerId ? `/customer/${customerId}` : '/customer')}
-          />
-
-          <Card>
-            <div className="p-6">
-              <h3 className="mb-4 text-lg font-semibold">
-                {intl.formatMessage({ id: 'customer.form.section_general', defaultMessage: 'General Information' })}
-              </h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <form.Field name="name" validators={{ onChange: ({ value }) => {
-                  if (!value || value.trim().length === 0) {
-                    return intl.formatMessage({ id: 'customer.form.error_name_required', defaultMessage: 'Customer name is required.' });
-                  }
-                  return undefined;
-                }}}>
-                  {(field) => (
-                    <FormField
-                      isRequired
-                      label={intl.formatMessage({ id: 'customer.form.field_name', defaultMessage: 'Name' })}
-                      error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined}
-                    >
-                      <Input
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        placeholder={intl.formatMessage({ id: 'customer.form.field_name_placeholder', defaultMessage: 'e.g. PT Maju Bersama' })}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <form.Field name="code" validators={{ onChange: ({ value }) => undefined }}>
-                  {(field) => (
-                    <FormField
-                      label={intl.formatMessage({ id: 'customer.form.field_code', defaultMessage: 'Code' })}
-                    >
-                      <Input
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        placeholder={intl.formatMessage({ id: 'customer.form.field_code_placeholder', defaultMessage: 'e.g. CUST-001' })}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <form.Field name="taxId" validators={{ onChange: ({ value }) => undefined }}>
-                  {(field) => (
-                    <FormField
-                      label={intl.formatMessage({ id: 'customer.form.field_tax_id', defaultMessage: 'Tax ID (NPWP)' })}
-                    >
-                      <Input
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        placeholder={intl.formatMessage({ id: 'customer.form.field_tax_id_placeholder', defaultMessage: 'e.g. 12.345.678.9-123.000' })}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <form.Field name="status" validators={{ onChange: ({ value }) => undefined }}>
-                  {(field) => (
-                    <FormField
-                      label={intl.formatMessage({ id: 'customer.form.field_status', defaultMessage: 'Status' })}
-                    >
-                      <Input
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        placeholder="ACTIVE"
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="p-6">
-              <h3 className="mb-4 text-lg font-semibold">
-                {intl.formatMessage({ id: 'customer.form.section_finance', defaultMessage: 'Finance & Billing' })}
-              </h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <form.Field name="paymentTerms" validators={{ onChange: ({ value }) => undefined }}>
-                  {(field) => (
-                    <FormField
-                      label={intl.formatMessage({ id: 'customer.form.field_payment_terms', defaultMessage: 'Payment Terms' })}
-                    >
-                      <Input
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        placeholder={intl.formatMessage({ id: 'customer.form.field_payment_terms_placeholder', defaultMessage: 'e.g. NET 30, 50/50' })}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <form.Field name="creditLimit" validators={{ onChange: ({ value }) => undefined }}>
-                  {(field) => (
-                    <FormField
-                      label={intl.formatMessage({ id: 'customer.form.field_credit_limit', defaultMessage: 'Credit Limit' })}
-                    >
-                      <Input
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        type="number"
-                        placeholder={intl.formatMessage({ id: 'customer.form.field_credit_limit_placeholder', defaultMessage: 'e.g. 50000000' })}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <form.Field name="billingAddress" validators={{ onChange: ({ value }) => undefined }}>
-                  {(field) => (
-                    <FormField
-                      className="md:col-span-2"
-                      label={intl.formatMessage({ id: 'customer.form.field_billing_address', defaultMessage: 'Billing Address' })}
-                    >
-                      <Textarea
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        placeholder={intl.formatMessage({ id: 'customer.form.field_billing_address_placeholder', defaultMessage: 'Full billing address' })}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <form.Field name="notes" validators={{ onChange: ({ value }) => undefined }}>
-                  {(field) => (
-                    <FormField
-                      className="md:col-span-2"
-                      label={intl.formatMessage({ id: 'customer.form.field_notes', defaultMessage: 'Notes' })}
-                    >
-                      <Textarea
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        onBlur={field.handleBlur}
-                        placeholder={intl.formatMessage({ id: 'customer.form.field_notes_placeholder', defaultMessage: 'Internal notes about this customer' })}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-              </div>
-            </div>
-          </Card>
-
-          {formError ? (
-            <p className="text-sm text-danger">{formError}</p>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(isEdit && customerId ? `/customer/${customerId}` : '/customer')}
-            >
-              {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
-            </Button>
-            <Button variant="primary" type="submit" disabled={isPending}>
-              {isPending ? <Spinner size="sm" /> : isEdit ? intl.formatMessage({ id: 'common.action.save', defaultMessage: 'Save' }) : intl.formatMessage({ id: 'common.action.create', defaultMessage: 'Create' })}
-            </Button>
-          </div>
-        </section>
-      </form>
-
-      <Modal isOpen={modalStage !== 'idle'} onClose={() => { if (modalStage !== 'loading') setModalStage('idle'); }}>
-        <ModalContent>
-          {modalStage === 'loading' ? (
-            <ModalBody>
-              <div className="flex justify-center py-8">
-                <Spinner size="lg" />
-              </div>
-            </ModalBody>
-          ) : modalStage === 'success' ? (
-            <ModalBody>
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="flex size-12 items-center justify-center rounded-full bg-success-soft">
-                  <svg className="size-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-center text-sm">{resultMessage}</p>
-              </div>
-            </ModalBody>
-          ) : modalStage === 'error' ? (
-            <>
-              <ModalHeader>
-                {intl.formatMessage({ id: 'common.error', defaultMessage: 'Error' })}
-              </ModalHeader>
-              <ModalBody>
-                <p className="text-sm text-danger">{resultMessage}</p>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={() => setModalStage('idle')}>
-                  {intl.formatMessage({ id: 'common.action.close', defaultMessage: 'Close' })}
-                </Button>
-              </ModalFooter>
-            </>
-          ) : null}
-        </ModalContent>
-      </Modal>
-    </>
-  );
-}
-
-function CustomerFormPage() {
-  const { id } = useParams();
-  const intl = useIntl();
-  const navigate = useNavigate();
-  const isEdit = Boolean(id);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['customerDetail', id],
-    enabled: isEdit,
-    queryFn: () => trpcClient.customer.detail.query({ id: id ?? '' }),
+  const createMutation = useMutation({
+    mutationFn: (d: FormValues) => trpcClient.customer.create.mutate(d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customerList"] });
+      setResultMessage(intl.formatMessage({ id: "customer.form.success.created", defaultMessage: "Region created" }));
+      setModalStage("success");
+      setTimeout(() => navigate("/customer"), 1200);
+    },
+    onError: (e) => {
+      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setModalStage("error");
+    },
   });
 
-  if (isEdit && isLoading) {
+  const updateMutation = useMutation({
+    mutationFn: (d: FormValues & { currentId: string }) => trpcClient.customer.update.mutate(d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customerList"] });
+      queryClient.invalidateQueries({ queryKey: ["customerDetail", id] });
+      setResultMessage(intl.formatMessage({ id: "customer.form.success.updated", defaultMessage: "Region updated" }));
+      setModalStage("success");
+      setTimeout(() => navigate(`/customer/${id}`), 1200);
+    },
+    onError: (e) => {
+      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setModalStage("error");
+    },
+  });
+
+  const runSave = () => {
+    setModalStage("loading");
+    const values = form.state.values as FormValues;
+    if (isEdit && id) {
+      updateMutation.mutate({ ...values, currentId: id });
+    } else {
+      createMutation.mutate(values);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (modalStage === "idle") form.handleSubmit();
+      }
+      if (e.key === "Escape" && modalStage !== "idle") setModalStage("idle");
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [form, modalStage]);
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <Spinner size="lg" />
-      </div>
+      <ModulePage accent="#AF52DE" accentEnd="#5856D6" aiContext={{ section: "customer-form", loading: true }}>
+        <div className="m-loading"><Spinner size="lg" /></div>
+      </ModulePage>
     );
   }
-
-  if (isEdit && !data) {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-danger">
-          {intl.formatMessage({ id: 'customer.form.not_found', defaultMessage: 'Customer not found.' })}
-        </p>
-        <Button variant="ghost" onClick={() => navigate('/customer')}>
-          {intl.formatMessage({ id: 'customer.detail.back', defaultMessage: 'Back to Customers' })}
-        </Button>
-      </div>
-    );
-  }
-
-  const initialValues = isEdit && data
-    ? transformDetailToFormValues(data as CustomerDetail)
-    : defaultFormValues();
 
   return (
-    <CustomerForm
-      initialValues={initialValues}
-      isEdit={isEdit}
-      customerId={id}
-    />
-  );
-}
+    <ModulePage accent="#AF52DE" accentEnd="#5856D6" aiContext={{ section: "customer-form", isEdit, id: id ?? null }}>
+      <form
+        className="m-page"
+        onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+        style={{ gap: "1.25rem" }}
+      >
+        {/* ── Header ── */}
+        <div className="so-form__header">
+          <div>
+            <h1 className="so-form__title">
+              {isEdit
+                ? intl.formatMessage({ id: "customer.form.title_edit", defaultMessage: "Edit customer" })
+                : intl.formatMessage({ id: "customer.form.title_create", defaultMessage: "New customer" })}
+            </h1>
+            <p className="so-form__subtitle">
+              {isEdit ? "Update customer details" : "Create a new geographical customer"}
+            </p>
+          </div>
+          <button type="button" className="so-form__back" onClick={() => navigate(isEdit && id ? `/customer/${id}` : "/customer")}>
+            <CustomerIcon name="back" size={14} />
+            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
+          </button>
+        </div>
 
-export { CustomerFormPage };
+        {/* ── Fields ── */}
+        <section className="so-card">
+          <div className="so-card__header">
+            <h2 className="so-card__title">
+              <span className="so-card__icon"><CustomerIcon name="user" size={14} /></span>
+              {intl.formatMessage({ id: "customer.form.section_basic", defaultMessage: "Basic information" })}
+            </h2>
+          </div>
+          <div className="so-card__body">
+            <div className="so-section">
+              <form.Field name="code">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "customer.form.field_code", defaultMessage: "Code" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "customer.form.field_code_placeholder", defaultMessage: "Optional" })}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "customer.form.field_name", defaultMessage: "Name" })} *
+                    </label>
+                    <input
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "customer.form.field_name_placeholder", defaultMessage: "Region name" })}
+                    />
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Actions ── */}
+        <div className="so-actions">
+          <ButtonGroup
+            items={[
+              {
+                key: "save",
+                label: intl.formatMessage({ id: "customer.form.save_button", defaultMessage: "Save" }),
+                icon: <CustomerIcon name="check" size={14} />,
+                onClick: () => { form.handleSubmit(); },
+                disabled: !canSave || createMutation.isPending || updateMutation.isPending,
+                isLoading: createMutation.isPending || updateMutation.isPending,
+                variant: "primary",
+              },
+            ]}
+          />
+        </div>
+      </form>
+
+      {/* ── Modal ── */}
+      {modalStage !== "idle" && createPortal(
+        <div className="so-modal__backdrop" onClick={() => modalStage !== "loading" && modalStage !== "confirm" && setModalStage("idle")}>
+          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
+            {modalStage === "confirm" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({ id: "customer.form.modal.confirm_title", defaultMessage: "Confirm save" })}
+                  </h3>
+                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
+                    <CustomerIcon name="close" size={14} />
+                  </button>
+                </div>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--success">
+                    <CustomerIcon name="check" size={28} />
+                  </div>
+                  <h3 className="so-modal__title">
+                    {intl.formatMessage({ id: "customer.form.modal.confirm_body", defaultMessage: "Save changes to this customer?" })}
+                  </h3>
+                </div>
+                <div className="so-modal__footer">
+                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
+                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+                  </button>
+                  <button className="so-btn so-btn--primary" onClick={runSave}>
+                    {intl.formatMessage({ id: "common.action.confirm", defaultMessage: "Confirm" })}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {modalStage === "loading" && (
+              <div className="so-modal__body">
+                <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
+                  <span className="so-spinner so-spinner--lg" />
+                </div>
+                <p className="so-modal__msg">{intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}</p>
+              </div>
+            )}
+
+            {modalStage === "success" && (
+              <>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--success">
+                    <CustomerIcon name="check" size={28} />
+                  </div>
+                  <h3 className="so-modal__title">
+                    {intl.formatMessage({ id: "customer.form.modal.success", defaultMessage: "Success!" })}
+                  </h3>
+                  <p className="so-modal__msg">{resultMessage}</p>
+                </div>
+              </>
+            )}
+
+            {modalStage === "error" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({ id: "customer.form.modal.error_title", defaultMessage: "Error" })}
+                  </h3>
+                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
+                    <CustomerIcon name="close" size={14} />
+                  </button>
+                </div>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--error">
+                    <CustomerIcon name="close" size={28} />
+                  </div>
+                  <p className="so-modal__msg">{resultMessage}</p>
+                </div>
+                <div className="so-modal__footer">
+                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
+                    {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </ModulePage>
+  );
+};

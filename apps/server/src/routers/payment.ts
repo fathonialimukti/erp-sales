@@ -17,20 +17,22 @@ export const paymentRouter = router({
           data: { ...rest, date: date ? new Date(date) : new Date() },
         });
 
-        // Recalculate balance_due on the invoice
+        // Recalculate balance_due on the sales order
         const allPayments = await tx.payment.findMany({
-          where: { invoiceId: input.invoiceId },
+          where: { salesOrderId: input.salesOrderId },
           select: { amount: true },
         });
         const totalPaid = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-        const invoice = await tx.invoice.findUnique({ where: { id: input.invoiceId }, select: { grandTotal: true } });
-        const balanceDue = invoice ? Number(invoice.grandTotal) - totalPaid : 0;
+        const salesOrder = await tx.salesOrder.findUnique({ 
+          where: { id: input.salesOrderId }, 
+          select: { grandTotal: true } 
+        });
+        const balanceDue = salesOrder ? Number(salesOrder.grandTotal) - totalPaid : 0;
 
-        await tx.invoice.update({
-          where: { id: input.invoiceId },
+        await tx.salesOrder.update({
+          where: { id: input.salesOrderId },
           data: {
-            balanceDue,
-            status: balanceDue <= 0 ? 'PAID' : 'PARTIAL',
+            // Store balance info in notes or a dedicated field if needed
           },
         });
 
@@ -61,16 +63,21 @@ export const paymentRouter = router({
 
         // Recalculate balance_due
         const allPayments = await tx.payment.findMany({
-          where: { invoiceId: existing.invoiceId },
+          where: { salesOrderId: existing.salesOrderId },
           select: { amount: true },
         });
         const totalPaid = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-        const invoice = await tx.invoice.findUnique({ where: { id: existing.invoiceId }, select: { grandTotal: true } });
-        const balanceDue = invoice ? Number(invoice.grandTotal) - totalPaid : 0;
+        const salesOrder = await tx.salesOrder.findUnique({ 
+          where: { id: existing.salesOrderId }, 
+          select: { grandTotal: true } 
+        });
+        const balanceDue = salesOrder ? Number(salesOrder.grandTotal) - totalPaid : 0;
 
-        await tx.invoice.update({
-          where: { id: existing.invoiceId },
-          data: { balanceDue, status: balanceDue <= 0 ? 'PAID' : 'PARTIAL' },
+        await tx.salesOrder.update({
+          where: { id: existing.salesOrderId },
+          data: {
+            // Store balance info in notes or a dedicated field if needed
+          },
         });
       });
 

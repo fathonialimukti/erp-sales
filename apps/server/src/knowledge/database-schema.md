@@ -337,6 +337,256 @@ All 10 transaction types follow a common pattern with these shared fields:
 - detail (JSON, nullable)
 - created_at (TIMESTAMP)
 
+## CRM Tables
+
+### crm_regions
+- id (TEXT, PK, ULID)
+- code (TEXT, unique, nullable)
+- name (TEXT)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_areas
+- id (TEXT, PK, ULID)
+- region_id (TEXT, FK -> crm_regions.id)
+- code (TEXT, unique, nullable)
+- name (TEXT)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_customers
+- id (TEXT, PK, ULID)
+- code (TEXT, unique, nullable)
+- name (TEXT)
+- tax_id (TEXT, nullable)
+- payment_terms (TEXT, nullable)
+- credit_limit (DECIMAL, nullable)
+- status (TEXT, default 'ACTIVE')
+- billing_address (TEXT, nullable)
+- notes (TEXT, nullable)
+- area_id (TEXT, FK -> crm_areas.id, nullable)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_customer_contacts
+- id (TEXT, PK, ULID)
+- customer_id (TEXT, FK -> crm_customers.id)
+- outlet_id (TEXT, FK -> crm_outlets.id, nullable)
+- name (TEXT)
+- title (TEXT, nullable)
+- email (TEXT, nullable)
+- phone (TEXT, nullable)
+- is_primary (BOOLEAN, default false)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_outlets
+- id (TEXT, PK, ULID)
+- customer_id (TEXT, FK -> crm_customers.id)
+- area_id (TEXT, FK -> crm_areas.id)
+- code (TEXT, unique, nullable)
+- name (TEXT)
+- address (TEXT, nullable)
+- contact_name (TEXT, nullable)
+- contact_phone (TEXT, nullable)
+- latitude (FLOAT, nullable)
+- longitude (FLOAT, nullable)
+- status (TEXT, default 'ACTIVE')
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_visit_logs
+- id (TEXT, PK, ULID)
+- salesman_id (TEXT, FK -> users.id)
+- outlet_id (TEXT, FK -> crm_outlets.id)
+- date (DATE)
+- check_in_at (TIMESTAMP, nullable)
+- check_out_at (TIMESTAMP, nullable)
+- purpose (TEXT, nullable)
+- notes (TEXT, nullable)
+- photos (JSON, nullable)
+- feedback (TEXT, nullable)
+- sales_order_id (TEXT, FK -> crm_sales_orders.id, nullable)
+- approval_status (ENUM: DRAFT, VALIDATING, PROPOSED, APPROVED, REJECTED, default DRAFT)
+- submitted_at (TIMESTAMP, nullable)
+- approved_by_id (TEXT, FK -> users.id, nullable)
+- approved_at (TIMESTAMP, nullable)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_sales_orders
+- id (TEXT, PK, ULID)
+- document_number (TEXT, unique, nullable)
+- date (DATE, default now())
+- customer_id (TEXT, FK -> crm_customers.id)
+- outlet_id (TEXT, FK -> crm_outlets.id, nullable)
+- area_id (TEXT, FK -> crm_areas.id)
+- currency (TEXT, default 'IDR')
+- payment_terms (TEXT, nullable)
+- expected_delivery_date (DATE, nullable)
+- notes (TEXT, nullable)
+- source (TEXT, default 'MANUAL')
+- approval_status (ENUM: DRAFT, VALIDATING, PROPOSED, APPROVED, REJECTED, default DRAFT)
+- created_by_id (TEXT, FK -> users.id)
+- proposed_at (TIMESTAMP, nullable)
+- approved_by_id (TEXT, FK -> users.id, nullable)
+- approved_at (TIMESTAMP, nullable)
+- approval_history (JSON, nullable)
+- subtotal (DECIMAL, nullable)
+- discount_total (DECIMAL, nullable)
+- tax_total (DECIMAL, nullable)
+- grand_total (DECIMAL, nullable)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_sales_order_items
+- id (TEXT, PK, ULID)
+- sort_order (INTEGER, default 0)
+- sales_order_id (TEXT, FK -> crm_sales_orders.id)
+- sku_id (TEXT, FK -> skus.id)
+- quantity (DECIMAL)
+- unit_price (DECIMAL)
+- discount_percent (DECIMAL, default 0)
+- tax_percent (DECIMAL, default 0)
+- line_total (DECIMAL)
+- notes (TEXT, nullable)
+
+### crm_payments
+- id (TEXT, PK, ULID)
+- sales_order_id (TEXT, FK -> crm_sales_orders.id)
+- customer_id (TEXT, FK -> crm_customers.id)
+- date (DATE, default now())
+- amount (DECIMAL)
+- method (TEXT, nullable)
+- reference (TEXT, nullable)
+- notes (TEXT, nullable)
+- created_at (TIMESTAMP)
+
+### crm_action_programs
+- id (TEXT, PK, ULID)
+- document_number (TEXT, unique, nullable)
+- name (TEXT)
+- type (ENUM: DISCOUNT, BUNDLE, FREE_ITEM, REBATE, LOYALTY)
+- description (TEXT, nullable)
+- files (JSON, nullable)
+- start_date (DATE)
+- end_date (DATE)
+- budget_amount (DECIMAL, nullable)
+- budget_currency (TEXT, default 'IDR')
+- rules (JSON)
+- area_id (TEXT, FK -> crm_areas.id)
+- pic_id (TEXT, FK -> users.id)
+- approval_status (ENUM: DRAFT, VALIDATING, PROPOSED, APPROVED, REJECTED, default DRAFT)
+- created_by_id (TEXT, FK -> users.id)
+- area_manager_approved_by_id (TEXT, nullable)
+- area_manager_approved_at (TIMESTAMP, nullable)
+- region_manager_approved_by_id (TEXT, nullable)
+- region_manager_approved_at (TIMESTAMP, nullable)
+- finance_manager_approved_by_id (TEXT, nullable)
+- finance_manager_approved_at (TIMESTAMP, nullable)
+- director_approved_by_id (TEXT, nullable)
+- director_approved_at (TIMESTAMP, nullable)
+- approval_history (JSON, nullable)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_action_program_outlets
+- action_program_id (TEXT, FK -> crm_action_programs.id)
+- outlet_id (TEXT, FK -> crm_outlets.id)
+- Primary Key: (action_program_id, outlet_id)
+
+### crm_action_program_skus
+- action_program_id (TEXT, FK -> crm_action_programs.id)
+- sku_id (TEXT, FK -> skus.id)
+- quantity (DECIMAL)
+- price (DECIMAL)
+- discount (DECIMAL, default 0)
+- price_after_discount (DECIMAL)
+- cost (DECIMAL)
+- tax (DECIMAL, default 0)
+- total (DECIMAL)
+- notes (TEXT, nullable)
+- Primary Key: (action_program_id, sku_id)
+
+### crm_action_program_items
+- id (TEXT, PK, ULID)
+- action_program_id (TEXT, FK -> crm_action_programs.id)
+- name (TEXT)
+- quantity (DECIMAL)
+- price (DECIMAL)
+- cost (DECIMAL)
+- notes (TEXT, nullable)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_action_program_payments
+- id (TEXT, PK, ULID)
+- action_program_id (TEXT, FK -> crm_action_programs.id)
+- amount (DECIMAL)
+- payment_date (DATE)
+- method (TEXT, nullable)
+- reference (TEXT, nullable)
+- notes (TEXT, nullable)
+- created_at (TIMESTAMP)
+
+### crm_event_proposals
+- id (TEXT, PK, ULID)
+- document_number (TEXT, unique, nullable)
+- name (TEXT)
+- event_type (TEXT, nullable)
+- description (TEXT, nullable)
+- files (JSON, nullable)
+- venue (TEXT, nullable)
+- event_date (DATE)
+- event_end_date (DATE, nullable)
+- organizer_name (TEXT, nullable)
+- organizer_contact (TEXT, nullable)
+- area_id (TEXT, FK -> crm_areas.id)
+- observation_days (INTEGER, default 90)
+- proposed_budget (DECIMAL, nullable)
+- currency (TEXT, default 'IDR')
+- approval_status (ENUM: DRAFT, VALIDATING, PROPOSED, APPROVED, REJECTED, default DRAFT)
+- created_by_id (TEXT, FK -> users.id)
+- area_manager_approved_by_id (TEXT, nullable)
+- area_manager_approved_at (TIMESTAMP, nullable)
+- region_manager_approved_by_id (TEXT, nullable)
+- region_manager_approved_at (TIMESTAMP, nullable)
+- finance_manager_approved_by_id (TEXT, nullable)
+- finance_manager_approved_at (TIMESTAMP, nullable)
+- director_approved_by_id (TEXT, nullable)
+- director_approved_at (TIMESTAMP, nullable)
+- approval_history (JSON, nullable)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### crm_event_proposal_skus
+- event_proposal_id (TEXT, FK -> crm_event_proposals.id)
+- sku_id (TEXT, FK -> skus.id)
+- quantity (DECIMAL)
+- price (DECIMAL)
+- tax (DECIMAL, default 0)
+- total (DECIMAL)
+- notes (TEXT, nullable)
+- Primary Key: (event_proposal_id, sku_id)
+
+### crm_event_proposal_payments
+- id (TEXT, PK, ULID)
+- event_proposal_id (TEXT, FK -> crm_event_proposals.id)
+- amount (DECIMAL)
+- payment_date (DATE)
+- method (TEXT, nullable)
+- reference (TEXT, nullable)
+- notes (TEXT, nullable)
+- created_at (TIMESTAMP)
+
+### knowledge_chunks
+- id (TEXT, PK, ULID)
+- source (TEXT)
+- title (TEXT)
+- content (TEXT)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
 ## Common Query Patterns
 
 ### Get available pallets for a SKU
@@ -367,6 +617,52 @@ JOIN skus s ON sm.sku_id = s.id
 WHERE sm.document_id = '01H...'
 ORDER BY sm.transaction_date DESC;
 
+### Get customer sales order history
+SELECT so.document_number, so.date, so.grand_total, so.approval_status,
+       c.name as customer_name, a.name as area_name
+FROM crm_sales_orders so
+JOIN crm_customers c ON so.customer_id = c.id
+JOIN crm_areas a ON so.area_id = a.id
+WHERE so.customer_id = '01H...'
+  AND so.approval_status IN ('APPROVED', 'PROPOSED')
+ORDER BY so.date DESC
+LIMIT 20;
+
+### Get SKU pricing history
+SELECT soi.unit_price, soi.quantity, soi.discount_percent,
+       so.document_number, so.date, c.name as customer_name
+FROM crm_sales_order_items soi
+JOIN crm_sales_orders so ON soi.sales_order_id = so.id
+JOIN crm_customers c ON so.customer_id = c.id
+WHERE soi.sku_id = '01H...'
+  AND so.approval_status IN ('APPROVED', 'PROPOSED')
+ORDER BY so.date DESC
+LIMIT 50;
+
+### Get outlet order statistics
+SELECT o.name, o.code, COUNT(so.id) as order_count,
+       SUM(so.grand_total) as total_revenue,
+       AVG(so.grand_total) as avg_order_value
+FROM crm_outlets o
+LEFT JOIN crm_sales_orders so ON o.id = so.outlet_id
+  AND so.approval_status IN ('APPROVED', 'PROPOSED')
+WHERE o.id = '01H...'
+GROUP BY o.id, o.name, o.code;
+
+### Get action program discounts for a SKU and outlet
+SELECT ap.name, ap.type, aps.discount, aps.price_after_discount,
+       ap.start_date, ap.end_date
+FROM crm_action_programs ap
+JOIN crm_action_program_skus aps ON ap.id = aps.action_program_id
+JOIN crm_action_program_outlets apo ON ap.id = apo.action_program_id
+WHERE aps.sku_id = '01H...'
+  AND apo.outlet_id = '01H...'
+  AND ap.approval_status = 'APPROVED'
+  AND ap.start_date <= CURRENT_DATE
+  AND ap.end_date >= CURRENT_DATE
+ORDER BY aps.discount DESC
+LIMIT 1;
+
 ## Security Notes
 
 - NEVER SELECT the password column from users table
@@ -375,3 +671,5 @@ ORDER BY sm.transaction_date DESC;
 - Decimal fields should be cast to numeric for calculations
 - Date fields use DATE type (no time component)
 - Timestamp fields use TIMESTAMP type
+- CRM tables use prefix `crm_`
+- ApprovalStatus enum values: DRAFT, VALIDATING, PROPOSED, APPROVED, REJECTED

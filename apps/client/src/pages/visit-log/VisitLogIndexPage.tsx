@@ -1,61 +1,167 @@
-import { useAtomValue } from 'jotai';
-import { useEffect, useMemo, useState } from 'react';
-import { useIntl } from 'react-intl';
-import { Button, Card, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Pagination, Spinner, Table, TBody, TD, TH, THead, TR, Icon } from '../../ui';
-
-import { type ColumnDef, type PaginationState, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { useNavigate } from 'react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { hasPermissionAtom } from '../../lib/atoms';
-import { trpcClient } from '../../lib/trpc';
-import './VisitLog.css';
+import { useEffect, useMemo, useState } from "react";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type ColumnDef,
+  type PaginationState,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { RowActions } from "../../components/RowActions";
+import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
+import { VisitLogIcon } from "./VisitLogIcons";
 
 type VisitLogRow = {
-  id: string; date: string; purpose: string | null; approvalStatus: string;
-  salesman: { id: string; name: string | null };
-  outlet: { id: string; name: string };
+  id: string;
+  date: string;
+  salesman: { id: string; name: string };
+  outlet: { id: string; name: string } | null;
+  approvalStatus: string;
 };
 
-const statusColor: Record<string, 'neutral' | 'info' | 'success' | 'danger'> = {
-  DRAFT: 'neutral', PROPOSED: 'info', APPROVED: 'success', REJECTED: 'danger',
-};
-
-function VisitLogIndexPage() {
-  const intl = useIntl(); const navigate = useNavigate(); const queryClient = useQueryClient();
+export const VisitLogIndexPage = () => {
+  const intl = useIntl();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canCreate = hasPermission('visit-log@create'); const canDelete = hasPermission('visit-log@delete');
+  const canCreate = hasPermission("visitLog@create");
+  const canUpdate = hasPermission("visitLog@update");
+  const canDelete = hasPermission("visitLog@delete");
+  const toast = useToast();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [searchInput, setSearchInput] = useState(''); const [search, setSearch] = useState('');
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false); const [itemToDelete, setItemToDelete] = useState<VisitLogRow | null>(null); const [isDeleting, setIsDeleting] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<VisitLogRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => { const t = setTimeout(() => { setSearch(searchInput.trim()); setPagination((p) => ({ ...p, pageIndex: 0 })); }, 300); return () => clearTimeout(t); }, [searchInput]);
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPagination((p) => ({ ...p, pageIndex: 0 })); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const { data, isLoading } = useQuery({ queryKey: ['visitLogList', pagination.pageIndex, pagination.pageSize, search], queryFn: () => trpcClient.visitLog.list.query({ page: pagination.pageIndex + 1, limit: pagination.pageSize }) });
+  const { data, isLoading } = useQuery({
+    queryKey: ["visitLogList", pagination.pageIndex, pagination.pageSize, search],
+    queryFn: () => trpcClient.visitLog.list.query({ page: pagination.pageIndex + 1, limit: pagination.pageSize, search: search || undefined }),
+  });
+
+  const rows = (data?.data ?? []) as VisitLogRow[];
+  const totalPages = data?.meta?.totalPages ?? 1;
+  const totalRows = data?.meta?.total ?? 0;
 
   const columns = useMemo<ColumnDef<VisitLogRow>[]>(() => [
-    { id: 'date', header: 'Date', cell: ({ row }) => <span>{new Date(row.original.date).toLocaleDateString()}</span> },
-    { id: 'salesman', header: 'Salesman', cell: ({ row }) => <span>{row.original.salesman.name ?? '-'}</span> },
-    { id: 'outlet', header: 'Outlet', cell: ({ row }) => <span>{row.original.outlet.name}</span> },
-    { id: 'purpose', header: 'Purpose', cell: ({ row }) => <span>{row.original.purpose ?? '-'}</span> },
-    { id: 'status', header: 'Status', cell: ({ row }) => <Chip size="sm" tone={statusColor[row.original.approvalStatus] ?? 'neutral'}>{row.original.approvalStatus}</Chip> },
-    { id: 'actions', header: '', cell: ({ row }) => (
-      <div className="vl-actions">
-        <Button size="sm" variant="ghost" onClick={() => navigate(`/visit-log/${row.original.id}`)}><Icon icon="solar:eye-linear" /></Button>
-        {canDelete && <Dropdown><DropdownTrigger><Button size="icon" variant="ghost"><Icon icon="solar:menu-dots-bold" /></Button></DropdownTrigger><DropdownMenu><DropdownItem key="delete" color="danger" onClick={() => { setItemToDelete(row.original); setDeleteModalOpen(true); }}>Delete</DropdownItem></DropdownMenu></Dropdown>}
-      </div>) },
-  ], [navigate, canDelete]);
+    {
+      id: "date", header: intl.formatMessage({ id: "visit_log.index.header_code", defaultMessage: "Date" }),
+      cell: ({ row }) => (
+        <span className="m-doc">
+          <span className="m-doc__text">
+            <span className="m-doc__code">{new Date(row.original.date).toLocaleDateString()}</span>
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: "salesman", header: intl.formatMessage({ id: "visit_log.index.header_name", defaultMessage: "Salesman" }),
+      cell: ({ row }) => <span className="m-cell m-cell--single"><span className="m-cell__primary">{row.original.salesman.name}</span></span>,
+    },
+    {
+      id: "outlet", header: intl.formatMessage({ id: "visit_log.index.header_outlet", defaultMessage: "Outlet" }),
+      cell: ({ row }) => <span className="m-cell m-cell--single"><span className="m-cell__primary">{row.original.outlet?.name ?? "—"}</span></span>,
+    },
+    {
+      id: "status", header: intl.formatMessage({ id: "visit_log.index.header_status", defaultMessage: "Status" }),
+      cell: ({ row }) => <span className="m-cell m-cell--single"><span className="m-cell__primary">{row.original.approvalStatus}</span></span>,
+    },
+    {
+      id: "actions", header: "",
+      cell: ({ row }) => (
+        <RowActions
+          ariaLabel={intl.formatMessage({ id: "common.action.actions", defaultMessage: "Actions" })}
+          items={[
+            { key: "view", label: intl.formatMessage({ id: "common.action.view", defaultMessage: "View" }), icon: <VisitLogIcon name="eye" size={16} />, onClick: () => navigate(`/visitLog/${row.original.id}`) },
+            ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <VisitLogIcon name="edit" size={16} />, onClick: () => navigate(`/visitLog/${row.original.id}/edit`) }] : []),
+            ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <VisitLogIcon name="delete" size={16} />, tone: "danger" as const, separator: true, onClick: () => { setItemToDelete(row.original); setDeleteModalOpen(true); } }] : []),
+          ]}
+        />
+      ),
+    },
+  ], [intl, navigate, canUpdate, canDelete]);
 
-  const table = useReactTable({ data: (data?.data ?? []) as VisitLogRow[], columns, pageCount: data?.meta?.totalPages ?? 0, state: { pagination }, onPaginationChange: setPagination, getCoreRowModel: getCoreRowModel(), manualPagination: true });
-  const handleDelete = async () => { if (!itemToDelete || isDeleting) return; setIsDeleting(true); try { await trpcClient.visitLog.delete.mutate({ id: itemToDelete.id }); await queryClient.invalidateQueries({ queryKey: ['visitLogList'] }); setDeleteModalOpen(false); setItemToDelete(null); } catch (e) { console.error(e); } finally { setIsDeleting(false); } };
+  const table = useReactTable({
+    data: rows, columns, pageCount: totalPages,
+    state: { pagination },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+  });
+
+  const handleDelete = async () => {
+    if (!itemToDelete || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await trpcClient.visitLog.delete.mutate({ id: itemToDelete.id });
+      await queryClient.invalidateQueries({ queryKey: ["visitLogList"] });
+      setDeleteModalOpen(false); setItemToDelete(null);
+      toast.success(intl.formatMessage({ id: "visit_log.index.delete_success", defaultMessage: "Region deleted" }));
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed to delete"); }
+    finally { setIsDeleting(false); }
+  };
+
 
   return (
-    <section className="vl-page" data-ai-context={JSON.stringify({ section: 'visit-log-index', itemCount: data?.meta?.total ?? 0 })}>
-      <div className="vl-header"><div><h1 className="vl-header__title">Visit Logs</h1></div>{canCreate && <Button variant="primary" onClick={() => navigate('/visit-log/create')}><Icon icon="solar:add-circle-linear" />New Visit</Button>}</div>
-      <Card>{isLoading ? <div className="vl-loading"><Spinner /></div> : (<><Table aria-label="Visit Logs"><THead>{table.getHeaderGroups().map((hg) => hg.headers.map((h) => <TH key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TH>))}</THead><TBody emptyContent="No visits found.">{table.getRowModel().rows.map((row) => <TR key={row.id}>{row.getVisibleCells().map((c) => <TD key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</TD>)}</TR>)}</TBody></Table><div className="vl-pagination-wrap"><Pagination page={pagination.pageIndex + 1} totalPages={data?.meta?.totalPages ?? 1} onChange={(page) => setPagination({ pageIndex: page - 1, pageSize: pagination.pageSize })} /></div></>)}</Card>
-      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}><ModalContent><ModalHeader>Delete Visit</ModalHeader><ModalBody>Delete this visit log?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button variant="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
-    </section>
-  );
-}
+    <ModulePage accent="#8B5CF6" accentEnd="#6D28D9" aiContext={{ section: "visitLog-index", itemCount: totalRows, page: pagination.pageIndex + 1, search }}>
+      <ModuleHero
+        kicker={intl.formatMessage({ id: "nav.field_ops", defaultMessage: "Field Operations" })}
+        title={intl.formatMessage({ id: "visit_log.index.title", defaultMessage: "Visit Log" })}
+        subtitle={intl.formatMessage({ id: "visit_log.index.subtitle", defaultMessage: "Manage geographical visitLogs and their areas." })}
+        cta={canCreate ? { label: intl.formatMessage({ id: "visit_log.index.create_button", defaultMessage: "New visitLog" }), icon: <VisitLogIcon name="plus" size={18} />, onClick: () => navigate("/visitLog/create") } : undefined}
+        stats={[{ value: totalRows, label: intl.formatMessage({ id: "visit_log.hero.total", defaultMessage: "Total" }) }]}
+      />
 
-export { VisitLogIndexPage };
+      <div className="m-toolbar">
+        <ModuleSearch
+          value={searchInput} onChange={setSearchInput}
+          placeholder={intl.formatMessage({ id: "visit_log.index.search_placeholder", defaultMessage: "Search visitLogs…" })}
+          searchIcon={<VisitLogIcon name="search" size={16} />}
+          clearIcon={<VisitLogIcon name="close" size={12} />}
+          clearLabel={intl.formatMessage({ id: "common.action.clear", defaultMessage: "Clear" })}
+        />
+        <span className="m-count">
+          {intl.formatMessage({ id: "visit_log.index.count_label", defaultMessage: "{count, plural, one {# visitLog} other {# visitLogs}}" }, { count: totalRows })}
+        </span>
+      </div>
+
+      <ModuleTable
+        table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
+        pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
+        onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}
+        onRowClick={(row) => navigate(`/visitLog/${row.id}`)}
+        paginationLabel={intl.formatMessage({ id: "common.pagination_info", defaultMessage: "Page {page} of {total}" }, { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) })}
+        emptyState={
+          <ModuleEmpty
+                        title={search ? intl.formatMessage({ id: "visit_log.index.empty_search", defaultMessage: "No visitLogs found" }) : intl.formatMessage({ id: "visit_log.index.empty_title", defaultMessage: "No visitLogs yet" })}
+            description={search ? intl.formatMessage({ id: "visit_log.index.empty_search_sub", defaultMessage: "Try adjusting your search terms." }) : intl.formatMessage({ id: "visit_log.index.empty_desc", defaultMessage: "Create your first visitLog to get started." })}
+            cta={canCreate && !search ? { label: intl.formatMessage({ id: "visit_log.index.create_button", defaultMessage: "New visitLog" }), icon: <VisitLogIcon name="plus" size={16} />, onClick: () => navigate("/visitLog/create") } : undefined}
+          />
+        }
+      />
+
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} size="sm">
+        <ModalHeader>{intl.formatMessage({ id: "visit_log.index.delete_title", defaultMessage: "Delete visitLog" })}</ModalHeader>
+        <ModalBody>{intl.formatMessage({ id: "visit_log.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: itemToDelete?.name ?? "" })}</ModalBody>
+        <ModalFooter>
+          <button type="button" className="btn btn-secondary" onClick={() => setDeleteModalOpen(false)} disabled={isDeleting}>{intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}</button>
+          <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? <Spinner size="sm" /> : intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}</button>
+        </ModalFooter>
+      </Modal>
+    </ModulePage>
+  );
+};

@@ -4,7 +4,7 @@ import { wrapLanguageModel } from 'ai';
 
 const localProvider = createOpenAICompatible({
     name: '9router',
-    baseURL: process.env.AI_BASE_URL ?? 'http://localhost:20128/v1',
+    baseURL: (process.env.AI_BASE_URL?.trim() || 'http://localhost:20128/v1').replace(/\/$/, ''),
     apiKey: process.env.AI_API_KEY ?? 'sk-a269cec57930fc82-1bvmkj-87bd8cdc',
     supportsStructuredOutputs: true,
 });

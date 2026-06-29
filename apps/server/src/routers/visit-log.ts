@@ -7,6 +7,7 @@ import { buildPaginationMeta, buildPaginationParams } from '../lib/list-query.js
 import { prisma } from '../lib/prisma.js';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
+import { validateVisitLog } from '../lib/ai-validation.js';
 
 export const visitLogRouter = router({
   list: protectedProcedure
@@ -130,6 +131,48 @@ export const visitLogRouter = router({
       return { success: true };
     }),
 
+  validate: protectedProcedure
+    .use(hasPermission('visit-log@validate'))
+    .input(visitLogIdSchema)
+    .mutation(async ({ input, ctx }) => {
+      const existing = await prisma.visitLog.findUnique({ where: { id: input.id } });
+      if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Visit log not found.' });
+      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT visit logs can be validated.' });
+
+      const validation = await validateVisitLog(input.id);
+      if (!validation.valid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Validation failed: ${validation.issues.join(', ')}`,
+        });
+      }
+
+      const history = pushApprovalHistory((existing as any).approvalHistory ?? null, {
+        process: 'AI Validation',
+        name: ctx.user.name ?? 'Unknown',
+        dateTime: new Date().toISOString(),
+        message: 'Document validated successfully',
+      });
+
+      const updated = await prisma.visitLog.update({
+        where: { id: input.id },
+        data: {
+          approvalStatus: 'VALIDATING',
+          approvalHistory: history as any,
+        },
+      });
+
+      await logActivity(prisma, {
+        action: 'APPROVE',
+        userId: ctx.user.userId,
+        resource: 'visit_log',
+        resourceId: updated.id,
+        message: `Validated visit log`,
+      });
+
+      return updated;
+    }),
+
   // --- Approval flow: submit for AM approval → Area Manager approves/rejects ---
 
   submit: protectedProcedure
@@ -138,7 +181,7 @@ export const visitLogRouter = router({
     .mutation(async ({ input, ctx }) => {
       const existing = await prisma.visitLog.findUnique({ where: { id: input.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Visit log not found.' });
-      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT visit logs can be submitted.' });
+      if (existing.approvalStatus !== 'VALIDATING') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING visit logs can be submitted.' });
 
       const history = pushApprovalHistory((existing as any).approvalHistory ?? null, {
         process: 'Submit',

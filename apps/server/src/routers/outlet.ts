@@ -33,7 +33,14 @@ export const outletRouter = router({
         prisma.outlet.count({ where }),
       ]);
 
-      return { data, meta: buildPaginationMeta({ page, limit, total }) };
+      // Transform data to include customer name and area name for form display
+      const transformedData = data.map((outlet) => ({
+        ...outlet,
+        customerName: outlet.customer?.name ?? '',
+        areaName: outlet.area?.name ?? '',
+      }));
+
+      return { data: transformedData, meta: buildPaginationMeta({ page, limit, total }) };
     }),
 
   detail: protectedProcedure

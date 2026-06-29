@@ -1,336 +1,288 @@
-import { useEffect, useRef, useState } from 'react';
-import { useIntl } from 'react-intl';
-import { Button, Card, FieldError, Input, Label, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, Spinner, FormField } from '../../ui';
-import { useNavigate, useParams } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from '@tanstack/react-form';
-import type { inferProcedureInput } from '@trpc/server';
-import type { AppRouter } from '../../lib/trpc';
-import { PageHeader } from '../../components/PageHeader';
-import { trpcClient } from '../../lib/trpc';
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate, useParams } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { ButtonGroup } from "../../components/ButtonGroup";
+import { ModulePage } from "../../components/ModulePage";
+import { AreaIcon } from "./AreaIcons";
 
-type AreaFormValues = {
-  regionId: string;
+interface FormValues {
   code: string;
   name: string;
-};
+}
 
-type AreaDetail = {
-  id: string;
-  code: string | null;
-  name: string;
-  region: { id: string; name: string };
-};
+type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
-type RegionOption = {
-  id: string;
-  name: string;
-};
+const defaults = (): FormValues => ({ code: "", name: "" });
 
-const defaultFormValues = (): AreaFormValues => ({
-  regionId: '',
-  code: '',
-  name: '',
-});
-
-const transformDetailToFormValues = (detail: AreaDetail): AreaFormValues => ({
-  regionId: detail.region.id,
-  code: detail.code ?? '',
-  name: detail.name,
-});
-
-function AreaForm({
-  initialValues,
-  isEdit,
-  areaId,
-  regions,
-}: {
-  initialValues: AreaFormValues;
-  isEdit: boolean;
-  areaId?: string;
-  regions: RegionOption[];
-}) {
+export const AreaFormPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [modalStage, setModalStage] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [resultMessage, setResultMessage] = useState('');
-  const successRedirectIdRef = useRef<string | null>(null);
-  const resultTimerRef = useRef<number | null>(null);
+  const hasPermission = useAtomValue(hasPermissionAtom);
+  const canSave = hasPermission(id ? "area@update" : "area@create");
+  const toast = useToast();
 
-  const clearResultTimer = () => {
-    if (resultTimerRef.current !== null) {
-      window.clearTimeout(resultTimerRef.current);
-      resultTimerRef.current = null;
-    }
-  };
+  const isEdit = Boolean(id);
+  const [modalStage, setModalStage] = useState<ModalStage>("idle");
+  const [resultMessage, setResultMessage] = useState("");
 
-  useEffect(() => () => clearResultTimer(), []);
-
-  const handleModalClose = () => {
-    if (modalStage === 'loading') return;
-    clearResultTimer();
-    const redirectId = successRedirectIdRef.current;
-    successRedirectIdRef.current = null;
-    setModalStage('idle');
-    if (redirectId) navigate(`/area/${redirectId}`);
-  };
-
-  const createMutation = useMutation<{ id: string }, unknown, inferProcedureInput<AppRouter['area']['create']>>({
-    mutationFn: (payload) => trpcClient.area.create.mutate(payload),
-    onSuccess: async (created) => {
-      await queryClient.invalidateQueries({ queryKey: ['areaList'] });
-      queryClient.removeQueries({ queryKey: ['areaDetail', created.id] });
-      successRedirectIdRef.current = created.id;
-      setResultMessage(intl.formatMessage({ id: 'area.form.success_created', defaultMessage: 'Area created successfully.' }));
-      setModalStage('success');
-      resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
-    },
-    onError: () => {
-      setResultMessage(intl.formatMessage({ id: 'area.form.error_create_failed', defaultMessage: 'Failed to create area.' }));
-      setModalStage('error');
-    },
-  });
-
-  const updateMutation = useMutation<{ id: string }, unknown, inferProcedureInput<AppRouter['area']['update']>>({
-    mutationFn: (payload) => trpcClient.area.update.mutate(payload),
-    onSuccess: async (updated) => {
-      await queryClient.invalidateQueries({ queryKey: ['areaList'] });
-      queryClient.removeQueries({ queryKey: ['areaDetail', areaId] });
-      successRedirectIdRef.current = updated.id;
-      setResultMessage(intl.formatMessage({ id: 'area.form.success_updated', defaultMessage: 'Area updated successfully.' }));
-      setModalStage('success');
-      resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
-    },
-    onError: () => {
-      setResultMessage(intl.formatMessage({ id: 'area.form.error_update_failed', defaultMessage: 'Failed to update area.' }));
-      setModalStage('error');
-    },
+  const { data, isLoading } = useQuery({
+    queryKey: ["areaDetail", id],
+    enabled: isEdit && Boolean(id),
+    queryFn: () => trpcClient.area.detail.query({ id: id ?? "" }),
   });
 
   const form = useForm({
-    defaultValues: initialValues,
-    onSubmit: async ({ value }) => {
-      setFormError(null);
-      setModalStage('loading');
-      if (isEdit && areaId) {
-        updateMutation.mutate({ currentId: areaId, ...value });
-      } else {
-        createMutation.mutate(value);
-      }
+    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    onSubmit: async () => {
+      setModalStage("confirm");
     },
   });
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
-  const isPending = isLoading;
+  const createMutation = useMutation({
+    mutationFn: (d: FormValues) => trpcClient.area.create.mutate(d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["areaList"] });
+      setResultMessage(intl.formatMessage({ id: "area.form.success.created", defaultMessage: "Region created" }));
+      setModalStage("success");
+      setTimeout(() => navigate("/area"), 1200);
+    },
+    onError: (e) => {
+      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setModalStage("error");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (d: FormValues & { currentId: string }) => trpcClient.area.update.mutate(d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["areaList"] });
+      queryClient.invalidateQueries({ queryKey: ["areaDetail", id] });
+      setResultMessage(intl.formatMessage({ id: "area.form.success.updated", defaultMessage: "Region updated" }));
+      setModalStage("success");
+      setTimeout(() => navigate(`/area/${id}`), 1200);
+    },
+    onError: (e) => {
+      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setModalStage("error");
+    },
+  });
+
+  const runSave = () => {
+    setModalStage("loading");
+    const values = form.state.values as FormValues;
+    if (isEdit && id) {
+      updateMutation.mutate({ ...values, currentId: id });
+    } else {
+      createMutation.mutate(values);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (modalStage === "idle") form.handleSubmit();
+      }
+      if (e.key === "Escape" && modalStage !== "idle") setModalStage("idle");
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [form, modalStage]);
+
+  if (isLoading) {
+    return (
+      <ModulePage accent="#AF52DE" accentEnd="#AF52DE" aiContext={{ section: "area-form", loading: true }}>
+        <div className="m-loading"><Spinner size="lg" /></div>
+      </ModulePage>
+    );
+  }
 
   return (
-    <>
+    <ModulePage accent="#AF52DE" accentEnd="#AF52DE" aiContext={{ section: "area-form", isEdit, id: id ?? null }}>
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
+        className="m-page"
+        onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+        style={{ gap: "1.25rem" }}
       >
-        <section className="space-y-6">
-          <PageHeader
-            title={
-              isEdit
-                ? intl.formatMessage({ id: 'area.form.title_edit', defaultMessage: 'Edit Area' })
-                : intl.formatMessage({ id: 'area.form.title_create', defaultMessage: 'Create Area' })
-            }
-            onBack={() => navigate(isEdit && areaId ? `/area/${areaId}` : '/area')}
-          />
+        {/* ── Header ── */}
+        <div className="so-form__header">
+          <div>
+            <h1 className="so-form__title">
+              {isEdit
+                ? intl.formatMessage({ id: "area.form.title_edit", defaultMessage: "Edit area" })
+                : intl.formatMessage({ id: "area.form.title_create", defaultMessage: "New area" })}
+            </h1>
+            <p className="so-form__subtitle">
+              {isEdit ? "Update area details" : "Create a new geographical area"}
+            </p>
+          </div>
+          <button type="button" className="so-form__back" onClick={() => navigate(isEdit && id ? `/area/${id}` : "/area")}>
+            <AreaIcon name="back" size={14} />
+            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
+          </button>
+        </div>
 
-          <Card>
-            <div className="grid gap-6 p-6 md:grid-cols-2">
-              <form.Field
-                name="regionId"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value) {
-                      return intl.formatMessage({ id: 'area.form.error_region_required', defaultMessage: 'Region is required.' });
-                    }
-                    return undefined;
-                  },
-                }}
-              >
-                {(field) => (
-                  <Select
-                    isRequired
-                    label={intl.formatMessage({ id: 'area.form.region', defaultMessage: 'Region' })}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  >
-                    {regions.map((r) => (
-                      <SelectItem key={r.id}>{r.name}</SelectItem>
-                    ))}
-                  </Select>
+        {/* ── Fields ── */}
+        <section className="so-card">
+          <div className="so-card__header">
+            <h2 className="so-card__title">
+              <span className="so-card__icon"><AreaIcon name="grid" size={14} /></span>
+              {intl.formatMessage({ id: "area.form.section_basic", defaultMessage: "Basic information" })}
+            </h2>
+          </div>
+          <div className="so-card__body">
+            <div className="so-section">
+              <form.Field name="code">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "area.form.field_code", defaultMessage: "Code" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "area.form.field_code_placeholder", defaultMessage: "Optional" })}
+                    />
+                  </div>
                 )}
               </form.Field>
 
-              <form.Field name="code" validators={{ onChange: ({ value }) => undefined }}>
-                {(field) => (
-                  <FormField
-                    label={intl.formatMessage({ id: 'area.form.code', defaultMessage: 'Code' })}
-                  >
-                    <Input
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                      onBlur={field.handleBlur}
-                      placeholder={intl.formatMessage({ id: 'area.form.code_placeholder', defaultMessage: 'e.g. JKT-PUSAT' })}
+              <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "area.form.field_name", defaultMessage: "Name" })} *
+                    </label>
+                    <input
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "area.form.field_name_placeholder", defaultMessage: "Region name" })}
                     />
-                  </FormField>
-                )}
-              </form.Field>
-
-              <form.Field
-                name="name"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value || value.trim().length === 0) {
-                      return intl.formatMessage({ id: 'area.form.error_name_required', defaultMessage: 'Area name is required.' });
-                    }
-                    return undefined;
-                  },
-                }}
-              >
-                {(field) => (
-                  <FormField
-                    isRequired
-                    label={intl.formatMessage({ id: 'area.form.name', defaultMessage: 'Name' })}
-                    error={field.state.meta.errors.length > 0 ? String(field.state.meta.errors[0]) : undefined}
-                  >
-                    <Input
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                      onBlur={field.handleBlur}
-                      placeholder={intl.formatMessage({ id: 'area.form.name_placeholder', defaultMessage: 'e.g. Jakarta Pusat' })}
-                    />
-                  </FormField>
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
                 )}
               </form.Field>
             </div>
-          </Card>
-
-          {formError ? (
-            <p className="text-sm text-danger">{formError}</p>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(isEdit && areaId ? `/area/${areaId}` : '/area')}
-            >
-              {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
-            </Button>
-            <Button variant="primary" type="submit" disabled={isPending}>
-              {isPending ? (
-                <Spinner size="sm" />
-              ) : isEdit ? (
-                intl.formatMessage({ id: 'common.action.save', defaultMessage: 'Save' })
-              ) : (
-                intl.formatMessage({ id: 'common.action.create', defaultMessage: 'Create' })
-              )}
-            </Button>
           </div>
         </section>
+
+        {/* ── Actions ── */}
+        <div className="so-actions">
+          <ButtonGroup
+            items={[
+              {
+                key: "save",
+                label: intl.formatMessage({ id: "area.form.save_button", defaultMessage: "Save" }),
+                icon: <AreaIcon name="check" size={14} />,
+                onClick: () => { form.handleSubmit(); },
+                disabled: !canSave || createMutation.isPending || updateMutation.isPending,
+                isLoading: createMutation.isPending || updateMutation.isPending,
+                variant: "primary",
+              },
+            ]}
+          />
+        </div>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onClose={() => handleModalClose()}>
-        <ModalContent>
-          {modalStage === 'loading' ? (
-            <ModalBody>
-              <div className="flex justify-center py-8">
-                <Spinner size="lg" />
-              </div>
-            </ModalBody>
-          ) : modalStage === 'success' ? (
-            <ModalBody>
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="flex size-12 items-center justify-center rounded-full bg-success-soft">
-                  <svg className="size-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+      {/* ── Modal ── */}
+      {modalStage !== "idle" && createPortal(
+        <div className="so-modal__backdrop" onClick={() => modalStage !== "loading" && modalStage !== "confirm" && setModalStage("idle")}>
+          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
+            {modalStage === "confirm" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({ id: "area.form.modal.confirm_title", defaultMessage: "Confirm save" })}
+                  </h3>
+                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
+                    <AreaIcon name="close" size={14} />
+                  </button>
                 </div>
-                <p className="text-center text-sm">{resultMessage}</p>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--success">
+                    <AreaIcon name="check" size={28} />
+                  </div>
+                  <h3 className="so-modal__title">
+                    {intl.formatMessage({ id: "area.form.modal.confirm_body", defaultMessage: "Save changes to this area?" })}
+                  </h3>
+                </div>
+                <div className="so-modal__footer">
+                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
+                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+                  </button>
+                  <button className="so-btn so-btn--primary" onClick={runSave}>
+                    {intl.formatMessage({ id: "common.action.confirm", defaultMessage: "Confirm" })}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {modalStage === "loading" && (
+              <div className="so-modal__body">
+                <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
+                  <span className="so-spinner so-spinner--lg" />
+                </div>
+                <p className="so-modal__msg">{intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}</p>
               </div>
-            </ModalBody>
-          ) : modalStage === 'error' ? (
-            <>
-              <ModalHeader>
-                {intl.formatMessage({ id: 'common.error', defaultMessage: 'Error' })}
-              </ModalHeader>
-              <ModalBody>
-                <p className="text-sm text-danger">{resultMessage}</p>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={handleModalClose}>
-                  {intl.formatMessage({ id: 'common.action.close', defaultMessage: 'Close' })}
-                </Button>
-              </ModalFooter>
-            </>
-          ) : null}
-        </ModalContent>
-      </Modal>
-    </>
+            )}
+
+            {modalStage === "success" && (
+              <>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--success">
+                    <AreaIcon name="check" size={28} />
+                  </div>
+                  <h3 className="so-modal__title">
+                    {intl.formatMessage({ id: "area.form.modal.success", defaultMessage: "Success!" })}
+                  </h3>
+                  <p className="so-modal__msg">{resultMessage}</p>
+                </div>
+              </>
+            )}
+
+            {modalStage === "error" && (
+              <>
+                <div className="so-modal__header">
+                  <h3>
+                    {intl.formatMessage({ id: "area.form.modal.error_title", defaultMessage: "Error" })}
+                  </h3>
+                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
+                    <AreaIcon name="close" size={14} />
+                  </button>
+                </div>
+                <div className="so-modal__body">
+                  <div className="so-modal__icon so-modal__icon--error">
+                    <AreaIcon name="close" size={28} />
+                  </div>
+                  <p className="so-modal__msg">{resultMessage}</p>
+                </div>
+                <div className="so-modal__footer">
+                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
+                    {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </ModulePage>
   );
-}
-
-function AreaFormPage() {
-  const { id } = useParams();
-  const intl = useIntl();
-  const navigate = useNavigate();
-  const isEdit = Boolean(id);
-
-  const { data: detailData, isLoading: detailLoading } = useQuery({
-    queryKey: ['areaDetail', id],
-    enabled: isEdit,
-    queryFn: () => trpcClient.area.detail.query({ id: id ?? '' }),
-  });
-
-  const { data: regionsData, isLoading: regionsLoading } = useQuery({
-    queryKey: ['regionList', 0, 100, ''],
-    queryFn: () => trpcClient.region.list.query({ page: 1, limit: 100 }),
-  });
-
-  if ((isEdit && detailLoading) || regionsLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (isEdit && !detailData) {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-danger">
-          {intl.formatMessage({ id: 'area.form.not_found', defaultMessage: 'Area not found.' })}
-        </p>
-        <Button variant="ghost" onClick={() => navigate('/area')}>
-          {intl.formatMessage({ id: 'area.detail.back', defaultMessage: 'Back to Areas' })}
-        </Button>
-      </div>
-    );
-  }
-
-  const initialValues = isEdit && detailData
-    ? transformDetailToFormValues(detailData as AreaDetail)
-    : defaultFormValues();
-
-  const regions = (regionsData?.data ?? []) as RegionOption[];
-
-  return (
-    <AreaForm
-      initialValues={initialValues}
-      isEdit={isEdit}
-      areaId={id}
-      regions={regions}
-    />
-  );
-}
-
-export { AreaFormPage };
+};

@@ -4,16 +4,21 @@ import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
+import { z } from 'zod';
 import { createCustomerSchema, updateCustomerSchema, customerIdSchema } from '@repo/schemas/customer';
 import { createCustomerContactSchema, updateCustomerContactSchema, customerContactIdSchema } from '@repo/schemas/customer-contact';
 
 export const customerRouter = router({
   list: protectedProcedure
     .use(hasPermission('customer@read'))
-    .input(createListInputSchema())
+    .input(z.object({
+      page: z.number().int().min(1).default(1),
+      limit: z.number().int().min(1).max(100).default(10),
+      search: z.string().optional(),
+    }))
     .query(async ({ input }) => {
       const { page, limit, skip } = buildPaginationParams(input);
-      const where = buildTextSearchWhere(input?.search, ['name', 'code', 'taxId'] as const);
+      const where: any = buildTextSearchWhere(input?.search, ['name', 'code', 'taxId'] as const) || {};
 
       const [data, total] = await Promise.all([
         prisma.customer.findMany({

@@ -5,6 +5,7 @@ import { createContext } from './context.js';
 import { serveUpload } from './lib/upload-file.js';
 import { appRouter } from './router.js';
 import { aiChatHandler, aiChatResumeHandler, aiQueryDatabaseHandler } from './routes/ai.js';
+import { salesOrderPdfHandler } from './routes/sales-order-pdf.js';
 
 const port = Number(process.env.PORT ?? 2022);
 const corsOrigin = process.env.CORS_ORIGIN;
@@ -44,6 +45,10 @@ app.use(
 app.post('/api/ai/chat', aiChatHandler);
 app.get('/api/ai/chat/:chatId/stream', aiChatResumeHandler);
 app.post('/api/ai/query', aiQueryDatabaseHandler);
+
+// Sales order PDF preview — streams inline so the browser's native
+// PDF viewer renders it (preview + print + download).
+app.get('/api/sales-order/:id/pdf', salesOrderPdfHandler);
 
 app.listen(port, '0.0.0.0');
 console.log(`✓ tRPC server listening on http://0.0.0.0:${port}/trpc/`);

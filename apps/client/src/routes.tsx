@@ -28,9 +28,6 @@ import { SkuFormPage } from './pages/sku/SkuFormPage';
 import { SalesOrderIndexPage } from './pages/sales-order/SalesOrderIndexPage';
 import { SalesOrderDetailPage } from './pages/sales-order/SalesOrderDetailPage';
 import { SalesOrderFormPage } from './pages/sales-order/SalesOrderFormPage';
-import { InvoiceIndexPage } from './pages/invoice/InvoiceIndexPage';
-import { InvoiceDetailPage } from './pages/invoice/InvoiceDetailPage';
-import { InvoiceFormPage } from './pages/invoice/InvoiceFormPage';
 import { VisitLogIndexPage } from './pages/visit-log/VisitLogIndexPage';
 import { VisitLogDetailPage } from './pages/visit-log/VisitLogDetailPage';
 import { VisitLogFormPage } from './pages/visit-log/VisitLogFormPage';
@@ -44,6 +41,7 @@ import { UsersIndexPage } from './pages/users/UsersIndexPage';
 import { UserDetailPage } from './pages/users/UserDetailPage';
 import { UserFormPage } from './pages/users/UserFormPage';
 import { RolesIndexPage } from './pages/access-control/RolesIndexPage';
+import { RoleDetailPage } from './pages/access-control/RoleDetailPage';
 import { RoleFormPage } from './pages/access-control/RoleFormPage';
 import { ActivityLogsIndexPage } from './pages/activity-logs/ActivityLogsIndexPage';
 import { ActivityLogDetailPage } from './pages/activity-logs/ActivityLogDetailPage';
@@ -141,15 +139,6 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: 'invoice',
-        children: [
-          { index: true, element: <InvoiceIndexPage /> },
-          { path: 'create', element: <InvoiceFormPage /> },
-          { path: ':id', element: <InvoiceDetailPage /> },
-          { path: ':id/edit', element: <InvoiceFormPage /> },
-        ],
-      },
-      {
         path: 'visit-log',
         children: [
           { index: true, element: <VisitLogIndexPage /> },
@@ -185,10 +174,11 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: 'roles',
+        path: 'access-control',
         children: [
           { index: true, element: <RolesIndexPage /> },
           { path: 'create', element: <RoleFormPage /> },
+          { path: ':id', element: <RoleDetailPage /> },
           { path: ':id/edit', element: <RoleFormPage /> },
         ],
       },

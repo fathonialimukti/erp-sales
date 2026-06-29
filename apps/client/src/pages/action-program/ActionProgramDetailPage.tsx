@@ -1,104 +1,224 @@
-import { useState } from 'react';
-import { Button, Card, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea } from '../../ui';
-import { useNavigate, useParams } from 'react-router';
-import { useAtomValue } from 'jotai';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '../../components/PageHeader';
-import { ApprovalHistory } from '../../components/ApprovalHistory';
-import { hasPermissionAtom } from '../../lib/atoms';
-import { trpcClient } from '../../lib/trpc';
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate, useParams } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { ButtonGroup } from "../../components/ButtonGroup";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { ActionProgramIcon } from "./ActionProgramIcons";
 
-interface ActionProgramDetail {
-  id: string; documentNumber: string | null; name: string; type: string; description: string | null; startDate: string; endDate: string; budgetAmount: number | null; budgetCurrency: string; rules: any; approvalStatus: string; approvalHistory: any;
-  area: { id: string; name: string }; pic: { id: string; name: string | null }; createdBy: { id: string; name: string | null } | null;
-  outlets: { outlet: { id: string; name: string; code: string | null } }[];
-  skus: { sku: { id: string; name: string; code: string | null } }[];
-  payments: { id: string; amount: number; paymentDate: string; method: string | null; reference: string | null }[];
-  /** Per-tier approval timestamps. Surfaced once the server selects them. */
-  areaManagerApprovedAt?: string | Date | null;
-  regionManagerApprovedAt?: string | Date | null;
-  financeManagerApprovedAt?: string | Date | null;
-  directorApprovedAt?: string | Date | null;
-}
+type ActionProgramDetail = {
+  id: string;
+  documentNumber: string | null;
+  name: string;
+  type: string;
+  startDate: string | null;
+  endDate: string | null;
+  budget: number | null;
+  status: string;
+  description: string | null;
+  area: { id: string; name: string } | null;
+  pic: { id: string; name: string } | null;
+  outlets: { id: string; name: string }[];
+  skus: { id: string; name: string }[];
+};
 
-function ActionProgramDetailPage() {
-  const { id } = useParams(); const navigate = useNavigate(); const queryClient = useQueryClient();
+export const ActionProgramDetailPage = () => {
+  const intl = useIntl();
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canApproveArea = hasPermission('action-program@approve-area'); const canApproveRegion = hasPermission('action-program@approve-region');
-  const canApproveFinance = hasPermission('action-program@approve-finance'); const canApproveDirector = hasPermission('action-program@approve-director');
-  const canUpdate = hasPermission('action-program@update'); const canDelete = hasPermission('action-program@delete');
+  const canUpdate = hasPermission("actionProgram@update");
+  const canDelete = hasPermission("actionProgram@delete");
+  const toast = useToast();
 
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false); const [isDeleting, setIsDeleting] = useState(false);
-  const [actionModal, setActionModal] = useState<'approve' | 'reject' | null>(null);
-  const [message, setMessage] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const { data, isLoading } = useQuery({ queryKey: ['actionProgramDetail', id], enabled: Boolean(id), queryFn: () => trpcClient.actionProgram.detail.query({ id: id ?? '' }) });
-  const record = data as ActionProgramDetail | undefined;
+  const { data, isLoading } = useQuery({
+    queryKey: ["actionProgramDetail", id],
+    enabled: Boolean(id),
+    queryFn: () => trpcClient.actionProgram.detail.query({ id: id ?? "" }),
+  });
 
-  const approveAreaMutation = useMutation({ mutationFn: (p: { id: string; message?: string }) => trpcClient.actionProgram.approveArea.mutate(p), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['actionProgramDetail', id] }); queryClient.invalidateQueries({ queryKey: ['actionProgramList'] }); setActionModal(null); } });
-  const approveRegionMutation = useMutation({ mutationFn: (p: { id: string; message?: string }) => trpcClient.actionProgram.approveRegion.mutate(p), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['actionProgramDetail', id] }); setActionModal(null); } });
-  const approveFinanceMutation = useMutation({ mutationFn: (p: { id: string; message?: string }) => trpcClient.actionProgram.approveFinance.mutate(p), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['actionProgramDetail', id] }); setActionModal(null); } });
-  const approveDirectorMutation = useMutation({ mutationFn: (p: { id: string; message?: string }) => trpcClient.actionProgram.approveDirector.mutate(p), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['actionProgramDetail', id] }); setActionModal(null); } });
-  const rejectMutation = useMutation({ mutationFn: (p: { id: string; message?: string }) => trpcClient.actionProgram.reject.mutate(p), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['actionProgramDetail', id] }); setActionModal(null); } });
+  const actionProgram = data as ActionProgramDetail | undefined;
 
-  const handleDelete = async () => { if (!record || isDeleting) return; setIsDeleting(true); try { await trpcClient.actionProgram.delete.mutate({ id: record.id }); await queryClient.invalidateQueries({ queryKey: ['actionProgramList'] }); setDeleteModalOpen(false); navigate('/action-program'); } catch (e) { console.error(e); } finally { setIsDeleting(false); } };
+  const handleDelete = async () => {
+    if (!actionProgram || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await trpcClient.actionProgram.delete.mutate({ id: actionProgram.id });
+      await queryClient.invalidateQueries({ queryKey: ["actionProgramList"] });
+      setDeleteModalOpen(false);
+      toast.success(intl.formatMessage({ id: "action_program.detail.delete_success", defaultMessage: "Region deleted" }));
+      navigate("/actionProgram");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
-  if (isLoading) return <p className="text-sm text-muted">Loading...</p>;
-  if (!record) return <div className="space-y-3"><p className="text-sm text-danger">Not found.</p><Button variant="ghost" onClick={() => navigate('/action-program')}>Back</Button></div>;
+  if (isLoading) {
+    return (
+      <div className="so-page">
+        <div className="so-loading">
+          <Spinner size="lg" />
+          <span>{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
+        </div>
+      </div>
+    );
+  }
 
-  const tierApproved = (tier: string | null) => tier !== null;
+  if (!actionProgram) {
+    return (
+      <div className="so-page">
+        <div className="so-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
+          <div className="so-card">
+            <div className="so-card__body">
+              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
+                {intl.formatMessage({ id: "action_program.detail.not_found", defaultMessage: "Region not found" })}
+              </p>
+              <button type="button" className="so-btn so-btn--ghost" style={{ marginTop: 12 }} onClick={() => navigate("/actionProgram")}>
+                <ActionProgramIcon name="back" size={14} />
+                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <section className="space-y-6" data-ai-context={JSON.stringify({ section: 'action-program-detail', id: record.id, documentNumber: record.documentNumber, name: record.name, type: record.type, approvalStatus: record.approvalStatus, outletCount: record.outlets.length, skuCount: record.skus.length, budgetAmount: record.budgetAmount })}>
-      <PageHeader title={record.name} onBack={() => navigate('/action-program')} onEdit={canUpdate && record.approvalStatus === 'DRAFT' ? () => navigate(`/action-program/${record.id}/edit`) : undefined} onDelete={canDelete ? () => setDeleteModalOpen(true) : undefined} />
+    <section className="so-page" data-ai-context={JSON.stringify({ section: "actionProgram-detail", id: actionProgram.id, name: actionProgram.name, areaCount: actionProgram.outlets?.length ?? 0 })}>
+      {/* ── Hero ── */}
+      <header className="so-detail-hero">
+        <div className="so-detail-hero__top">
+          <ButtonGroup
+            size="md"
+            items={[{ key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <ActionProgramIcon name="back" size={14} />, to: "/actionProgram" }]}
+          />
+          <ButtonGroup
+            size="md"
+            items={[
+              ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <ActionProgramIcon name="edit" size={14} />, to: `/actionProgram/${actionProgram.id}/edit` }] : []),
+              ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <ActionProgramIcon name="delete" size={14} />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
+            ]}
+          />
+        </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Chip size="sm" tone={record.approvalStatus === 'APPROVED' ? 'success' : record.approvalStatus === 'REJECTED' ? 'danger' : record.approvalStatus === 'PROPOSED' ? 'accent' : 'neutral'}>{record.approvalStatus}</Chip>
-        <Chip size="sm">{record.type}</Chip>
-        {canApproveArea && record.approvalStatus === 'DRAFT' && <Button size="sm" variant="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Area)</Button>}
-        {canApproveRegion && record.approvalStatus === 'PROPOSED' && tierApproved(record.areaManagerApprovedAt as any) && !tierApproved(record.regionManagerApprovedAt as any) && <Button size="sm" variant="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Region)</Button>}
-        {canApproveFinance && tierApproved(record.regionManagerApprovedAt as any) && !tierApproved(record.financeManagerApprovedAt as any) && <Button size="sm" variant="primary" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Finance)</Button>}
-        {canApproveDirector && tierApproved(record.financeManagerApprovedAt as any) && !tierApproved(record.directorApprovedAt as any) && <Button size="sm" variant="success" onClick={() => { setMessage(''); setActionModal('approve'); }}>Approve (Director)</Button>}
-        <Button size="sm" variant="danger" onClick={() => { setMessage(''); setActionModal('reject'); }}>Reject</Button>
-      </div>
+        <div className="so-detail-hero__title-block">
+          <div className="so-detail-hero__title-row">
+            <div className="so-detail-hero__title-stack">
+              <span className="so-detail-hero__kicker">{intl.formatMessage({ id: "nav.programs", defaultMessage: "Programs" })}</span>
+              <h1 className="so-detail-hero__title">{actionProgram.name}</h1>
+              <span className="so-detail-hero__sub">{actionProgram.code ?? "—"}</span>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {/* Approval progress indicator */}
-      <Card><div className="p-4 flex gap-4 text-sm">
-        {(['Area Manager', 'Regional Manager', 'Finance PIC', 'Director'] as const).map((t, i) => {
-          const dates = [record.areaManagerApprovedAt, record.regionManagerApprovedAt, record.financeManagerApprovedAt, record.directorApprovedAt];
-          const done = dates[i] !== null;
-          const current = !done && (i === 0 || dates[i - 1] !== null) && record.approvalStatus !== 'REJECTED';
-          return <div key={t} className={`flex-1 text-center p-2 rounded-lg ${done ? 'bg-success-soft text-success' : current ? 'bg-primary-soft text-primary font-semibold' : 'bg-default-100 text-muted'}`}>{t}{done ? ' ✓' : current ? ' ⟵' : ''}</div>;
-        })}
-      </div></Card>
+      {/* ── Summary ── */}
+      <section className="so-card">
+        <div className="so-card__header">
+          <h2 className="so-card__title">
+            <span className="so-card__icon"><ActionProgramIcon name="document" size={14} /></span>
+            {intl.formatMessage({ id: "action_program.detail.summary", defaultMessage: "Summary" })}
+          </h2>
+        </div>
+        <div className="so-card__body">
+          <div className="so-section so-section--2">
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "action_program.detail.code_label", defaultMessage: "Code" })}</span>
+              <span className="so-field__value">{actionProgram.code ?? "—"}</span>
+            </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "action_program.detail.name_label", defaultMessage: "Name" })}</span>
+              <span className="so-field__value">{actionProgram.name}</span>
+            </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "action_program.detail.areas_label", defaultMessage: "Outlets" })}</span>
+              <span className="so-field__value">{actionProgram.outlets?.length ?? 0}</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <Card><div className="grid gap-4 p-6 md:grid-cols-4">
-        <Field label="Type" value={record.type} /><Field label="Area" value={record.area.name} /><Field label="PIC" value={record.pic.name} /><Field label="Budget" value={record.budgetAmount ? `IDR ${record.budgetAmount.toLocaleString()}` : '-'} />
-        <Field label="Start" value={new Date(record.startDate).toLocaleDateString()} /><Field label="End" value={new Date(record.endDate).toLocaleDateString()} /><Field label="Created By" value={record.createdBy?.name} />
-      </div></Card>
+      {/* ── Areas ── */}
+      <section className="so-card">
+        <div className="so-card__header">
+          <h2 className="so-card__title">
+            <span className="so-card__icon"><ActionProgramIcon name="outlet" size={14} /></span>
+            {intl.formatMessage({ id: "action_program.detail.outlets_title", defaultMessage: "Outlets" })}
+          </h2>
+          <p className="so-card__hint">{actionProgram.outlets?.length ?? 0} areas</p>
+        </div>
+        <div className="so-card__body" style={{ padding: 0 }}>
+          {actionProgram.outlets?.length ?? 0 === 0 ? (
+            <div className="so-card__body" style={{ textAlign: "center", padding: "2rem" }}>
+              <ActionProgramIcon name="outlet" size={48} />
+              <p style={{ marginTop: 12, color: "var(--ios-label-2)" }}>{intl.formatMessage({ id: "action_program.detail.no_outlets", defaultMessage: "No outlets yet" })}</p>
+            </div>
+          ) : (
+            <div className="so-items-table">
+              <div className="so-items-table__body">
+                {actionProgram.outlets?.map((outlet) => (
+                  <div key={outlet.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/outlet/${outlet.id}`)}>
+                    <div className="so-items-table__td so-items-table__td--product">
+                      <span className="so-items-table__icon" data-tint="blue" aria-hidden="true"><ActionProgramIcon name="outlet" size={16} /></span>
+                      <div className="so-items-table__product">
+                        <span className="so-items-table__product-name">{outlet.name}</span>
+                        {outlet.code && <span className="so-items-table__product-code">{outlet.code}</span>}
+                      </div>
+                    </div>
+                    <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
+                      <ActionProgramIcon name="chevron-right" size={16} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
-      {record.outlets.length > 0 && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Outlets ({record.outlets.length})</h3><div className="flex flex-wrap gap-2">{record.outlets.map((o) => <Chip key={o.outlet.id} size="sm">{o.outlet.name}</Chip>)}</div></div></Card>}
-      {record.skus.length > 0 && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Products ({record.skus.length})</h3><div className="flex flex-wrap gap-2">{record.skus.map((s) => <Chip key={s.sku.id} size="sm">{s.sku.name}</Chip>)}</div></div></Card>}
-      {record.payments.length > 0 && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Payments</h3><div className="space-y-2">{record.payments.map((p) => <div key={p.id} className="flex justify-between text-sm"><span>IDR {p.amount.toLocaleString()} — {new Date(p.paymentDate).toLocaleDateString()}</span><span className="text-muted">{p.method} {p.reference}</span></div>)}</div></div></Card>}
-
-      {record.approvalHistory && <Card><div className="p-6"><h3 className="mb-3 text-lg font-semibold">Approval History</h3><ApprovalHistory history={Array.isArray(record.approvalHistory) ? record.approvalHistory : []} /></div></Card>}
-
-      <Modal isOpen={actionModal !== null} onClose={() => setActionModal(null)}><ModalContent><ModalHeader>{actionModal === 'approve' ? 'Approve' : 'Reject'} Program</ModalHeader><ModalBody><Textarea label="Message" value={message} onValueChange={setMessage} placeholder="Enter note..." /></ModalBody><ModalFooter><Button variant="ghost" onClick={() => setActionModal(null)}>Cancel</Button><Button variant={actionModal === 'approve' ? 'success' : 'danger'} onClick={() => {
-        const p = { id: record!.id, message: message || undefined };
-        if (actionModal === 'reject') rejectMutation.mutate(p);
-        else if (!tierApproved(record!.areaManagerApprovedAt as any)) approveAreaMutation.mutate(p);
-        else if (!tierApproved(record!.regionManagerApprovedAt as any)) approveRegionMutation.mutate(p);
-        else if (!tierApproved(record!.financeManagerApprovedAt as any)) approveFinanceMutation.mutate(p);
-        else approveDirectorMutation.mutate(p);
-      }}>{actionModal === 'approve' ? 'Approve' : 'Reject'}</Button></ModalFooter></ModalContent></Modal>
-
-      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}><ModalContent><ModalHeader>Delete Program</ModalHeader><ModalBody>Delete "{record.name}"?</ModalBody><ModalFooter><Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button><Button variant="danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button></ModalFooter></ModalContent></Modal>
+      {/* ── Delete Modal ── */}
+      {deleteModalOpen && createPortal(
+        <div className="so-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
+          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="so-modal__header">
+              <h3><ActionProgramIcon name="delete" size={16} /> {intl.formatMessage({ id: "action_program.detail.delete_title", defaultMessage: "Delete actionProgram" })}</h3>
+              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close">
+                <ActionProgramIcon name="close" size={14} />
+              </button>
+            </div>
+            <div className="so-modal__body">
+              <div className="so-modal__icon so-modal__icon--error"><ActionProgramIcon name="delete" size={28} /></div>
+              <h3 className="so-modal__title">{intl.formatMessage({ id: "action_program.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}</h3>
+              <p className="so-modal__msg">
+                {intl.formatMessage({ id: "action_program.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: actionProgram.name })}
+              </p>
+            </div>
+            <div className="so-modal__footer">
+              <button className="so-btn so-btn--ghost" onClick={() => setDeleteModalOpen(false)}>
+                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+              </button>
+              <button className="so-btn so-btn--danger" onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting && <span className="so-spinner" />}
+                <ActionProgramIcon name="delete" size={14} />
+                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </section>
   );
-}
-
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-  return <div className="flex flex-col gap-1"><p className="text-sm font-medium text-muted">{label}</p><div className="text-sm">{value || '-'}</div></div>;
-}
-
-export { ActionProgramDetailPage };
+};

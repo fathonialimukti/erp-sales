@@ -1,38 +1,144 @@
 /* ============================================================
- * PageHeader — page title + action buttons
+ * PageHeader — page-level header used at the top of every page
  * Prefix: .ph-
+ *
+ * Layout (left to right):
+ *   ┌────────────────────────────────────────────────────────┐
+ *   │ [← Back]   Kicker                                       │
+ *   │            Title                          [Edit][Delete]│
+ *   │            Subtitle                                     │
+ *   └────────────────────────────────────────────────────────┘
+ *
+ * Visual contract: matches the inline .pg__header style so that
+ * whether a page uses <PageHeader /> or the inline version, the
+ * appearance is identical.
  * ============================================================ */
 
 .ph {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .ph {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    gap: 4px;
   }
 }
 
-.ph__title {
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  color: var(--color-slate-900);
+.ph__top-slot,
+.ph__bottom-slot {
+  /* Slot for breadcrumbs, chips, etc. */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.dark .ph__title {
-  color: var(--color-slate-100);
+.ph__row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
+
+@media (min-width: 768px) {
+  .ph__row {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+}
+
+/* ---------- Back button ---------- */
+
+.ph__back {
+  align-self: flex-start;
+  padding-left: 8px !important;
+  padding-right: 12px !important;
+  color: var(--color-muted);
+}
+
+.ph__back:hover {
+  color: var(--color-foreground);
+  background: var(--color-surface-2);
+}
+
+.dark .ph__back:hover {
+  background: var(--color-slate-800);
+}
+
+.ph__back-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  /* Hide the "Back" text on very small screens, keep just the arrow */
+  .ph__back-label {
+    display: none;
+  }
+}
+
+/* ---------- Heading column ---------- */
+
+.ph__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ph__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-700);
+}
+
+.dark .ph__kicker {
+  color: var(--color-accent-400);
+}
+
+.ph__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .ph__title {
+    font-size: 28px;
+  }
+}
+
+.ph__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+  line-height: 1.5;
+  max-width: 64ch;
+}
+
+/* ---------- Action column ---------- */
 
 .ph__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .ph__actions {
+    justify-content: flex-end;
+  }
 }
 
 .ph__action-item {
@@ -43,20 +149,10 @@
 
 .ph__divider {
   width: 1px;
-  height: 20px;
-  background: var(--color-slate-200);
+  height: 24px;
+  background: var(--color-border);
 }
 
 .dark .ph__divider {
   background: var(--color-slate-800);
-}
-
-.ph__action-label {
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .ph__action-label {
-    display: inline;
-  }
 }

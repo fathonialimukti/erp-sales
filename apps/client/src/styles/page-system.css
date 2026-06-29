@@ -1,0 +1,1395 @@
+/* ============================================================
+ * Page System — shared design language for every page
+ * Prefix: .pg-
+ *
+ * Every page in the app builds on these classes so we get a
+ * consistent look without duplicating CSS in each domain.
+ *
+ * Tokens used: --color-*, --radius-*, --shadow-*, --space-*,
+ *              --font-*, --ease-*, --duration-*, --shell-*
+ * ============================================================ */
+
+/* ============================================================
+ * 1. PAGE LAYOUT
+ * ============================================================ */
+
+.pg {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  animation: pgFadeUp 400ms var(--ease-out) both;
+}
+
+@keyframes pgFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+ * 2. PAGE HEADER — title + subtitle + actions
+ * ============================================================ */
+
+.pg__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .pg__header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+}
+
+.pg__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pg__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-700);
+}
+
+.dark .pg__kicker {
+  color: var(--color-accent-400);
+}
+
+.pg__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .pg__title { font-size: 28px; }
+}
+
+.pg__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+  line-height: 1.5;
+  max-width: 64ch;
+}
+
+.pg__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pg__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--color-border);
+}
+
+.dark .pg__divider { background: var(--color-slate-800); }
+
+/* ============================================================
+ * 3. SECTION — within a page (heading + body)
+ * ============================================================ */
+
+.pg__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pg__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pg__section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* ============================================================
+ * 4. STAT CARDS (small + medium + large)
+ * ============================================================ */
+
+.pg__stat-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .pg__stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .pg__stat-grid--4 { grid-template-columns: repeat(4, 1fr); }
+  .pg__stat-grid--3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+.pg-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: box-shadow 200ms var(--ease-default), transform 200ms var(--ease-default);
+}
+
+.pg-stat:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.pg-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent-400), var(--color-accent-600));
+  opacity: 0.85;
+}
+
+.pg-stat--neutral::before { background: linear-gradient(90deg, var(--color-slate-300), var(--color-slate-500)); }
+.pg-stat--info::before { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+.pg-stat--warning::before { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.pg-stat--danger::before { background: linear-gradient(90deg, #f87171, #ef4444); }
+
+.dark .pg-stat--neutral::before { background: linear-gradient(90deg, var(--color-slate-600), var(--color-slate-400)); }
+
+.pg-stat__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pg-stat__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+}
+
+.pg-stat__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-50);
+  color: var(--color-accent-700);
+}
+
+.dark .pg-stat__icon {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-accent-300);
+}
+
+.pg-stat--neutral .pg-stat__icon { background: var(--color-surface-2); color: var(--color-muted); }
+.pg-stat--info .pg-stat__icon { background: var(--color-state-info-bg); color: var(--color-state-info); }
+.pg-stat--warning .pg-stat__icon { background: var(--color-state-warning-bg); color: var(--color-state-warning); }
+.pg-stat--danger .pg-stat__icon { background: var(--color-state-danger-bg); color: var(--color-state-danger); }
+
+.dark .pg-stat--neutral .pg-stat__icon { background: var(--color-slate-800); color: var(--color-slate-400); }
+.dark .pg-stat--info .pg-stat__icon { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.dark .pg-stat--warning .pg-stat__icon { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.dark .pg-stat--danger .pg-stat__icon { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+.pg-stat__value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pg-stat__sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.pg-stat__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-state-success-bg);
+  color: var(--color-state-success);
+}
+
+.pg-stat__delta--down {
+  background: var(--color-state-danger-bg);
+  color: var(--color-state-danger);
+}
+
+.pg-stat__delta--flat {
+  background: var(--color-surface-2);
+  color: var(--color-muted);
+}
+
+/* ============================================================
+ * 5. CARD — for the page system
+ * (Wraps the existing .card primitive with a section header)
+ * ============================================================ */
+
+.pg-card {
+  position: relative;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: box-shadow 200ms var(--ease-default);
+}
+
+.pg-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.dark .pg-card { border-color: var(--color-slate-800); }
+
+.pg-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.dark .pg-card__header { border-bottom-color: var(--color-slate-800); }
+
+.pg-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--color-foreground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pg-card__subtitle {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.pg-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pg-card__body {
+  padding: 20px;
+}
+
+.pg-card__body--flush {
+  padding: 0;
+}
+
+.pg-card__body--tight {
+  padding: 12px 20px;
+}
+
+.pg-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+}
+
+.dark .pg-card__footer { border-top-color: var(--color-slate-800); background: rgba(15, 23, 42, 0.4); }
+
+/* ============================================================
+ * 6. FILTER BAR — search + filters row above a table
+ * ============================================================ */
+
+.pg-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--color-surface-1);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dark .pg-filters { border-bottom-color: var(--color-slate-800); }
+
+@media (min-width: 768px) {
+  .pg-filters { flex-direction: row; align-items: center; }
+}
+
+.pg-filters__search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+.pg-filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.pg-filters__spacer { flex: 1; }
+
+.pg-filters__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+ * 7. INFO FIELD — for detail pages
+ * ============================================================ */
+
+.pg-info {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .pg-info--2 { grid-template-columns: repeat(2, 1fr); }
+  .pg-info--3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .pg-info--4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+.pg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pg-field__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.pg-field__value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-foreground);
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.pg-field__value--mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pg-field__value--accent {
+  color: var(--color-accent-700);
+  font-weight: 700;
+}
+
+.dark .pg-field__value--accent { color: var(--color-accent-300); }
+
+.pg-field__value--muted {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+.pg-field__value--lg {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+ * 8. RELATED LIST — items related to a record
+ * ============================================================ */
+
+.pg-related {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pg-related__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  border: 1px solid transparent;
+  transition: background 150ms var(--ease-default), border-color 150ms var(--ease-default);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pg-related__item:hover {
+  background: var(--color-surface-3);
+  border-color: var(--color-border);
+}
+
+.dark .pg-related__item {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.dark .pg-related__item:hover {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: var(--color-slate-700);
+}
+
+.pg-related__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-1);
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.dark .pg-related__icon {
+  background: var(--color-slate-800);
+}
+
+.pg-related__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.pg-related__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-related__sub {
+  font-size: 12px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-related__chevron {
+  color: var(--color-muted-foreground);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+ * 9. FORM — sectioned form layout
+ * ============================================================ */
+
+.pg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* Bottom padding for the sticky form footer so the last card's
+     content can scroll above it. */
+  padding-bottom: 16px;
+}
+
+.pg-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pg-form__section:last-child { border-bottom: 0; }
+
+.dark .pg-form__section { border-bottom-color: var(--color-slate-800); }
+
+.pg-form__section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.pg-form__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .pg-form__grid--2 { grid-template-columns: repeat(2, 1fr); }
+  .pg-form__grid--3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .pg-form__grid--4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+.pg-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pg-form__field--full { grid-column: 1 / -1; }
+
+.pg-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  border-bottom-left-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+}
+
+.dark .pg-form__actions {
+  border-top-color: var(--color-slate-800);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+/* Sticky form action bar (lives at the bottom of the page, after all fields) */
+.pg-form-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  background: var(--color-surface-1);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -4px 12px -4px rgba(15, 23, 42, 0.06);
+  z-index: 5;
+}
+
+.dark .pg-form-footer {
+  background: var(--color-surface-1);
+  border-top-color: var(--color-slate-800);
+  box-shadow: 0 -4px 12px -4px rgba(0, 0, 0, 0.25);
+}
+
+.pg-form-footer__info {
+  margin-right: auto;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.pg-form-footer__info--error {
+  color: var(--color-state-danger);
+  font-weight: 500;
+}
+
+/* ============================================================
+ * 10. STATE — loading / empty / error
+ * ============================================================ */
+
+.pg-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.pg-state--inline {
+  padding: 24px;
+}
+
+.pg-state__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-2);
+  color: var(--color-muted-foreground);
+  margin-bottom: 4px;
+}
+
+.dark .pg-state__icon {
+  background: var(--color-slate-800);
+}
+
+.pg-state__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.pg-state__text {
+  font-size: 13px;
+  color: var(--color-muted);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.pg-state__action {
+  margin-top: 12px;
+}
+
+/* ============================================================
+ * 11. LIST — generic list (used for related items in detail)
+ * ============================================================ */
+
+.pg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pg-list__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pg-list__row:last-child { border-bottom: 0; }
+
+.dark .pg-list__row { border-bottom-color: var(--color-slate-800); }
+
+.pg-list__row--clickable {
+  cursor: pointer;
+  transition: background 150ms var(--ease-default);
+}
+
+.pg-list__row--clickable:hover {
+  background: var(--color-surface-2);
+}
+
+.dark .pg-list__row--clickable:hover { background: rgba(15, 23, 42, 0.4); }
+
+.pg-list__row--active {
+  background: var(--color-accent-50);
+  border-left: 3px solid var(--color-accent-500);
+}
+
+.dark .pg-list__row--active {
+  background: rgba(16, 185, 129, 0.10);
+}
+
+.pg-list__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.pg-list__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-list__sub {
+  font-size: 12px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-list__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* ============================================================
+ * 12. AVATAR + IDENTITY
+ * ============================================================ */
+
+.pg-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Subtle square swatch (30% — slate). No accent by default. */
+.pg-id__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-slate-600);
+  background: var(--color-slate-100);
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+  border: 1px solid var(--color-slate-200);
+}
+
+.dark .pg-id__avatar {
+  color: var(--color-slate-300);
+  background: var(--color-slate-800);
+  border-color: var(--color-slate-700);
+}
+
+/* Optional accent variant — only for special/active items */
+.pg-id__avatar--accent {
+  color: var(--color-accent-700);
+  background: var(--color-accent-50);
+  border-color: var(--color-accent-200);
+}
+
+.dark .pg-id__avatar--accent {
+  color: var(--color-accent-300);
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.pg-id__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.pg-id__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-id__sub {
+  font-size: 12px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* ============================================================
+ * 13. PAGINATION BAR — wrapper around the Pagination primitive
+ * ============================================================ */
+
+.pg-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+  flex-wrap: wrap;
+}
+
+.dark .pg-pagination { border-top-color: var(--color-slate-800); }
+
+.pg-pagination__info {
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+/* ============================================================
+ * 14. BREADCRUMBS — for nested pages
+ * ============================================================ */
+
+.pg-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+  flex-wrap: wrap;
+}
+
+.pg-crumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  transition: background 150ms var(--ease-default), color 150ms var(--ease-default);
+}
+
+.pg-crumbs__item:hover {
+  background: var(--color-surface-2);
+  color: var(--color-foreground);
+}
+
+.dark .pg-crumbs__item:hover { background: var(--color-slate-800); }
+
+.pg-crumbs__item--current {
+  color: var(--color-foreground);
+  font-weight: 600;
+  cursor: default;
+}
+
+.pg-crumbs__item--current:hover {
+  background: transparent;
+  color: var(--color-foreground);
+}
+
+.pg-crumbs__sep {
+  color: var(--color-muted-foreground);
+}
+
+/* ============================================================
+ * 15. UTILITY PATCHES — for in-page layouts
+ * ============================================================ */
+
+.pg__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pg__col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pg__between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pg__end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pg__gap-1 { gap: 4px; }
+.pg__gap-2 { gap: 8px; }
+.pg__gap-3 { gap: 12px; }
+.pg__gap-4 { gap: 16px; }
+.pg__gap-5 { gap: 20px; }
+.pg__gap-6 { gap: 24px; }
+
+.pg__mt-0 { margin-top: 0; }
+.pg__mt-1 { margin-top: 4px; }
+.pg__mt-2 { margin-top: 8px; }
+.pg__mt-3 { margin-top: 12px; }
+.pg__mt-4 { margin-top: 16px; }
+.pg__mt-5 { margin-top: 20px; }
+.pg__mt-6 { margin-top: 24px; }
+
+.pg__mb-0 { margin-bottom: 0; }
+.pg__mb-1 { margin-bottom: 4px; }
+.pg__mb-2 { margin-bottom: 8px; }
+.pg__mb-3 { margin-bottom: 12px; }
+.pg__mb-4 { margin-bottom: 16px; }
+
+.pg__truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg { animation: none; }
+}
+
+/* ============================================================
+ * 16. iOS-STYLE COMPONENTS
+ *    Segmented control, grouped list cells, colorful swatches.
+ *    Inspired by iOS settings.app — pill controls, hairline
+ *    separators, color-tinted leading icons.
+ * ============================================================ */
+
+/* ---- iOS Segmented Control ---- */
+.pg-segmented {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  gap: 0;
+  position: relative;
+  isolation: isolate;
+}
+
+.dark .pg-segmented {
+  background: var(--color-slate-800);
+  border-color: var(--color-slate-700);
+}
+
+.pg-segmented__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color 150ms var(--ease-default), background 200ms var(--ease-default);
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+.pg-segmented__item:hover:not(.pg-segmented__item--active) {
+  color: var(--color-foreground);
+}
+
+.pg-segmented__item--active {
+  background: var(--color-surface-1);
+  color: var(--color-foreground);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 1px 3px rgba(15, 23, 42, 0.08),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.dark .pg-segmented__item--active {
+  background: var(--color-slate-900);
+  color: var(--color-slate-100);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.pg-segmented__item svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pg-segmented__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-accent-500);
+  color: white;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.pg-segmented__item--active .pg-segmented__count {
+  background: var(--color-accent-600);
+}
+
+/* ---- iOS Grouped Section (large rounded card with sections) ---- */
+.pg-ios {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.dark .pg-ios { border-color: var(--color-slate-800); }
+
+.pg-ios__group {
+  padding: 16px 20px 6px;
+}
+
+.pg-ios__group:first-child {
+  padding-top: 18px;
+}
+
+.pg-ios__group-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.pg-ios__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--color-surface-1);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.dark .pg-ios__list {
+  border-color: var(--color-slate-800);
+}
+
+.pg-ios__cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  position: relative;
+  cursor: pointer;
+  transition: background 120ms var(--ease-default);
+}
+
+.pg-ios__cell:hover {
+  background: var(--color-surface-2);
+}
+
+.dark .pg-ios__cell:hover {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.pg-ios__cell + .pg-ios__cell::before {
+  content: "";
+  position: absolute;
+  left: 56px; /* past the swatch */
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--color-border);
+  pointer-events: none;
+}
+
+.dark .pg-ios__cell + .pg-ios__cell::before {
+  background: var(--color-slate-800);
+}
+
+.pg-ios__cell:last-child { border-bottom: 0; }
+
+.pg-ios__cell--clickable {
+  cursor: pointer;
+}
+
+.pg-ios__cell-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.pg-ios__cell-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--color-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-ios__cell-sub {
+  font-size: 12.5px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.pg-ios__cell-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pg-ios__cell-chevron {
+  color: var(--color-muted-foreground);
+  display: inline-flex;
+  flex-shrink: 0;
+  transition: transform 150ms var(--ease-default);
+}
+
+.pg-ios__cell--clickable:hover .pg-ios__cell-chevron {
+  transform: translateX(2px);
+  color: var(--color-accent-600);
+}
+
+.dark .pg-ios__cell--clickable:hover .pg-ios__cell-chevron {
+  color: var(--color-accent-300);
+}
+
+/* ---- iOS Swatch (colored leading icon/square) ---- */
+.pg-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Color variants — pick based on the row's semantic role */
+.pg-swatch--accent { background: linear-gradient(135deg, var(--color-accent-400), var(--color-accent-600)); }
+.pg-swatch--info   { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.pg-swatch--warning{ background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.pg-swatch--danger { background: linear-gradient(135deg, #f87171, #ef4444); }
+.pg-swatch--violet { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.pg-swatch--pink   { background: linear-gradient(135deg, #f472b6, #db2777); }
+.pg-swatch--cyan   { background: linear-gradient(135deg, #22d3ee, #0891b2); }
+.pg-swatch--slate  { background: linear-gradient(135deg, var(--color-slate-500), var(--color-slate-700)); }
+
+/* Subtle "soft" variant — for less-emphasis rows */
+.pg-swatch--soft {
+  background: var(--color-surface-2);
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+}
+
+.dark .pg-swatch--soft {
+  background: var(--color-slate-800);
+  border-color: var(--color-slate-700);
+  color: var(--color-slate-300);
+}
+
+/* iOS-style action button bar (like the bottom toolbar in iOS apps) */
+.pg-ios-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 4px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-xs);
+}
+
+.dark .pg-ios-actions {
+  background: var(--color-slate-800);
+  border-color: var(--color-slate-700);
+}
+
+.pg-ios-actions__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-700);
+  cursor: pointer;
+  transition: background 150ms var(--ease-default), color 150ms var(--ease-default), transform 100ms var(--ease-default);
+  white-space: nowrap;
+}
+
+.pg-ios-actions__item:hover:not(:disabled) {
+  background: var(--color-surface-1);
+  color: var(--color-foreground);
+}
+
+.pg-ios-actions__item:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.pg-ios-actions__item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pg-ios-actions__item--accent {
+  color: var(--color-accent-700);
+}
+
+.pg-ios-actions__item--accent:hover:not(:disabled) {
+  background: var(--color-accent-50);
+  color: var(--color-accent-700);
+}
+
+.dark .pg-ios-actions__item { color: var(--color-slate-300); }
+.dark .pg-ios-actions__item:hover:not(:disabled) {
+  background: var(--color-slate-700);
+  color: var(--color-slate-100);
+}
+.dark .pg-ios-actions__item--accent { color: var(--color-accent-300); }
+.dark .pg-ios-actions__item--accent:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-accent-300);
+}
+
+.pg-ios-actions__item svg { width: 16px; height: 16px; }
+
+.pg-ios-actions__sep {
+  width: 1px;
+  height: 22px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.dark .pg-ios-actions__sep { background: var(--color-slate-700); }
+
+.pg-ios-actions__item--danger {
+  color: var(--color-state-danger);
+}
+
+.pg-ios-actions__item--danger:hover:not(:disabled) {
+  background: var(--color-state-danger-bg);
+  color: var(--color-state-danger);
+}
+
+/* ---- iOS-style badge / chip (small pill) ---- */
+.pg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.pg-pill--success { background: var(--color-state-success-bg); color: var(--color-state-success); }
+.pg-pill--warning { background: var(--color-state-warning-bg); color: var(--color-state-warning); }
+.pg-pill--danger  { background: var(--color-state-danger-bg);  color: var(--color-state-danger); }
+.pg-pill--info    { background: var(--color-state-info-bg);    color: var(--color-state-info); }
+.pg-pill--accent  { background: var(--color-accent-50);       color: var(--color-accent-700); }
+.pg-pill--neutral { background: var(--color-surface-2);       color: var(--color-muted); }
+
+.dark .pg-pill--accent { background: rgba(16, 185, 129, 0.15); color: var(--color-accent-300); }
+.dark .pg-pill--neutral { background: var(--color-slate-800); color: var(--color-slate-400); }
+.dark .pg-pill--info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.dark .pg-pill--warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.dark .pg-pill--danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.dark .pg-pill--success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+
+/* ---- iOS-style FAB (floating action button) ---- */
+.pg-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-accent-500);
+  color: white;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow:
+    0 4px 12px -2px rgba(16, 185, 129, 0.45),
+    0 8px 24px -4px rgba(16, 185, 129, 0.35);
+  transition: transform 120ms var(--ease-default), box-shadow 200ms var(--ease-default), background 150ms var(--ease-default);
+  z-index: 30;
+}
+
+.pg-fab:hover {
+  background: var(--color-accent-600);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 16px -2px rgba(16, 185, 129, 0.55),
+    0 12px 28px -4px rgba(16, 185, 129, 0.4);
+}
+
+.pg-fab:active { transform: scale(0.97); }
+
+.pg-fab svg { width: 18px; height: 18px; }
+

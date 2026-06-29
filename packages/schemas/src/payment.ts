@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createPaymentSchema = z.object({
-  invoiceId: z.string().min(1, 'Invoice is required'),
+  salesOrderId: z.string().min(1, 'Sales order is required'),
   customerId: z.string().min(1, 'Customer is required'),
   date: z.string().optional(),
   amount: z.number().positive('Amount must be positive'),

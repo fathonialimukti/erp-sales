@@ -8,6 +8,7 @@ import { createEventProposalSchema } from '@repo/schemas/event-proposal';
 import { z } from 'zod';
 import { updateEventProposalSchema, eventProposalIdSchema, eventProposalListInputSchema } from '@repo/schemas/event-proposal';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
+import { validateEventProposal } from '../lib/ai-validation.js';
 
 export const eventProposalRouter = router({
   list: protectedProcedure
@@ -60,7 +61,7 @@ export const eventProposalRouter = router({
     .use(hasPermission('event-proposal@create'))
     .input(createEventProposalSchema)
     .mutation(async ({ input, ctx }) => {
-      const { skuIds, payments, eventDate, eventEndDate, ...header } = input;
+      const { skus, payments, eventDate, eventEndDate, ...header } = input;
 
       const created = await prisma.$transaction(async (tx) => {
         const proposal = await tx.eventProposal.create({
@@ -72,9 +73,17 @@ export const eventProposalRouter = router({
           },
         });
 
-        if (skuIds.length > 0) {
+        if (skus.length > 0) {
           await tx.eventProposalSku.createMany({
-            data: skuIds.map((skuId) => ({ eventProposalId: proposal.id, skuId })),
+            data: skus.map((sku) => ({
+              eventProposalId: proposal.id,
+              skuId: sku.skuId,
+              quantity: sku.quantity,
+              price: sku.price,
+              tax: sku.tax,
+              total: sku.total,
+              notes: sku.notes,
+            })),
           });
         }
 
@@ -107,7 +116,7 @@ export const eventProposalRouter = router({
     .use(hasPermission('event-proposal@update'))
     .input(updateEventProposalSchema)
     .mutation(async ({ input, ctx }) => {
-      const { currentId, skuIds, payments, eventDate, eventEndDate, ...header } = input;
+      const { currentId, skus, payments, eventDate, eventEndDate, ...header } = input;
       const existing = await prisma.eventProposal.findUnique({ where: { id: currentId } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event proposal not found.' });
       if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT proposals can be edited.' });
@@ -123,9 +132,17 @@ export const eventProposalRouter = router({
         });
 
         await tx.eventProposalSku.deleteMany({ where: { eventProposalId: currentId } });
-        if (skuIds.length > 0) {
+        if (skus.length > 0) {
           await tx.eventProposalSku.createMany({
-            data: skuIds.map((skuId) => ({ eventProposalId: proposal.id, skuId })),
+            data: skus.map((sku) => ({
+              eventProposalId: proposal.id,
+              skuId: sku.skuId,
+              quantity: sku.quantity,
+              price: sku.price,
+              tax: sku.tax,
+              total: sku.total,
+              notes: sku.notes,
+            })),
           });
         }
 
@@ -176,6 +193,48 @@ export const eventProposalRouter = router({
       return { success: true };
     }),
 
+  validate: protectedProcedure
+    .use(hasPermission('event-proposal@validate'))
+    .input(eventProposalIdSchema)
+    .mutation(async ({ input, ctx }) => {
+      const existing = await prisma.eventProposal.findUnique({ where: { id: input.id } });
+      if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event proposal not found.' });
+      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT proposals can be validated.' });
+
+      const validation = await validateEventProposal(input.id);
+      if (!validation.valid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Validation failed: ${validation.issues.join(', ')}`,
+        });
+      }
+
+      const history = pushApprovalHistory((existing as any).approvalHistory, {
+        process: 'AI Validation',
+        name: ctx.user.name ?? 'Unknown',
+        dateTime: new Date().toISOString(),
+        message: 'Document validated successfully',
+      });
+
+      const updated = await prisma.eventProposal.update({
+        where: { id: input.id },
+        data: {
+          approvalStatus: 'VALIDATING',
+          approvalHistory: history as any,
+        },
+      });
+
+      await logActivity(prisma, {
+        action: 'APPROVE',
+        userId: ctx.user.userId,
+        resource: 'event_proposal',
+        resourceId: updated.id,
+        message: `Validated event proposal ${updated.name}`,
+      });
+
+      return updated;
+    }),
+
   // ---- 4-tier approval: Area → Region → Finance → Director ----
 
   approveArea: protectedProcedure
@@ -185,7 +244,7 @@ export const eventProposalRouter = router({
       const { message, ...idInput } = input;
       const existing = await prisma.eventProposal.findUnique({ where: { id: idInput.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
-      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT proposals can start approval.' });
+      if (existing.approvalStatus !== 'VALIDATING') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING proposals can start approval.' });
 
       const history = pushApprovalHistory((existing as any).approvalHistory, {
         process: 'Area Manager',

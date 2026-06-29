@@ -67,6 +67,7 @@ const PERMISSIONS = [
   { name: "sales-order@create", description: "Create sales orders" },
   { name: "sales-order@update", description: "Update sales orders" },
   { name: "sales-order@delete", description: "Delete sales orders" },
+  { name: "sales-order@validate", description: "Validate sales orders" },
   { name: "sales-order@propose", description: "Propose sales orders" },
   { name: "sales-order@approve", description: "Approve sales orders" },
 
@@ -74,6 +75,7 @@ const PERMISSIONS = [
   { name: "action-program@create", description: "Create action programs" },
   { name: "action-program@update", description: "Update action programs" },
   { name: "action-program@delete", description: "Delete action programs" },
+  { name: "action-program@validate", description: "Validate action programs" },
   { name: "action-program@approve-area", description: "Approve action programs at area level" },
   { name: "action-program@approve-region", description: "Approve action programs at region level" },
   { name: "action-program@approve-finance", description: "Approve action programs at finance level" },
@@ -83,6 +85,7 @@ const PERMISSIONS = [
   { name: "event-proposal@create", description: "Create event proposals" },
   { name: "event-proposal@update", description: "Update event proposals" },
   { name: "event-proposal@delete", description: "Delete event proposals" },
+  { name: "event-proposal@validate", description: "Validate event proposals" },
   { name: "event-proposal@approve-area", description: "Approve event proposals at area level" },
   { name: "event-proposal@approve-region", description: "Approve event proposals at region level" },
   { name: "event-proposal@approve-finance", description: "Approve event proposals at finance level" },
@@ -91,11 +94,7 @@ const PERMISSIONS = [
   { name: "visit-log@read", description: "Read visit logs" },
   { name: "visit-log@create", description: "Create visit logs" },
   { name: "visit-log@delete", description: "Delete visit logs" },
-
-  { name: "invoice@read", description: "Read invoices" },
-  { name: "invoice@create", description: "Create invoices" },
-  { name: "invoice@update", description: "Update invoices" },
-  { name: "invoice@delete", description: "Delete invoices" },
+  { name: "visit-log@validate", description: "Validate visit logs" },
 
   { name: "payment@read", description: "Read payments" },
   { name: "payment@create", description: "Create payments" },
@@ -200,13 +199,30 @@ async function seedUsers(roleIds: Record<string, string>) {
 // CRM FAKE DATA
 // =============================================
 
-const pickOne = <T>(items: T[]): T => {
-  if (!items.length) throw new Error("Cannot pick from empty array");
-  return items[faker.number.int({ min: 0, max: items.length - 1 })]!;
-};
-
 async function seedCrmData() {
   console.log("\n🌱 Seeding CRM data...");
+
+  // Clean existing CRM data
+  console.log("Cleaning existing CRM data...");
+  await prisma.visitLog.deleteMany({});
+  await prisma.salesOrderItem.deleteMany({});
+  await prisma.salesOrder.deleteMany({});
+  await prisma.actionProgramOutlet.deleteMany({});
+  await prisma.actionProgramSku.deleteMany({});
+  await prisma.actionProgramPayment.deleteMany({});
+  await prisma.actionProgram.deleteMany({});
+  await prisma.eventProposalSku.deleteMany({});
+  await prisma.eventProposalPayment.deleteMany({});
+  await prisma.eventProposal.deleteMany({});
+  await prisma.payment.deleteMany({});
+  await prisma.customerContact.deleteMany({});
+  await prisma.outlet.deleteMany({});
+  await prisma.customer.deleteMany({});
+  await prisma.sku.deleteMany({});
+  await prisma.skuCategory.deleteMany({});
+  await prisma.area.deleteMany({});
+  await prisma.region.deleteMany({});
+  console.log("✓ Cleaned existing CRM data");
 
   // Regions
   const regionData = [
@@ -258,26 +274,37 @@ async function seedCrmData() {
   ];
   const customers = await Promise.all(customerData.map((c) => prisma.customer.create({ data: c })));
 
-  // Outlets — one per customer
+  // Outlets — 2-3 per customer, spread across different areas
+  const outletSuffixes = ["Main Store", "Branch A", "Branch B"];
+  let outletCount = 0;
   for (const customer of customers) {
-    const area = pickOne(areas)!;
-    await prisma.outlet.create({
-      data: {
-        customerId: customer.id,
-        areaId: area.id,
-        code: `OUT-${customer.code}-01`,
-        name: `${customer.name} - Main Store`,
-        address: faker.location.streetAddress(),
-        contactName: faker.person.fullName(),
-        contactPhone: faker.phone.number(),
-        latitude: faker.location.latitude(),
-        longitude: faker.location.longitude(),
-      },
-    });
+    // Each customer gets outlets in 2-3 different areas
+    const numOutlets = faker.number.int({ min: 2, max: 3 });
+    // Shuffle areas and pick distinct ones for this customer
+    const shuffled = faker.helpers.shuffle([...areas]);
+    const assignedAreas = shuffled.slice(0, numOutlets);
+
+    for (let i = 0; i < assignedAreas.length; i++) {
+      const area = assignedAreas[i]!;
+      outletCount++;
+      await prisma.outlet.create({
+        data: {
+          customerId: customer.id,
+          areaId: area.id,
+          code: `OUT-${customer.code}-${String(i + 1).padStart(2, '0')}`,
+          name: `${customer.name} - ${outletSuffixes[i] ?? `Store ${i + 1}`}`,
+          address: faker.location.streetAddress(),
+          contactName: faker.person.fullName(),
+          contactPhone: faker.phone.number(),
+          latitude: faker.location.latitude(),
+          longitude: faker.location.longitude(),
+        },
+      });
+    }
   }
 
   console.log(
-    `✓ CRM: ${regions.length} regions, ${areas.length} areas, ${categories.length} categories, ${skus.length} SKUs, ${customers.length} customers & outlets`,
+    `✓ CRM: ${regions.length} regions, ${areas.length} areas, ${categories.length} categories, ${skus.length} SKUs, ${customers.length} customers, ${outletCount} outlets`,
   );
 }
 

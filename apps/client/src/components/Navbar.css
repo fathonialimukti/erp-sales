@@ -1,36 +1,35 @@
 /* ============================================================
- * Navbar — floating glass bar
+ * Navbar — floating glass card
  * Prefix: .nav-
- * Responsive: collapses on mobile, full on desktop
+ * Responsive: floating glass on desktop, solid flat bar on mobile
+ * Uses unified --shell-* tokens so it matches the Sidebar.
  * ============================================================ */
 
 .nav-bar {
   position: sticky;
-  top: 16px;
-  margin: 0 16px;
-  z-index: 20;
+  top: var(--shell-pad);
+  left: var(--shell-pad);
+  right: var(--shell-pad);
+  z-index: var(--z-sticky);
+  height: var(--navbar-height);
+  margin: 0;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  animation: slideDown 250ms ease-out;
-  transition: box-shadow 200ms ease, background 200ms ease;
+  border-radius: var(--shell-radius);
+  background: var(--shell-bg);
+  backdrop-filter: blur(var(--shell-blur));
+  -webkit-backdrop-filter: blur(var(--shell-blur));
+  border: var(--shell-border);
+  box-shadow: var(--shell-shadow);
+  animation: slideDown 250ms var(--ease-out);
+  transition: box-shadow 200ms var(--ease-default);
 }
 
 .nav-bar:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.dark .nav-bar {
-  background: rgba(15, 23, 42, 0.75);
-  border-color: var(--color-slate-800);
+  box-shadow: var(--shell-shadow-hover);
 }
 
 .nav-bar__left {
@@ -168,23 +167,24 @@
   display: none;
 }
 
-/* Responsive: remove floating on mobile */
+/* Responsive: drop glass on mobile — becomes a solid flat top bar */
 @media (max-width: 768px) {
   .nav-bar {
     top: 0;
-    margin: 0;
+    left: 0;
+    right: 0;
     border-radius: 0;
-    padding: 10px 16px;
+    padding: 0 16px;
+    height: var(--navbar-height);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: var(--color-surface-1);
+    background: var(--shell-bg-mobile);
+    border: none;
     border-bottom: 1px solid var(--color-border);
-    border-left: none;
-    border-right: none;
-    border-top: none;
+    box-shadow: none;
   }
 
-  .dark .nav-bar {
-    background: var(--color-surface-1);
+  .nav-bar:hover {
+    box-shadow: none;
   }
 }

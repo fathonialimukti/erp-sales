@@ -7,6 +7,9 @@ import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import { z } from 'zod';
 import { createSalesOrderSchema, updateSalesOrderSchema, salesOrderIdSchema, salesOrderListInputSchema } from '@repo/schemas/sales-order';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
+import { validateSalesOrder } from '../lib/ai-validation.js';
+import { findBestDiscount } from '../lib/action-program-discount.js';
+import { startBackgroundValidation } from '../lib/background-validation.js';
 
 export const salesOrderRouter = router({
   list: protectedProcedure
@@ -14,20 +17,52 @@ export const salesOrderRouter = router({
     .input(salesOrderListInputSchema)
     .query(async ({ input }) => {
       const { page, limit, skip } = buildPaginationParams(input);
-      const searchWhere = buildTextSearchWhere(input?.search, ['documentNumber', 'notes'] as const);
 
-      const where: Record<string, unknown> = { ...searchWhere };
+      const where: Record<string, unknown> = {};
       if (input?.customerId) where.customerId = input.customerId;
       if (input?.outletId) where.outletId = input.outletId;
       if (input?.areaId) where.areaId = input.areaId;
       if (input?.approvalStatus) where.approvalStatus = input.approvalStatus;
+
+      // Date range filter
+      if (input?.dateFrom || input?.dateTo) {
+        where.date = {};
+        if (input.dateFrom) (where.date as any).gte = new Date(input.dateFrom);
+        if (input.dateTo) (where.date as any).lte = new Date(input.dateTo);
+      }
+
+      // Global search across all table columns
+      if (input?.search?.trim()) {
+        const raw = input.search.trim();
+        const numeric = Number(raw.replace(/\./g, '').replace(/,/g, '.'));
+        const isNumeric = !Number.isNaN(numeric);
+
+        where.OR = [
+          { documentNumber: { contains: raw, mode: 'insensitive' } },
+          { notes: { contains: raw, mode: 'insensitive' } },
+          { customer: { name: { contains: raw, mode: 'insensitive' } } },
+          { outlet: { name: { contains: raw, mode: 'insensitive' } } },
+          { area: { name: { contains: raw, mode: 'insensitive' } } },
+        ];
+
+        if (isNumeric) {
+          (where.OR as Record<string, unknown>[]).push(
+            { grandTotal: { equals: numeric } },
+          );
+        }
+      }
+
+      // Sorting
+      const sortBy = input?.sortBy || 'createdAt';
+      const sortOrder = input?.sortOrder || 'desc';
+      const orderBy: any = { [sortBy]: sortOrder };
 
       const [data, total] = await Promise.all([
         prisma.salesOrder.findMany({
           where,
           skip,
           take: limit,
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           include: {
             customer: { select: { id: true, name: true } },
             outlet: { select: { id: true, name: true } },
@@ -69,13 +104,56 @@ export const salesOrderRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { items, date, expectedDeliveryDate, ...header } = input;
 
+      // Auto-fill customerId and areaId from outlet
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: header.outletId },
+        select: { customerId: true, areaId: true },
+      });
+      if (!outlet) throw new TRPCError({ code: 'NOT_FOUND', message: 'Outlet not found.' });
+
+      // Auto-generate document number if not provided
+      let documentNumber = header.documentNumber;
+      if (!documentNumber) {
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0]!.replace(/-/g, ''); // YYYYMMDD
+        const prefix = `SO-${dateStr}-`;
+
+        // Find the last document number for today
+        const lastOrder = await prisma.salesOrder.findFirst({
+          where: {
+            documentNumber: {
+              startsWith: prefix,
+            },
+          },
+          orderBy: {
+            documentNumber: 'desc',
+          },
+          select: {
+            documentNumber: true,
+          },
+        });
+
+        let nextNum = 1;
+        if (lastOrder?.documentNumber) {
+          const lastNum = parseInt(lastOrder.documentNumber.slice(-4), 10);
+          if (!isNaN(lastNum)) {
+            nextNum = lastNum + 1;
+          }
+        }
+        documentNumber = `${prefix}${nextNum.toString().padStart(4, '0')}`;
+      }
+
       const created = await prisma.$transaction(async (tx) => {
         const order = await tx.salesOrder.create({
           data: {
             ...header,
+            documentNumber,
+            customerId: outlet.customerId,
+            areaId: outlet.areaId,
             date: date ? new Date(date) : new Date(),
             expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : null,
             createdById: ctx.user.userId,
+            approvalStatus: 'DRAFT',
           },
         });
 
@@ -111,11 +189,20 @@ export const salesOrderRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
       if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT orders can be edited.' });
 
+      // Auto-fill customerId and areaId from outlet
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: header.outletId },
+        select: { customerId: true, areaId: true },
+      });
+      if (!outlet) throw new TRPCError({ code: 'NOT_FOUND', message: 'Outlet not found.' });
+
       const updated = await prisma.$transaction(async (tx) => {
         const order = await tx.salesOrder.update({
           where: { id: currentId },
           data: {
             ...header,
+            customerId: outlet.customerId,
+            areaId: outlet.areaId,
             date: date ? new Date(date) : undefined,
             expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : undefined,
           },
@@ -167,24 +254,36 @@ export const salesOrderRouter = router({
       return { success: true };
     }),
 
-  propose: protectedProcedure
-    .use(hasPermission('sales-order@propose'))
+  validate: protectedProcedure
+    .use(hasPermission('sales-order@validate'))
     .input(salesOrderIdSchema)
     .mutation(async ({ input, ctx }) => {
       const existing = await prisma.salesOrder.findUnique({ where: { id: input.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
-      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT orders can be proposed.' });
+      if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT orders can be validated.' });
+
+      const validation = await validateSalesOrder(input.id);
+      if (!validation.valid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Validation failed: ${validation.issues.join(', ')}`,
+        });
+      }
 
       const history = pushApprovalHistory((existing as any).approvalHistory, {
-        process: 'Submit',
+        process: 'AI Validation',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
-        message: 'Sales order submitted for approval',
+        message: 'Document validated successfully',
       });
 
       const updated = await prisma.salesOrder.update({
         where: { id: input.id },
-        data: { approvalStatus: 'PROPOSED', proposedAt: new Date(), approvalHistory: history as any },
+        data: {
+          approvalStatus: 'PROPOSED',
+          proposedAt: new Date(),
+          approvalHistory: history as any,
+        },
       });
 
       await logActivity(prisma, {
@@ -192,8 +291,58 @@ export const salesOrderRouter = router({
         userId: ctx.user.userId,
         resource: 'sales_order',
         resourceId: updated.id,
-        message: `Proposed sales order ${updated.documentNumber ?? updated.id}`,
+        message: `Validated sales order ${updated.documentNumber ?? updated.id}`,
       });
+
+      return updated;
+    }),
+
+  lookupDiscount: protectedProcedure
+    .use(hasPermission('sales-order@read'))
+    .input(z.object({
+      skuId: z.string(),
+      outletId: z.string(),
+      date: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const discount = await findBestDiscount(input.skuId, input.outletId, new Date(input.date));
+      return discount;
+    }),
+
+  propose: protectedProcedure
+    .use(hasPermission('sales-order@propose'))
+    .input(salesOrderIdSchema.extend({ message: z.string().optional() }))
+    .mutation(async ({ input, ctx }) => {
+      const { message, ...idInput } = input;
+      const existing = await prisma.salesOrder.findUnique({ where: { id: idInput.id } });
+      if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
+      if (existing.approvalStatus !== 'DRAFT' && existing.approvalStatus !== 'REJECTED') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT or REJECTED orders can be proposed.' });
+
+      const history = pushApprovalHistory((existing as any).approvalHistory, {
+        process: 'Submit',
+        name: ctx.user.name ?? 'Unknown',
+        dateTime: new Date().toISOString(),
+        message: message ?? 'Sales order submitted for AI validation',
+      });
+
+      const updated = await prisma.salesOrder.update({
+        where: { id: idInput.id },
+        data: {
+          approvalStatus: 'VALIDATING',
+          approvalHistory: history as any,
+        },
+      });
+
+      await logActivity(prisma, {
+        action: 'APPROVE',
+        userId: ctx.user.userId,
+        resource: 'sales_order',
+        resourceId: updated.id,
+        message: `Submitted sales order ${updated.documentNumber ?? updated.id} for AI validation`,
+      });
+
+      // Fire-and-forget background validation
+      startBackgroundValidation(updated.id, ctx.user.userId, ctx.user.name ?? 'Unknown');
 
       return updated;
     }),
@@ -285,6 +434,35 @@ export const salesOrderRouter = router({
         resourceId: updated.id,
         message: `Rejected sales order ${updated.documentNumber ?? updated.id}`,
       });
+
+      return updated;
+    }),
+
+  retryValidation: protectedProcedure
+    .use(hasPermission('sales-order@validate'))
+    .input(salesOrderIdSchema)
+    .mutation(async ({ input, ctx }) => {
+      const existing = await prisma.salesOrder.findUnique({ where: { id: input.id } });
+      if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
+      if (existing.approvalStatus !== 'VALIDATING') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING orders can retry AI validation.' });
+      }
+
+      const updated = await prisma.salesOrder.update({
+        where: { id: input.id },
+        data: {},
+      });
+
+      await logActivity(prisma, {
+        action: 'APPROVE',
+        userId: ctx.user.userId,
+        resource: 'sales_order',
+        resourceId: updated.id,
+        message: `Retrying AI validation for sales order ${updated.documentNumber ?? updated.id}`,
+      });
+
+      // Fire-and-forget background validation
+      startBackgroundValidation(updated.id, ctx.user.userId, ctx.user.name ?? 'Unknown');
 
       return updated;
     }),

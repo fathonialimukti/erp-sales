@@ -4,15 +4,15 @@ import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
-import { createAreaSchema, updateAreaSchema, areaIdSchema } from '@repo/schemas/area';
+import { createAreaSchema, updateAreaSchema, areaIdSchema, areaListInputSchema } from '@repo/schemas/area';
 
 export const areaRouter = router({
   list: protectedProcedure
     .use(hasPermission('area@read'))
-    .input(createListInputSchema({ regionId: true } as any))
+    .input(areaListInputSchema)
     .query(async ({ input }) => {
       const { page, limit, skip } = buildPaginationParams(input);
-      const searchWhere = buildTextSearchWhere((input as any)?.search, ['name', 'code'] as const);
+      const searchWhere = buildTextSearchWhere(input?.search, ['name', 'code'] as const);
 
       const where: any = { ...searchWhere };
       if (input?.regionId) where.regionId = input.regionId;

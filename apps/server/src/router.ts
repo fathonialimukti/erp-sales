@@ -10,7 +10,6 @@ import { skuCategoryRouter } from './routers/sku-category.js';
 import { skuRouter } from './routers/sku.js';
 import { salesOrderRouter } from './routers/sales-order.js';
 import { visitLogRouter } from './routers/visit-log.js';
-import { invoiceRouter } from './routers/invoice.js';
 import { paymentRouter } from './routers/payment.js';
 import { actionProgramRouter } from './routers/action-program.js';
 import { eventProposalRouter } from './routers/event-proposal.js';
@@ -32,7 +31,6 @@ export const appRouter = router({
     sku: skuRouter,
     salesOrder: salesOrderRouter,
     visitLog: visitLogRouter,
-    invoice: invoiceRouter,
     payment: paymentRouter,
     actionProgram: actionProgramRouter,
     eventProposal: eventProposalRouter,

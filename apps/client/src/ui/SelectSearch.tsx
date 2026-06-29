@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Icon } from "./";
 import { Spinner } from "./Spinner";
 import "./SelectSearch.css";
 
@@ -24,8 +23,8 @@ interface SelectSearchProps<
 > {
   sourceData: SelectSearchSourceData<TOption, TDependencies>;
   optionsKey: keyof TOption;
-  value?: string;
-  onChange: (value: string) => void;
+  value?: string | string[];
+  onChange: (value: string | string[]) => void;
   queryKeyBase: string;
   dependencies?: TDependencies;
   selectedOption?: TOption | null;
@@ -45,6 +44,8 @@ interface SelectSearchProps<
   debounceMs?: number;
   limit?: number;
   fullWidth?: boolean;
+  multiple?: boolean;
+  isLoading?: boolean;
 }
 
 const normalizeSourceResult = <TOption,>(
@@ -108,9 +109,11 @@ export const SelectSearch = <
   debounceMs = 250,
   limit = 50,
   fullWidth = true,
+  multiple = false,
+  isLoading: propIsLoading,
 }: SelectSearchProps<TOption, TDependencies>) => {
   const autoId = useId();
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -122,7 +125,7 @@ export const SelectSearch = <
     if (dependencies !== undefined) setSearchTerm("");
   }, [dependencies]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: queryLoading } = useQuery({
     queryKey: [queryKeyBase, debouncedSearchTerm, dependencies, limit],
     queryFn: async () => {
       const result = await sourceData({ search: debouncedSearchTerm, limit, dependencies });
@@ -132,16 +135,31 @@ export const SelectSearch = <
     gcTime: 300_000,
   });
 
+  const isLoading = propIsLoading ?? queryLoading;
+
   const options = useMemo(() => data ?? [], [data]);
   const totalCount = options.length;
 
+  const selectedValues = useMemo(() => {
+    if (value === undefined || value === null || value === "") return multiple ? [] : "";
+    return multiple ? (Array.isArray(value) ? value : [value]) : value;
+  }, [value, multiple]);
+
+  const isSelected = (idVal: string) => {
+    if (multiple) {
+      return (selectedValues as string[]).includes(idVal);
+    }
+    return selectedValues === idVal;
+  };
+
   const selected = useMemo(() => {
+    if (multiple) return null;
     if (!value) return null;
     if (selectedOption && String(selectedOption[optionsKey] ?? "") === value) {
       return selectedOption;
     }
     return options.find((o) => String(o[optionsKey] ?? "") === value) ?? null;
-  }, [options, optionsKey, selectedOption, value]);
+  }, [options, optionsKey, selectedOption, value, multiple]);
 
   const renderLabel = (option: TOption) =>
     getOptionLabel ? getOptionLabel(option) : getDefaultLabel(option, optionsKey);
@@ -182,19 +200,29 @@ export const SelectSearch = <
   }, [open]);
 
   const handleSelect = (option: TOption) => {
-    onChange(String(option[optionsKey] ?? ""));
-    setSearchTerm("");
-    setOpen(false);
-    detailsRef.current?.removeAttribute("open");
+    const idVal = String(option[optionsKey] ?? "");
+    if (multiple) {
+      const current = selectedValues as string[];
+      const next = current.includes(idVal)
+        ? current.filter((v) => v !== idVal)
+        : [...current, idVal];
+      onChange(next);
+    } else {
+      onChange(idVal);
+      setSearchTerm("");
+      setOpen(false);
+      detailsRef.current?.removeAttribute("open");
+    }
   };
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    onChange("");
+    onChange(multiple ? [] : "");
+    setSearchTerm("");
   };
 
-  const handleTriggerKey = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+  const handleTriggerKey = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
       e.preventDefault();
       setOpen(true);
@@ -213,10 +241,17 @@ export const SelectSearch = <
       e.preventDefault();
       const opt = options[highlight];
       if (opt) handleSelect(opt);
+    } else if (e.key === "Backspace" && multiple) {
+      e.preventDefault();
+      const current = selectedValues as string[];
+      if (current.length > 0) {
+        onChange(current.slice(0, -1));
+      }
     }
   };
 
-  const toggleOpen = () => {
+  const toggleOpen = (e?: React.MouseEvent<HTMLElement>) => {
+    e?.preventDefault();
     const next = !open;
     setOpen(next);
     const d = detailsRef.current;
@@ -229,8 +264,16 @@ export const SelectSearch = <
   const selectedLabel = selected ? renderLabel(selected) : "";
   const selectedInitial = selected ? renderInitial(selected) : "";
   const selectedHue = selected ? hashToHue(selectedLabel) : 0;
-  const displayText = selected ? selectedLabel : placeholder;
-  const isPlaceholder = !selected;
+
+  const selectedCount = multiple ? (selectedValues as string[]).length : 0;
+  const displayText = multiple
+    ? selectedCount > 0
+      ? `${selectedCount} selected`
+      : placeholder
+    : selected
+      ? selectedLabel
+      : placeholder;
+  const isPlaceholder = multiple ? selectedCount === 0 : !selected;
 
   const triggerClasses = [
     "ss-trigger",
@@ -258,50 +301,72 @@ export const SelectSearch = <
         className="ss-details"
         onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
       >
-        <summary className={triggerClasses}>
-          <button
-            ref={triggerRef}
-            id={autoId}
-            type="button"
-            aria-haspopup="listbox"
-            aria-expanded={open}
-            aria-label={ariaLabel ?? label}
-            disabled={isDisabled}
-            onKeyDown={handleTriggerKey}
-            onClick={(e) => { e.preventDefault(); toggleOpen(); }}
-            className="ss-trigger__btn"
-          >
-            {selected ? (
-              <span
-                className="ss-trigger__initial"
-                style={{ backgroundColor: `hsl(${selectedHue} 60% 45%)` }}
-                aria-hidden
-              >
-                {selectedInitial}
-              </span>
-            ) : (
-              <span className="ss-trigger__initial ss-trigger__initial--empty" aria-hidden>
-                <Icon icon="solar:user-circle-linear" />
-              </span>
-            )}
-            <span className={`ss-trigger__text ${isPlaceholder ? "ss-trigger__text--placeholder" : ""}`}>
-              {displayText}
+        <summary
+          ref={triggerRef}
+          id={autoId}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-label={ariaLabel ?? label}
+          className={triggerClasses}
+          onKeyDown={handleTriggerKey}
+          onClick={(e) => toggleOpen(e)}
+        >
+          {!multiple && selected ? (
+            <span
+              className="ss-trigger__initial"
+              style={{ backgroundColor: `hsl(${selectedHue} 60% 45%)` }}
+              aria-hidden
+            >
+              {selectedInitial}
             </span>
-          </button>
+          ) : null}
+          <span className={`ss-trigger__text ${isPlaceholder ? "ss-trigger__text--placeholder" : ""}`}>
+            {displayText}
+          </span>
 
-          {selected && !isDisabled && (
+          {!multiple && selected && !isDisabled ? (
             <button type="button" onClick={handleClear} aria-label="Clear selection" className="ss-trigger__clear">
-              <Icon icon="solar:close-circle-linear" />
+              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`ss-trigger__arrow ${open ? "ss-trigger__arrow--open" : ""}`}
+              aria-hidden
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           )}
-
-          <Icon icon="solar:alt-arrow-down-linear" className={`ss-trigger__arrow ${open ? "ss-trigger__arrow--open" : ""}`} />
         </summary>
 
         <div role="listbox" className="ss-panel">
           <div className="ss-search-bar">
             <div className="ss-search-inner">
-              <Icon icon="solar:magnifer-linear" className="ss-search-inner__icon" />
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="ss-search-inner__icon"
+                aria-hidden
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
               <input
                 ref={searchRef}
                 type="search"
@@ -313,7 +378,10 @@ export const SelectSearch = <
               />
               {searchTerm && (
                 <button type="button" onClick={() => setSearchTerm("")} aria-label="Clear search" className="ss-search-inner__clear">
-                  <Icon icon="solar:close-circle-linear" />
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               )}
             </div>
@@ -328,7 +396,21 @@ export const SelectSearch = <
             ) : options.length === 0 ? (
               <li className="ss-empty">
                 <div className="ss-empty__icon-wrapper">
-                  <Icon icon="solar:minimalistic-magnifer-linear" className="ss-empty__icon" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ss-empty__icon"
+                    aria-hidden
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
                 </div>
                 {emptyLabel}
               </li>
@@ -339,16 +421,14 @@ export const SelectSearch = <
                 const optInitial = initialOf(optLabel);
                 const optHue = hashToHue(optLabel);
                 const isHighlighted = idx === highlight;
-                const isSelected = idVal === value;
+                const isSelected = multiple
+                  ? (selectedValues as string[]).includes(idVal)
+                  : idVal === value;
                 const description = getOptionDescription?.(option);
                 const optionClasses = [
                   "ss-option",
                   isHighlighted ? "ss-option--highlighted" : "",
                   isSelected ? "ss-option--selected" : "",
-                ].filter(Boolean).join(" ");
-                const initialClasses = [
-                  "ss-option__initial",
-                  isSelected ? "ss-option__initial--selected" : "",
                 ].filter(Boolean).join(" ");
                 return (
                   <li
@@ -359,14 +439,18 @@ export const SelectSearch = <
                     onClick={() => handleSelect(option)}
                     className={optionClasses}
                   >
-                    <span className={initialClasses} style={{ backgroundColor: `hsl(${optHue} 60% 45%)` }} aria-hidden>
+                    <span className="ss-option__initial" style={{ backgroundColor: `hsl(${optHue} 60% 45%)` }} aria-hidden>
                       {optInitial}
                     </span>
                     <span className="ss-option__text">
                       <span className="ss-option__label">{optLabel}</span>
                       {description && <span className="ss-option__desc">{description}</span>}
                     </span>
-                    {isSelected && <Icon icon="solar:check-circle-bold" className="ss-option__check" />}
+                    {isSelected && (
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ss-option__check" aria-hidden>
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
                   </li>
                 );
               })
@@ -387,6 +471,45 @@ export const SelectSearch = <
           )}
         </div>
       </details>
+
+      {multiple && (selectedValues as string[]).length > 0 && (
+        <div className="ss-chips">
+          {(selectedValues as string[]).map((idVal) => {
+            const option = options.find((o) => String(o[optionsKey] ?? "") === idVal);
+            const chipLabel = option ? renderLabel(option) : idVal;
+            return (
+              <span key={idVal} className="ss-chip">
+                <span className="ss-chip__label">{chipLabel}</span>
+                <button
+                  type="button"
+                  className="ss-chip__remove"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const current = selectedValues as string[];
+                    onChange(current.filter((v) => v !== idVal));
+                  }}
+                  aria-label={`Remove ${chipLabel}`}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="12"
+                    height="12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
 
       {isInvalid && errorMessage && <p className="ss-error" role="alert">{errorMessage}</p>}
     </div>

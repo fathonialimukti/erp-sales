@@ -42,10 +42,21 @@ afterAll(async () => {
 
 describe('sales order CRUD + approval', () => {
   let orderId: string;
+  let outletId: string;
+
+  beforeAll(async () => {
+    // Create an outlet for the customer
+    const outlet = await caller.outlet.create({
+      customerId,
+      areaId,
+      name: 'Test Outlet',
+    });
+    outletId = outlet.id;
+  });
 
   it('creates a sales order', async () => {
     const created = await caller.salesOrder.create({
-      customerId, areaId,
+      outletId,
       items: [{ skuId, quantity: 2, unitPrice: 10000, lineTotal: 20000, discountPercent: 0, taxPercent: 0 }],
       currency: 'IDR',
       subtotal: 20000, grandTotal: 20000, discountTotal: 0, taxTotal: 0,
@@ -75,41 +86,5 @@ describe('sales order CRUD + approval', () => {
   it('deletes sales order', async () => {
     await caller.salesOrder.delete({ id: orderId });
     // should not throw
-  });
-});
-
-describe('invoice CRUD', () => {
-  let invoiceId: string;
-  let orderId: string;
-
-  beforeAll(async () => {
-    // Create an approved order for invoicing
-    const order = await caller.salesOrder.create({
-      customerId, areaId,
-      items: [{ skuId, quantity: 1, unitPrice: 50000, lineTotal: 50000, discountPercent: 0, taxPercent: 0 }],
-      currency: 'IDR',
-      subtotal: 50000, grandTotal: 50000, discountTotal: 0, taxTotal: 0,
-    });
-    orderId = order.id;
-    await caller.salesOrder.propose({ id: orderId });
-    await caller.salesOrder.approve({ id: orderId });
-  });
-
-  afterAll(async () => {
-    if (invoiceId) await caller.invoice.delete({ id: invoiceId }).catch(() => {});
-    if (orderId) await caller.salesOrder.delete({ id: orderId }).catch(() => {});
-  });
-
-  it('creates invoice from sales order', async () => {
-    const created = await caller.invoice.create({
-      salesOrderId: orderId,
-      customerId,
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      subtotal: 50000, taxTotal: 0, grandTotal: 50000, balanceDue: 50000,
-      currency: 'IDR',
-    });
-    expect(created.id).toBeDefined();
-    expect(created.balanceDue).toBe(50000);
-    invoiceId = created.id;
   });
 });

@@ -1,69 +1,57 @@
-import { useState } from 'react';
-import { useIntl } from 'react-intl';
-import { Button, Card, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '../../ui';
-import { useNavigate, useParams } from 'react-router';
-import { useAtomValue } from 'jotai';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '../../components/PageHeader';
-import { hasPermissionAtom } from '../../lib/atoms';
-import { trpcClient } from '../../lib/trpc';
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { useIntl } from "react-intl";
+import { useAtomValue } from "jotai";
+import { useNavigate, useParams } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { trpcClient } from "../../lib/trpc";
+import { hasPermissionAtom } from "../../lib/atoms";
+import { ButtonGroup } from "../../components/ButtonGroup";
+import { Spinner } from "../../ui/Spinner";
+import { useToast } from "../../ui/useToast";
+import { CustomerIcon } from "./CustomerIcons";
 
-interface CustomerDetail {
+type CustomerDetail = {
   id: string;
   code: string | null;
   name: string;
-  taxId: string | null;
-  paymentTerms: string | null;
-  creditLimit: number | null;
   status: string;
-  billingAddress: string | null;
-  notes: string | null;
-  outlets: { id: string; name: string; code: string | null; area: { id: string; name: string } }[];
-  contacts: { id: string; name: string; title: string | null; email: string | null; phone: string | null; isPrimary: boolean }[];
-  createdAt: string;
-}
+  outlets: { id: string; code: string | null; name: string }[];
+  contacts: { id: string; name: string; title: string | null; email: string | null; phone: string | null }[];
+};
 
-function DetailField({ label, value }: { label: string; value: string | number | null | undefined }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <p className="text-sm font-medium text-muted">{label}</p>
-      <p>{value ?? '-'}</p>
-    </div>
-  );
-}
-
-function CustomerDetailPage() {
-  const { id } = useParams();
+export const CustomerDetailPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canUpdate = hasPermission('customer@update');
-  const canDelete = hasPermission('customer@delete');
+  const canUpdate = hasPermission("customer@update");
+  const canDelete = hasPermission("customer@delete");
+  const toast = useToast();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['customerDetail', id],
+    queryKey: ["customerDetail", id],
     enabled: Boolean(id),
-    queryFn: () => trpcClient.customer.detail.query({ id: id ?? '' }),
+    queryFn: () => trpcClient.customer.detail.query({ id: id ?? "" }),
   });
 
-  const record = data as CustomerDetail | undefined;
+  const customer = data as CustomerDetail | undefined;
 
   const handleDelete = async () => {
-    if (!record || isDeleting) return;
+    if (!customer || isDeleting) return;
     setIsDeleting(true);
     try {
-      await trpcClient.customer.delete.mutate({ id: record.id });
-      await queryClient.invalidateQueries({ queryKey: ['customerList'] });
-      queryClient.removeQueries({ queryKey: ['customerDetail', record.id] });
+      await trpcClient.customer.delete.mutate({ id: customer.id });
+      await queryClient.invalidateQueries({ queryKey: ["customerList"] });
       setDeleteModalOpen(false);
-      navigate('/customer');
-    } catch (error) {
-      console.error(error);
-      setDeleteModalOpen(false);
+      toast.success(intl.formatMessage({ id: "customer.detail.delete_success", defaultMessage: "Region deleted" }));
+      navigate("/customer");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
     } finally {
       setIsDeleting(false);
     }
@@ -71,148 +59,159 @@ function CustomerDetailPage() {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-muted">
-        {intl.formatMessage({ id: 'customer.detail.loading_detail', defaultMessage: 'Loading details...' })}
-      </p>
+      <div className="so-page">
+        <div className="so-loading">
+          <Spinner size="lg" />
+          <span>{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
+        </div>
+      </div>
     );
   }
 
-  if (!record) {
+  if (!customer) {
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-danger">
-          {intl.formatMessage({ id: 'customer.detail.not_found', defaultMessage: 'Customer not found.' })}
-        </p>
-        <Button variant="ghost" onClick={() => navigate('/customer')}>
-          {intl.formatMessage({ id: 'customer.detail.back', defaultMessage: 'Back to Customers' })}
-        </Button>
+      <div className="so-page">
+        <div className="so-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
+          <div className="so-card">
+            <div className="so-card__body">
+              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
+                {intl.formatMessage({ id: "customer.detail.not_found", defaultMessage: "Region not found" })}
+              </p>
+              <button type="button" className="so-btn so-btn--ghost" style={{ marginTop: 12 }} onClick={() => navigate("/customer")}>
+                <CustomerIcon name="back" size={14} />
+                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <section className="space-y-6" data-ai-context={JSON.stringify({ section: 'customer-detail', id: record.id, name: record.name, status: record.status, outletCount: record.outlets.length })}>
-      <PageHeader
-        title={record.name}
-        onBack={() => navigate('/customer')}
-        onEdit={canUpdate ? () => navigate(`/customer/${record.id}/edit`) : undefined}
-        onDelete={canDelete ? () => setDeleteModalOpen(true) : undefined}
-      />
-
-      <Card>
-        <div className="grid gap-4 p-6 md:grid-cols-3">
-          <DetailField
-            label={intl.formatMessage({ id: 'customer.detail.code_label', defaultMessage: 'Code' })}
-            value={record.code}
+    <section className="so-page" data-ai-context={JSON.stringify({ section: "customer-detail", id: customer.id, name: customer.name, areaCount: customer.outlets?.length ?? 0 })}>
+      {/* ── Hero ── */}
+      <header className="so-detail-hero">
+        <div className="so-detail-hero__top">
+          <ButtonGroup
+            size="md"
+            items={[{ key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <CustomerIcon name="back" size={14} />, to: "/customer" }]}
           />
-          <DetailField
-            label={intl.formatMessage({ id: 'customer.detail.tax_id_label', defaultMessage: 'Tax ID' })}
-            value={record.taxId}
-          />
-          <DetailField
-            label={intl.formatMessage({ id: 'customer.detail.status_label', defaultMessage: 'Status' })}
-            value={record.status}
-          />
-          <DetailField
-            label={intl.formatMessage({ id: 'customer.detail.payment_terms_label', defaultMessage: 'Payment Terms' })}
-            value={record.paymentTerms}
-          />
-          <DetailField
-            label={intl.formatMessage({ id: 'customer.detail.credit_limit_label', defaultMessage: 'Credit Limit' })}
-            value={record.creditLimit ? `IDR ${record.creditLimit.toLocaleString()}` : '-'}
-          />
-          <DetailField
-            label={intl.formatMessage({ id: 'customer.detail.billing_address_label', defaultMessage: 'Billing Address' })}
-            value={record.billingAddress}
+          <ButtonGroup
+            size="md"
+            items={[
+              ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <CustomerIcon name="edit" size={14} />, to: `/customer/${customer.id}/edit` }] : []),
+              ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <CustomerIcon name="delete" size={14} />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
+            ]}
           />
         </div>
-        {record.notes ? (
-          <div className="border-t px-6 py-4">
-            <DetailField
-              label={intl.formatMessage({ id: 'customer.detail.notes_label', defaultMessage: 'Notes' })}
-              value={record.notes}
-            />
-          </div>
-        ) : null}
-      </Card>
 
-      {record.contacts.length > 0 ? (
-        <Card>
-          <div className="p-6">
-            <h3 className="mb-3 text-lg font-semibold">
-              {intl.formatMessage({ id: 'customer.detail.contacts_title', defaultMessage: 'Contacts' })}
-            </h3>
-            <div className="space-y-2">
-              {record.contacts.map((contact) => (
-                <div key={contact.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <p className="font-medium">
-                      {contact.name}
-                      {contact.isPrimary ? (
-                        <span className="ml-2 text-xs text-primary">
-                          {intl.formatMessage({ id: 'customer.detail.primary_badge', defaultMessage: 'Primary' })}
-                        </span>
-                      ) : null}
-                    </p>
-                    <p className="text-sm text-muted">{contact.title ?? '-'}</p>
-                  </div>
-                  <div className="text-right text-sm text-muted">
-                    {contact.email ? <p>{contact.email}</p> : null}
-                    {contact.phone ? <p>{contact.phone}</p> : null}
-                  </div>
-                </div>
-              ))}
+        <div className="so-detail-hero__title-block">
+          <div className="so-detail-hero__title-row">
+            <div className="so-detail-hero__title-stack">
+              <span className="so-detail-hero__kicker">{intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}</span>
+              <h1 className="so-detail-hero__title">{customer.name}</h1>
+              <span className="so-detail-hero__sub">{customer.code ?? "—"}</span>
             </div>
           </div>
-        </Card>
-      ) : null}
+        </div>
+      </header>
 
-      {record.outlets.length > 0 ? (
-        <Card>
-          <div className="p-6">
-            <h3 className="mb-3 text-lg font-semibold">
-              {intl.formatMessage({ id: 'customer.detail.outlets_title', defaultMessage: 'Outlets' })}
-            </h3>
-            <div className="space-y-2">
-              {record.outlets.map((outlet) => (
-                <div key={outlet.id} className="flex cursor-pointer items-center justify-between rounded-lg border p-3 hover:bg-default-50" onClick={() => navigate(`/outlet/${outlet.id}`)}>
-                  <div>
-                    <p className="font-medium">{outlet.name}</p>
-                    {outlet.code ? <p className="text-sm text-muted">{outlet.code}</p> : null}
-                  </div>
-                  <p className="text-sm text-muted">{outlet.area.name}</p>
-                </div>
-              ))}
+      {/* ── Summary ── */}
+      <section className="so-card">
+        <div className="so-card__header">
+          <h2 className="so-card__title">
+            <span className="so-card__icon"><CustomerIcon name="user" size={14} /></span>
+            {intl.formatMessage({ id: "customer.detail.summary", defaultMessage: "Summary" })}
+          </h2>
+        </div>
+        <div className="so-card__body">
+          <div className="so-section so-section--2">
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "customer.detail.code_label", defaultMessage: "Code" })}</span>
+              <span className="so-field__value">{customer.code ?? "—"}</span>
+            </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "customer.detail.name_label", defaultMessage: "Name" })}</span>
+              <span className="so-field__value">{customer.name}</span>
+            </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "customer.detail.areas_label", defaultMessage: "Outlets" })}</span>
+              <span className="so-field__value">{customer.outlets?.length ?? 0}</span>
             </div>
           </div>
-        </Card>
-      ) : null}
+        </div>
+      </section>
 
-      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
-        <ModalContent>
-          <ModalHeader>
-            {intl.formatMessage({ id: 'customer.detail.delete_title', defaultMessage: 'Delete Customer' })}
-          </ModalHeader>
-          <ModalBody>
-            {intl.formatMessage(
-              { id: 'customer.detail.delete_confirm_body', defaultMessage: 'Are you sure you want to delete "{name}"? All outlets, contacts, and order history will also be removed.' },
-              { name: record.name },
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
-              {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
-            </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting
-                ? intl.formatMessage({ id: 'common.action.deleting', defaultMessage: 'Deleting...' })
-                : intl.formatMessage({ id: 'common.action.delete', defaultMessage: 'Delete' })}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* ── Areas ── */}
+      <section className="so-card">
+        <div className="so-card__header">
+          <h2 className="so-card__title">
+            <span className="so-card__icon"><CustomerIcon name="outlet" size={14} /></span>
+            {intl.formatMessage({ id: "customer.detail.outlets_title", defaultMessage: "Outlets" })}
+          </h2>
+          <p className="so-card__hint">{customer.outlets?.length ?? 0} outlets</p>
+        </div>
+        <div className="so-card__body" style={{ padding: 0 }}>
+          {customer.outlets?.length ?? 0 === 0 ? (
+            <div className="so-card__body" style={{ textAlign: "center", padding: "2rem" }}>
+              <CustomerIcon name="outlet" size={48} />
+              <p style={{ marginTop: 12, color: "var(--ios-label-2)" }}>{intl.formatMessage({ id: "customer.detail.no_outlets", defaultMessage: "No outlets yet" })}</p>
+            </div>
+          ) : (
+            <div className="so-items-table">
+              <div className="so-items-table__body">
+                {customer.outlets?.map((outlet) => (
+                  <div key={outlet.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/outlet/${outlet.id}`)}>
+                    <div className="so-items-table__td so-items-table__td--product">
+                      <span className="so-items-table__icon" data-tint="blue" aria-hidden="true"><CustomerIcon name="outlet" size={16} /></span>
+                      <div className="so-items-table__product">
+                        <span className="so-items-table__product-name">{outlet.name}</span>
+                        {outlet.code && <span className="so-items-table__product-code">{outlet.code}</span>}
+                      </div>
+                    </div>
+                    <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
+                      <CustomerIcon name="chevron-right" size={16} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Delete Modal ── */}
+      {deleteModalOpen && createPortal(
+        <div className="so-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
+          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="so-modal__header">
+              <h3><CustomerIcon name="delete" size={16} /> {intl.formatMessage({ id: "customer.detail.delete_title", defaultMessage: "Delete customer" })}</h3>
+              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close">
+                <CustomerIcon name="close" size={14} />
+              </button>
+            </div>
+            <div className="so-modal__body">
+              <div className="so-modal__icon so-modal__icon--error"><CustomerIcon name="delete" size={28} /></div>
+              <h3 className="so-modal__title">{intl.formatMessage({ id: "customer.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}</h3>
+              <p className="so-modal__msg">
+                {intl.formatMessage({ id: "customer.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: customer.name })}
+              </p>
+            </div>
+            <div className="so-modal__footer">
+              <button className="so-btn so-btn--ghost" onClick={() => setDeleteModalOpen(false)}>
+                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+              </button>
+              <button className="so-btn so-btn--danger" onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting && <span className="so-spinner" />}
+                <CustomerIcon name="delete" size={14} />
+                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </section>
   );
-}
-
-export { CustomerDetailPage };
+};

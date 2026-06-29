@@ -85,9 +85,16 @@ model RoleHasPermission {
 
 enum ApprovalStatus {
   DRAFT
+  VALIDATING
   PROPOSED
   APPROVED
   REJECTED
+}
+
+enum AiValidationStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }
 
 enum NotificationType {
@@ -100,7 +107,6 @@ enum NotificationType {
 enum NotificationTargetType {
   SYSTEM
   SALES_ORDER
-  INVOICE
   PAYMENT
   ACTION_PROGRAM
   EVENT_PROPOSAL
@@ -252,7 +258,6 @@ model Customer {
   outlets        Outlet[]
   contacts       CustomerContact[]
   salesOrders    SalesOrder[]
-  invoices       Invoice[]
   payments       Payment[]
   createdAt      DateTime            @default(now()) @map("created_at")
   updatedAt      DateTime            @updatedAt @map("updated_at")
@@ -340,10 +345,10 @@ model SalesOrder {
   id                    String         @id @default(ulid()) @map("id")
   documentNumber        String?        @unique @map("document_number")
   date                  DateTime       @default(now()) @map("date") @db.Date
-  customerId            String         @map("customer_id")
-  customer              Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  outletId              String?        @map("outlet_id")
-  outlet                Outlet?        @relation(fields: [outletId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  customerId            String?        @map("customer_id")
+  customer              Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  outletId              String         @map("outlet_id")
+  outlet                Outlet         @relation(fields: [outletId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   areaId                String         @map("area_id")
   area                  Area           @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   currency              String         @default("IDR") @map("currency")
@@ -363,7 +368,7 @@ model SalesOrder {
 
   items                 SalesOrderItem[]
   visitLogs             VisitLog[]
-  invoices              Invoice[]
+  payments              Payment[]
 
   subtotal              Decimal?       @map("subtotal")
   discountTotal         Decimal?       @map("discount_total")
@@ -404,47 +409,20 @@ model SalesOrderItem {
   @@map("crm_sales_order_items")
 }
 
-model Invoice {
-  id             String    @id @default(ulid()) @map("id")
-  documentNumber String?   @unique @map("document_number")
-  salesOrderId   String    @map("sales_order_id")
-  salesOrder     SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  customerId     String    @map("customer_id")
-  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  date           DateTime  @default(now()) @map("date") @db.Date
-  dueDate        DateTime  @map("due_date") @db.Date
-  status         String    @default("DRAFT") @map("status")
-  currency       String    @default("IDR") @map("currency")
-  subtotal       Decimal   @map("subtotal")
-  taxTotal       Decimal   @map("tax_total")
-  grandTotal     Decimal   @map("grand_total")
-  balanceDue     Decimal   @map("balance_due")
-  notes          String?   @map("notes")
-  payments       Payment[]
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+model Payment {
+  id             String   @id @default(ulid()) @map("id")
+  salesOrderId   String   @map("sales_order_id")
+  salesOrder     SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  customerId     String   @map("customer_id")
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  date           DateTime @default(now()) @map("date") @db.Date
+  amount         Decimal  @map("amount")
+  method         String?  @map("method")
+  reference      String?  @map("reference")
+  notes          String?  @map("notes")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([salesOrderId])
-  @@index([customerId])
-  @@index([status])
-  @@index([dueDate])
-  @@map("crm_invoices")
-}
-
-model Payment {
-  id          String   @id @default(ulid()) @map("id")
-  invoiceId   String   @map("invoice_id")
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  customerId  String   @map("customer_id")
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  date        DateTime @default(now()) @map("date") @db.Date
-  amount      Decimal  @map("amount")
-  method      String?  @map("method")
-  reference   String?  @map("reference")
-  notes       String?  @map("notes")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@index([invoiceId])
   @@index([customerId])
   @@map("crm_payments")
 }
@@ -489,6 +467,7 @@ model ActionProgram {
 
   outlets                    ActionProgramOutlet[]
   skus                       ActionProgramSku[]
+  items                      ActionProgramItem[]
   payments                   ActionProgramPayment[]
 
   createdAt                  DateTime          @default(now()) @map("created_at")
@@ -513,10 +492,18 @@ model ActionProgramOutlet {
 }
 
 model ActionProgramSku {
-  actionProgramId String        @map("action_program_id")
-  actionProgram   ActionProgram @relation(fields: [actionProgramId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  skuId           String        @map("sku_id")
-  sku             Sku           @relation(fields: [skuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  actionProgramId    String        @map("action_program_id")
+  actionProgram      ActionProgram @relation(fields: [actionProgramId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  skuId              String        @map("sku_id")
+  sku                Sku           @relation(fields: [skuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  quantity           Decimal       @map("quantity")
+  price              Decimal       @map("price")
+  discount           Decimal       @default(0) @map("discount")
+  priceAfterDiscount Decimal       @map("price_after_discount")
+  cost               Decimal       @map("cost")
+  tax                Decimal       @default(0) @map("tax")
+  total              Decimal       @map("total")
+  notes              String?       @map("notes")
 
   @@id([actionProgramId, skuId])
   @@map("crm_action_program_skus")
@@ -535,6 +522,22 @@ model ActionProgramPayment {
 
   @@index([actionProgramId])
   @@map("crm_action_program_payments")
+}
+
+model ActionProgramItem {
+  id              String        @id @default(ulid()) @map("id")
+  actionProgramId String        @map("action_program_id")
+  actionProgram   ActionProgram @relation(fields: [actionProgramId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  name            String        @map("name")
+  quantity        Decimal       @map("quantity")
+  price           Decimal       @map("price")
+  cost            Decimal       @map("cost")
+  notes           String?       @map("notes")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([actionProgramId])
+  @@map("crm_action_program_items")
 }
 
 model EventProposal {
@@ -586,6 +589,11 @@ model EventProposalSku {
   eventProposal   EventProposal @relation(fields: [eventProposalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   skuId           String        @map("sku_id")
   sku             Sku           @relation(fields: [skuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  quantity        Decimal       @map("quantity")
+  price           Decimal       @map("price")
+  tax             Decimal       @default(0) @map("tax")
+  total           Decimal       @map("total")
+  notes           String?       @map("notes")
 
   @@id([eventProposalId, skuId])
   @@map("crm_event_proposal_skus")

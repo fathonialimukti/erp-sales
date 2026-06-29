@@ -1,28 +1,7 @@
 /* ============================================================
- * Input — text input with label, error, icons
+ * Input — bare text input with icons
  * Prefix: .inp-
  * ============================================================ */
-
-.inp-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.inp-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-slate-700);
-}
-
-.dark .inp-label {
-  color: var(--color-slate-300);
-}
-
-.inp-label__required {
-  margin-left: 2px;
-  color: var(--color-state-danger);
-}
 
 .inp-box {
   display: flex;
@@ -32,26 +11,25 @@
   border: 1px solid var(--color-slate-300);
   background: var(--color-surface-1);
   padding: 0 12px;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms var(--ease-default), box-shadow 150ms var(--ease-default);
   min-height: 40px;
+}
+
+.inp-box:hover:not(.inp-box--disabled) {
+  border-color: var(--color-slate-400);
 }
 
 .inp-box:focus-within {
   border-color: var(--color-accent-500);
-  box-shadow: 0 0 0 1px var(--color-accent-500);
-}
-
-.inp-box--error {
-  border-color: var(--color-state-danger);
-}
-
-.inp-box--error:focus-within {
-  border-color: var(--color-state-danger);
-  box-shadow: 0 0 0 1px var(--color-state-danger);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
 }
 
 .dark .inp-box {
   border-color: var(--color-slate-700);
+}
+
+.dark .inp-box:hover:not(.inp-box--disabled) {
+  border-color: var(--color-slate-600);
 }
 
 .inp-box--disabled {
@@ -87,16 +65,6 @@
   height: 20px;
   color: var(--color-muted);
   flex-shrink: 0;
-}
-
-.inp-error {
-  font-size: 12px;
-  color: var(--color-state-danger);
-}
-
-.inp-hint {
-  font-size: 12px;
-  color: var(--color-muted);
 }
 
 /* Responsive */

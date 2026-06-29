@@ -1,16 +1,30 @@
 import { useLocation, useNavigate } from "react-router";
-import { useAtomValue } from "jotai";
-import { Icon } from "../ui";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
-import type { ReactNode } from "react";
-import { hasPermissionAtom } from "../lib/atoms";
+import { useMemo, useState, useCallback, useRef } from "react";
+import { ICONS } from "../assets/chrome-icons";
+import { Avatar } from "../ui";
+import {
+  authUserAtom,
+  hasPermissionAtom,
+  searchOpenAtom,
+  sidebarOpenAtom,
+} from "../lib/atoms";
+import { UserMenuTrigger } from "./UserMenuPopover";
 import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
-import { Button } from "../ui/Button";
 import "./Sidebar.css";
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface NavLeaf {
+  name: string;
+  href: string;
+  icon?: string;
+  permission?: string | string[];
+}
+
+interface NavSection {
+  id: string;
+  name: string;
+  items: NavLeaf[];
 }
 
 const normalizePath = (path: string) =>
@@ -23,124 +37,246 @@ const isPathActive = (current: string, target: string) => {
   return c === t || c.startsWith(`${t}/`);
 };
 
-const renderIcon = (icon: string) => {
-  const isLocalAsset =
-    /^(\/|https?:\/\/)/.test(icon) || /\.(svg|png|jpe?g|webp|gif)$/i.test(icon);
-  if (isLocalAsset) {
-    return <img src={icon} alt="" className="sidebar-item__icon" aria-hidden="true" />;
+const flattenLeaves = (items: NavMenuItem[]): NavLeaf[] => {
+  const leaves: NavLeaf[] = [];
+  for (const item of items) {
+    if (item.href) {
+      leaves.push({
+        name: item.name,
+        href: item.href,
+        icon: item.icon,
+        permission: item.permission,
+      });
+    }
+    if (item.children?.length) {
+      leaves.push(...flattenLeaves(item.children));
+    }
   }
-  return <Icon icon={icon} />;
+  return leaves;
 };
 
-const filterByPermission = (
-  items: NavMenuItem[],
-  hasPermission: (p: string | string[]) => boolean,
-): NavMenuItem[] => {
-  return (
-    items
-      .map((item) => {
-        const children = item.children ? filterByPermission(item.children, hasPermission) : undefined;
-        const visibleChildren = children?.length ? children : undefined;
-        const itemAllowed = !item.permission || hasPermission(item.permission);
-        if (!itemAllowed && !visibleChildren) return null;
-        return { ...item, children: visibleChildren };
-      }) as (NavMenuItem | null)[]
-  ).filter((item): item is NavMenuItem => item !== null);
-};
-
-export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const intl = useIntl();
   const hasPermission = useAtomValue(hasPermissionAtom);
+  const user = useAtomValue(authUserAtom);
+  const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
+  const setSearchOpen = useSetAtom(searchOpenAtom);
 
-  const visibleItems = filterByPermission(NAV_MENU, hasPermission);
-  const menuHeading = intl.formatMessage({ id: "nav.menu", defaultMessage: "Menu" });
+  // Tooltip portal state — renders outside nav overflow
+  const [tooltip, setTooltip] = useState<{ label: string; top: number } | null>(null);
+  const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const renderLeaf = (item: NavMenuItem, key: string) => {
-    if (!item.href) {
-      return (
-        <div
-          key={key}
-          className="sidebar-item"
-        >
-          {renderIcon(item.icon || "solar:question-circle-linear")}
-          <span className="sidebar-item__label">{intl.formatMessage({ id: item.name, defaultMessage: item.name })}</span>
-        </div>
-      );
-    }
+  const showTooltip = useCallback((label: string, el: HTMLElement) => {
+    if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+    const rect = el.getBoundingClientRect();
+    setTooltip({ label, top: rect.top + rect.height / 2 });
+  }, []);
+
+  const hideTooltip = useCallback(() => {
+    tooltipTimeoutRef.current = setTimeout(() => setTooltip(null), 80);
+  }, []);
+
+  const isCollapsed = !sidebarOpen;
+
+  const sections = useMemo<NavSection[]>(() => {
+    const visible = flattenLeaves(NAV_MENU).filter(
+      (l) => !l.permission || hasPermission(l.permission),
+    );
+    return [
+      {
+        id: "favorites",
+        name: intl.formatMessage({ id: "nav.section.favorites", defaultMessage: "Favorites" }),
+        items: visible.filter((l) => ["/dashboard", "/sales-order", "/invoice", "/visit-log"].includes(l.href)),
+      },
+      {
+        id: "master_data",
+        name: intl.formatMessage({ id: "nav.section.master_data", defaultMessage: "Master Data" }),
+        items: visible.filter((l) =>
+          ["/region", "/area", "/customer", "/outlet", "/sku-category", "/sku"].includes(l.href),
+        ),
+      },
+      {
+        id: "programs",
+        name: intl.formatMessage({ id: "nav.section.programs", defaultMessage: "Programs" }),
+        items: visible.filter((l) => ["/action-program", "/event-proposal"].includes(l.href)),
+      },
+      {
+        id: "admin",
+        name: intl.formatMessage({ id: "nav.section.admin", defaultMessage: "Administration" }),
+        items: visible.filter((l) =>
+          ["/users", "/access-control", "/activity-logs", "/notifications"].includes(l.href),
+        ),
+      },
+    ].filter((s) => s.items.length > 0);
+  }, [hasPermission, intl]);
+
+  const renderItem = (item: NavLeaf) => {
     const active = isPathActive(location.pathname, item.href);
+    const label = intl.formatMessage({ id: item.name, defaultMessage: item.name });
     return (
-      <Button
-        key={key}
-        variant={active ? "primary" : "ghost"}
-        fullWidth
-        onClick={() => {
-          navigate(item.href!);
-          onClose();
-        }}
-        leftIcon={renderIcon(item.icon || "solar:question-circle-linear")}
+      <button
+        type="button"
+        key={item.href}
+        className={`ios-sb__row ${active ? "ios-sb__row--active" : ""}`}
+        onClick={() => navigate(item.href)}
+        aria-current={active ? "page" : undefined}
+        data-tooltip={label}
+        onMouseEnter={(e) => isCollapsed && showTooltip(label, e.currentTarget)}
+        onMouseLeave={isCollapsed ? hideTooltip : undefined}
+        onFocus={(e) => isCollapsed && showTooltip(label, e.currentTarget)}
+        onBlur={isCollapsed ? hideTooltip : undefined}
       >
-        {intl.formatMessage({ id: item.name, defaultMessage: item.name })}
-      </Button>
+        <span className="ios-sb__row-icon" aria-hidden="true">
+          {item.icon ? <img src={item.icon} alt="" /> : null}
+        </span>
+        <span className="ios-sb__row-label">{label}</span>
+        <span className="ios-sb__row-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span>
+      </button>
     );
   };
 
-  const renderItem = (item: NavMenuItem, parentKey: string): ReactNode => {
-    const key = `${parentKey}/${item.name}`;
-    if (item.children?.length) {
-      return (
-        <details key={key} className="sidebar-group">
-          <summary className="sidebar-group__summary">
-            {renderIcon(item.icon || "solar:question-circle-linear")}
-            <span className="sidebar-item__label">
-              {intl.formatMessage({ id: item.name, defaultMessage: item.name })}
-            </span>
-            <Icon
-              icon="solar:alt-arrow-down-linear"
-              className="sidebar-group__arrow"
-            />
-          </summary>
-          <div className="sidebar-group__children">
-            {item.children.map((child) => renderItem(child, key))}
-          </div>
-        </details>
-      );
-    }
-    return renderLeaf(item, key);
-  };
-
   return (
-    <>
-      {isOpen && (
-        <div
-          className="sidebar-overlay"
-          aria-hidden="true"
-          onClick={onClose}
-        />
+    <aside
+      className={`ios-sb ${sidebarOpen ? "" : "ios-sb--collapsed"}`}
+      aria-label="Sidebar"
+    >
+      {/* SECTION 1 — Header: app brand + search */}
+      <header className="ios-sb__header">
+        <div className="ios-sb__brand">
+          <img src={ICONS.brandLogo} alt="" className="ios-sb__brand-logo" />
+          <div className="ios-sb__brand-text">
+            <span className="ios-sb__brand-title">
+              {intl.formatMessage({ id: "nav.erp_sales", defaultMessage: "CRM" })}
+            </span>
+            <span className="ios-sb__brand-sub">
+              {intl.formatMessage({ id: "nav.brand_sub", defaultMessage: "Sales OS" })}
+            </span>
+          </div>
+        </div>
+
+        <div className="ios-sb__search">
+          {/* Full search trigger (expanded) */}
+          <button
+            type="button"
+            className="ios-sb__search-trigger"
+            onClick={() => setSearchOpen(true)}
+            aria-label={intl.formatMessage({
+              id: "nav.search.open",
+              defaultMessage: "Open search",
+            })}
+          >
+            <span className="ios-sb__search-icon-tile" aria-hidden="true">
+              <img src={ICONS.ui.searchTile} alt="" />
+            </span>
+            <span className="ios-sb__search-text">
+              <span className="ios-sb__search-label">
+                {intl.formatMessage({
+                  id: "nav.search.label",
+                  defaultMessage: "Search",
+                })}
+              </span>
+              <span className="ios-sb__search-hint">
+                {intl.formatMessage({
+                  id: "nav.search.hint",
+                  defaultMessage: "pages, customers, SKUs…",
+                })}
+              </span>
+            </span>
+            <span className="ios-sb__search-kbd" aria-hidden="true">
+              <kbd>⌘</kbd>
+              <kbd>K</kbd>
+            </span>
+            <span className="ios-sb__search-shine" aria-hidden="true" />
+          </button>
+          {/* Compact search trigger (collapsed) */}
+          <button
+            type="button"
+            className="ios-sb__search-compact"
+            onClick={() => setSearchOpen(true)}
+            aria-label={intl.formatMessage({
+              id: "nav.search.open",
+              defaultMessage: "Open search",
+            })}
+            title={intl.formatMessage({ id: "nav.search.label", defaultMessage: "Search" })}
+          >
+            <span className="ios-sb__search-compact-icon" aria-hidden="true">
+              <img src={ICONS.ui.searchTile} alt="" />
+            </span>
+          </button>
+        </div>
+      </header>
+
+      {/* SECTION 2 — Scrollable nav menu */}
+      <nav className="ios-sb__nav" aria-label="Primary">
+        <div className="ios-sb__nav-scroll">
+          {sections.map((section) => (
+            <section key={section.id} className="ios-sb__group" aria-labelledby={`ios-sb-group-${section.id}`}>
+              <header className="ios-sb__group-header" id={`ios-sb-group-${section.id}`}>
+                <span>{section.name}</span>
+                <span className="ios-sb__group-count">{section.items.length}</span>
+              </header>
+              <div className="ios-sb__group-card">{section.items.map(renderItem)}</div>
+            </section>
+          ))}
+        </div>
+      </nav>
+
+      {/* SECTION 3 — Profile / user footer */}
+      {user && (
+        <footer className="ios-sb__footer">
+          <UserMenuTrigger
+            className="ios-sb__user"
+            aria-label={user.name}
+          >
+            <Avatar name={user.name} size="md" />
+            <div className="ios-sb__user-text">
+              <span className="ios-sb__user-name">{user.name}</span>
+              <span className="ios-sb__user-role">{user.roleName}</span>
+            </div>
+          </UserMenuTrigger>
+        </footer>
       )}
 
-      <aside
-        className={`sidebar-panel ${isOpen ? '' : 'sidebar-panel--closed'}`}
-        aria-hidden={!isOpen}
-      >
-        <div className="sidebar-header">
-          <span className="sidebar-header__title">
-            {menuHeading}
+      {/* Compact user avatar (collapsed) — opens the same UserMenuPopover */}
+      {user && (
+        <UserMenuTrigger
+          className="ios-sb__user-compact"
+          aria-label={user.name}
+        >
+          <span aria-hidden="true">
+            {user.name
+              .split(/\s+/)
+              .slice(0, 2)
+              .map((s) => s[0]?.toUpperCase() ?? "")
+              .join("")}
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Close sidebar"
-            onClick={onClose}
-          >
-            <Icon icon="solar:close-circle-linear" />
-          </Button>
+        </UserMenuTrigger>
+      )}
+
+      {/* Tooltip portal — renders as direct child of <aside> to escape nav overflow */}
+      {tooltip && isCollapsed && (
+        <div
+          className="ios-sb__tooltip-portal"
+          style={{ top: tooltip.top }}
+        >
+          {tooltip.label}
         </div>
-        <nav className="sidebar-nav">
-          {visibleItems.map((item) => renderItem(item, "root"))}
-        </nav>
-      </aside>
-    </>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setSidebarOpen((prev) => !prev)}
+        className="ios-sb__collapse-hidden"
+        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+    </aside>
   );
 };

@@ -58,6 +58,13 @@ export const notificationRouter = router({
     return { success: true };
   }),
 
+  clearAll: protectedProcedure.mutation(async ({ ctx }) => {
+    await prisma.notification.deleteMany({
+      where: { userId: ctx.user.userId },
+    });
+    return { success: true };
+  }),
+
   // Admin list — view all users' notifications
   adminList: protectedProcedure
     .input(createListInputSchema({

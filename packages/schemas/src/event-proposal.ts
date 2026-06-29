@@ -15,6 +15,16 @@ export const eventProposalPaymentSchema = z.object({
   notes: z.string().optional(),
 });
 
+// --- SKU sub-record (rich model with qty/price/tax) ---
+export const eventProposalSkuInputSchema = z.object({
+  skuId: z.string().min(1, 'SKU is required'),
+  quantity: z.number().positive('Quantity must be positive'),
+  price: z.number().nonnegative('Price must be non-negative'),
+  tax: z.number().nonnegative('Tax must be non-negative').default(0),
+  total: z.number().nonnegative('Total must be non-negative'),
+  notes: z.string().optional(),
+});
+
 // --- Create ---
 export const createEventProposalSchema = z.object({
   documentNumber: z.string().optional(),
@@ -30,7 +40,7 @@ export const createEventProposalSchema = z.object({
   observationDays: z.number().int().default(90),
   proposedBudget: z.number().positive().optional().nullable(),
   currency: z.string().default('IDR'),
-  skuIds: z.array(z.string()).optional().default([]),
+  skus: z.array(eventProposalSkuInputSchema).optional().default([]),
   payments: z.array(eventProposalPaymentSchema).optional().default([]),
 });
 
@@ -50,7 +60,7 @@ export const updateEventProposalSchema = z.object({
   observationDays: z.number().int().default(90),
   proposedBudget: z.number().positive().optional().nullable(),
   currency: z.string(),
-  skuIds: z.array(z.string()).optional().default([]),
+  skus: z.array(eventProposalSkuInputSchema).optional().default([]),
   payments: z.array(eventProposalPaymentSchema).optional().default([]),
 });
 
@@ -59,6 +69,7 @@ export const eventProposalIdSchema = z.object({
 });
 
 export type EventProposalPaymentInput = z.infer<typeof eventProposalPaymentSchema>;
+export type EventProposalSkuInput = z.infer<typeof eventProposalSkuInputSchema>;
 export type CreateEventProposalInput = z.infer<typeof createEventProposalSchema>;
 export type UpdateEventProposalInput = z.infer<typeof updateEventProposalSchema>;
 export type EventProposalIdInput = z.infer<typeof eventProposalIdSchema>;
