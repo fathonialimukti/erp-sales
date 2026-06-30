@@ -928,6 +928,7 @@
   "rma_receipt.reject_success": "Transaction rejected.",
   "rma_receipt.search_placeholder": "Search...",
   "rma_receipt.section_general": "Transaction Details",
+  "roles.index.header_description": "Description",
   "roles.index.create_button": "Create Role",
   "roles.index.delete_cancel": "Cancel",
   "roles.index.delete_confirm": "Delete",

@@ -9,7 +9,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { trpcClient } from "../../lib/trpc";
-import { RowActions } from "../../components/RowActions";
 import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
 import { ActivityLogIcon } from "./ActivityLogIcons";
 
@@ -88,27 +87,10 @@ export const ActivityLogsIndexPage = () => {
       cell: ({ row }) => (
         <span className="m-cell">
           <span className="m-cell__primary">{row.original.resource}</span>
-          <span className="m-cell__secondary">{row.original.resourceId}</span>
         </span>
       ),
     },
-    {
-      id: "actions", header: "",
-      cell: ({ row }) => (
-        <button
-          type="button"
-          className="m-btn m-btn--ghost m-btn--sm"
-          onClick={() => navigate(`/activity-logs/${row.original.id}`)}
-          aria-label={intl.formatMessage({ id: "common.action.view", defaultMessage: "View" })}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </button>
-      ),
-    },
-  ], [intl, navigate]);
+  ], [intl]);
 
   const table = useReactTable({
     data: rows, columns, pageCount: totalPages,
@@ -143,6 +125,7 @@ export const ActivityLogsIndexPage = () => {
       <ModuleTable
         table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
         pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
+        onRowClick={(row) => navigate(`/activity-logs/${row.id}`)}
         onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}
         paginationLabel={intl.formatMessage({ id: "common.pagination_info", defaultMessage: "Page {page} of {total}" }, { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) })}
         emptyState={

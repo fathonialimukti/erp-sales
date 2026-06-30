@@ -84,8 +84,15 @@ export const RolesIndexPage = () => {
         <span className="m-doc">
           <span className="m-doc__text">
             <span className="m-doc__code">{row.original.name}</span>
-            {row.original.description ? <span className="m-doc__name">{row.original.description}</span> : null}
           </span>
+        </span>
+      ),
+    },
+    {
+      id: "description", header: intl.formatMessage({ id: "roles.index.header_description", defaultMessage: "Description" }),
+      cell: ({ row }) => (
+        <span className="m-cell">
+          <span className="m-cell__primary">{row.original.description ?? "—"}</span>
         </span>
       ),
     },
