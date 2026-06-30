@@ -16,7 +16,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
  */
 export async function salesOrderPdfHandler(req: Request, res: Response) {
     // --- Auth ---
-    // Cookie is httpOnly + cross-origin (client on :1420, server on :2022),
+    // Cookie is httpOnly + cross-origin (client on :10021, server on :10022),
     // so a new browser tab can't send it. Accept the token from either the
     // cookie, the Authorization header, or a ?token= query param.
     let token: string | null = null;

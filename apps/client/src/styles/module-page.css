@@ -2647,3 +2647,102 @@
   to { transform: rotate(360deg); }
 }
 
+/* ============================================================
+ * 12. iOS TOGGLE — sliding pill switch
+ * ============================================================ */
+
+.m-toggle {
+  --_tw: 2.75rem;
+  --_th: 1.625rem;
+  --_tg: 0.125rem;
+  --_td: calc(var(--_th) - 2 * var(--_tg));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ios-label-2);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.m-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.m-toggle__track {
+  flex-shrink: 0;
+  width: var(--_tw);
+  height: var(--_th);
+  border-radius: 999px;
+  background: var(--ios-pill-bg, rgba(15, 23, 42, 0.12));
+  border: 0.0625rem solid var(--ios-card-border, rgba(15, 23, 42, 0.08));
+  position: relative;
+  transition: background 0.25s var(--ease-spring, cubic-bezier(0.4, 0, 0.2, 1)),
+              border-color 0.25s var(--ease-spring, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.m-toggle__track::after {
+  content: "";
+  position: absolute;
+  top: var(--_tg);
+  left: var(--_tg);
+  width: var(--_td);
+  height: var(--_td);
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow:
+    0 0.0625rem 0.1875rem rgba(15, 23, 42, 0.12),
+    0 0.0625rem 0.0625rem rgba(15, 23, 42, 0.06),
+    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.8);
+  transition: transform 0.25s var(--ease-spring, cubic-bezier(0.4, 0, 0.2, 1)),
+              box-shadow 0.25s var(--ease-spring, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.m-toggle input:checked + .m-toggle__track {
+  background: var(--m-accent, var(--ios-accent, #7C3AED));
+  border-color: transparent;
+}
+
+.m-toggle input:checked + .m-toggle__track::after {
+  transform: translateX(calc(var(--_tw) - var(--_td) - 2 * var(--_tg)));
+  box-shadow:
+    0 0.0625rem 0.25rem rgba(124, 58, 237, 0.35),
+    0 0.0625rem 0.0625rem rgba(124, 58, 237, 0.15),
+    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.8);
+}
+
+.m-toggle input:focus-visible + .m-toggle__track {
+  outline: 2px solid var(--m-accent, var(--ios-accent, #7C3AED));
+  outline-offset: 2px;
+}
+
+.m-toggle:hover .m-toggle__track {
+  border-color: rgba(124, 58, 237, 0.25);
+}
+
+.m-toggle input:checked:hover + .m-toggle__track {
+  background: var(--m-accent-end, #6D28D9);
+}
+
+.m-toggle:active .m-toggle__track::after {
+  transform: scale(0.9);
+}
+
+.m-toggle input:checked:active + .m-toggle__track::after {
+  transform: translateX(calc(var(--_tw) - var(--_td) - 2 * var(--_tg))) scale(0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-toggle__track,
+  .m-toggle__track::after {
+    transition: none;
+  }
+}
+

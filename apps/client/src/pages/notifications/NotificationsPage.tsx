@@ -95,13 +95,13 @@ const NotificationsPage = () => {
       />
 
       <div className="m-toolbar">
-        <label className="m-search" style={{ cursor: "pointer", padding: "0 1rem", height: "2.5rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--ios-label-2)" }}>
+        <label className="m-toggle">
           <input
             type="checkbox"
             checked={unreadOnly}
             onChange={(e) => { setUnreadOnly(e.target.checked); setPage(1); }}
-            style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
           />
+          <span className="m-toggle__track" />
           {intl.formatMessage({ id: "notifications.unread_only", defaultMessage: "Unread only" })}
         </label>
         {unreadCount > 0 ? (

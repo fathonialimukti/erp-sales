@@ -7,7 +7,7 @@ import { appRouter } from './router.js';
 import { aiChatHandler, aiChatResumeHandler, aiQueryDatabaseHandler } from './routes/ai.js';
 import { salesOrderPdfHandler } from './routes/sales-order-pdf.js';
 
-const port = Number(process.env.PORT ?? 2022);
+const port = Number(process.env.PORT ?? 10022);
 const corsOrigin = process.env.CORS_ORIGIN;
 const isDev = process.env.NODE_ENV !== 'production';
 

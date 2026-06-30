@@ -16,3 +16,6 @@ RUN apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+
+# Install Copilot CLI (BYOK)
+RUN bun install -g @githubnext/github-copilot-cli

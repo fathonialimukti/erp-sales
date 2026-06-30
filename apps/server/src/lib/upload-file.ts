@@ -142,7 +142,7 @@ const getRequestOrigin = (req: Request) => {
     const protocol = Array.isArray(forwardedProto)
         ? forwardedProto[0]
         : forwardedProto ?? req.protocol;
-    const host = req.headers.host ?? 'localhost:2022';
+    const host = req.headers.host ?? 'localhost:10022';
     return `${protocol}://${host}`;
 };
 
