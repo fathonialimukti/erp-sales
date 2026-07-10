@@ -20,9 +20,6 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@gravity-ui/icons": "^2.18.0",
     "@internationalized/date": "^3.12.2",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
-    "@react-three/postprocessing": "^3.0.4",
     "@repo/schemas": "*",
     "@tanstack/react-devtools": "^0.10.5",
     "@tanstack/react-form": "^1.33.0",
@@ -48,8 +45,6 @@
     "react-router": "^7.16.0",
     "recharts": "^3.8.1",
     "remark-gfm": "^4",
-    "three": "^0.184.0",
-    "three-stdlib": "^2.36.1",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"

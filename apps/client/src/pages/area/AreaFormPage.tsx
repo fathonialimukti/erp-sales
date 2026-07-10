@@ -14,13 +14,14 @@ import { ModulePage } from "../../components/ModulePage";
 import { AreaIcon } from "./AreaIcons";
 
 interface FormValues {
+  regionId: string;
   code: string;
   name: string;
 }
 
 type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
-const defaults = (): FormValues => ({ code: "", name: "" });
+const defaults = (): FormValues => ({ regionId: "", code: "", name: "" });
 
 export const AreaFormPage = () => {
   const intl = useIntl();
@@ -41,8 +42,13 @@ export const AreaFormPage = () => {
     queryFn: () => trpcClient.area.detail.query({ id: id ?? "" }),
   });
 
+  const { data: regions } = useQuery({
+    queryKey: ["regionOptions"],
+    queryFn: () => trpcClient.region.list.query({ page: 1, limit: 100 }),
+  });
+
   const form = useForm({
-    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    defaultValues: (isEdit && data ? { regionId: data.regionId, code: data.code ?? "", name: data.name } : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
     },
@@ -142,6 +148,29 @@ export const AreaFormPage = () => {
           </div>
           <div className="so-card__body">
             <div className="so-section">
+              <form.Field name="regionId" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "area.form.field_region", defaultMessage: "Region" })} *
+                    </label>
+                    <select
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    >
+                      <option value="">{intl.formatMessage({ id: "area.form.field_region_placeholder", defaultMessage: "Select region" })}</option>
+                      {(regions?.data ?? []).map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+
               <form.Field name="code">
                 {(f) => (
                   <div className="so-field">

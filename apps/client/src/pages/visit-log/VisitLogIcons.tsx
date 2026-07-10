@@ -16,7 +16,8 @@ export type VisitLogIconName =
   | "eye"
   | "clipboard"
   | "clock"
-  | "location";
+  | "location"
+  | "item";
 
 interface VisitLogIconProps {
   name: VisitLogIconName;
@@ -41,6 +42,7 @@ const ICON_MAP: Record<VisitLogIconName, string> = {
   clipboard: icons.visitClipboard,
   clock: icons.visitClock,
   location: icons.visitLocation,
+  item: icons.visitClipboard,
 };
 
 export const VisitLogIcon = ({

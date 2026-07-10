@@ -14,9 +14,9 @@ import { VisitLogIcon } from "./VisitLogIcons";
 type VisitLogDetail = {
   id: string;
   date: string;
-  checkIn: string | null;
-  checkOut: string | null;
-  status: string;
+  checkInAt: string | null;
+  checkOutAt: string | null;
+  approvalStatus: string;
   purpose: string | null;
   notes: string | null;
   feedback: string | null;
@@ -93,8 +93,10 @@ export const VisitLogDetailPage = () => {
     );
   }
 
+  const title = visitLog.outlet?.name ?? intl.formatMessage({ id: "visit_log.detail.unnamed", defaultMessage: "Visit Log" });
+
   return (
-    <section className="so-page" data-ai-context={JSON.stringify({ section: "visitLog-detail", id: visitLog.id, name: visitLog.name, areaCount: visitLog.areas.length })}>
+    <section className="so-page" data-ai-context={JSON.stringify({ section: "visitLog-detail", id: visitLog.id, name: title, outletId: visitLog.outlet?.id, approvalStatus: visitLog.approvalStatus })}>
       {/* ── Hero ── */}
       <header className="so-detail-hero">
         <div className="so-detail-hero__top">
@@ -115,8 +117,8 @@ export const VisitLogDetailPage = () => {
           <div className="so-detail-hero__title-row">
             <div className="so-detail-hero__title-stack">
               <span className="so-detail-hero__kicker">{intl.formatMessage({ id: "nav.field_ops", defaultMessage: "Field Operations" })}</span>
-              <h1 className="so-detail-hero__title">{visitLog.name}</h1>
-              <span className="so-detail-hero__sub">{visitLog.code ?? "—"}</span>
+              <h1 className="so-detail-hero__title">{title}</h1>
+              <span className="so-detail-hero__sub">{visitLog.outlet?.customer?.name ?? "—"}</span>
             </div>
           </div>
         </div>
@@ -133,58 +135,64 @@ export const VisitLogDetailPage = () => {
         <div className="so-card__body">
           <div className="so-section so-section--2">
             <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.code_label", defaultMessage: "Code" })}</span>
-              <span className="so-field__value">{visitLog.code ?? "—"}</span>
+              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.date_label", defaultMessage: "Date" })}</span>
+              <span className="so-field__value">{visitLog.date}</span>
             </div>
             <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.name_label", defaultMessage: "Name" })}</span>
-              <span className="so-field__value">{visitLog.name}</span>
+              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.status_label", defaultMessage: "Status" })}</span>
+              <span className="so-field__value">{visitLog.approvalStatus}</span>
             </div>
             <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.areas_label", defaultMessage: "Details" })}</span>
-              <span className="so-field__value">{visitLog.areas.length}</span>
+              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.salesman_label", defaultMessage: "Salesman" })}</span>
+              <span className="so-field__value">{visitLog.salesman?.name ?? "—"}</span>
+            </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.outlet_label", defaultMessage: "Outlet" })}</span>
+              <span className="so-field__value">{visitLog.outlet?.name ?? "—"}</span>
+            </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.purpose_label", defaultMessage: "Purpose" })}</span>
+              <span className="so-field__value">{visitLog.purpose ?? "—"}</span>
+            </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.notes_label", defaultMessage: "Notes" })}</span>
+              <span className="so-field__value">{visitLog.notes ?? "—"}</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Areas ── */}
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon"><VisitLogIcon name="item" size={14} /></span>
-            {intl.formatMessage({ id: "visit_log.detail.none_title", defaultMessage: "Details" })}
-          </h2>
-          <p className="so-card__hint">{visitLog.areas.length} areas</p>
-        </div>
-        <div className="so-card__body" style={{ padding: 0 }}>
-          {visitLog.areas.length === 0 ? (
-            <div className="so-card__body" style={{ textAlign: "center", padding: "2rem" }}>
-              <VisitLogIcon name="item" size={48} />
-              <p style={{ marginTop: 12, color: "var(--ios-label-2)" }}>{intl.formatMessage({ id: "visit_log.detail.no_none", defaultMessage: "No data" })}</p>
-            </div>
-          ) : (
+      {/* ── Linked Sales Order ── */}
+      {visitLog.salesOrder && (
+        <section className="so-card">
+          <div className="so-card__header">
+            <h2 className="so-card__title">
+              <span className="so-card__icon"><VisitLogIcon name="item" size={14} /></span>
+              {intl.formatMessage({ id: "visit_log.detail.order_title", defaultMessage: "Linked Sales Order" })}
+            </h2>
+          </div>
+          <div className="so-card__body" style={{ padding: 0 }}>
             <div className="so-items-table">
               <div className="so-items-table__body">
-                {visitLog.areas.map((area) => (
-                  <div key={area.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/area/${area.id}`)}>
-                    <div className="so-items-table__td so-items-table__td--product">
-                      <span className="so-items-table__icon" data-tint="blue" aria-hidden="true"><VisitLogIcon name="item" size={16} /></span>
-                      <div className="so-items-table__product">
-                        <span className="so-items-table__product-name">{area.name}</span>
-                        {area.code && <span className="so-items-table__product-code">{area.code}</span>}
-                      </div>
-                    </div>
-                    <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
-                      <VisitLogIcon name="chevron-right" size={16} />
+                <div className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/sales-order/${visitLog.salesOrder!.id}`)}>
+                  <div className="so-items-table__td so-items-table__td--product">
+                    <span className="so-items-table__icon" data-tint="blue" aria-hidden="true"><VisitLogIcon name="item" size={16} /></span>
+                    <div className="so-items-table__product">
+                      <span className="so-items-table__product-name">{visitLog.salesOrder.documentNumber ?? visitLog.salesOrder.id}</span>
+                      {visitLog.salesOrder.grandTotal != null && (
+                        <span className="so-items-table__product-code">{visitLog.salesOrder.grandTotal}</span>
+                      )}
                     </div>
                   </div>
-                ))}
+                  <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
+                    <VisitLogIcon name="chevron-right" size={16} />
+                  </div>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* ── Delete Modal ── */}
       {deleteModalOpen && createPortal(
@@ -200,7 +208,7 @@ export const VisitLogDetailPage = () => {
               <div className="so-modal__icon so-modal__icon--error"><VisitLogIcon name="delete" size={28} /></div>
               <h3 className="so-modal__title">{intl.formatMessage({ id: "visit_log.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}</h3>
               <p className="so-modal__msg">
-                {intl.formatMessage({ id: "visit_log.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: visitLog.name })}
+                {intl.formatMessage({ id: "visit_log.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: title })}
               </p>
             </div>
             <div className="so-modal__footer">

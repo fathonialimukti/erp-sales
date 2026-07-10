@@ -156,7 +156,7 @@ export const VisitLogIndexPage = () => {
 
       <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} size="sm">
         <ModalHeader>{intl.formatMessage({ id: "visit_log.index.delete_title", defaultMessage: "Delete visitLog" })}</ModalHeader>
-        <ModalBody>{intl.formatMessage({ id: "visit_log.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: itemToDelete?.name ?? "" })}</ModalBody>
+        <ModalBody>{intl.formatMessage({ id: "visit_log.index.delete_confirm_body", defaultMessage: 'Delete visit log for "{name}"? This action cannot be undone.' }, { name: itemToDelete?.outlet?.name ?? itemToDelete?.date ?? "" })}</ModalBody>
         <ModalFooter>
           <button type="button" className="btn btn-secondary" onClick={() => setDeleteModalOpen(false)} disabled={isDeleting}>{intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}</button>
           <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? <Spinner size="sm" /> : intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}</button>

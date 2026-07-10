@@ -1,32 +1,7 @@
-import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { protectedProcedure, router } from '../trpc.js';
 
 export const dashboardRouter = router({
-    activityFeed: protectedProcedure
-        .input(z.object({ limit: z.number().int().min(1).max(50).optional() }).optional())
-        .query(async ({ input }) => {
-            const take = input?.limit ?? 10;
-
-            const data = await prisma.activityLog.findMany({
-                take,
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                        },
-                    },
-                },
-                orderBy: {
-                    createdAt: 'desc',
-                },
-            });
-
-            return { data };
-        }),
-
     /**
      * Sales-focused dashboard data: KPI counts, 30-day revenue trend,
      * top-5 customers by revenue this month, and recent activity.
@@ -124,13 +99,15 @@ export const dashboardRouter = router({
         const revenueTrend = Array.from(buckets.values());
 
         // Top customers — need names
-        const topCustomerIds = topCustomersRaw.map((c) => c.customerId);
+        const topCustomerIds = topCustomersRaw.map((c) => c.customerId).filter((id): id is string => id !== null);
         const topCustomerNames = await prisma.customer.findMany({
             where: { id: { in: topCustomerIds } },
             select: { id: true, name: true },
         });
         const nameMap = new Map(topCustomerNames.map((c) => [c.id, c.name]));
-        const topCustomers = topCustomersRaw.map((c) => ({
+        const topCustomers = topCustomersRaw
+            .filter((c): c is typeof c & { customerId: string } => c.customerId !== null)
+            .map((c) => ({
             id: c.customerId,
             name: nameMap.get(c.customerId) ?? 'Unknown',
             total: c._sum.grandTotal ? Number(c._sum.grandTotal) : 0,

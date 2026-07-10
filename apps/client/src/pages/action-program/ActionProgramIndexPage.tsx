@@ -18,7 +18,7 @@ import { RowActions } from "../../components/RowActions";
 import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
 import { ActionProgramIcon } from "./ActionProgramIcons";
 
-type ActionProgramRow = { id: string; code: string | null; name: string; _count: { outlets: number } };
+type ActionProgramRow = { id: string; documentNumber: string | null; name: string; _count: { outlets: number } };
 
 export const ActionProgramIndexPage = () => {
   const intl = useIntl();
@@ -57,7 +57,7 @@ export const ActionProgramIndexPage = () => {
       cell: ({ row }) => (
         <span className="m-doc">
           <span className="m-doc__text">
-            <span className="m-doc__code">{row.original.code ?? "—"}</span>
+            <span className="m-doc__code">{row.original.documentNumber ?? "—"}</span>
           </span>
         </span>
       ),

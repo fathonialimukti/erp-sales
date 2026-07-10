@@ -42,7 +42,7 @@ export async function runAiValidation(orderId: string): Promise<ValidationResult
   }
 
   // Retrieve relevant knowledge base chunks for validation context
-  const ragQuery = `sales order validation pricing discount approval ${order.customer.name} ${order.items.map(i => i.sku.name).join(' ')}`;
+  const ragQuery = `sales order validation pricing discount approval ${order.customer?.name ?? ''} ${order.items.map(i => i.sku.name).join(' ')}`;
   const ragContext = await retrieveRelevantChunks(ragQuery);
 
   const systemPrompt = `You are a STRICT AI validation agent for a sales order system. Your task is to identify issues and reject orders that don't meet business standards.
@@ -121,7 +121,7 @@ ${ragContext}`;
 **Order Details:**
 - Document Number: ${order.documentNumber ?? 'N/A'}
 - Date: ${order.date.toISOString()}
-- Customer: ${order.customer.name}
+- Customer: ${order.customer?.name ?? 'N/A'}
 - Outlet: ${order.outlet?.name ?? 'N/A'}
 - Area: ${order.area.name}
 - Currency: ${order.currency}

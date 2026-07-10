@@ -14,13 +14,16 @@ import { ModulePage } from "../../components/ModulePage";
 import { VisitLogIcon } from "./VisitLogIcons";
 
 interface FormValues {
-  code: string;
-  name: string;
+  salesmanId: string;
+  outletId: string;
+  date: string;
+  purpose: string;
+  notes: string;
 }
 
 type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
-const defaults = (): FormValues => ({ code: "", name: "" });
+const defaults = (): FormValues => ({ salesmanId: "", outletId: "", date: "", purpose: "", notes: "" });
 
 export const VisitLogFormPage = () => {
   const intl = useIntl();
@@ -41,8 +44,24 @@ export const VisitLogFormPage = () => {
     queryFn: () => trpcClient.visitLog.detail.query({ id: id ?? "" }),
   });
 
+  const { data: salesmen } = useQuery({
+    queryKey: ["userOptions"],
+    queryFn: () => trpcClient.user.list.query({ page: 1, limit: 100 }),
+  });
+
+  const { data: outlets } = useQuery({
+    queryKey: ["outletOptions"],
+    queryFn: () => trpcClient.outlet.list.query({ page: 1, limit: 100 }),
+  });
+
   const form = useForm({
-    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    defaultValues: (isEdit && data ? {
+      salesmanId: data.salesmanId,
+      outletId: data.outletId,
+      date: data.date,
+      purpose: data.purpose ?? "",
+      notes: data.notes ?? "",
+    } : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
     },
@@ -142,39 +161,100 @@ export const VisitLogFormPage = () => {
           </div>
           <div className="so-card__body">
             <div className="so-section">
-              <form.Field name="code">
+              <form.Field name="salesmanId" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
                 {(f) => (
                   <div className="so-field">
                     <label className="so-field__label">
-                      {intl.formatMessage({ id: "visit_log.form.field_code", defaultMessage: "Code" })}
+                      {intl.formatMessage({ id: "visitLog.form.field_salesman", defaultMessage: "Salesman" })} *
+                    </label>
+                    <select
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    >
+                      <option value="">{intl.formatMessage({ id: "visitLog.form.field_salesman_placeholder", defaultMessage: "Select salesman" })}</option>
+                      {(salesmen?.data ?? []).map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </select>
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="outletId" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "visitLog.form.field_outlet", defaultMessage: "Outlet" })} *
+                    </label>
+                    <select
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    >
+                      <option value="">{intl.formatMessage({ id: "visitLog.form.field_outlet_placeholder", defaultMessage: "Select outlet" })}</option>
+                      {(outlets?.data ?? []).map((o) => (
+                        <option key={o.id} value={o.id}>{o.name}</option>
+                      ))}
+                    </select>
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="date" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "visitLog.form.field_date", defaultMessage: "Date" })} *
+                    </label>
+                    <input
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      type="date"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="purpose">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "visitLog.form.field_purpose", defaultMessage: "Purpose" })}
                     </label>
                     <input
                       className="so-field__input"
                       type="text"
                       value={f.state.value ?? ""}
                       onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "visit_log.form.field_code_placeholder", defaultMessage: "Optional" })}
+                      placeholder={intl.formatMessage({ id: "visitLog.form.field_purpose_placeholder", defaultMessage: "Optional" })}
                     />
                   </div>
                 )}
               </form.Field>
 
-              <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+              <form.Field name="notes">
                 {(f) => (
                   <div className="so-field">
                     <label className="so-field__label">
-                      {intl.formatMessage({ id: "visit_log.form.field_name", defaultMessage: "Name" })} *
+                      {intl.formatMessage({ id: "visitLog.form.field_notes", defaultMessage: "Notes" })}
                     </label>
-                    <input
-                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
-                      type="text"
+                    <textarea
+                      className="so-field__input"
                       value={f.state.value ?? ""}
                       onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "visit_log.form.field_name_placeholder", defaultMessage: "Region name" })}
+                      placeholder={intl.formatMessage({ id: "visitLog.form.field_notes_placeholder", defaultMessage: "Optional" })}
                     />
-                    {f.state.meta.errors.length > 0 && (
-                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
-                    )}
                   </div>
                 )}
               </form.Field>

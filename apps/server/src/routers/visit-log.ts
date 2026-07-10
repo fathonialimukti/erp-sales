@@ -147,18 +147,10 @@ export const visitLogRouter = router({
         });
       }
 
-      const history = pushApprovalHistory((existing as any).approvalHistory ?? null, {
-        process: 'AI Validation',
-        name: ctx.user.name ?? 'Unknown',
-        dateTime: new Date().toISOString(),
-        message: 'Document validated successfully',
-      });
-
       const updated = await prisma.visitLog.update({
         where: { id: input.id },
         data: {
           approvalStatus: 'VALIDATING',
-          approvalHistory: history as any,
         },
       });
 

@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
 import { useMemo, useState, useCallback, useRef } from "react";
-import { ICONS } from "../assets/chrome-icons";
+import { icons } from "../assets/icons";
 import { Avatar } from "../ui";
 import {
   authUserAtom,
@@ -149,7 +149,7 @@ export const Sidebar = () => {
       {/* SECTION 1 — Header: app brand + search */}
       <header className="ios-sb__header">
         <div className="ios-sb__brand">
-          <img src={ICONS.brandLogo} alt="" className="ios-sb__brand-logo" />
+          <img src={icons.brandLogo} alt="" className="ios-sb__brand-logo" />
           <div className="ios-sb__brand-text">
             <span className="ios-sb__brand-title">
               {intl.formatMessage({ id: "nav.erp_sales", defaultMessage: "CRM" })}
@@ -172,7 +172,7 @@ export const Sidebar = () => {
             })}
           >
             <span className="ios-sb__search-icon-tile" aria-hidden="true">
-              <img src={ICONS.ui.searchTile} alt="" />
+              <img src={icons.uiSearchTile} alt="" />
             </span>
             <span className="ios-sb__search-text">
               <span className="ios-sb__search-label">
@@ -206,7 +206,7 @@ export const Sidebar = () => {
             title={intl.formatMessage({ id: "nav.search.label", defaultMessage: "Search" })}
           >
             <span className="ios-sb__search-compact-icon" aria-hidden="true">
-              <img src={ICONS.ui.searchTile} alt="" />
+              <img src={icons.uiSearchTile} alt="" />
             </span>
           </button>
         </div>

@@ -8,6 +8,7 @@
 @import "./styles/utilities.css";
 @import "./styles/page-system.css";
 @import "./styles/module-page.css";
+@import "./styles/reports.css";
 @import "react-day-picker/style.css";
 
 /* Base resets layered on top of the design tokens */

@@ -18,7 +18,7 @@ import { RowActions } from "../../components/RowActions";
 import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
 import { EventProposalIcon } from "./EventProposalIcons";
 
-type EventProposalRow = { id: string; code: string | null; name: string; _count: { budget: number } };
+type EventProposalRow = { id: string; documentNumber: string | null; name: string; _count: { skus: number } };
 
 export const EventProposalIndexPage = () => {
   const intl = useIntl();
@@ -57,7 +57,7 @@ export const EventProposalIndexPage = () => {
       cell: ({ row }) => (
         <span className="m-doc">
           <span className="m-doc__text">
-            <span className="m-doc__code">{row.original.code ?? "—"}</span>
+            <span className="m-doc__code">{row.original.documentNumber ?? "—"}</span>
           </span>
         </span>
       ),

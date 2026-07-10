@@ -18,25 +18,21 @@ import { prisma } from '../lib/prisma.js';
 const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
 
 const ROUTE_CATALOG = `
-- Users: list /users, create /users/new, detail /users/:id
-- Roles: list /access-control/roles, create /access-control/roles/new
-- Warehouses: list /warehouse, create /warehouse/new, detail /warehouse/:id
-- SKU / Products: list /skus, create /skus/new, detail /skus/:id
-- Inbound transactions (hub): list /inbound-transaction
-- Receiving: create /inbound-transaction/receiving/new, detail /inbound-transaction/receiving/:id
-- Found: create /inbound-transaction/found/new, detail /inbound-transaction/found/:id
-- RMA Receipt: create /inbound-transaction/rma-receipt/new, detail /inbound-transaction/rma-receipt/:id
-- WIP Completion: create /inbound-transaction/wip-completion/new, detail /inbound-transaction/wip-completion/:id
-- Outbound transactions (hub): list /outbound-transaction
-- Shipment: create /outbound-transaction/shipment/new, detail /outbound-transaction/shipment/:id
-- Disposal: create /outbound-transaction/disposal/new, detail /outbound-transaction/disposal/:id
-- Loss: create /outbound-transaction/loss/new, detail /outbound-transaction/loss/:id
-- Return to Supplier: create /outbound-transaction/return-to-supplier/new, detail /outbound-transaction/return-to-supplier/:id
-- WIP Issue: create /outbound-transaction/wip-issue/new, detail /outbound-transaction/wip-issue/:id
-- Activity logs: list /activity-logs
-- Stock movement: list /stock-movement
+- Dashboard: /dashboard
+- Region: list /region, create /region/create, detail /region/:id, edit /region/:id/edit
+- Area: list /area, create /area/create, detail /area/:id, edit /area/:id/edit
+- Customer: list /customer, create /customer/create, detail /customer/:id, edit /customer/:id/edit
+- Outlet: list /outlet, create /outlet/create, detail /outlet/:id, edit /outlet/:id/edit
+- SKU Category: list /sku-category, create /sku-category/create, detail /sku-category/:id, edit /sku-category/:id/edit
+- SKU: list /sku, create /sku/create, detail /sku/:id, edit /sku/:id/edit
+- Sales Order: list /sales-order, create /sales-order/create, detail /sales-order/:id, edit /sales-order/:id/edit
+- Visit Log: list /visit-log, create /visit-log/create, detail /visit-log/:id
+- Action Program: list /action-program, create /action-program/create, detail /action-program/:id, edit /action-program/:id/edit
+- Event Proposal: list /event-proposal, create /event-proposal/create, detail /event-proposal/:id, edit /event-proposal/:id/edit
+- Users: list /users, create /users/create, detail /users/:id, edit /users/:id/edit
+- Roles: list /access-control, create /access-control/create, detail /access-control/:id, edit /access-control/:id/edit
+- Activity logs: list /activity-logs, detail /activity-logs/:id
 - Notifications: list /notifications
-- Inventory Aging Analyzer: dashboard /inventory-aging
 `.trim();
 
 // Maximum number of past user-assistant turn pairs to keep.
@@ -274,7 +270,7 @@ function buildSystemPrompt(
         ? `\n\n## Relevant Documentation\n${context}`
         : '';
 
-    return `You are an AI assistant embedded in a Warehouse ERP Management System.
+    return `You are an AI assistant embedded in a Sales ERP (CRM + Sales Order) Management System.
 You help users navigate the application, understand features, and perform tasks step by step.
 
 ## Current User
@@ -297,7 +293,7 @@ ${ROUTE_CATALOG}
 - Prefer the page heading/section context over generic browser title text when both are available.
 - Do not dump raw JSON from tool output; translate it into concise business language.
 - Use navigateTo to guide users to the correct page before explaining what to do there.
-- Never mention or display route paths (e.g. /skus, /warehouse/:id) in your responses. Refer to destinations by their human-readable module name only (e.g. "SKU list", "Warehouse detail", "Create Receiving").
+- Never mention or display route paths (e.g. /sku, /sales-order/:id) in your responses. Refer to destinations by their human-readable module name only (e.g. "SKU list", "Sales Order detail", "Create Sales Order").
 - Be concise, practical, and step-by-step in your guidance.
 - Resolve routes from the Route Catalog above first; use retrieved documentation only as supporting context.
 - Use the page purpose and navigation documentation to infer the right module and route for any request.
@@ -312,24 +308,23 @@ ${ROUTE_CATALOG}
 - Never claim a record has been created, updated, saved, submitted, or persisted after using fillFormFields.
 - After filling fields, explicitly tell the user the form is prefilled and they must review and click Save/Submit themselves. Do NOT call getPageContext again to verify — trust that fillFormFields worked and move on to the final confirmation message.
 - Do not write a lead-in sentence when a tool call can directly satisfy the user request.
-- Permission format is always resource@action (e.g. receiving@approve, warehouse@create).
+- Permission format is always resource@action (e.g. sales-order@approve, region@create).
 
 ## Database Query Tool
-You have access to a read-only SQL query tool called queryDatabase. Use it when users ask about inventory levels, transaction records, stock movements, warehouse data, pallet information, user activity, or any data-related question.
+You have access to a read-only SQL query tool called queryDatabase. Use it when users ask about sales data, order records, customer/outlet data, SKU catalog, visit logs, user activity, or any data-related question.
 
 When to use:
 - User asks "how many SKUs do we have?" or any count/summary question
-- User asks "show me pending/approved/rejected transactions"
-- User asks "what is the inventory balance for SKU X?"
-- User asks "show me recent stock movements"
-- User asks about warehouse capacity, pallet availability, or supplier data
-- User asks for any data that requires querying the database
+- User asks "show me pending/approved/rejected sales orders"
+- User asks "what is the revenue for customer X?" or "total sales this month?"
+- User asks "how many visits did salesman Y log?"
+- User asks about any data that requires querying the database
 
 SQL Guidelines:
 - Only SELECT statements are allowed (INSERT/UPDATE/DELETE/DROP/ALTER/CREATE are blocked)
-- Use snake_case for table and column names (e.g., stock_movements, receiving_transactions, sku_inventory_balances)
+- Use snake_case for table and column names (e.g., crm_sales_orders, crm_outlets, skus)
 - Always add a LIMIT clause (default 100 rows, max 500)
-- Use JOINs to get related data (e.g., JOIN skus to get SKU details, JOIN warehouses for names)
+- Use JOINs to get related data (e.g., JOIN skus to get SKU details, JOIN crm_outlets for names)
 - Use aggregate functions (COUNT, SUM, AVG) and GROUP BY for summary queries
 - Date fields use DATE type (no time); timestamp fields use TIMESTAMP type
 - All IDs are ULID strings (26 characters)
@@ -338,25 +333,10 @@ SQL Guidelines:
 
 Example queries:
 - Count SKUs: SELECT COUNT(*) as count FROM skus
-- List SKUs by type: SELECT code, name, base_unit, type FROM skus WHERE type = 'RAW_MATERIAL' LIMIT 10
-- Pending transactions: SELECT document_number, date, approval_status FROM receiving_transactions WHERE approval_status = 'DRAFT' ORDER BY date DESC LIMIT 10
-- Inventory balance: SELECT year, month, closing_qty FROM sku_inventory_balances WHERE sku_id = '01H...' AND warehouse_id = '01H...' ORDER BY year DESC, month DESC LIMIT 12
-- Stock movements: SELECT sm.transaction_type, sm.direction, sm.quantity, sm.signed_qty, sm.transaction_date, s.code, s.name FROM stock_movements sm JOIN skus s ON sm.sku_id = s.id ORDER BY sm.transaction_date DESC LIMIT 20
-- Available pallets: SELECT p.id, p.status, s.code, s.name FROM pallets p JOIN skus s ON p.sku_id = s.id WHERE p.status = 'AVAILABLE' LIMIT 10
+- List SKUs: SELECT code, name, base_unit, status FROM skus LIMIT 10
+- Open sales orders: SELECT document_number, date, approval_status, grand_total FROM crm_sales_orders WHERE approval_status = 'DRAFT' ORDER BY date DESC LIMIT 10
+- Revenue by customer: SELECT c.name, SUM(so.grand_total) as total FROM crm_sales_orders so JOIN crm_customers c ON so.customer_id = c.id WHERE so.approval_status = 'APPROVED' GROUP BY c.name ORDER BY total DESC LIMIT 10
+- Visits by salesman: SELECT u.name, COUNT(*) as visits FROM crm_visit_logs vl JOIN users u ON vl.salesman_id = u.id GROUP BY u.name ORDER BY visits DESC LIMIT 10
 
-Refer to the database schema documentation in the knowledge base for complete table and column names.
-
-## Inventory Aging Analyzer Tools
-You have three specialized tools for inventory aging analysis (capital tied up in non-moving goods):
-- get_inventory_aging_summary: High-level KPIs (total value, dead/slow/active split). Use first when user asks about inventory health.
-- get_dead_stock_by_zone: Top dead-stock items in a zone sorted by value. Use when user asks "what to clear first" or "which items to recover".
-- get_aging_by_zone: Zone-by-zone breakdown of dead/slow/active value. Use when user asks "which zone has the most dead stock".
-
-Aging thresholds:
-- Dead stock: > 180 days since last stock movement
-- Slow moving: 30-180 days
-- Active: < 30 days
-
-When users ask about "dead stock", "slow moving inventory", "stagnant stock", "capital locked in inventory", "what to clearance", or "inventory value at risk", PREFER the inventory aging tools over generic SQL — they return structured, business-friendly data.
-The Inventory Aging Analyzer is available at /inventory-aging in the route catalog.${contextSection}`;
+Refer to the database schema documentation in the knowledge base for complete table and column names.${contextSection}`;
 }

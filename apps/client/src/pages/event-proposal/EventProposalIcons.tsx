@@ -16,7 +16,8 @@ export type EventProposalIconName =
   | "eye"
   | "document"
   | "calendar"
-  | "budget";
+  | "budget"
+  | "payment";
 
 interface EventProposalIconProps {
   name: EventProposalIconName;
@@ -41,6 +42,7 @@ const ICON_MAP: Record<EventProposalIconName, string> = {
   document: icons.eventProposalDocument,
   calendar: icons.eventProposalCalendar,
   budget: icons.eventProposalBudget,
+  payment: icons.eventProposalBudget,
 };
 
 export const EventProposalIcon = ({

@@ -19,12 +19,13 @@ type EventProposalDetail = {
   venue: string | null;
   eventDate: string | null;
   eventEndDate: string | null;
-  budget: number | null;
+  proposedBudget: number | null;
+  currency: string;
   status: string;
   description: string | null;
   area: { id: string; name: string } | null;
   createdBy: { id: string; name: string } | null;
-  skus: { id: string; name: string }[];
+  skus: { id: string; sku: { id: string; name: string; code: string | null } }[];
 };
 
 export const EventProposalDetailPage = () => {
@@ -118,7 +119,7 @@ export const EventProposalDetailPage = () => {
             <div className="so-detail-hero__title-stack">
               <span className="so-detail-hero__kicker">{intl.formatMessage({ id: "nav.programs", defaultMessage: "Programs" })}</span>
               <h1 className="so-detail-hero__title">{eventProposal.name}</h1>
-              <span className="so-detail-hero__sub">{eventProposal.code ?? "—"}</span>
+              <span className="so-detail-hero__sub">{eventProposal.documentNumber ?? "—"}</span>
             </div>
           </div>
         </div>
@@ -135,8 +136,8 @@ export const EventProposalDetailPage = () => {
         <div className="so-card__body">
           <div className="so-section so-section--2">
             <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "event_proposal.detail.code_label", defaultMessage: "Code" })}</span>
-              <span className="so-field__value">{eventProposal.code ?? "—"}</span>
+              <span className="so-field__label">{intl.formatMessage({ id: "event_proposal.detail.code_label", defaultMessage: "Document" })}</span>
+              <span className="so-field__value">{eventProposal.documentNumber ?? "—"}</span>
             </div>
             <div className="so-field">
               <span className="so-field__label">{intl.formatMessage({ id: "event_proposal.detail.name_label", defaultMessage: "Name" })}</span>
@@ -169,12 +170,12 @@ export const EventProposalDetailPage = () => {
             <div className="so-items-table">
               <div className="so-items-table__body">
                 {eventProposal.skus?.map((sku) => (
-                  <div key={sku.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/sku/${sku.id}`)}>
+                  <div key={sku.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/sku/${sku.sku.id}`)}>
                     <div className="so-items-table__td so-items-table__td--product">
                       <span className="so-items-table__icon" data-tint="blue" aria-hidden="true"><EventProposalIcon name="payment" size={16} /></span>
                       <div className="so-items-table__product">
-                        <span className="so-items-table__product-name">{sku.name}</span>
-                        {sku.code && <span className="so-items-table__product-code">{sku.code}</span>}
+                        <span className="so-items-table__product-name">{sku.sku.name}</span>
+                        {sku.sku.code && <span className="so-items-table__product-code">{sku.sku.code}</span>}
                       </div>
                     </div>
                     <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">

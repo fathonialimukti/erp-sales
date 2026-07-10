@@ -12,15 +12,37 @@ import { useToast } from "../../ui/useToast";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { ModulePage } from "../../components/ModulePage";
 import { EventProposalIcon } from "./EventProposalIcons";
+import type { CreateEventProposalInput, UpdateEventProposalInput } from "@repo/schemas/event-proposal";
 
 interface FormValues {
-  code: string;
   name: string;
+  eventType: string;
+  description: string;
+  venue: string;
+  eventDate: string;
+  eventEndDate: string;
+  organizerName: string;
+  organizerContact: string;
+  areaId: string;
+  proposedBudget: string;
+  currency: string;
 }
 
 type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
-const defaults = (): FormValues => ({ code: "", name: "" });
+const defaults = (): FormValues => ({
+  name: "",
+  eventType: "",
+  description: "",
+  venue: "",
+  eventDate: "",
+  eventEndDate: "",
+  organizerName: "",
+  organizerContact: "",
+  areaId: "",
+  proposedBudget: "",
+  currency: "IDR",
+});
 
 export const EventProposalFormPage = () => {
   const intl = useIntl();
@@ -41,15 +63,32 @@ export const EventProposalFormPage = () => {
     queryFn: () => trpcClient.eventProposal.detail.query({ id: id ?? "" }),
   });
 
+  const { data: areas } = useQuery({
+    queryKey: ["areaOptions"],
+    queryFn: () => trpcClient.area.list.query({ page: 1, limit: 100 }),
+  });
+
   const form = useForm({
-    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    defaultValues: (isEdit && data ? {
+      name: data.name,
+      eventType: data.eventType ?? "",
+      description: data.description ?? "",
+      venue: data.venue ?? "",
+      eventDate: data.eventDate,
+      eventEndDate: data.eventEndDate ?? "",
+      organizerName: data.organizerName ?? "",
+      organizerContact: data.organizerContact ?? "",
+      areaId: data.areaId,
+      proposedBudget: data.proposedBudget != null ? String(data.proposedBudget) : "",
+      currency: data.currency,
+    } : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: (d: FormValues) => trpcClient.eventProposal.create.mutate(d),
+    mutationFn: (d: CreateEventProposalInput) => trpcClient.eventProposal.create.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["eventProposalList"] });
       setResultMessage(intl.formatMessage({ id: "event_proposal.form.success.created", defaultMessage: "Region created" }));
@@ -63,7 +102,7 @@ export const EventProposalFormPage = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (d: FormValues & { currentId: string }) => trpcClient.eventProposal.update.mutate(d),
+    mutationFn: (d: UpdateEventProposalInput) => trpcClient.eventProposal.update.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["eventProposalList"] });
       queryClient.invalidateQueries({ queryKey: ["eventProposalDetail", id] });
@@ -80,10 +119,14 @@ export const EventProposalFormPage = () => {
   const runSave = () => {
     setModalStage("loading");
     const values = form.state.values as FormValues;
+    const payload = {
+      ...values,
+      proposedBudget: values.proposedBudget ? Number(values.proposedBudget) : null,
+    };
     if (isEdit && id) {
-      updateMutation.mutate({ ...values, currentId: id });
+      updateMutation.mutate({ ...payload, currentId: id } as UpdateEventProposalInput);
     } else {
-      createMutation.mutate(values);
+      createMutation.mutate(payload as CreateEventProposalInput);
     }
   };
 
@@ -142,39 +185,190 @@ export const EventProposalFormPage = () => {
           </div>
           <div className="so-card__body">
             <div className="so-section">
-              <form.Field name="code">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_code", defaultMessage: "Code" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "event_proposal.form.field_code_placeholder", defaultMessage: "Optional" })}
-                    />
-                  </div>
-                )}
-              </form.Field>
-
               <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
                 {(f) => (
                   <div className="so-field">
                     <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_name", defaultMessage: "Name" })} *
+                      {intl.formatMessage({ id: "event_proposal.form.field_name", defaultMessage: "Event name" })} *
                     </label>
                     <input
                       className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
                       type="text"
                       value={f.state.value ?? ""}
                       onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "event_proposal.form.field_name_placeholder", defaultMessage: "Region name" })}
                     />
                     {f.state.meta.errors.length > 0 && (
                       <span className="so-field__error">{f.state.meta.errors[0]}</span>
                     )}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="eventType">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_event_type", defaultMessage: "Event type" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="description">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_description", defaultMessage: "Description" })}
+                    </label>
+                    <textarea
+                      className="so-field__input"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="venue">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_venue", defaultMessage: "Venue" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="eventDate" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_event_date", defaultMessage: "Event date" })} *
+                    </label>
+                    <input
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      type="date"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="eventEndDate">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_event_end_date", defaultMessage: "Event end date" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="date"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="organizerName">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_organizer_name", defaultMessage: "Organizer name" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="organizerContact">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_organizer_contact", defaultMessage: "Organizer contact" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="areaId" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_area", defaultMessage: "Area" })} *
+                    </label>
+                    <select
+                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    >
+                      <option value="">{intl.formatMessage({ id: "event_proposal.form.field_area_placeholder", defaultMessage: "Select area" })}</option>
+                      {(areas?.data ?? []).map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                    {f.state.meta.errors.length > 0 && (
+                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="proposedBudget">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_proposed_budget", defaultMessage: "Proposed budget" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="number"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="currency">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "event_proposal.form.field_currency", defaultMessage: "Currency" })} *
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    />
                   </div>
                 )}
               </form.Field>

@@ -88,6 +88,63 @@ export const Dashboard = () => {
 
   const sales = data as SalesDashboard | undefined;
 
+  // "Today" agenda — today's visit logs + draft sales orders, merged into
+  // a single actionable rail. Turns the dashboard from a report into a
+  // launchpad.
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const todayVisitsQuery = useQuery({
+    queryKey: ["dashboard.todayVisits", todayISO],
+    queryFn: () =>
+      trpcClient.visitLog.list.query({
+        page: 1,
+        limit: 10,
+        search: "",
+      }),
+    staleTime: 30_000,
+  });
+
+  const draftOrdersQuery = useQuery({
+    queryKey: ["dashboard.draftOrders", todayISO],
+    queryFn: () =>
+      trpcClient.salesOrder.list.query({
+        page: 1,
+        limit: 10,
+        approvalStatus: "DRAFT",
+      }),
+    staleTime: 30_000,
+  });
+
+  const todayAgenda = useMemo(() => {
+    type AgendaItem = {
+      id: string;
+      type: "visit" | "order";
+      title: string;
+      subtitle: string;
+      href: string;
+      time: string;
+    };
+    const visits = (todayVisitsQuery.data?.data ?? []).map<AgendaItem>((v: any) => ({
+      id: v.id,
+      type: "visit",
+      title: v.outlet?.name ?? "Visit",
+      subtitle: v.purpose ?? v.approvalStatus ?? "",
+      href: `/visit-log/${v.id}`,
+      time: v.date ?? "",
+    }));
+    const orders = (draftOrdersQuery.data?.data ?? []).map<AgendaItem>((o: any) => ({
+      id: o.id,
+      type: "order",
+      title: o.documentNumber ?? "Draft order",
+      subtitle: o.customer?.name ?? "Draft",
+      href: `/sales-order/${o.id}`,
+      time: o.date ?? "",
+    }));
+    return [...visits, ...orders]
+      .sort((a, b) => (a.time < b.time ? 1 : a.time > b.time ? -1 : 0))
+      .slice(0, 8);
+  }, [todayVisitsQuery.data, draftOrdersQuery.data]);
+
   const revenueChartData = useMemo(
     () => (sales?.revenueTrend ?? []).map((p) => ({ date: p.date, label: formatShortDate(p.date), total: p.total })),
     [sales?.revenueTrend],
@@ -97,7 +154,7 @@ export const Dashboard = () => {
     () => [
       {
         id: "new-order",
-        icon: icons.newOrder,
+        icon: icons.dashNewOrder,
         label: intl.formatMessage({ id: "dashboard.action.new_order", defaultMessage: "New sales order" }),
         permission: "sales-order@create",
         href: "/sales-order/create",
@@ -105,7 +162,7 @@ export const Dashboard = () => {
       },
       {
         id: "new-visit",
-        icon: icons.newVisit,
+        icon: icons.dashNewVisit,
         label: intl.formatMessage({ id: "dashboard.action.new_visit", defaultMessage: "Log a visit" }),
         permission: "visit-log@create",
         href: "/visit-log/create",
@@ -113,7 +170,7 @@ export const Dashboard = () => {
       },
       {
         id: "new-customer",
-        icon: icons.newCustomer,
+        icon: icons.dashNewCustomer,
         label: intl.formatMessage({ id: "dashboard.action.new_customer", defaultMessage: "Add customer" }),
         permission: "customer@create",
         href: "/customer/create",
@@ -121,7 +178,7 @@ export const Dashboard = () => {
       },
       {
         id: "new-sku",
-        icon: icons.newSku,
+        icon: icons.dashNewSku,
         label: intl.formatMessage({ id: "dashboard.action.new_sku", defaultMessage: "Add SKU" }),
         permission: "sku@create",
         href: "/sku/create",
@@ -129,7 +186,7 @@ export const Dashboard = () => {
       },
       {
         id: "new-program",
-        icon: icons.newProgram,
+        icon: icons.dashNewProgram,
         label: intl.formatMessage({ id: "dashboard.action.new_program", defaultMessage: "New action program" }),
         permission: "action-program@create",
         href: "/action-program/create",
@@ -137,7 +194,7 @@ export const Dashboard = () => {
       },
       {
         id: "new-event",
-        icon: icons.newEvent,
+        icon: icons.dashNewEvent,
         label: intl.formatMessage({ id: "dashboard.action.new_event", defaultMessage: "New event proposal" }),
         permission: "event-proposal@create",
         href: "/event-proposal/create",
@@ -190,7 +247,7 @@ export const Dashboard = () => {
           </p>
         </div>
         <div className="ios-dash__hero-orb" aria-hidden="true">
-          <img src={icons.sun} alt="" className="ios-dash__hero-sun" />
+          <img src={icons.dashSun} alt="" className="ios-dash__hero-sun" />
         </div>
       </header>
 
@@ -211,7 +268,7 @@ export const Dashboard = () => {
               }`}
             >
               <img
-                src={sales.kpis.revenueDeltaPercent > 0 ? icons.arrowUp : icons.arrowDown}
+                src={sales.kpis.revenueDeltaPercent > 0 ? icons.dashArrowUp : icons.dashArrowDown}
                 alt=""
                 className="ios-dash__chip-arrow"
               />
@@ -256,7 +313,7 @@ export const Dashboard = () => {
             </ResponsiveContainer>
           ) : (
             <div className="ios-dash__primary-empty">
-              <img src={icons.sparkle} alt="" />
+              <img src={icons.dashSparkle} alt="" />
               <span>
                 {intl.formatMessage({ id: "dashboard.chart.no_data", defaultMessage: "No approved sales yet" })}
               </span>
@@ -268,7 +325,7 @@ export const Dashboard = () => {
       {/* ============== 3 SECONDARY METRIC ROWS (iOS list style) ============== */}
       <section className="ios-dash__metrics" aria-label="Key metrics">
         <IosMetricRow
-          icon={icons.orders}
+          icon={icons.dashOrders}
           tint="blue"
           label={intl.formatMessage({ id: "dashboard.kpi.open_orders", defaultMessage: "Open orders" })}
           value={sales ? formatCompact(sales.kpis.openOrders) : null}
@@ -280,7 +337,7 @@ export const Dashboard = () => {
           isLoading={isLoading}
         />
         <IosMetricRow
-          icon={icons.customers}
+          icon={icons.dashCustomers}
           tint="pink"
           label={intl.formatMessage({ id: "dashboard.kpi.customers", defaultMessage: "Customers" })}
           value={sales ? formatCompact(sales.kpis.customerCount) : null}
@@ -292,7 +349,7 @@ export const Dashboard = () => {
           isLoading={isLoading}
         />
         <IosMetricRow
-          icon={icons.visits}
+          icon={icons.dashVisits}
           tint="orange"
           label={intl.formatMessage({ id: "dashboard.kpi.visits", defaultMessage: "Visit logs" })}
           value={sales ? formatCompact(sales.kpis.visitCount) : null}
@@ -309,7 +366,7 @@ export const Dashboard = () => {
       <section className="ios-dash__card" aria-label="Revenue trend">
         <header className="ios-dash__card-header">
           <div className="ios-dash__card-icon" data-tint="green">
-            <img src={icons.chart} alt="" />
+            <img src={icons.dashChart} alt="" />
           </div>
           <div className="ios-dash__card-heading">
             <h2 className="ios-dash__card-title">
@@ -381,7 +438,7 @@ export const Dashboard = () => {
       <section className="ios-dash__card" aria-label="Top customers">
         <header className="ios-dash__card-header">
           <div className="ios-dash__card-icon" data-tint="yellow">
-            <img src={icons.trophy} alt="" />
+            <img src={icons.dashTrophy} alt="" />
           </div>
           <div className="ios-dash__card-heading">
             <h2 className="ios-dash__card-title">
@@ -439,7 +496,7 @@ export const Dashboard = () => {
             </div>
           ) : (
             <div className="ios-dash__empty">
-              <img src={icons.inbox} alt="" className="ios-dash__empty-icon" />
+              <img src={icons.dashInbox} alt="" className="ios-dash__empty-icon" />
               <span className="ios-dash__empty-title">
                 {intl.formatMessage({ id: "dashboard.chart.no_data", defaultMessage: "No approved sales yet" })}
               </span>
@@ -481,6 +538,63 @@ export const Dashboard = () => {
                 <span className="ios-dash__quick-label">{a.label}</span>
               </button>
             ))}
+        </div>
+      </section>
+
+      {/* ============== TODAY AGENDA — actionable launchpad ============== */}
+      <section className="ios-dash__today" aria-label="Today">
+        <header className="ios-dash__activity-header">
+          <h2 className="ios-dash__section-title">
+            {intl.formatMessage({ id: "dashboard.section.today", defaultMessage: "Today" })}
+          </h2>
+          <p className="ios-dash__section-sub">
+            {intl.formatMessage({
+              id: "dashboard.section.today_sub",
+              defaultMessage: "Your visits and drafts for the day",
+            })}
+          </p>
+        </header>
+        <div className="ios-dash__today-list">
+          {todayAgenda.length === 0 ? (
+            <div className="ios-dash__empty">
+              <img src={icons.dashClock} alt="" className="ios-dash__empty-icon" />
+              <span className="ios-dash__empty-title">
+                {intl.formatMessage({ id: "dashboard.today_empty", defaultMessage: "Nothing scheduled yet" })}
+              </span>
+              <span className="ios-dash__empty-text">
+                {intl.formatMessage({
+                  id: "dashboard.today_empty_sub",
+                  defaultMessage: "Log a visit or start a draft order to see it here.",
+                })}
+              </span>
+            </div>
+          ) : (
+            todayAgenda.map((item) => (
+              <button
+                key={`${item.type}-${item.id}`}
+                type="button"
+                className="ios-dash__today-row"
+                onClick={() => navigate(item.href)}
+              >
+                <span
+                  className="ios-dash__today-icon"
+                  data-tint={item.type === "visit" ? "orange" : "blue"}
+                  aria-hidden="true"
+                >
+                  <img src={item.type === "visit" ? icons.dashVisits : icons.dashOrders} alt="" />
+                </span>
+                <div className="ios-dash__today-body">
+                  <span className="ios-dash__today-title">{item.title}</span>
+                  <span className="ios-dash__today-sub">{item.subtitle}</span>
+                </div>
+                <span className="ios-dash__today-tag" data-type={item.type}>
+                  {item.type === "visit"
+                    ? intl.formatMessage({ id: "dashboard.today.visit", defaultMessage: "Visit" })
+                    : intl.formatMessage({ id: "dashboard.today.draft", defaultMessage: "Draft" })}
+                </span>
+              </button>
+            ))
+          )}
         </div>
       </section>
 
@@ -535,7 +649,7 @@ export const Dashboard = () => {
             ))
           ) : (
             <div className="ios-dash__empty">
-              <img src={icons.clock} alt="" className="ios-dash__empty-icon" />
+              <img src={icons.dashClock} alt="" className="ios-dash__empty-icon" />
               <span className="ios-dash__empty-title">
                 {intl.formatMessage({ id: "dashboard.activity_empty", defaultMessage: "No recent activity" })}
               </span>
@@ -573,6 +687,6 @@ const IosMetricRow = ({ icon, tint, label, value, detail, isLoading }: IosMetric
       )}
       {detail && <span className="ios-dash__metric-detail">{detail}</span>}
     </div>
-    <img src={icons.chevron} alt="" className="ios-dash__metric-chevron" />
+    <img src={icons.dashChevron} alt="" className="ios-dash__metric-chevron" />
   </div>
 );

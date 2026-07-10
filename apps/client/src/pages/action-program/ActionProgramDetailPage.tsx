@@ -13,6 +13,7 @@ import { ActionProgramIcon } from "./ActionProgramIcons";
 
 type ActionProgramDetail = {
   id: string;
+  code: string | null;
   documentNumber: string | null;
   name: string;
   type: string;
@@ -23,7 +24,7 @@ type ActionProgramDetail = {
   description: string | null;
   area: { id: string; name: string } | null;
   pic: { id: string; name: string } | null;
-  outlets: { id: string; name: string }[];
+  outlets: { id: string; name: string; code?: string | null }[];
   skus: { id: string; name: string }[];
 };
 

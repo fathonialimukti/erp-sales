@@ -998,6 +998,114 @@
 }
 
 /* ============================================================
+ * 9b. TODAY AGENDA RAIL
+ * ============================================================ */
+
+.ios-dash__today {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ios-dash__today-list {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--ios-radius-card);
+  background: var(--ios-bg-elevated);
+  box-shadow: var(--ios-shadow-card);
+  border: 1px solid var(--ios-separator);
+  overflow: hidden;
+}
+
+.ios-dash__today-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 150ms var(--ease-default);
+  font: inherit;
+  color: inherit;
+}
+
+.ios-dash__today-row + .ios-dash__today-row {
+  border-top: 1px solid var(--ios-separator);
+}
+
+.ios-dash__today-row:hover {
+  background: var(--ios-fill-quaternary);
+}
+
+.ios-dash__today-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ios-dash__today-icon img {
+  width: 18px;
+  height: 18px;
+}
+
+.ios-dash__today-icon[data-tint="orange"] { background: linear-gradient(160deg, #FED7AA, #EA580C); }
+.ios-dash__today-icon[data-tint="blue"]   { background: linear-gradient(160deg, #93C5FD, #2563EB); }
+
+.ios-dash__today-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.ios-dash__today-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ios-label);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ios-dash__today-sub {
+  font-size: 12.5px;
+  color: var(--ios-label-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ios-dash__today-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.01em;
+}
+
+.ios-dash__today-tag[data-type="visit"] {
+  background: color-mix(in srgb, #EA580C 16%, transparent);
+  color: #C2410C;
+}
+
+.ios-dash__today-tag[data-type="order"] {
+  background: color-mix(in srgb, #2563EB 16%, transparent);
+  color: #1D4ED8;
+}
+
+.dark .ios-dash__today-tag[data-type="visit"] { color: #FDBA74; }
+.dark .ios-dash__today-tag[data-type="order"] { color: #93C5FD; }
+
+/* ============================================================
  * 10. REDUCED MOTION
  * ============================================================ */
 

@@ -1,171 +1,233 @@
 /**
- * Custom colorful iOS-style icon assets.
- * SVG paths are versioned here so the dashboard can reference them
- * via `<img src={...} />` or as CSS backgrounds.
+ * Single icon registry for the whole app.
  *
- * Each icon is 64x64, uses a soft top-left gradient + white glyph
- * to mimic iOS app icons (rounded square with subtle highlight).
+ * All SVGs live in ./icons and use category prefixes so the folder is
+ * self-documenting:
+ *   nav-*    sidebar / chrome navigation
+ *   ui-*     generic chrome controls (search, bell, theme…)
+ *   brand-*  app brand mark
+ *   dash-*   colorful iOS-style dashboard + hero glyphs
+ *   action-* shared CRUD / table actions (back, edit, delete…)
+ *   <domain>-*  domain-specific glyphs (region-*, sku-*, …)
+ *
+ * Vite returns an asset URL string for every `import`, so no `?url` suffix
+ * is needed. Consume via `icons.<key>` (typed by `IconName`).
  */
-import iconRevenue from "./icon-revenue.svg";
-import iconOrders from "./icon-orders.svg";
-import iconCustomers from "./icon-customers.svg";
-import iconVisits from "./icon-visits.svg";
-import iconNewOrder from "./icon-new-order.svg";
-import iconNewVisit from "./icon-new-visit.svg";
-import iconNewCustomer from "./icon-new-customer.svg";
-import iconNewSku from "./icon-new-sku.svg";
-import iconNewProgram from "./icon-new-program.svg";
-import iconNewEvent from "./icon-new-event.svg";
-import iconChart from "./icon-chart.svg";
-import iconTrophy from "./icon-trophy.svg";
-import iconActivity from "./icon-activity.svg";
-import iconBolt from "./icon-bolt.svg";
-import iconInbox from "./icon-inbox.svg";
-import iconClock from "./icon-clock.svg";
-import iconSparkle from "./icon-sparkle.svg";
-import iconSearchGlass from "./icon-search-glass.svg";
-import iconSearchTileColor from "./icon-search-tile-color.svg";
-import iconSun from "./icon-sun.svg";
-import iconChevron from "./icon-chevron.svg";
-import iconArrowUp from "./icon-arrow-up.svg";
-import iconArrowDown from "./icon-arrow-down.svg";
 
-/* ── Shared action icons (used by ALL modules) ── */
-import iconActionBack from "./icons/icon-action-back.svg";
-import iconActionEdit from "./icons/icon-action-edit.svg";
-import iconActionDelete from "./icons/icon-action-delete.svg";
-import iconActionPlus from "./icons/icon-action-plus.svg";
-import iconActionSearch from "./icons/icon-action-search.svg";
-import iconActionCheck from "./icons/icon-action-check.svg";
-import iconActionClose from "./icons/icon-action-close.svg";
-import iconActionChevronRight from "./icons/icon-action-chevron-right.svg";
-import iconActionChevronDown from "./icons/icon-action-chevron-down.svg";
-import iconActionChevronLeft from "./icons/icon-action-chevron-left.svg";
-import iconActionMenuDots from "./icons/icon-action-menu-dots.svg";
-import iconActionEye from "./icons/icon-action-eye.svg";
+/* ── Brand ── */
+import brandLogo from "./icons/brand-logo.svg";
 
-/* ── Domain-specific icons ── */
-import iconRegionMap from "./icons/icon-region-map.svg";
-import iconRegionArea from "./icons/icon-region-area.svg";
-import iconRegionBuilding from "./icons/icon-region-building.svg";
-import iconAreaGrid from "./icons/icon-area-grid.svg";
-import iconAreaOutlet from "./icons/icon-area-outlet.svg";
-import iconAreaRegion from "./icons/icon-area-region.svg";
-import iconCustomerUser from "./icons/icon-customer-user.svg";
-import iconCustomerOutlet from "./icons/icon-customer-outlet.svg";
-import iconCustomerContacts from "./icons/icon-customer-contacts.svg";
-import iconCustomerCredit from "./icons/icon-customer-credit.svg";
-import iconCustomerAddress from "./icons/icon-customer-address.svg";
-import iconOutletStore from "./icons/icon-outlet-store.svg";
-import iconOutletLocation from "./icons/icon-outlet-location.svg";
-import iconOutletPhone from "./icons/icon-outlet-phone.svg";
-import iconOutletContact from "./icons/icon-outlet-contact.svg";
-import iconSkuCategoryTag from "./icons/icon-sku-category-tag.svg";
-import iconSkuCategoryBox from "./icons/icon-sku-category-box.svg";
-import iconSkuPackage from "./icons/icon-sku-package.svg";
-import iconSkuPrice from "./icons/icon-sku-price.svg";
-import iconVisitClipboard from "./icons/icon-visit-clipboard.svg";
-import iconVisitClock from "./icons/icon-visit-clock.svg";
-import iconVisitLocation from "./icons/icon-visit-location.svg";
-import iconActivityClipboard from "./icons/icon-activity-clipboard.svg";
-import iconActivityClock from "./icons/icon-activity-clock.svg";
-import iconActivityUser from "./icons/icon-activity-user.svg";
-import iconActionProgramDocument from "./icons/icon-action-program-document.svg";
-import iconActionProgramCalendar from "./icons/icon-action-program-calendar.svg";
-import iconActionProgramBudget from "./icons/icon-action-program-budget.svg";
-import iconEventProposalDocument from "./icons/icon-event-proposal-document.svg";
-import iconEventProposalCalendar from "./icons/icon-event-proposal-calendar.svg";
-import iconEventProposalBudget from "./icons/icon-event-proposal-budget.svg";
+/* ── Navigation (sidebar) ── */
+import navDashboard from "./icons/chrome-nav-dashboard.svg";
+import navRegion from "./icons/chrome-nav-region.svg";
+import navArea from "./icons/chrome-nav-area.svg";
+import navCustomer from "./icons/chrome-nav-customer.svg";
+import navOutlet from "./icons/chrome-nav-outlet.svg";
+import navSkuCategory from "./icons/chrome-nav-sku-category.svg";
+import navSku from "./icons/chrome-nav-sku.svg";
+import navSalesOrder from "./icons/chrome-nav-sales-order.svg";
+import navVisit from "./icons/chrome-nav-visit.svg";
+import navProgram from "./icons/chrome-nav-program.svg";
+import navEvent from "./icons/chrome-nav-event.svg";
+import navUsers from "./icons/chrome-nav-users.svg";
+import navRoles from "./icons/chrome-nav-roles.svg";
+import navActivity from "./icons/chrome-nav-activity.svg";
+import navNotifications from "./icons/chrome-nav-notifications.svg";
+
+/* ── UI controls ── */
+import uiSearch from "./icons/ui-search.svg";
+import uiSearchTile from "./icons/ui-search-tile.svg";
+import uiBell from "./icons/ui-bell.svg";
+import uiMenu from "./icons/ui-menu.svg";
+import uiSun from "./icons/ui-sun.svg";
+import uiMoon from "./icons/ui-moon.svg";
+import uiClock from "./icons/ui-clock.svg";
+
+/* ── Dashboard / hero (colorful iOS style) ── */
+import dashOrders from "./icons/dash-orders.svg";
+import dashCustomers from "./icons/dash-customers.svg";
+import dashVisits from "./icons/dash-visits.svg";
+import dashNewOrder from "./icons/dash-new-order.svg";
+import dashNewVisit from "./icons/dash-new-visit.svg";
+import dashNewCustomer from "./icons/dash-new-customer.svg";
+import dashNewSku from "./icons/dash-new-sku.svg";
+import dashNewProgram from "./icons/dash-new-program.svg";
+import dashNewEvent from "./icons/dash-new-event.svg";
+import dashChart from "./icons/dash-chart.svg";
+import navReports from "./icons/dash-chart.svg";
+import dashTrophy from "./icons/dash-trophy.svg";
+import dashInbox from "./icons/dash-inbox.svg";
+import dashSparkle from "./icons/dash-sparkle.svg";
+import dashSun from "./icons/dash-sun.svg";
+import dashClock from "./icons/dash-clock.svg";
+import dashChevron from "./icons/dash-chevron.svg";
+import dashArrowUp from "./icons/dash-arrow-up.svg";
+import dashArrowDown from "./icons/dash-arrow-down.svg";
+import dashSearchGlass from "./icons/dash-search-glass.svg";
+
+/* ── Shared actions ── */
+import actionBack from "./icons/action-back.svg";
+import actionEdit from "./icons/action-edit.svg";
+import actionDelete from "./icons/action-delete.svg";
+import actionPlus from "./icons/action-plus.svg";
+import actionSearch from "./icons/action-search.svg";
+import actionCheck from "./icons/action-check.svg";
+import actionClose from "./icons/action-close.svg";
+import actionChevronRight from "./icons/action-chevron-right.svg";
+import actionChevronDown from "./icons/action-chevron-down.svg";
+import actionChevronLeft from "./icons/action-chevron-left.svg";
+import actionMenuDots from "./icons/action-menu-dots.svg";
+import actionEye from "./icons/action-eye.svg";
+
+/* ── Domain glyphs ── */
+import regionMap from "./icons/region-map.svg";
+import regionArea from "./icons/region-area.svg";
+import regionBuilding from "./icons/region-building.svg";
+import areaGrid from "./icons/area-grid.svg";
+import areaOutlet from "./icons/area-outlet.svg";
+import areaRegion from "./icons/area-region.svg";
+import customerUser from "./icons/customer-user.svg";
+import customerOutlet from "./icons/customer-outlet.svg";
+import customerContacts from "./icons/customer-contacts.svg";
+import customerCredit from "./icons/customer-credit.svg";
+import customerAddress from "./icons/customer-address.svg";
+import outletStore from "./icons/outlet-store.svg";
+import outletLocation from "./icons/outlet-location.svg";
+import outletPhone from "./icons/outlet-phone.svg";
+import outletContact from "./icons/outlet-contact.svg";
+import skuCategoryTag from "./icons/sku-category-tag.svg";
+import skuCategoryBox from "./icons/sku-category-box.svg";
+import skuPackage from "./icons/sku-package.svg";
+import skuPrice from "./icons/sku-price.svg";
+import visitClipboard from "./icons/visit-clipboard.svg";
+import visitClock from "./icons/visit-clock.svg";
+import visitLocation from "./icons/visit-location.svg";
+import activityClipboard from "./icons/activity-clipboard.svg";
+import activityClock from "./icons/activity-clock.svg";
+import activityUser from "./icons/activity-user.svg";
+import actionProgramDocument from "./icons/action-program-document.svg";
+import actionProgramCalendar from "./icons/action-program-calendar.svg";
+import actionProgramBudget from "./icons/action-program-budget.svg";
+import eventProposalDocument from "./icons/event-proposal-document.svg";
+import eventProposalCalendar from "./icons/event-proposal-calendar.svg";
+import eventProposalBudget from "./icons/event-proposal-budget.svg";
 
 export const icons = {
-  revenue: iconRevenue,
-  orders: iconOrders,
-  customers: iconCustomers,
-  visits: iconVisits,
-  newOrder: iconNewOrder,
-  newVisit: iconNewVisit,
-  newCustomer: iconNewCustomer,
-  newSku: iconNewSku,
-  newProgram: iconNewProgram,
-  newEvent: iconNewEvent,
-  chart: iconChart,
-  trophy: iconTrophy,
-  activity: iconActivity,
-  bolt: iconBolt,
-  inbox: iconInbox,
-  clock: iconClock,
-  sparkle: iconSparkle,
-  searchGlass: iconSearchGlass,
-  searchTileColor: iconSearchTileColor,
-  sun: iconSun,
-  chevron: iconChevron,
-  arrowUp: iconArrowUp,
-  arrowDown: iconArrowDown,
+  /* Brand */
+  brandLogo,
 
-  /* Shared action icons */
-  actionBack: iconActionBack,
-  actionEdit: iconActionEdit,
-  actionDelete: iconActionDelete,
-  actionPlus: iconActionPlus,
-  actionSearch: iconActionSearch,
-  actionCheck: iconActionCheck,
-  actionClose: iconActionClose,
-  actionChevronRight: iconActionChevronRight,
-  actionChevronDown: iconActionChevronDown,
-  actionChevronLeft: iconActionChevronLeft,
-  actionMenuDots: iconActionMenuDots,
-  actionEye: iconActionEye,
+  /* Navigation */
+  navDashboard,
+  navRegion,
+  navArea,
+  navCustomer,
+  navOutlet,
+  navSkuCategory,
+  navSku,
+  navSalesOrder,
+  navVisit,
+  navProgram,
+  navEvent,
+  navUsers,
+  navRoles,
+  navActivity,
+  navNotifications,
 
-  /* Region domain */
-  regionMap: iconRegionMap,
-  regionArea: iconRegionArea,
-  regionBuilding: iconRegionBuilding,
+  /* UI controls */
+  uiSearch,
+  uiSearchTile,
+  uiBell,
+  uiMenu,
+  uiSun,
+  uiMoon,
+  uiClock,
 
-  /* Area domain */
-  areaGrid: iconAreaGrid,
-  areaOutlet: iconAreaOutlet,
-  areaRegion: iconAreaRegion,
+  /* Dashboard / hero */
+  dashOrders,
+  dashCustomers,
+  dashVisits,
+  dashNewOrder,
+  dashNewVisit,
+  dashNewCustomer,
+  dashNewSku,
+  dashNewProgram,
+  dashNewEvent,
+  dashChart,
+  navReports,
+  dashTrophy,
+  dashInbox,
+  dashSparkle,
+  dashSun,
+  dashClock,
+  dashChevron,
+  dashArrowUp,
+  dashArrowDown,
+  dashSearchGlass,
 
-  /* Customer domain */
-  customerUser: iconCustomerUser,
-  customerOutlet: iconCustomerOutlet,
-  customerContacts: iconCustomerContacts,
-  customerCredit: iconCustomerCredit,
-  customerAddress: iconCustomerAddress,
+  /* Shared actions */
+  actionBack,
+  actionEdit,
+  actionDelete,
+  actionPlus,
+  actionSearch,
+  actionCheck,
+  actionClose,
+  actionChevronRight,
+  actionChevronDown,
+  actionChevronLeft,
+  actionMenuDots,
+  actionEye,
 
-  /* Outlet domain */
-  outletStore: iconOutletStore,
-  outletLocation: iconOutletLocation,
-  outletPhone: iconOutletPhone,
-  outletContact: iconOutletContact,
+  /* Region */
+  regionMap,
+  regionArea,
+  regionBuilding,
 
-  /* SKU Category domain */
-  skuCategoryTag: iconSkuCategoryTag,
-  skuCategoryBox: iconSkuCategoryBox,
+  /* Area */
+  areaGrid,
+  areaOutlet,
+  areaRegion,
 
-  /* SKU domain */
-  skuPackage: iconSkuPackage,
-  skuPrice: iconSkuPrice,
+  /* Customer */
+  customerUser,
+  customerOutlet,
+  customerContacts,
+  customerCredit,
+  customerAddress,
 
-  /* Visit Log domain */
-  visitClipboard: iconVisitClipboard,
-  visitClock: iconVisitClock,
-  visitLocation: iconVisitLocation,
+  /* Outlet */
+  outletStore,
+  outletLocation,
+  outletPhone,
+  outletContact,
 
-  /* Activity Log domain */
-  activityClipboard: iconActivityClipboard,
-  activityClock: iconActivityClock,
-  activityUser: iconActivityUser,
+  /* SKU Category */
+  skuCategoryTag,
+  skuCategoryBox,
 
-  /* Action Program domain */
-  actionProgramDocument: iconActionProgramDocument,
-  actionProgramCalendar: iconActionProgramCalendar,
-  actionProgramBudget: iconActionProgramBudget,
+  /* SKU */
+  skuPackage,
+  skuPrice,
 
-  /* Event Proposal domain */
-  eventProposalDocument: iconEventProposalDocument,
-  eventProposalCalendar: iconEventProposalCalendar,
-  eventProposalBudget: iconEventProposalBudget,
+  /* Visit Log */
+  visitClipboard,
+  visitClock,
+  visitLocation,
+
+  /* Activity Log */
+  activityClipboard,
+  activityClock,
+  activityUser,
+
+  /* Action Program */
+  actionProgramDocument,
+  actionProgramCalendar,
+  actionProgramBudget,
+
+  /* Event Proposal */
+  eventProposalDocument,
+  eventProposalCalendar,
+  eventProposalBudget,
 } as const;
 
 export type IconName = keyof typeof icons;

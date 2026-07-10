@@ -1,9 +1,9 @@
 import { useLocation } from "react-router";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ICONS } from "../assets/chrome-icons";
+import { icons } from "../assets/icons";
 import {
   authUserAtom,
   notificationsOpenAtom,
@@ -15,6 +15,7 @@ import { localeSymbols, supportedLocales } from "../lib/locale";
 import { UserMenuTrigger } from "./UserMenuPopover";
 import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
 import { trpcClient } from "../lib/trpc";
+import { showPushNotification } from "../lib/push-notification";
 import "./Topbar.css";
 
 const findPageMeta = (
@@ -78,6 +79,23 @@ export const Topbar = () => {
   const unreadCount =
     (unread as { count?: number } | undefined)?.count ?? 0;
 
+  // Surface new notifications as native desktop toasts (Tauri advantage).
+  // Fire only when the unread count grows past what we've already shown.
+  const seenCountRef = useRef(0);
+  useEffect(() => {
+    if (unreadCount > seenCountRef.current) {
+      void showPushNotification(
+        intl.formatMessage({ id: "notification.native_title", defaultMessage: "New notification" }),
+        intl.formatMessage(
+          { id: "notification.native_body", defaultMessage: "You have {count} unread notification(s)" },
+          { count: unreadCount },
+        ),
+        "/notifications",
+      );
+    }
+    seenCountRef.current = unreadCount;
+  }, [unreadCount, intl]);
+
   const time = now.toLocaleTimeString(intl.locale, {
     hour: "2-digit",
     minute: "2-digit",
@@ -99,7 +117,7 @@ export const Topbar = () => {
             defaultMessage: "Toggle sidebar",
           })}
         >
-          <img src={ICONS.ui.menu} alt="" />
+          <img src={icons.uiMenu} alt="" />
         </button>
         <div className="ios-tb__title">
           <span className="ios-tb__title-kicker">{kickerLabel}</span>
@@ -115,7 +133,7 @@ export const Topbar = () => {
           aria-hidden="true"
           title={intl.formatMessage({ id: "common.time", defaultMessage: "Local time" })}
         >
-          <img src={ICONS.ui.clock} alt="" className="ios-tb__chip-icon" />
+          <img src={icons.uiClock} alt="" className="ios-tb__chip-icon" />
           <span className="ios-tb__chip-text">{time}</span>
         </div>
 
@@ -144,7 +162,7 @@ export const Topbar = () => {
           aria-expanded={notifsOpen}
           onClick={() => setNotifsOpen((prev) => !prev)}
         >
-          <img src={ICONS.ui.bell} alt="" />
+          <img src={icons.uiBell} alt="" />
           {unreadCount > 0 && <span className="ios-tb__icon-dot" aria-hidden="true" />}
         </button>
 
@@ -154,7 +172,7 @@ export const Topbar = () => {
           aria-label={intl.formatMessage({ id: "nav.theme", defaultMessage: "Theme" })}
           onClick={toggleTheme}
         >
-          <img src={theme === "dark" ? ICONS.ui.sun : ICONS.ui.moon} alt="" />
+          <img src={theme === "dark" ? icons.uiSun : icons.uiMoon} alt="" />
         </button>
 
         {user && (

@@ -12,15 +12,21 @@ import { useToast } from "../../ui/useToast";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { ModulePage } from "../../components/ModulePage";
 import { SkuIcon } from "./SkuIcons";
+import type { CreateSkuInput, UpdateSkuInput } from "@repo/schemas/sku";
 
 interface FormValues {
   code: string;
   name: string;
+  description: string;
+  categoryId: string;
+  basePrice: string;
+  baseUnit: string;
+  status: string;
 }
 
 type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
-const defaults = (): FormValues => ({ code: "", name: "" });
+const defaults = (): FormValues => ({ code: "", name: "", description: "", categoryId: "", basePrice: "", baseUnit: "pcs", status: "ACTIVE" });
 
 export const SkuFormPage = () => {
   const intl = useIntl();
@@ -41,15 +47,28 @@ export const SkuFormPage = () => {
     queryFn: () => trpcClient.sku.detail.query({ id: id ?? "" }),
   });
 
+  const { data: categories } = useQuery({
+    queryKey: ["skuCategoryOptions"],
+    queryFn: () => trpcClient.skuCategory.list.query({ page: 1, limit: 100 }),
+  });
+
   const form = useForm({
-    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    defaultValues: (isEdit && data ? {
+      code: data.code ?? "",
+      name: data.name,
+      description: data.description ?? "",
+      categoryId: data.categoryId ?? "",
+      basePrice: data.basePrice != null ? String(data.basePrice) : "",
+      baseUnit: data.baseUnit,
+      status: data.status,
+    } : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: (d: FormValues) => trpcClient.sku.create.mutate(d),
+    mutationFn: (d: CreateSkuInput) => trpcClient.sku.create.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["skuList"] });
       setResultMessage(intl.formatMessage({ id: "sku.form.success.created", defaultMessage: "Region created" }));
@@ -63,7 +82,7 @@ export const SkuFormPage = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (d: FormValues & { currentId: string }) => trpcClient.sku.update.mutate(d),
+    mutationFn: (d: UpdateSkuInput) => trpcClient.sku.update.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["skuList"] });
       queryClient.invalidateQueries({ queryKey: ["skuDetail", id] });
@@ -80,10 +99,15 @@ export const SkuFormPage = () => {
   const runSave = () => {
     setModalStage("loading");
     const values = form.state.values as FormValues;
+    const payload = {
+      ...values,
+      basePrice: values.basePrice ? Number(values.basePrice) : null,
+      categoryId: values.categoryId || null,
+    };
     if (isEdit && id) {
-      updateMutation.mutate({ ...values, currentId: id });
+      updateMutation.mutate({ ...payload, currentId: id } as UpdateSkuInput);
     } else {
-      createMutation.mutate(values);
+      createMutation.mutate(payload as CreateSkuInput);
     }
   };
 
@@ -170,11 +194,100 @@ export const SkuFormPage = () => {
                       type="text"
                       value={f.state.value ?? ""}
                       onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "sku.form.field_name_placeholder", defaultMessage: "Region name" })}
+                      placeholder={intl.formatMessage({ id: "sku.form.field_name_placeholder", defaultMessage: "Product name" })}
                     />
                     {f.state.meta.errors.length > 0 && (
                       <span className="so-field__error">{f.state.meta.errors[0]}</span>
                     )}
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="description">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "sku.form.field_description", defaultMessage: "Description" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "sku.form.field_description_placeholder", defaultMessage: "Optional" })}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="categoryId">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "sku.form.field_category", defaultMessage: "Category" })}
+                    </label>
+                    <select
+                      className="so-field__input"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    >
+                      <option value="">{intl.formatMessage({ id: "sku.form.field_category_placeholder", defaultMessage: "Select category" })}</option>
+                      {(categories?.data ?? []).map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="basePrice">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "sku.form.field_base_price", defaultMessage: "Base price" })}
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="number"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "sku.form.field_base_price_placeholder", defaultMessage: "Optional" })}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="baseUnit">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "sku.form.field_base_unit", defaultMessage: "Base unit" })} *
+                    </label>
+                    <input
+                      className="so-field__input"
+                      type="text"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                      placeholder={intl.formatMessage({ id: "sku.form.field_base_unit_placeholder", defaultMessage: "e.g. pcs" })}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <form.Field name="status">
+                {(f) => (
+                  <div className="so-field">
+                    <label className="so-field__label">
+                      {intl.formatMessage({ id: "sku.form.field_status", defaultMessage: "Status" })} *
+                    </label>
+                    <select
+                      className="so-field__input"
+                      value={f.state.value ?? ""}
+                      onChange={(e) => f.handleChange(e.target.value)}
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                    </select>
                   </div>
                 )}
               </form.Field>

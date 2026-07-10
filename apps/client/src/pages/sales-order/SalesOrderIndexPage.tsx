@@ -150,7 +150,7 @@ export const SalesOrderIndexPage = () => {
         cell: ({ row }) => (
           <span className="so-doc">
             <span className="so-doc__icon" data-tint="blue" aria-hidden="true">
-              <img src={icons.orders} alt="" />
+              <img src={icons.dashOrders} alt="" />
             </span>
             <span className="so-doc__text">
               <span className="so-doc__number">
@@ -335,7 +335,7 @@ export const SalesOrderIndexPage = () => {
               className="so-hero__cta"
               onClick={() => navigate("/sales-order/create")}
             >
-              <img src={icons.newOrder} alt="" className="so-hero__cta-icon" />
+              <img src={icons.dashNewOrder} alt="" className="so-hero__cta-icon" />
               {intl.formatMessage({ id: "sales_order.index.create_button", defaultMessage: "New order" })}
             </button>
           )}
@@ -376,7 +376,7 @@ export const SalesOrderIndexPage = () => {
       <div className="so-toolbar">
         <div className="so-search">
           <span className="so-search__icon" aria-hidden="true">
-            <img src={icons.searchGlass} alt="" />
+            <img src={icons.dashSearchGlass} alt="" />
           </span>
           <Input
             className="so-search__input"
@@ -522,7 +522,7 @@ export const SalesOrderIndexPage = () => {
               className="so-state__cta"
               onClick={() => navigate("/sales-order/create")}
             >
-              <img src={icons.newOrder} alt="" className="so-state__cta-icon" />
+              <img src={icons.dashNewOrder} alt="" className="so-state__cta-icon" />
               {intl.formatMessage({ id: "sales_order.index.create_button", defaultMessage: "New order" })}
             </button>
           )}

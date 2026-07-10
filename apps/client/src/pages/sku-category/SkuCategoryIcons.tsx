@@ -15,7 +15,8 @@ export type SkuCategoryIconName =
   | "menu-dots"
   | "eye"
   | "category"
-  | "sku";
+  | "sku"
+  | "tag";
 
 interface SkuCategoryIconProps {
   name: SkuCategoryIconName;
@@ -39,6 +40,7 @@ const ICON_MAP: Record<SkuCategoryIconName, string> = {
   eye: icons.actionEye,
   category: icons.skuCategoryTag,
   sku: icons.skuCategoryBox,
+  tag: icons.skuCategoryTag,
 };
 
 export const SkuCategoryIcon = ({

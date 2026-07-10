@@ -1,52 +1,33 @@
-# ERP Warehouse Management System Overview
+# ERP Sales Management System Overview
 
-This is a Warehouse ERP (Enterprise Resource Planning) system for managing warehouse operations including receiving goods, shipping, inventory, and stock management.
+This is a Sales ERP (Customer Relationship Management + Sales Order) system for managing the sales field force, customers, outlets, products (SKUs), sales orders, visit logs, and promotional programs.
 
-## Catalog Structure
+## Domain Hierarchy
 
-The item catalog is split into three types, all stored as SKUs:
+The data model is a geographic + account hierarchy:
 
-- **Raw Material** (`type: RAW_MATERIAL`) — input materials received from suppliers (e.g. Rice Paddy 25kg, Palm Oil Drum 20L)
-- **Packaging Material** (`type: PACKAGING_MATERIAL`) — packaging components received from suppliers (e.g. PET Bottle 1L, PP Woven Sack)
-- **Finished Good** (`type: FINISHED_GOOD`) — manufactured products ready for sale (e.g. Refined Cooking Oil 1L, Premium White Rice 5kg)
+- **Region** — top-level sales territory (e.g. "Java Island")
+- **Area** — a sub-territory inside a Region (e.g. "Jakarta Selatan")
+- **Customer** — a company / account that buys goods
+- **Outlet** — a physical store belonging to a Customer, located in an Area
+- **Salesman (User)** — a field user assigned to an Area
 
-### Where Each Type is Managed
+## Catalog
 
-| SKU Type | Managed From | Page |
-|---|---|---|
-| Raw Material | Supplier detail page | `/suppliers/:id` |
-| Packaging Material | Supplier detail page | `/suppliers/:id` |
-| Finished Good | Product page | `/products` |
-| All (read-only view) | SKU overview page | `/skus` |
+- **SKU Category** — groups products (e.g. "Beverages", "Snacks")
+- **SKU** — a sellable product with a base price and unit (e.g. "Refined Cooking Oil 1L")
+
+## Transactions
+
+- **Sales Order** — an order placed by an Outlet, containing SKU line items, with an approval workflow (DRAFT -> PROPOSED -> APPROVED/REJECTED)
+- **Visit Log** — a field-sales visit to an Outlet, with check-in/check-out, purpose, and notes
+- **Action Program** — a promotional program (discount, bundle, rebate, loyalty) targeting outlets and SKUs in an Area, with a multi-level approval chain
+- **Event Proposal** — a marketing event proposal for an Area with a proposed budget
 
 ## Main Features
 
-- **Receiving Transactions**: Record goods received from suppliers into the warehouse
-- **Shipments**: Record goods shipped out to customers
-- **WIP Completions**: Record work-in-progress completions from production
-- **WIP Issues**: Record materials issued to work-in-progress production
-- **RMA Receipts**: Record returned merchandise authorizations from customers
-- **Return to Supplier**: Record goods returned back to suppliers
-- **Subinventory Transfer**: Transfer goods between storage locations within the warehouse
-- **Loss Transactions**: Record lost or damaged inventory
-- **Found Transactions**: Record inventory found during cycle counts
-- **Disposals**: Record disposed/scrapped inventory
-
-## Supporting Modules
-
-- **SKU Overview** (`/skus`): Read-only view of all SKUs across 3 tabs — Raw Material, Packaging Material, Finished Goods
-- **Supplier Management** (`/suppliers`): Manage supplier info and their supplied materials (raw + packaging SKUs)
-- **Product Management** (`/products`): Manage finished goods SKUs
-- **Warehouse Management** (`/warehouse`): Manage warehouse facilities and storage locations
-- **User Management** (`/users`): Manage system users (admin only)
-- **Access Control** (`/access-control`): Manage roles and permissions (admin only)
-- **Stock Movement** (`/stock-movement`): View stock movement history
-- **Activity Log** (`/activity-logs`): View audit trail of system actions
-
-## Document Lifecycle
-
-Most transaction documents follow this approval workflow:
-1. **DRAFT** — Initial state, document is being created and can be edited
-2. **PROPOSED** — Document has been submitted for approval
-3. **APPROVED** — Document has been approved and inventory has been updated
-4. **REJECTED** — Document has been rejected and needs revision
+- Browse and manage master data: Regions, Areas, Customers, Outlets, SKU Categories, SKUs
+- Create and approve Sales Orders
+- Log and approve field Visits
+- Plan and approve Action Programs and Event Proposals
+- Review Activity Logs (audit trail) and Notifications

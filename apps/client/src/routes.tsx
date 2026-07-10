@@ -3,6 +3,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { PrivateLayout } from './layouts/PrivateLayout';
 import { PublicLayout } from './layouts/PublicLayout';
 import { Dashboard } from './pages/Dashboard';
+import { ReportsHub } from './pages/reports/ReportsHub';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RouteErrorPage } from './pages/RouteErrorPage';
@@ -74,6 +75,10 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: <Dashboard />,
+      },
+      {
+        path: 'reports',
+        element: <ReportsHub />,
       },
       {
         path: 'region',

@@ -16,7 +16,8 @@ export type ActionProgramIconName =
   | "eye"
   | "document"
   | "calendar"
-  | "budget";
+  | "budget"
+  | "outlet";
 
 interface ActionProgramIconProps {
   name: ActionProgramIconName;
@@ -41,6 +42,7 @@ const ICON_MAP: Record<ActionProgramIconName, string> = {
   document: icons.actionProgramDocument,
   calendar: icons.actionProgramCalendar,
   budget: icons.actionProgramBudget,
+  outlet: icons.outletStore,
 };
 
 export const ActionProgramIcon = ({

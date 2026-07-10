@@ -3,7 +3,7 @@ import { useIntl } from "react-intl";
 import { useAtom, useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ICONS } from "../assets/chrome-icons";
+import { icons } from "../assets/icons";
 import { hasPermissionAtom, searchOpenAtom } from "../lib/atoms";
 import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
 import { trpcClient } from "../lib/trpc";
@@ -81,6 +81,30 @@ export const SearchPalette = () => {
     }));
   }, [hasPermission, intl]);
 
+  // "Global create" shortcuts — shown when the query is empty or matches
+  // a create keyword. Permission-gated so users only see what they can do.
+  const createActions = useMemo<SearchResult[]>(() => {
+    const actions: Array<{ id: string; href: string; labelId: string; label: string; permission: string; icon?: string }> = [
+      { id: "create-sales-order", href: "/sales-order/create", labelId: "search.create.sales_order", label: "New sales order", permission: "sales-order@create", icon: icons.dashNewOrder },
+      { id: "create-customer", href: "/customer/create", labelId: "search.create.customer", label: "New customer", permission: "customer@create", icon: icons.dashNewCustomer },
+      { id: "create-visit", href: "/visit-log/create", labelId: "search.create.visit", label: "Log a visit", permission: "visit-log@create", icon: icons.dashNewVisit },
+      { id: "create-sku", href: "/sku/create", labelId: "search.create.sku", label: "New SKU", permission: "sku@create", icon: icons.dashNewSku },
+      { id: "create-action-program", href: "/action-program/create", labelId: "search.create.action_program", label: "New action program", permission: "action-program@create", icon: icons.dashNewProgram },
+      { id: "create-event-proposal", href: "/event-proposal/create", labelId: "search.create.event_proposal", label: "New event proposal", permission: "event-proposal@create", icon: icons.dashNewEvent },
+    ];
+    return actions
+      .filter((a) => hasPermission(a.permission))
+      .map((a) => ({
+        kind: "page" as const,
+        id: a.id,
+        href: a.href,
+        label: intl.formatMessage({ id: a.labelId, defaultMessage: a.label }),
+        hint: intl.formatMessage({ id: "search.hint.create", defaultMessage: "Create new" }),
+        icon: a.icon,
+        tint: "green",
+      }));
+  }, [hasPermission, intl]);
+
   // Debounced query for live search.
   const debouncedQuery = useDebounced(query, 220);
 
@@ -124,10 +148,22 @@ export const SearchPalette = () => {
   });
 
   // Build merged result list (nav pages filter live; entity results
-  // come from tRPC).
+  // come from tRPC; create shortcuts surface on empty / "new" queries).
   const results = useMemo<SearchResult[]>(() => {
     const q = normalize(query);
-    if (!q) return navPages.slice(0, 10);
+    const isCreateIntent = /^(new|create|\+|add|buat|baru)/.test(q);
+
+    if (!q) {
+      return [...createActions, ...navPages].slice(0, 12);
+    }
+
+    if (isCreateIntent) {
+      const matched = createActions.filter((a) => a.label.toLowerCase().includes(q) || a.hint.toLowerCase().includes(q));
+      const filteredPages = navPages.filter(
+        (r) => r.label.toLowerCase().includes(q) || r.href.toLowerCase().includes(q),
+      );
+      return [...matched, ...filteredPages].slice(0, 12);
+    }
 
     const filteredPages = navPages.filter(
       (r) => r.label.toLowerCase().includes(q) || r.href.toLowerCase().includes(q),
@@ -261,7 +297,7 @@ export const SearchPalette = () => {
       <div className="ios-search__panel" role="document">
         <div className="ios-search__input-row">
           <span className="ios-search__input-icon" aria-hidden="true">
-            <img src={ICONS.ui.search} alt="" />
+            <img src={icons.uiSearch} alt="" />
           </span>
           <input
             ref={inputRef}

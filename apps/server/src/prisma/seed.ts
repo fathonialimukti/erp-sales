@@ -37,6 +37,8 @@ const PERMISSIONS = [
   // Activity Log
   { name: "activity_log@read", description: "Read activity logs" },
 
+  { name: "report@read", description: "Read reports" },
+
   // Notification
   { name: "notification@read", description: "View notifications" },
   { name: "notification@delete", description: "Delete notifications" },

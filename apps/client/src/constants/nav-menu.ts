@@ -1,4 +1,4 @@
-import { ICONS } from "../assets/chrome-icons";
+import { icons } from "../assets/icons";
 
 export interface NavMenuItem {
   name: string;
@@ -11,46 +11,52 @@ export interface NavMenuItem {
 export const NAV_MENU: NavMenuItem[] = [
   {
     name: "nav.dashboard",
-    icon: ICONS.nav.dashboard,
+    icon: icons.navDashboard,
     href: "/dashboard",
   },
   {
+    name: "nav.reports",
+    icon: icons.navReports,
+    href: "/reports",
+    permission: "report@read",
+  },
+  {
     name: "nav.master_data",
-    icon: ICONS.nav.region,
+    icon: icons.navRegion,
     children: [
       {
         name: "nav.region",
-        icon: ICONS.nav.region,
+        icon: icons.navRegion,
         href: "/region",
         permission: "region@read",
       },
       {
         name: "nav.area",
-        icon: ICONS.nav.area,
+        icon: icons.navArea,
         href: "/area",
         permission: "area@read",
       },
       {
         name: "nav.customer",
-        icon: ICONS.nav.customer,
+        icon: icons.navCustomer,
         href: "/customer",
         permission: "customer@read",
       },
       {
         name: "nav.outlet",
-        icon: ICONS.nav.outlet,
+        icon: icons.navOutlet,
         href: "/outlet",
         permission: "outlet@read",
       },
       {
         name: "nav.sku_category",
-        icon: ICONS.nav.skuCategory,
+        icon: icons.navSkuCategory,
         href: "/sku-category",
         permission: "sku@read",
       },
       {
         name: "nav.sku",
-        icon: ICONS.nav.sku,
+        icon: icons.navSku,
         href: "/sku",
         permission: "sku@read",
       },
@@ -58,11 +64,11 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.sales",
-    icon: ICONS.nav.salesOrder,
+    icon: icons.navSalesOrder,
     children: [
       {
         name: "nav.sales_order",
-        icon: ICONS.nav.salesOrder,
+        icon: icons.navSalesOrder,
         href: "/sales-order",
         permission: "sales-order@read",
       },
@@ -70,11 +76,11 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.field_ops",
-    icon: ICONS.nav.visit,
+    icon: icons.navVisit,
     children: [
       {
         name: "nav.visit_log",
-        icon: ICONS.nav.visit,
+        icon: icons.navVisit,
         href: "/visit-log",
         permission: "visit-log@read",
       },
@@ -82,17 +88,17 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.programs",
-    icon: ICONS.nav.program,
+    icon: icons.navProgram,
     children: [
       {
         name: "nav.action_program",
-        icon: ICONS.nav.program,
+        icon: icons.navProgram,
         href: "/action-program",
         permission: "action-program@read",
       },
       {
         name: "nav.event_proposal",
-        icon: ICONS.nav.event,
+        icon: icons.navEvent,
         href: "/event-proposal",
         permission: "event-proposal@read",
       },
@@ -100,29 +106,29 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.system",
-    icon: ICONS.nav.users,
+    icon: icons.navUsers,
     children: [
       {
         name: "nav.users",
-        icon: ICONS.nav.users,
+        icon: icons.navUsers,
         href: "/users",
         permission: "user@read",
       },
       {
         name: "nav.access_control",
-        icon: ICONS.nav.roles,
+        icon: icons.navRoles,
         href: "/access-control",
         permission: "role@read",
       },
       {
         name: "nav.activity_logs",
-        icon: ICONS.nav.activity,
+        icon: icons.navActivity,
         href: "/activity-logs",
         permission: "activity_log@read",
       },
       {
         name: "nav.notifications_admin",
-        icon: ICONS.nav.notifications,
+        icon: icons.navNotifications,
         href: "/notifications",
         permission: "notification@read",
       },

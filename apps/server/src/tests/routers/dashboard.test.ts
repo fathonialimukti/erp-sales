@@ -32,8 +32,5 @@ describe('dashboard router', () => {
     expect(sales.revenueTrend).toBeDefined();
     expect(sales.topCustomers).toBeDefined();
     expect(sales.recentActivity).toBeDefined();
-
-    const feed = await caller.dashboard.activityFeed({ limit: 5 });
-    expect(feed.data).toBeDefined();
   });
 });

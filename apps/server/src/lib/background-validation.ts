@@ -72,7 +72,7 @@ async function runValidation(orderId: string, userId: string, userName: string) 
 
     // If valid and auto-proposed, notify approvers
     if (result.valid) {
-      await notifyApprovers(orderId, order.documentNumber, order.customer.name, userId);
+      await notifyApprovers(orderId, order.documentNumber, order.customer?.name ?? 'N/A', userId);
     } else {
       // If invalid, notify creator with AI feedback
       await notifyCreatorOfFailure(orderId, order.documentNumber, order.createdById, userId, result);
