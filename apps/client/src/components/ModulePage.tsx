@@ -101,11 +101,6 @@ export const ModuleSearch = ({ value, onChange, placeholder, searchIcon, clearIc
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       aria-label={placeholder}
-      style={{
-        flex: "1 1 auto", minWidth: 0, width: "100%", height: "100%", minHeight: 0,
-        padding: "0 0.5rem", background: "transparent", border: 0, outline: "none",
-        fontSize: "0.9375rem", color: "var(--color-foreground)",
-      }}
     />
     {value && (
       <button type="button" className="m-search__clear" onClick={() => onChange("")} aria-label={clearLabel}>
@@ -271,82 +266,3 @@ export const ModuleDetailSummary = ({ fields }: ModuleDetailSummaryProps) => (
     </div>
   </div>
 );
-
-/* ============================================================
- * ModuleRelatedList — related items list (e.g., areas in region).
- * ============================================================ */
-
-interface ModuleRelatedItem {
-  id: string;
-  name: string;
-  code?: string | null;
-}
-
-interface ModuleRelatedListProps {
-  title: string;
-  count: number;
-  icon: ReactNode;
-  items: ModuleRelatedItem[];
-  emptyTitle: string;
-  emptyIcon: ReactNode;
-  onItemClick: (item: ModuleRelatedItem) => void;
-}
-
-export const ModuleRelatedList = ({ title, count, icon, items, emptyTitle, emptyIcon, onItemClick }: ModuleRelatedListProps) => (
-  <div className="m-detail__related">
-    <div className="m-detail__related-header">
-      <h2 className="m-detail__related-title">{title}</h2>
-      <span className="m-badge">{count}</span>
-    </div>
-    {items.length === 0 ? (
-      <div className="m-empty" style={{ padding: "2rem 1rem" }}>
-        {emptyIcon}
-        <h3 className="m-empty__title">{emptyTitle}</h3>
-      </div>
-    ) : (
-      <div className="m-detail__related-list">
-        {items.map((item) => (
-          <div key={item.id} className="m-detail__related-item" onClick={() => onItemClick(item)}>
-            <span className="m-detail__related-icon">{icon}</span>
-            <span className="m-detail__related-text">
-              <span className="m-detail__related-name">{item.name}</span>
-              <span className="m-detail__related-code">{item.code ?? "—"}</span>
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
-/* ============================================================
- * ModuleFormPage — form page wrapper with hero + form card.
- * ============================================================ */
-
-interface ModuleFormPageProps {
-  kicker: string;
-  title: string;
-  backTo: string;
-  backIcon: ReactNode;
-  backLabel: string;
-  children: ReactNode;
-  onSubmit: (e: React.FormEvent) => void;
-}
-
-export const ModuleFormPage = ({ kicker, title, backTo, backIcon, backLabel, children, onSubmit }: ModuleFormPageProps) => (
-  <header className="m-hero">
-    <div className="m-hero__top">
-      <div className="m-hero__text">
-        <span className="m-hero__kicker">{kicker}</span>
-        <h1 className="m-hero__title">{title}</h1>
-      </div>
-      <button type="button" className="btn btn-ghost" onClick={() => window.location.href = backTo}>
-        {backIcon}
-        {backLabel}
-      </button>
-    </div>
-  </header>
-);
-
-/* We don't export ModuleFormPage; form pages are too varied. Instead, export the building blocks. */

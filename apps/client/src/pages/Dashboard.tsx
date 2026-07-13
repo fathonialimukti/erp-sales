@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { useQuery } from "@tanstack/react-query";
 import { useAtomValue } from "jotai";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Area,
   AreaChart,
@@ -79,6 +81,44 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const hasPermission = useAtomValue(hasPermissionAtom);
   const authUser = useAtomValue(authUserAtom);
+
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [insightResult, setInsightResult] = useState("");
+  const [insightError, setInsightError] = useState("");
+
+  const handleInsightClick = async (prompt: string) => {
+    setInsightLoading(true);
+    setInsightResult("");
+    setInsightError("");
+
+    try {
+      const res = await fetch("http://localhost:10022/api/ai/chat", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+      });
+
+      if (!res.ok) throw new Error("AI request failed");
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        setInsightResult(accumulated);
+      }
+    } catch (e) {
+      setInsightError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setInsightLoading(false);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard.sales"],
@@ -657,7 +697,55 @@ export const Dashboard = () => {
           )}
         </div>
       </section>
-    </section>
+      {/* ============== AI INSIGHTS ============== */}
+      <section className="ios-dash__card" aria-label="AI Insights">
+        <div className="ios-dash__card-header">
+          <h2 className="ios-dash__card-title">
+            {intl.formatMessage({ id: "dashboard.ai_insights_title", defaultMessage: "AI Insights" })}
+          </h2>
+        </div>
+        <div className="ios-dash__card-body">
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="ios-dash__insight-chip"
+              onClick={() => handleInsightClick(
+                intl.formatMessage({ id: "dashboard.ai_insight_top_customers", defaultMessage: "Top 5 customers this month" })
+              )}
+              disabled={insightLoading}
+            >
+              {intl.formatMessage({ id: "dashboard.ai_insight_top_customers", defaultMessage: "Top 5 customers this month" })}
+            </button>
+            <button
+              type="button"
+              className="ios-dash__insight-chip"
+              onClick={() => handleInsightClick(
+                intl.formatMessage({ id: "dashboard.ai_insight_at_risk", defaultMessage: "At-risk orders" })
+              )}
+              disabled={insightLoading}
+            >
+              {intl.formatMessage({ id: "dashboard.ai_insight_at_risk", defaultMessage: "At-risk orders" })}
+            </button>
+            <button
+              type="button"
+              className="ios-dash__insight-chip"
+              onClick={() => handleInsightClick(
+                intl.formatMessage({ id: "dashboard.ai_insight_sales_trend", defaultMessage: "Sales trend" })
+              )}
+              disabled={insightLoading}
+            >
+              {intl.formatMessage({ id: "dashboard.ai_insight_sales_trend", defaultMessage: "Sales trend" })}
+            </button>
+          </div>
+          {insightLoading && <div className="text-sm text-gray-500">Loading...</div>}
+          {insightError && <div className="text-sm text-red-600">{insightError}</div>}
+          {insightResult && (
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightResult}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+      </section>    </section>
   );
 };
 

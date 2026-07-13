@@ -17,7 +17,8 @@ export type VisitLogIconName =
   | "clipboard"
   | "clock"
   | "location"
-  | "item";
+  | "item"
+  | "sparkle";
 
 interface VisitLogIconProps {
   name: VisitLogIconName;
@@ -43,6 +44,7 @@ const ICON_MAP: Record<VisitLogIconName, string> = {
   clock: icons.visitClock,
   location: icons.visitLocation,
   item: icons.visitClipboard,
+  sparkle: icons.dashSparkle,
 };
 
 export const VisitLogIcon = ({

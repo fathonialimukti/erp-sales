@@ -6,7 +6,6 @@ import {
     buildCreateUserData,
     buildUpdateUserData,
     ensureUserEmailAvailable,
-    ensureUserDeletionAllowed,
     getUserDeletionStateOrThrow,
     getUserDetailOrThrow,
     logUserMutation,
@@ -74,7 +73,6 @@ export const userRouter = router({
 
             const userData = await buildCreateUserData({
                 input,
-                req: ctx.req,
                 locale: ctx.locale,
             });
 
@@ -113,8 +111,6 @@ export const userRouter = router({
 
             const updateData = await buildUpdateUserData({
                 input: { ...data, password, photo },
-                existingPhoto: existingUser.photo,
-                req: ctx.req,
                 locale: ctx.locale,
             });
 
@@ -140,7 +136,6 @@ export const userRouter = router({
         .input(userIdSchema)
         .mutation(async ({ input, ctx }) => {
             const user = await getUserDeletionStateOrThrow({ db: prisma, id: input.id, locale: ctx.locale });
-            await ensureUserDeletionAllowed({ db: prisma, locale: ctx.locale, user });
 
             await prisma.user.delete({
                 where: { id: input.id },

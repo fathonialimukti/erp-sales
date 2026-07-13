@@ -9,6 +9,7 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
+import { SummarizePageButton } from "../../components/SummarizePageButton";
 import { CustomerIcon } from "./CustomerIcons";
 
 type CustomerDetail = {
@@ -212,6 +213,15 @@ export const CustomerDetailPage = () => {
         </div>,
         document.body,
       )}
+      <SummarizePageButton
+        contextData={{
+          section: "customer-detail",
+          id: customer.id,
+          name: customer.name,
+          outletCount: customer.outlets?.length ?? 0,
+        }}
+        recordData={customer}
+      />
     </section>
   );
 };

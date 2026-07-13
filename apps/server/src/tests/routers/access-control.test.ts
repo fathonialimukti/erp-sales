@@ -9,7 +9,7 @@ let actorUserId: string;
 let actorRoleId: string;
 
 beforeAll(async () => {
-  const role = await seedRoleWithPermissions(['permission@read', 'role@read']);
+  const role = await seedRoleWithPermissions(['user@read', 'role@read']);
   actorRoleId = role.id;
 
   const actor = await seedTestUser({

@@ -1,7 +1,6 @@
 import { publicProcedure, router } from './trpc.js';
 import { authRouter } from './routers/auth.js';
 import { dashboardRouter } from './routers/dashboard.js';
-import { landingRouter } from './routers/landing.js';
 import { regionRouter } from './routers/region.js';
 import { areaRouter } from './routers/area.js';
 import { customerRouter } from './routers/customer.js';
@@ -22,7 +21,6 @@ export const appRouter = router({
     hello: publicProcedure.query(() => ({ message: 'Hello World' })),
     auth: authRouter,
     dashboard: dashboardRouter,
-    landing: landingRouter,
     region: regionRouter,
     area: areaRouter,
     customer: customerRouter,

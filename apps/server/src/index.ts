@@ -4,7 +4,8 @@ import cors from 'cors';
 import { createContext } from './context.js';
 import { serveUpload } from './lib/upload-file.js';
 import { appRouter } from './router.js';
-import { aiChatHandler, aiChatResumeHandler, aiQueryDatabaseHandler } from './routes/ai.js';
+import { aiChatHandler, aiChatResumeHandler, aiQueryDatabaseHandler, aiSummarizeHandler, aiDraftHandler } from './routes/ai.js';
+import { aiExtractSalesOrderHandler } from './routes/ai-extract.js';
 import { salesOrderPdfHandler } from './routes/sales-order-pdf.js';
 
 const port = Number(process.env.PORT ?? 10022);
@@ -45,6 +46,9 @@ app.use(
 app.post('/api/ai/chat', aiChatHandler);
 app.get('/api/ai/chat/:chatId/stream', aiChatResumeHandler);
 app.post('/api/ai/query', aiQueryDatabaseHandler);
+app.post('/api/ai/extract-sales-order', aiExtractSalesOrderHandler);
+app.post('/api/ai/summarize', aiSummarizeHandler);
+app.post('/api/ai/draft', aiDraftHandler);
 
 // Sales order PDF preview — streams inline so the browser's native
 // PDF viewer renders it (preview + print + download).

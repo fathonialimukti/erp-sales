@@ -9,6 +9,7 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
+import { SummarizePageButton } from "../../components/SummarizePageButton";
 import { AreaIcon } from "./AreaIcons";
 
 type AreaDetail = {
@@ -211,6 +212,15 @@ export const AreaDetailPage = () => {
         </div>,
         document.body,
       )}
+      <SummarizePageButton
+        contextData={{
+          section: "area-detail",
+          id: area.id,
+          name: area.name,
+          outletCount: area.outlets.length,
+        }}
+        recordData={area}
+      />
     </section>
   );
 };

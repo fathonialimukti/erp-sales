@@ -10,7 +10,10 @@ let regionId: string;
 let areaId: string;
 
 beforeAll(async () => {
-  const role = await seedRoleWithPermissions(['region@read', 'region@create', 'region@update', 'region@delete']);
+  const role = await seedRoleWithPermissions([
+    'region@read', 'region@create', 'region@update', 'region@delete',
+    'area@read', 'area@create', 'area@delete',
+  ]);
   actorRoleId = role.id;
   const actor = await seedTestUser({ roleId: actorRoleId, email: `crm-actor-${randomUUID()}@example.com`, name: 'CRM Actor' });
   actorUserId = actor.id;

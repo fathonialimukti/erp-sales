@@ -363,7 +363,7 @@ export const AiAssistant = () => {
     // on the server side and implement consumeSseStream in the POST handler.
     resume: true,
     transport: new DefaultChatTransport({
-      api: 'http://localhost:2022/api/ai/chat',
+      api: 'http://localhost:10022/api/ai/chat',
       credentials: 'include',
       // Patches SSE stream to inject missing tool-input-available events from
       // local models that emit finishReason:"other" instead of "tool-calls".
@@ -374,7 +374,7 @@ export const AiAssistant = () => {
       }),
       // Point the resume GET request at our Express resume endpoint.
       prepareReconnectToStreamRequest: ({ id }) => ({
-        api: `http://localhost:2022/api/ai/chat/${id}/stream`,
+        api: `http://localhost:10022/api/ai/chat/${id}/stream`,
         credentials: 'include' as RequestCredentials,
       }),
     }),
@@ -470,7 +470,7 @@ export const AiAssistant = () => {
       setPendingToolCallsVersion(v => v + 1);
 
       // Call the server endpoint to execute the query
-      fetch('http://localhost:2022/api/ai/query', {
+      fetch('http://localhost:10022/api/ai/query', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -495,6 +495,46 @@ export const AiAssistant = () => {
           });
           setPendingToolCallsVersion(v => v + 1);
          });
+      return;
+    }
+
+    if (toolName === 'summarizeCurrentPage') {
+      if (alreadyHandled) return;
+
+      const context = collectPageContext();
+      pendingToolCallsRef.current.add(toolCallId);
+      setPendingToolCallsVersion(v => v + 1);
+
+      fetch('http://localhost:10022/api/ai/summarize', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: (context as any).section ?? 'unknown', contextJson: JSON.stringify(context) }),
+      })
+        .then(async res => {
+          if (!res.ok) throw new Error('Summarize failed');
+          const reader = res.body?.getReader();
+          if (!reader) throw new Error('No response body');
+          const decoder = new TextDecoder();
+          let accumulated = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            accumulated += decoder.decode(value, { stream: true });
+          }
+          pendingToolCallsRef.current.delete(toolCallId);
+          addToolOutput({ tool: 'summarizeCurrentPage', toolCallId, output: accumulated });
+          setPendingToolCallsVersion(v => v + 1);
+        })
+        .catch(err => {
+          pendingToolCallsRef.current.delete(toolCallId);
+          addToolOutput({
+            tool: 'summarizeCurrentPage',
+            toolCallId,
+            output: `Summary failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          });
+          setPendingToolCallsVersion(v => v + 1);
+        });
       return;
     }
 

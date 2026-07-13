@@ -7,14 +7,14 @@ import { logActivity } from './activity-log.js';
  * Fire-and-forget background AI validation for a sales order.
  * Updates the order status to PROPOSED on success, or keeps it VALIDATING on failure.
  */
-export function startBackgroundValidation(orderId: string, userId: string, userName: string) {
+export function startBackgroundValidation(orderId: string, userId: string) {
   // Fire-and-forget — do NOT await
-  void runValidation(orderId, userId, userName).catch((err) => {
+  void runValidation(orderId, userId).catch((err) => {
     console.error(`[background-validation] Unhandled error for order ${orderId}:`, err);
   });
 }
 
-async function runValidation(orderId: string, userId: string, userName: string) {
+async function runValidation(orderId: string, userId: string) {
   try {
     // Run AI validation
     const result = await runAiValidation(orderId);

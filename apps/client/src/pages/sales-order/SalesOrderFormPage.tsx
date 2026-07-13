@@ -5,11 +5,11 @@ import { useIntl } from "react-intl";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import type { inferProcedureInput } from "@trpc/server";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
-import { hasPermissionAtom } from "../../lib/atoms";
+import { hasPermissionAtom, aiFormFillAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { DatePicker } from "../../components/DatePicker";
 import { SelectSearch } from "../../ui/SelectSearch";
@@ -449,8 +449,47 @@ export const SalesOrderFormPage = () => {
   );
 
   useAiFillForm({
+    outletId: (v: unknown) => form.setFieldValue("outletId" as never, String(v) as never),
+    currency: (v: unknown) => form.setFieldValue("currency" as never, String(v) as never),
+    paymentTerms: (v: unknown) => form.setFieldValue("paymentTerms" as never, String(v) as never),
+    expectedDeliveryDate: (v: unknown) => form.setFieldValue("expectedDeliveryDate" as never, String(v) as never),
     notes: (v: unknown) => form.setFieldValue("notes" as never, String(v) as never),
+    items: (v: unknown) => {
+      if (Array.isArray(v)) {
+        form.setFieldValue("items" as never, v as never);
+      }
+    },
   });
+
+  // AI autofill: "Draft from description"
+  const [draftText, setDraftText] = useState("");
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftError, setDraftError] = useState("");
+  const setAiFormFill = useSetAtom(aiFormFillAtom);
+
+  const handleAiDraft = useCallback(async () => {
+    if (!draftText.trim()) return;
+    setDraftLoading(true);
+    setDraftError("");
+    try {
+      const res = await fetch("http://localhost:10022/api/ai/extract-sales-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ text: draftText }),
+      });
+      if (!res.ok) throw new Error("Extraction failed");
+      const json = await res.json() as { data?: Record<string, unknown> };
+      if (json.data) {
+        setAiFormFill(json.data);
+        setDraftText("");
+      }
+    } catch (e) {
+      setDraftError(e instanceof Error ? e.message : "Could not extract order data");
+    } finally {
+      setDraftLoading(false);
+    }
+  }, [draftText, setAiFormFill]);
 
   // Read directly from form.state.values so the component re-renders
   // when the form store updates. form.getFieldValue() is a snapshot read
@@ -632,6 +671,43 @@ export const SalesOrderFormPage = () => {
         availableSkus: skuList.map((s) => ({ id: s.id, name: s.name, basePrice: s.basePrice })),
       })}
     >
+      {/* AI Draft from Description */}
+      {!isEdit && (
+        <div className="so-card" style={{ marginBottom: "1.5rem" }}>
+          <div className="so-card__header">
+            <h2 className="so-card__title">
+              <span className="so-card__icon"><SOIcon name="sparkle" size={16} /></span>
+              {intl.formatMessage({ id: "sales_order.form.ai_draft_label", defaultMessage: "Draft from description" })}
+            </h2>
+            <p className="so-card__hint">AI will extract order details and pre-fill the form below</p>
+          </div>
+          <div className="so-card__body">
+            <textarea
+              className="so-field__input"
+              rows={4}
+              value={draftText}
+              onChange={(e) => setDraftText(e.target.value)}
+              placeholder={intl.formatMessage({ id: "sales_order.form.ai_draft_placeholder", defaultMessage: "Paste or describe the order..." })}
+              disabled={draftLoading}
+              style={{ width: "100%", resize: "vertical" }}
+            />
+            {draftError && (
+              <p style={{ color: "#e53e3e", fontSize: "0.875rem", marginTop: "0.5rem" }}>
+                {intl.formatMessage({ id: "sales_order.form.ai_draft_error", defaultMessage: "Could not extract order data" })}: {draftError}
+              </p>
+            )}
+            <button
+              type="button"
+              className="so-btn so-btn--primary"
+              onClick={handleAiDraft}
+              disabled={!draftText.trim() || draftLoading}
+              style={{ marginTop: "0.75rem" }}
+            >
+              {draftLoading ? "Processing..." : intl.formatMessage({ id: "sales_order.form.ai_draft_button", defaultMessage: "Auto-fill form" })}
+            </button>
+          </div>
+        </div>
+      )}
       <form
         className="so-form__shell"
         onSubmit={(e) => {

@@ -314,7 +314,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { SOIcon } from "./SalesOrderIcons";
 
-const PDF_BASE_URL = "http://localhost:2022";
+const PDF_BASE_URL = "http://localhost:10022";
 
 interface SalesOrderPdfPreviewProps {
   orderId: string | null;

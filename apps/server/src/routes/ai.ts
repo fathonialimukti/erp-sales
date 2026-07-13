@@ -255,6 +255,110 @@ export async function aiQueryDatabaseHandler(req: Request, res: Response) {
     }
 }
 
+const SUMMARIZE_SYSTEM = `You are a concise business analyst for a Sales ERP system.
+Summarize the provided page context into readable Markdown for a human:
+1) **Current Page** (module name and purpose — never the raw route path)
+2) **What Is Visible Now** (key data points, counts, record/form state)
+3) **Recommended Next Actions** (up to 3 practical actions)
+Do not dump raw JSON; translate it into concise business language.`;
+
+const DRAFT_SYSTEM = `You are a writing assistant for a Sales ERP system.
+Draft practical, professional text based on the provided page context.
+- followup: a short follow-up note/message for the record owner or customer.
+- nextSteps: a bulleted list of concrete next actions.
+- reply: a polite reply to a customer or teammate.
+Keep it concise and business-appropriate. Respond in Markdown.`;
+
+function authUserId(req: Request, res: Response): string | null {
+    let token: string | null = null;
+    const cookieHeader = req.headers.cookie;
+    if (cookieHeader) {
+        const cookies = parseCookie(cookieHeader);
+        if (cookies.access_token) token = cookies.access_token;
+    }
+    if (!token) {
+        const auth = req.headers.authorization;
+        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
+    }
+    if (!token) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return null;
+    }
+    try {
+        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
+        if (!payload?.userId) throw new Error('Invalid token payload');
+        return String(payload.userId);
+    } catch {
+        res.status(401).json({ error: 'Invalid token' });
+        return null;
+    }
+}
+
+export async function aiSummarizeHandler(req: Request, res: Response) {
+    const userId = authUserId(req, res);
+    if (!userId) return;
+
+    const { section, contextJson, recordJson } = req.body as {
+        section?: string;
+        contextJson?: string;
+        recordJson?: string;
+    };
+    if (!section || typeof section !== 'string') {
+        res.status(400).json({ error: 'section is required' });
+        return;
+    }
+
+    const userText = [contextJson, recordJson].filter(Boolean).join('\n\n');
+    const relevantContext = await retrieveRelevantChunks(userText);
+
+    const stream = createUIMessageStream({
+        execute: ({ writer }) => {
+            const result = streamText({
+                model: chatModel,
+                system: SUMMARIZE_SYSTEM,
+                prompt: `Page section: ${section}\n\nContext:\n${userText}`,
+                temperature: 0,
+            });
+            writer.merge(result.toUIMessageStream());
+        },
+    });
+    void relevantContext;
+    pipeUIMessageStreamToResponse({ response: res, stream });
+}
+
+export async function aiDraftHandler(req: Request, res: Response) {
+    const userId = authUserId(req, res);
+    if (!userId) return;
+
+    const { section, contextJson, kind } = req.body as {
+        section?: string;
+        contextJson?: string;
+        kind?: 'followup' | 'reply' | 'nextSteps';
+    };
+    if (!section || typeof section !== 'string') {
+        res.status(400).json({ error: 'section is required' });
+        return;
+    }
+    if (kind && !['followup', 'reply', 'nextSteps'].includes(kind)) {
+        res.status(400).json({ error: 'invalid kind' });
+        return;
+    }
+
+    const userText = contextJson ?? '';
+    const stream = createUIMessageStream({
+        execute: ({ writer }) => {
+            const result = streamText({
+                model: chatModel,
+                system: DRAFT_SYSTEM,
+                prompt: `Page section: ${section}\nDraft type: ${kind ?? 'followup'}\n\nContext:\n${userText}`,
+                temperature: 0.4,
+            });
+            writer.merge(result.toUIMessageStream());
+        },
+    });
+    pipeUIMessageStreamToResponse({ response: res, stream });
+}
+
 function buildSystemPrompt(
     userName: string,
     roleName: string,
@@ -312,6 +416,14 @@ ${ROUTE_CATALOG}
 
 ## Database Query Tool
 You have access to a read-only SQL query tool called queryDatabase. Use it when users ask about sales data, order records, customer/outlet data, SKU catalog, visit logs, user activity, or any data-related question.
+
+## Analytics & Insights
+When the user asks for trends, rankings, or "at-risk" analysis, use queryDatabase with aggregate queries, then summarize the result in Markdown.
+Example insight requests and the query shape to use:
+- "Top 5 customers this month": SUM(grand_total) grouped by customer, filtered to APPROVED orders in the current month, ordered DESC, LIMIT 5.
+- "At-risk orders": DRAFT/PROPOSED sales orders with old dates or missing required fields; surface document_number and age.
+- "Sales trend": monthly SUM(grand_total) of APPROVED orders, ordered by month.
+Always explain the business meaning of the numbers, not just the raw rows.
 
 When to use:
 - User asks "how many SKUs do we have?" or any count/summary question

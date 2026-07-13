@@ -66,7 +66,7 @@ export const RolesIndexPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["rolesList", pagination.pageIndex, pagination.pageSize, search],
     queryFn: () =>
-      trpcClient.role.list.query({
+      trpcClient.accessControl.role.list.query({
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         search: search || undefined,

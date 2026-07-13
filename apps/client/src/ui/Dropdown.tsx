@@ -180,16 +180,4 @@ export const DropdownItem = ({
   );
 };
 
-export const DropdownTrigger = ({ children, className, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button type="button" className={`dd__trigger ${className ?? ""}`} {...rest}>
-    {children}
-  </button>
-);
-
-export const DropdownMenu = ({ children, className }: { children: ReactNode; className?: string }) => (
-  <div role="menu" className={`dd__panel ${className ?? ""}`}>
-    {children}
-  </div>
-);
-
 export const DropdownSeparator = () => <div className="dd__separator" role="separator" />;

@@ -2,7 +2,7 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "../server/src/router";
 
 const trpcClient = createTRPCClient<AppRouter>({
-    links: [httpBatchLink({ url: "http://localhost:2022" })],
+    links: [httpBatchLink({ url: "http://localhost:10022" })],
 });
 
 async function testGreetingIntegration() {

@@ -14,6 +14,7 @@ import { FormField } from "../../ui/FormField";
 import { useToast } from "../../ui/useToast";
 import { SalesOrderPrint, SalesOrderPdfPreview, type SalesOrderPrintRecord } from "./SalesOrderPrint";
 import { SOIcon } from "./SalesOrderIcons";
+import { SummarizePageButton } from "../../components/SummarizePageButton";
 import "./SalesOrder.css";
 
 interface SalesOrderDetail {
@@ -931,6 +932,18 @@ export const SalesOrderDetailPage = () => {
 
       {/* PDF preview modal — native browser PDF viewer in an iframe */}
       <SalesOrderPdfPreview orderId={pdfPreviewId} onClose={() => setPdfPreviewId(null)} />
+      <SummarizePageButton
+        contextData={{
+          section: "sales-order-detail",
+          id: record.id,
+          documentNumber: record.documentNumber,
+          customer: record.customer?.name,
+          approvalStatus: record.approvalStatus,
+          itemCount: record.items.length,
+          grandTotal: record.grandTotal,
+        }}
+        recordData={record}
+      />
     </section>
   );
 };

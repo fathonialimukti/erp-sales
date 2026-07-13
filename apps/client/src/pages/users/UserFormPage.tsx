@@ -16,7 +16,6 @@ import {
   Label,
   Modal,
   ModalBody,
-  ModalContent,
   ModalFooter,
   ModalHeader,
   Select,
@@ -158,7 +157,7 @@ const InnerForm = ({
 
   const { data: rolesData } = useQuery({
     queryKey: ['rolesListForSelect'],
-    queryFn: () => trpcClient.role.list.query({ page: 1, limit: 100 }),
+    queryFn: () => trpcClient.accessControl.role.list.query({ page: 1, limit: 100 }),
   });
 
   const roleOptions = (rolesData?.data ?? []) as { id: string; name: string }[];
@@ -298,7 +297,7 @@ const InnerForm = ({
       </form>
 
       <Modal isOpen={modalStage !== 'idle'} onClose={() => handleModalClose()}>
-        <ModalContent>
+        <ModalBody>
           {modalStage === 'loading' ? (
             <ModalBody>
               <div className="flex justify-center py-8">
@@ -327,7 +326,7 @@ const InnerForm = ({
               </ModalFooter>
             </>
           )}
-        </ModalContent>
+        </ModalBody>
       </Modal>
     </>
   );

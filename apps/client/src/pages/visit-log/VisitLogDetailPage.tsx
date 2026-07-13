@@ -4,11 +4,15 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
+import { Modal, ModalHeader, ModalBody } from "../../ui";
+import { SummarizePageButton } from "../../components/SummarizePageButton";
 import { VisitLogIcon } from "./VisitLogIcons";
 
 type VisitLogDetail = {
@@ -37,6 +41,57 @@ export const VisitLogDetailPage = () => {
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [draftModalOpen, setDraftModalOpen] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftResult, setDraftResult] = useState("");
+  const [draftError, setDraftError] = useState("");
+
+  const handleDraftFollowUp = async () => {
+    if (!visitLog) return;
+    setDraftModalOpen(true);
+    setDraftLoading(true);
+    setDraftResult("");
+    setDraftError("");
+
+    const contextData = {
+      section: "visit-log-detail",
+      id: visitLog.id,
+      outlet: visitLog.outlet?.name,
+      date: visitLog.date,
+    };
+
+    try {
+      const res = await fetch("http://localhost:10022/api/ai/draft", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section: contextData.section,
+          contextJson: JSON.stringify(contextData),
+          kind: "followup",
+        }),
+      });
+
+      if (!res.ok) throw new Error("Draft failed");
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        setDraftResult(accumulated);
+      }
+    } catch (e) {
+      setDraftError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setDraftLoading(false);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["visitLogDetail", id],
@@ -108,6 +163,7 @@ export const VisitLogDetailPage = () => {
             size="md"
             items={[
               ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <VisitLogIcon name="edit" size={14} />, to: `/visitLog/${visitLog.id}/edit` }] : []),
+              { key: "draft", label: intl.formatMessage({ id: "visit_log.detail.draft_followup", defaultMessage: "Draft follow-up" }), icon: <VisitLogIcon name="sparkle" size={14} />, onClick: handleDraftFollowUp },
               ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <VisitLogIcon name="delete" size={14} />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
             ]}
           />
@@ -225,6 +281,31 @@ export const VisitLogDetailPage = () => {
         </div>,
         document.body,
       )}
+      <SummarizePageButton
+        contextData={{
+          section: "visit-log-detail",
+          id: visitLog.id,
+          outlet: visitLog.outlet?.name,
+          date: visitLog.date,
+        }}
+        recordData={visitLog}
+      />
+
+      {/* Draft Follow-up Modal */}
+      <Modal isOpen={draftModalOpen} onClose={() => setDraftModalOpen(false)} size="xl">
+        <ModalHeader onClose={() => setDraftModalOpen(false)}>
+          {intl.formatMessage({ id: "visit_log.detail.draft_followup", defaultMessage: "Draft follow-up" })}
+        </ModalHeader>
+        <ModalBody>
+          {draftLoading && <Spinner />}
+          {draftError && <p className="text-red-600">{draftError}</p>}
+          {draftResult && (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm max-w-none">
+              {draftResult}
+            </ReactMarkdown>
+          )}
+        </ModalBody>
+      </Modal>
     </section>
   );
 };

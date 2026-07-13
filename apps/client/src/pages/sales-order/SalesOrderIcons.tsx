@@ -48,6 +48,7 @@ export type SOIconName =
   | "tag"
   | "duplicate"
   | "sort-asc"
+  | "sparkle"
   | "sort-desc";
 
 interface SOIconProps {
@@ -246,6 +247,11 @@ const PATHS: Record<SOIconName, React.ReactNode> = {
     <>
       <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
       <line x1="7" y1="7" x2="7.01" y2="7" />
+    </>
+  ),
+  sparkle: (
+    <>
+      <path d="M12 3v3m0 12v3M3 12h3m12 0h3M6.343 6.343l2.122 2.122m7.07 7.07l2.122 2.122M6.343 17.657l2.122-2.122m7.07-7.07l2.122-2.122" />
     </>
   ),
 };

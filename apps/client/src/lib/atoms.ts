@@ -33,21 +33,10 @@ export const localeActionsAtom = atom(null, (_get, set, newLocale: Locale) => {
   persistLocale(newLocale);
 });
 
-const normalizePermissionName = (permission: string) => {
-  if (permission.includes('@')) {
-    return permission;
-  }
-
-  return permission.replace(/_(?=[^_]+$)/, '@');
-};
-
-const normalizePermissions = (permissions: string[]) =>
-  permissions.map((permission) => normalizePermissionName(permission));
-
 // Computed atom for user permissions
 export const userPermissionsAtom = atom((get) => {
   const user = get(authUserAtom);
-  return normalizePermissions(user?.permissions ?? []);
+  return user?.permissions ?? [];
 });
 
 // Helper to check if user has permission
@@ -55,9 +44,8 @@ export const hasPermissionAtom = atom(
   (get) => (permission: string | string[]) => {
     const permissions = get(userPermissionsAtom);
     const required = Array.isArray(permission) ? permission : [permission];
-    const normalizedRequired = required.map(normalizePermissionName);
 
-    return normalizedRequired.some((requiredPermission) =>
+    return required.some((requiredPermission) =>
       permissions.includes(requiredPermission),
     );
   },

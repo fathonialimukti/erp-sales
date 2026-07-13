@@ -10,9 +10,6 @@ export const messages: Record<Locale, Record<string, string>> = {
   id,
 };
 
-export const isLocale = (value: unknown): value is Locale =>
-  value === 'en' || value === 'id';
-
 export function getLocaleMessages(locale: string) {
   return messages[locale === 'id' ? 'id' : 'en'];
 }

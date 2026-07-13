@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { logActivity } from '../lib/activity-log.js';
+import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
@@ -28,23 +30,60 @@ export const permissionRouter = router({
   create: protectedProcedure
     .use(hasPermission('user@create'))
     .input(z.object({ name: z.string().min(1), description: z.string().optional() }))
-    .mutation(async ({ input }) => {
-      return prisma.permission.create({ data: input });
+    .mutation(async ({ input, ctx }) => {
+      const created = await prisma.permission.create({ data: input });
+
+      await logActivity(prisma, {
+        action: 'CREATE',
+        userId: ctx.user.userId,
+        resource: 'permission',
+        resourceId: created.id,
+        message: `Created permission ${created.name}`,
+        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+      });
+
+      return created;
     }),
 
   update: protectedProcedure
     .use(hasPermission('user@update'))
     .input(z.object({ id: z.string(), name: z.string().min(1).optional(), description: z.string().optional() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
-      return prisma.permission.update({ where: { id }, data });
+      const existing = await prisma.permission.findUnique({ where: { id } });
+      const updated = await prisma.permission.update({ where: { id }, data });
+
+      await logActivity(prisma, {
+        action: 'UPDATE',
+        userId: ctx.user.userId,
+        resource: 'permission',
+        resourceId: updated.id,
+        message: `Updated permission ${updated.name}`,
+        detail: buildUpdateLogDetail(
+          (existing ?? {}) as unknown as Record<string, unknown>,
+          updated as unknown as Record<string, unknown>,
+        ),
+      });
+
+      return updated;
     }),
 
   delete: protectedProcedure
     .use(hasPermission('user@delete'))
     .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const existing = await prisma.permission.findUnique({ where: { id: input.id } });
       await prisma.permission.delete({ where: { id: input.id } });
+
+      await logActivity(prisma, {
+        action: 'DELETE',
+        userId: ctx.user.userId,
+        resource: 'permission',
+        resourceId: input.id,
+        message: `Deleted permission ${existing?.name ?? input.id}`,
+        detail: buildDeleteLogDetail((existing ?? {}) as unknown as Record<string, unknown>),
+      });
+
       return { success: true };
     }),
 });

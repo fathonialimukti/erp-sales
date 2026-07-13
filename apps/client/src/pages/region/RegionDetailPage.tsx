@@ -9,6 +9,7 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
+import { SummarizePageButton } from "../../components/SummarizePageButton";
 import { RegionIcon } from "./RegionIcons";
 
 type RegionDetail = {
@@ -210,6 +211,15 @@ export const RegionDetailPage = () => {
         </div>,
         document.body,
       )}
+      <SummarizePageButton
+        contextData={{
+          section: "region-detail",
+          id: region.id,
+          name: region.name,
+          areaCount: region.areas.length,
+        }}
+        recordData={region}
+      />
     </section>
   );
 };

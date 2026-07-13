@@ -117,13 +117,70 @@ export const reportingRouter = router({
           }));
       }
 
-      const byField: Record<string, 'regionId' | 'areaId' | 'outletId' | 'customerId'> = {
-        region: 'regionId',
+      // Region is reached via area.regionId (SalesOrder has no regionId column),
+      // so group by areaId and roll the results up into region buckets.
+      if (dimension === 'region') {
+        const areaRows = await prisma.salesOrder.groupBy({
+          by: ['areaId'],
+          where: approvedWhere,
+          _sum: { grandTotal: true },
+          _count: { _all: true },
+          orderBy: { _sum: { grandTotal: 'desc' } },
+          take: 100,
+        });
+        const areaIds = areaRows.map((r) => r.areaId).filter((id): id is string => id !== null);
+        const areas = await prisma.area.findMany({
+          where: { id: { in: areaIds } },
+          select: { id: true, regionId: true, region: { select: { id: true, name: true } } },
+        });
+        const areaToRegion = new Map(areas.map((a) => [a.id, a.region?.id ?? null]));
+        const regionName = new Map(areas.map((a) => [a.region?.id ?? '', a.region?.name ?? 'Unknown']));
+
+        const quantityRows = await prisma.salesOrderItem.groupBy({
+          by: ['salesOrderId'],
+          where: { salesOrder: approvedWhere },
+          _sum: { quantity: true },
+        });
+        const orderIds = quantityRows.map((r) => r.salesOrderId);
+        const orders = await prisma.salesOrder.findMany({
+          where: { id: { in: orderIds } },
+          select: { id: true, areaId: true },
+        });
+        const qtyByOrder = new Map(quantityRows.map((q) => [q.salesOrderId, toNumber(q._sum?.quantity)]));
+        const qtyByArea = new Map<string, number>();
+        orders.forEach((o) => {
+          if (o.areaId) qtyByArea.set(o.areaId, (qtyByArea.get(o.areaId) ?? 0) + (qtyByOrder.get(o.id) ?? 0));
+        });
+
+        const regionAgg = new Map<string, { revenue: number; orderCount: number; quantity: number }>();
+        for (const r of areaRows) {
+          const regionId = r.areaId ? (areaToRegion.get(r.areaId) ?? null) : null;
+          if (!regionId) continue;
+          const cur = regionAgg.get(regionId) ?? { revenue: 0, orderCount: 0, quantity: 0 };
+          cur.revenue += toNumber(r._sum?.grandTotal);
+          cur.orderCount += r._count?._all ?? 0;
+          cur.quantity += r.areaId ? (qtyByArea.get(r.areaId) ?? 0) : 0;
+          regionAgg.set(regionId, cur);
+        }
+
+        return Array.from(regionAgg.entries())
+          .map(([regionId, agg]) => ({
+            id: regionId,
+            label: regionName.get(regionId) ?? 'Unknown',
+            revenue: agg.revenue,
+            orderCount: agg.orderCount,
+            quantity: agg.quantity,
+          }))
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 20);
+      }
+
+      const byField: Record<string, 'areaId' | 'outletId' | 'customerId'> = {
         area: 'areaId',
         outlet: 'outletId',
         customer: 'customerId',
       };
-      const field = byField[dimension] ?? 'regionId';
+      const field = byField[dimension as 'area' | 'outlet' | 'customer'] ?? 'areaId';
 
       const rows = await prisma.salesOrder.groupBy({
         by: [field] as Prisma.SalesOrderScalarFieldEnum[],
@@ -139,10 +196,7 @@ export const reportingRouter = router({
         .filter((id): id is string => id !== null);
 
       let nameMap = new Map<string, string>();
-      if (dimension === 'region') {
-        const recs = await prisma.region.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
-        nameMap = new Map(recs.map((r) => [r.id, r.name]));
-      } else if (dimension === 'area') {
+      if (dimension === 'area') {
         const recs = await prisma.area.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
         nameMap = new Map(recs.map((r) => [r.id, r.name]));
       } else if (dimension === 'outlet') {

@@ -1,8 +1,3 @@
-import { prisma } from "../lib/prisma.js";
-import { publicProcedure, router } from "../trpc.js";
-
-/**
- * Public landing page router — no auth required.
- * Returns CRM stats for the landing page dashboard.
- */
-export const landingRouter = router({});
+// DEPRECATED: empty router, no longer registered in appRouter (see router.ts).
+// Landing-page stats are served by `dashboard.sales`. Safe to delete this file.
+export {};

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { logActivity } from '../lib/activity-log.js';
+import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
@@ -50,7 +52,7 @@ export const roleRouter = router({
       description: z.string().optional(),
       permissionIds: z.array(z.string()).optional().default([]),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { permissionIds, ...data } = input;
       const created = await prisma.$transaction(async (tx) => {
         const role = await tx.role.create({ data });
@@ -61,6 +63,16 @@ export const roleRouter = router({
         }
         return role;
       });
+
+      await logActivity(prisma, {
+        action: 'CREATE',
+        userId: ctx.user.userId,
+        resource: 'role',
+        resourceId: created.id,
+        message: `Created role ${created.name}`,
+        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+      });
+
       return created;
     }),
 
@@ -72,7 +84,7 @@ export const roleRouter = router({
       description: z.string().optional(),
       permissionIds: z.array(z.string()).optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { currentId, permissionIds, ...data } = input;
       const existing = await prisma.role.findUnique({ where: { id: currentId } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Role not found.' });
@@ -92,17 +104,39 @@ export const roleRouter = router({
         return role;
       });
 
+      await logActivity(prisma, {
+        action: 'UPDATE',
+        userId: ctx.user.userId,
+        resource: 'role',
+        resourceId: updated.id,
+        message: `Updated role ${updated.name}`,
+        detail: buildUpdateLogDetail(
+          existing as unknown as Record<string, unknown>,
+          updated as unknown as Record<string, unknown>,
+        ),
+      });
+
       return updated;
     }),
 
   delete: protectedProcedure
     .use(hasPermission('role@delete'))
     .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const existing = await prisma.role.findUnique({ where: { id: input.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Role not found.' });
 
       await prisma.role.delete({ where: { id: input.id } });
+
+      await logActivity(prisma, {
+        action: 'DELETE',
+        userId: ctx.user.userId,
+        resource: 'role',
+        resourceId: input.id,
+        message: `Deleted role ${existing.name}`,
+        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+      });
+
       return { success: true };
     }),
 });

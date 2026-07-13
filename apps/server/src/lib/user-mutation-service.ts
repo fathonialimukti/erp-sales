@@ -60,7 +60,6 @@ export async function ensureUserEmailAvailable(params: {
 
 export async function buildCreateUserData(params: {
   input: { email: string; name?: string | null; password?: string; photo?: string | null; roleId?: string | null };
-  req: unknown;
   locale: ServerLocale;
 }): Promise<Prisma.UserCreateInput> {
   return {
@@ -74,8 +73,6 @@ export async function buildCreateUserData(params: {
 
 export async function buildUpdateUserData(params: {
   input: { email?: string; name?: string | null; password?: string; photo?: string | null; roleId?: string | null };
-  existingPhoto: string | null;
-  req: unknown;
   locale: ServerLocale;
 }): Promise<Prisma.UserUpdateInput> {
   const data: Prisma.UserUpdateInput = {};
@@ -104,15 +101,6 @@ export async function getUserDeletionStateOrThrow(params: {
     });
   }
   return user;
-}
-
-export async function ensureUserDeletionAllowed(params: {
-  db: DbClient;
-  locale: ServerLocale;
-  user: { id: string; email: string };
-}) {
-  // ponytail: prevent self-deletion
-  // Check handled at router level — no-op for now
 }
 
 export async function logUserMutation(params: {

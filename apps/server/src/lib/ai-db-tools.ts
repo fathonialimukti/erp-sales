@@ -41,18 +41,20 @@ export function validateReadOnlySql(sql: string): { valid: boolean; reason?: str
         return { valid: false, reason: 'Comments are not allowed in queries.' };
     }
 
-    // Block multi-statement queries (semicolons not inside string literals)
-    // Simple check: count semicolons outside of single quotes
+    // Block multi-statement queries (semicolons not inside string literals).
+    // A single trailing semicolon is tolerated (the caller strips it anyway);
+    // any other semicolon means a second statement and is rejected.
+    const normalized = trimmed.replace(/;\s*$/, '');
     let inQuote = false;
     let semicolonCount = 0;
-    for (let i = 0; i < trimmed.length; i++) {
-        if (trimmed[i] === "'" && (i === 0 || trimmed[i - 1] !== '\\')) {
+    for (let i = 0; i < normalized.length; i++) {
+        if (normalized[i] === "'" && (i === 0 || normalized[i - 1] !== '\\')) {
             inQuote = !inQuote;
-        } else if (trimmed[i] === ';' && !inQuote) {
+        } else if (normalized[i] === ';' && !inQuote) {
             semicolonCount++;
         }
     }
-    if (semicolonCount > 1) {
+    if (semicolonCount > 0) {
         return { valid: false, reason: 'Multiple statements are not allowed.' };
     }
 

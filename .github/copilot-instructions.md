@@ -142,7 +142,7 @@ Follow these instructions **strictly** for every code suggestion and generation.
 
 ```
 apps/client/     — React 19 + Vite + Tauri frontend (port: Vite default)
-apps/server/     — Express + tRPC v11 backend (port: 2022)
+apps/server/     — Express + tRPC v11 backend (port: 10022)
 packages/schemas — Shared Zod schemas (@repo/schemas) — use these first before defining locally
 packages/ui      — Turborepo scaffold placeholder, NOT used by client (client uses @heroui/react directly)
 ```
@@ -169,7 +169,7 @@ packages/ui      — Turborepo scaffold placeholder, NOT used by client (client 
 |----------|---------|-------|
 | `DATABASE_URL` | — | PostgreSQL connection string (**required**) |
 | `JWT_SECRET` | `'your-secret-key-change-this'` | **Must override in prod** |
-| `PORT` | `2022` | HTTP port |
+| `PORT` | `10022` | HTTP port |
 | `CORS_ORIGIN` | — | Production origin; dev allows all `localhost:*` + `tauri://localhost` |
 
 ---

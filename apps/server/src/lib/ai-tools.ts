@@ -41,6 +41,36 @@ export const clientTools = {
             reason: z.string().optional().describe('Why you need the page context'),
         }),
     }),
+    summarizeCurrentPage: tool({
+        description:
+            'Request a concise Markdown summary of the current page from the backend. ' +
+            'Use when the user asks "summarize this page", "what does this show", or wants a quick brief. ' +
+            'The backend uses the current page context to produce the summary.',
+        inputSchema: z.object({
+            reason: z.string().optional().describe('Why a summary is needed'),
+        }),
+    }),
+    draftFollowUp: tool({
+        description:
+            'Draft a follow-up note or message based on the current page context. ' +
+            'Use when the user asks to "draft a follow-up", "write a note", or "prepare a message" for the open record. ' +
+            'The backend streams a Markdown draft back to the chat.',
+        inputSchema: z.object({
+            kind: z
+                .enum(['followup', 'reply', 'nextSteps'])
+                .describe('Type of draft: followup note, reply, or next-steps list'),
+            reason: z.string().optional().describe('Why the draft is needed'),
+        }),
+    }),
+    suggestNextSteps: tool({
+        description:
+            'Suggest concrete next actions for the current record or page. ' +
+            'Use when the user asks "what should I do next", "recommend next steps", or "what actions are available". ' +
+            'The backend returns a Markdown list of practical next actions.',
+        inputSchema: z.object({
+            reason: z.string().optional().describe('Why next steps are needed'),
+        }),
+    }),
     queryDatabase: tool({
         description:
             'Execute a read-only SQL query against the CRM database. ' +

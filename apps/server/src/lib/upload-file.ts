@@ -150,41 +150,6 @@ const toUploadUrl = (req: Request, folder: string, fileName: string) => {
     return `${getRequestOrigin(req)}${UPLOADS_URL_PREFIX}/${folder}/${fileName}`;
 };
 
-const toManagedUploadPath = (fileUrl: string) => {
-    const pathname = (() => {
-        if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
-            return new URL(fileUrl).pathname;
-        }
-
-        return fileUrl;
-    })();
-
-    if (!pathname.startsWith(`${UPLOADS_URL_PREFIX}/`)) {
-        return null;
-    }
-
-    const relativePath = pathname.slice(UPLOADS_URL_PREFIX.length + 1);
-    const resolvedPath = path.resolve(UPLOADS_DIR, relativePath);
-    if (!resolvedPath.startsWith(UPLOADS_DIR)) {
-        return null;
-    }
-
-    return resolvedPath;
-};
-
-export const deleteManagedUpload = async (fileUrl: string | null) => {
-    if (!fileUrl) {
-        return;
-    }
-
-    const filePath = toManagedUploadPath(fileUrl);
-    if (!filePath) {
-        return;
-    }
-
-    await fs.rm(filePath, { force: true });
-};
-
 export const persistUploadedImage = async ({
     image,
     folder,

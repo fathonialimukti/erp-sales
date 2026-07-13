@@ -73,7 +73,7 @@ const InnerForm = ({ initialValues, isEdit, roleId }: { initialValues: RoleFormV
   };
 
   const createMutation = useMutation({
-    mutationFn: (payload: { name: string; description?: string; permissionIds: string[] }) => trpcClient.role.create.mutate(payload),
+    mutationFn: (payload: { name: string; description?: string; permissionIds: string[] }) => trpcClient.accessControl.role.create.mutate(payload),
     onSuccess: async (created: { id: string }) => {
       await queryClient.invalidateQueries({ queryKey: ["rolesList"] });
       successRedirectIdRef.current = created.id;
@@ -85,7 +85,7 @@ const InnerForm = ({ initialValues, isEdit, roleId }: { initialValues: RoleFormV
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: { currentId: string; name?: string; description?: string; permissionIds?: string[] }) => trpcClient.role.update.mutate(payload),
+    mutationFn: (payload: { currentId: string; name?: string; description?: string; permissionIds?: string[] }) => trpcClient.accessControl.role.update.mutate(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["rolesList"] });
       successRedirectIdRef.current = roleId ?? null;
@@ -98,7 +98,7 @@ const InnerForm = ({ initialValues, isEdit, roleId }: { initialValues: RoleFormV
 
   const { data: permissionsData } = useQuery({
     queryKey: ["permissionsList"],
-    queryFn: () => trpcClient.permission.list.query({ page: 1, limit: 100 }),
+    queryFn: () => trpcClient.accessControl.permission.list.query({ page: 1, limit: 100 }),
   });
 
   const allPermissions = (permissionsData?.data ?? []) as { id: string; name: string; description: string | null }[];
@@ -315,7 +315,7 @@ export const RoleFormPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["roleDetail", id],
     enabled: isEdit,
-    queryFn: () => trpcClient.role.detail.query({ id: id ?? "" }),
+    queryFn: () => trpcClient.accessControl.role.detail.query({ id: id ?? "" }),
   });
 
   if (isEdit && isLoading) {

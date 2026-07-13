@@ -32,7 +32,8 @@ const ICONS = {
 import { useAuthActions } from "../lib/useAuth";
 import { isAuthenticatedAtom } from "../lib/atoms";
 import { useLocale } from "../lib/useLocale";
-import { isLocale, type Locale } from "../lib/i18n";
+import { type Locale } from "../lib/i18n";
+import { isLocale } from "../lib/locale";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { FormField } from "../ui/FormField";

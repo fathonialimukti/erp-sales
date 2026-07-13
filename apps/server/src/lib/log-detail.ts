@@ -18,7 +18,6 @@ export function buildUpdateLogDetail(
   before: Record<string, unknown>,
   after: Record<string, unknown>,
 ): JsonCompatible {
-  const changedFields: string[] = [];
   const changes: Record<string, { from: unknown; to: unknown }> = {};
 
   for (const key of Object.keys(after)) {
@@ -26,7 +25,6 @@ export function buildUpdateLogDetail(
     const afterVal = after[key];
 
     if (JSON.stringify(beforeVal) !== JSON.stringify(afterVal)) {
-      changedFields.push(key);
       changes[key] = { from: beforeVal, to: afterVal };
     }
   }
@@ -34,7 +32,6 @@ export function buildUpdateLogDetail(
   return {
     before: { id: before.id, name: (before as { name?: string }).name },
     after: { id: after.id, name: (after as { name?: string }).name },
-    changedFields,
     changes,
   } as unknown as JsonCompatible;
 }

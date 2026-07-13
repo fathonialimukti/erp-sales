@@ -59,7 +59,7 @@ export const RoleDetailPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["roleDetail", id],
     enabled: Boolean(id),
-    queryFn: () => trpcClient.role.detail.query({ id: id ?? "" }),
+    queryFn: () => trpcClient.accessControl.role.detail.query({ id: id ?? "" }),
   });
 
   const role = data as unknown as RoleDetail | undefined;
@@ -68,7 +68,7 @@ export const RoleDetailPage = () => {
     if (!role || isDeleting) return;
     setIsDeleting(true);
     try {
-      await trpcClient.role.delete.mutate({ id: role.id });
+      await trpcClient.accessControl.role.delete.mutate({ id: role.id });
       await queryClient.invalidateQueries({ queryKey: ["rolesList"] });
       setDeleteModalOpen(false);
       toast.success(intl.formatMessage({ id: "roles.detail.delete_success", defaultMessage: "Role deleted" }));

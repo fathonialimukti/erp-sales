@@ -342,7 +342,7 @@ export const salesOrderRouter = router({
       });
 
       // Fire-and-forget background validation
-      startBackgroundValidation(updated.id, ctx.user.userId, ctx.user.name ?? 'Unknown');
+      startBackgroundValidation(updated.id, ctx.user.userId);
 
       return updated;
     }),
@@ -462,7 +462,7 @@ export const salesOrderRouter = router({
       });
 
       // Fire-and-forget background validation
-      startBackgroundValidation(updated.id, ctx.user.userId, ctx.user.name ?? 'Unknown');
+      startBackgroundValidation(updated.id, ctx.user.userId);
 
       return updated;
     }),

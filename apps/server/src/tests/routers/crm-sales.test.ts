@@ -1,6 +1,7 @@
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'crypto';
 import { createCaller } from '../helpers/caller.js';
+import { prisma } from '../../lib/prisma.js';
 import { seedRoleWithPermissions, seedTestUser, deleteTestRole, deleteTestUser, seedTestCustomer, deleteTestCustomer, seedTestArea, deleteTestArea, seedTestRegion, deleteTestRegion, seedTestSku, deleteTestSku } from '../helpers/seed.js';
 
 let caller: ReturnType<typeof createCaller>;
@@ -16,6 +17,7 @@ beforeAll(async () => {
     'sales-order@read', 'sales-order@create', 'sales-order@update', 'sales-order@delete', 'sales-order@propose', 'sales-order@approve',
     'customer@read', 'customer@create', 'customer@delete',
     'area@read', 'region@read', 'region@create', 'region@delete', 'area@create', 'area@delete',
+    'outlet@read', 'outlet@create', 'outlet@delete',
     'sku@read', 'sku@create', 'sku@delete',
     'invoice@read', 'invoice@create', 'invoice@delete',
   ]);
@@ -69,15 +71,18 @@ describe('sales order CRUD + approval', () => {
   it('gets sales order detail', async () => {
     const detail = await caller.salesOrder.detail({ id: orderId });
     expect(detail.items.length).toBe(1);
-    expect(detail.items[0]!.quantity).toBe(2);
+    expect(String(detail.items[0]!.quantity)).toBe('2');
   });
 
   it('proposes sales order', async () => {
     const result = await caller.salesOrder.propose({ id: orderId });
-    expect(result.approvalStatus).toBe('PROPOSED');
+    expect(result.approvalStatus).toBe('VALIDATING');
   });
 
   it('approves sales order', async () => {
+    // propose() moves the order to VALIDATING; the async AI-validation job later
+    // transitions it to PROPOSED. Mirror that post-validation state for the approve test.
+    await prisma.salesOrder.update({ where: { id: orderId }, data: { approvalStatus: 'PROPOSED' } });
     const result = await caller.salesOrder.approve({ id: orderId, message: 'Looks good' });
     expect(result.approvalStatus).toBe('APPROVED');
     expect(result.approvalHistory).toBeDefined();
