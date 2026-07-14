@@ -311,49 +311,67 @@
   align-items: flex-end;
 }
 
-.ai-footer__textarea {
-  flex: 1;
-  min-width: 0;
-  word-break: break-word;
-  overflow-wrap: break-word;
+.ai-footer__chips {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
 }
 
-/* Override the default .txa in the AI footer */
-.ai-footer__textarea .txa {
+.ai-footer__chip-btn {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.ai-footer__chip-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-footer__input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Override the default .inp-box in the AI footer */
+.ai-footer__input .inp-box {
   border-radius: 0.875rem;
   border: 0.0625rem solid var(--ios-card-border, rgba(15, 23, 42, 0.08));
   background: var(--ios-search-bg, rgba(15, 23, 42, 0.05));
-  padding: 0.625rem 0.875rem;
+  padding: 0 0.875rem;
   font-size: 0.8125rem;
   color: var(--ios-label, var(--color-foreground));
   font-family: var(--font-sans);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  resize: none;
-  line-height: 1.5;
 }
 
-.ai-footer__textarea .txa:hover {
+.ai-footer__input .inp-box:hover {
   border-color: var(--ios-search-border-hover, rgba(124, 58, 237, 0.20));
 }
 
-.ai-footer__textarea .txa:focus {
-  outline: 0;
+.ai-footer__input .inp-box:focus-within {
   background: var(--ios-search-bg-focus, rgba(255, 255, 255, 0.95));
   border-color: var(--ios-search-ring, rgba(124, 58, 237, 0.30));
   box-shadow: 0 0 0 0.1875rem var(--ios-search-ring, rgba(124, 58, 237, 0.20));
 }
 
-.ai-footer__textarea .txa::placeholder {
+.ai-footer__input .inp-field {
+  height: 2.5rem;
+}
+
+.ai-footer__input .inp-field::placeholder {
   color: var(--ios-label-3, var(--color-muted));
 }
 
-.dark .ai-footer__textarea .txa {
+.dark .ai-footer__input .inp-box {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.08);
   color: var(--ios-label, #FFFFFF);
 }
 
-.dark .ai-footer__textarea .txa:focus {
+.dark .ai-footer__input .inp-box:focus-within {
   background: rgba(58, 58, 60, 0.95);
   border-color: rgba(167, 139, 250, 0.35);
   box-shadow: 0 0 0 0.1875rem rgba(167, 139, 250, 0.25);

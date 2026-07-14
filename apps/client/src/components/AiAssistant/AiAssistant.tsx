@@ -1,7 +1,8 @@
 import "./AiAssistant.css";
 
-import { Chip, Spinner, Textarea } from '../../ui';
+import { Chip, Input, Spinner } from '../../ui';
 import { useChat } from '@ai-sdk/react';
+import { useIntl } from 'react-intl';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
@@ -327,9 +328,11 @@ const collectPageContext = (): string => {
 };
 
 export const AiAssistant = () => {
+  const intl = useIntl();
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
+  const [summarizing, setSummarizing] = useState(false);
   const navigate = useNavigate();
   const setFormFill = useSetAtom(aiFormFillAtom);
   // Tracks toolCallIds already executed to prevent double-firing (Strict Mode / multiple effects)
@@ -594,10 +597,45 @@ export const AiAssistant = () => {
     setInput('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleSummarizePage = async () => {
+    if (isLoading || summarizing) return;
+    setSummarizing(true);
+    try {
+      const context = collectPageContext();
+      const res = await fetch('http://localhost:10022/api/ai/summarize', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: (context as unknown as { section?: string }).section ?? 'unknown', contextJson: JSON.stringify(context) }),
+      });
+      if (!res.ok) throw new Error('Summarize failed');
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No response body');
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+      }
+      setMessages([
+        ...messages,
+        { id: crypto.randomUUID(), role: 'assistant', parts: [{ type: 'text', text: accumulated }] },
+      ]);
+    } catch (e) {
+      setMessages([
+        ...messages,
+        { id: crypto.randomUUID(), role: 'assistant', parts: [{ type: 'text', text: `Summary failed: ${e instanceof Error ? e.message : 'Unknown error'}` }] },
+      ]);
+    } finally {
+      setSummarizing(false);
     }
   };
 
@@ -759,12 +797,25 @@ export const AiAssistant = () => {
           </div>
 
           <div className="ai-footer">
+            <div className="ai-footer__chips">
+              <button
+                type="button"
+                className="ai-footer__chip-btn"
+                onClick={handleSummarizePage}
+                disabled={isLoading || summarizing}
+              >
+                <Chip>
+                  {summarizing && <Spinner size="sm" />}
+                  {intl.formatMessage({ id: 'common.action.summarize_page', defaultMessage: 'Summarize this page' })}
+                </Chip>
+              </button>
+            </div>
             <div className="ai-footer__row">
-              <div className="ai-footer__textarea">
-                <Textarea
+              <div className="ai-footer__input">
+                <Input
                   placeholder="Ask a question..."
                   value={input}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
                 />

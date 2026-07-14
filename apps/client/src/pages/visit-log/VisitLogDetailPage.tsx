@@ -12,7 +12,7 @@ import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 import { Modal, ModalHeader, ModalBody } from "../../ui";
-import { SummarizePageButton } from "../../components/SummarizePageButton";
+
 import { VisitLogIcon } from "./VisitLogIcons";
 
 type VisitLogDetail = {
@@ -281,16 +281,6 @@ export const VisitLogDetailPage = () => {
         </div>,
         document.body,
       )}
-      <SummarizePageButton
-        contextData={{
-          section: "visit-log-detail",
-          id: visitLog.id,
-          outlet: visitLog.outlet?.name,
-          date: visitLog.date,
-        }}
-        recordData={visitLog}
-      />
-
       {/* Draft Follow-up Modal */}
       <Modal isOpen={draftModalOpen} onClose={() => setDraftModalOpen(false)} size="xl">
         <ModalHeader onClose={() => setDraftModalOpen(false)}>

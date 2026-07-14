@@ -9,7 +9,7 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
-import { SummarizePageButton } from "../../components/SummarizePageButton";
+
 import { ActionProgramIcon } from "./ActionProgramIcons";
 
 type ActionProgramDetail = {
@@ -221,15 +221,6 @@ export const ActionProgramDetailPage = () => {
         </div>,
         document.body,
       )}
-      <SummarizePageButton
-        contextData={{
-          section: "action-program-detail",
-          id: actionProgram.id,
-          name: actionProgram.name,
-          outletCount: actionProgram.outlets?.length ?? 0,
-        }}
-        recordData={actionProgram}
-      />
     </section>
   );
 };

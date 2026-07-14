@@ -17,7 +17,6 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  max-width: 75rem;
   margin: 0 auto;
   width: 100%;
   animation: soFadeUp 0.4s var(--ease-out) both;
@@ -1170,6 +1169,50 @@
 
 .m-form__back:hover {
   background: var(--ios-pill-bg-hover);
+}
+
+/* ---------- Detail summary (info grid below hero) ---------- */
+.m-detail__summary {
+  position: relative;
+  z-index: 1;
+  margin-top: -0.75rem;
+  padding: 0 0.25rem;
+}
+
+.m-detail__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+
+.m-detail__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1rem;
+  background: var(--ios-card-bg);
+  border: 0.0625rem solid var(--ios-card-border);
+  box-shadow: var(--ios-card-shadow);
+  backdrop-filter: blur(1.25rem);
+  -webkit-backdrop-filter: blur(1.25rem);
+  min-width: 0;
+}
+
+.m-detail__field-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ios-label-3);
+}
+
+.m-detail__field-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ios-label);
+  letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 /* ---------- Detail hero (replaces PageHeader on detail page) ---------- */

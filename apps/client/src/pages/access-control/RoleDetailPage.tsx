@@ -122,16 +122,14 @@ export const RoleDetailPage = () => {
         title={role.name}
         subtitle={role.description ?? undefined}
         actions={
-          <>
-            <ButtonGroup size="md" items={[{ key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <BackIcon />, to: "/access-control" }]} />
-            <ButtonGroup
-              size="md"
-              items={[
-                ...(canUpdate && !role.isSystem ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <EditIcon />, to: `/access-control/${role.id}/edit` }] : []),
-                ...(canDelete && !role.isSystem ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <DeleteIcon />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
-              ]}
-            />
-          </>
+          <ButtonGroup
+            size="md"
+            items={[
+              { key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <BackIcon />, to: "/access-control" },
+              ...(canUpdate && !role.isSystem ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <EditIcon />, to: `/access-control/${role.id}/edit` }] : []),
+              ...(canDelete && !role.isSystem ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <DeleteIcon />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
+            ]}
+          />
         }
       />
 

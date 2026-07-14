@@ -12,7 +12,7 @@ import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 import { Modal, ModalHeader, ModalBody } from "../../ui";
-import { SummarizePageButton } from "../../components/SummarizePageButton";
+
 import { EventProposalIcon } from "./EventProposalIcons";
 
 type EventProposalDetail = {
@@ -276,16 +276,6 @@ export const EventProposalDetailPage = () => {
         </div>,
         document.body,
       )}
-      <SummarizePageButton
-        contextData={{
-          section: "event-proposal-detail",
-          id: eventProposal.id,
-          name: eventProposal.name,
-          skuCount: eventProposal.skus?.length ?? 0,
-        }}
-        recordData={eventProposal}
-      />
-
       {/* Draft Follow-up Modal */}
       <Modal isOpen={draftModalOpen} onClose={() => setDraftModalOpen(false)} size="xl">
         <ModalHeader onClose={() => setDraftModalOpen(false)}>

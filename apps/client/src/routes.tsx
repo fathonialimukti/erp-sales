@@ -47,6 +47,7 @@ import { RoleFormPage } from './pages/access-control/RoleFormPage';
 import { ActivityLogsIndexPage } from './pages/activity-logs/ActivityLogsIndexPage';
 import { ActivityLogDetailPage } from './pages/activity-logs/ActivityLogDetailPage';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
+import AiAdminChatPage from './pages/ai-admin/AiAdminChatPage';
 
 export const router = createBrowserRouter([
   {
@@ -197,6 +198,10 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <NotificationsPage />,
+      },
+      {
+        path: 'ai-admin',
+        element: <AiAdminChatPage />,
       },
       {
         path: '*',

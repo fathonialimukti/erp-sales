@@ -5,6 +5,7 @@ import { createContext } from './context.js';
 import { serveUpload } from './lib/upload-file.js';
 import { appRouter } from './router.js';
 import { aiChatHandler, aiChatResumeHandler, aiQueryDatabaseHandler, aiSummarizeHandler, aiDraftHandler } from './routes/ai.js';
+import { aiAdminChatHandler, aiAdminChatResumeHandler } from './routes/ai-admin.js';
 import { aiExtractSalesOrderHandler } from './routes/ai-extract.js';
 import { salesOrderPdfHandler } from './routes/sales-order-pdf.js';
 
@@ -49,6 +50,9 @@ app.post('/api/ai/query', aiQueryDatabaseHandler);
 app.post('/api/ai/extract-sales-order', aiExtractSalesOrderHandler);
 app.post('/api/ai/summarize', aiSummarizeHandler);
 app.post('/api/ai/draft', aiDraftHandler);
+
+app.post('/api/ai/admin/chat', aiAdminChatHandler);
+app.get('/api/ai/admin/chat/:chatId/stream', aiAdminChatResumeHandler);
 
 // Sales order PDF preview — streams inline so the browser's native
 // PDF viewer renders it (preview + print + download).

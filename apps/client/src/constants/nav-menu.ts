@@ -134,4 +134,10 @@ export const NAV_MENU: NavMenuItem[] = [
       },
     ],
   },
+  {
+    name: "nav.ai_admin",
+    icon: icons.dashSparkle,
+    href: "/ai-admin",
+    permission: "ai-admin@access",
+  },
 ];

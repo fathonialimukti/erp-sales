@@ -9,7 +9,7 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
-import { SummarizePageButton } from "../../components/SummarizePageButton";
+
 import { OutletIcon } from "./OutletIcons";
 
 type OutletDetail = {
@@ -227,15 +227,6 @@ export const OutletDetailPage = () => {
         </div>,
         document.body,
       )}
-      <SummarizePageButton
-        contextData={{
-          section: "outlet-detail",
-          id: outlet.id,
-          name: outlet.name,
-          contactCount: outlet.contacts?.length ?? 0,
-        }}
-        recordData={outlet}
-      />
     </section>
   );
 };

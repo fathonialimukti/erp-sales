@@ -15,7 +15,6 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-width: 75rem;
   margin: 0 auto;
   width: 100%;
   animation: soFadeUp 0.4s var(--ease-out) both;

@@ -9,7 +9,7 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 import { ButtonGroup } from "../../components/ButtonGroup";
-import { SummarizePageButton } from "../../components/SummarizePageButton";
+
 
 type SkuDetail = {
   id: string;
@@ -206,15 +206,6 @@ export const SkuDetailPage = () => {
         </div>,
         document.body,
       )}
-      <SummarizePageButton
-        contextData={{
-          section: "sku-detail",
-          id: sku.id,
-          name: sku.name,
-          status: sku.status,
-        }}
-        recordData={sku}
-      />
     </section>
   );
 };

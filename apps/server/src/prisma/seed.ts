@@ -44,6 +44,9 @@ const PERMISSIONS = [
   { name: "notification@delete", description: "Delete notifications" },
   { name: "notification@broadcast", description: "Broadcast notifications to users" },
 
+  // AI Admin
+  { name: "ai-admin@access", description: "Access AI system administrator assistant with full read-write database access" },
+
   // CRM
   { name: "region@read", description: "Read regions" },
   { name: "region@create", description: "Create regions" },

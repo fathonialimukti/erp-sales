@@ -186,6 +186,32 @@
 .stagger-11 { animation-delay: 550ms; }
 .stagger-12 { animation-delay: 600ms; }
 
+/* ===== Scroll-reveal utility classes ===== */
+
+.reveal {
+  opacity: 0;
+}
+
+.reveal.is-revealed {
+  animation: slideUp var(--duration-slow) var(--ease-out) forwards;
+}
+
+.reveal--fadeIn.is-revealed {
+  animation-name: fadeIn;
+}
+
+.reveal--slideInLeft.is-revealed {
+  animation-name: slideInLeft;
+}
+
+.reveal--slideInRight.is-revealed {
+  animation-name: slideInRight;
+}
+
+.reveal--scaleIn.is-revealed {
+  animation-name: scaleIn;
+}
+
 /* ===== Reduced motion: disable all animations ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
