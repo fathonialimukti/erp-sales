@@ -16,6 +16,8 @@ export default defineConfig(async () => ({
   server: {
     port: 10021,
     strictPort: true,
+    // Allow proxied hosts (e.g. served via Nginx Proxy Manager) instead of only localhost.
+    allowedHosts: true,
     host: host || '0.0.0.0',
     hmr: host
       ? {
