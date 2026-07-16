@@ -415,6 +415,8 @@ export const SalesOrderIndexPage = () => {
             placeholder={intl.formatMessage({ id: "sales_order.index.all_statuses", defaultMessage: "All statuses" })}
             ariaLabel={intl.formatMessage({ id: "sales_order.index.filter_status", defaultMessage: "Filter by status" })}
             fullWidth={false}
+            searchPlaceholder={intl.formatMessage({ id: "sales_order.index.search_status", defaultMessage: "Search status…" })}
+            emptyLabel={intl.formatMessage({ id: "sales_order.index.no_status", defaultMessage: "No statuses found" })}
           />
 
           <DatePicker
@@ -443,6 +445,8 @@ export const SalesOrderIndexPage = () => {
             placeholder={intl.formatMessage({ id: "sales_order.index.sort_by", defaultMessage: "Sort by" })}
             ariaLabel={intl.formatMessage({ id: "sales_order.index.sort_by", defaultMessage: "Sort by" })}
             fullWidth={false}
+            searchPlaceholder={intl.formatMessage({ id: "sales_order.index.search_sort", defaultMessage: "Search sort options…" })}
+            emptyLabel={intl.formatMessage({ id: "sales_order.index.no_sort", defaultMessage: "No sort options found" })}
           />
 
           <button

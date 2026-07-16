@@ -175,7 +175,7 @@
   align-items: center;
 }
 
-.ios-tb__select {
+.ios-tb__select-wrap .ios-tb__select.ss-trigger {
   appearance: none;
   -webkit-appearance: none;
   height: 36px;
@@ -193,9 +193,29 @@
   transition: background 150ms var(--ease-default), box-shadow 150ms var(--ease-default);
 }
 
-.ios-tb__select:hover {
+.ios-tb__select-wrap .ios-tb__select.ss-trigger:hover {
   background: var(--ios-tb-pill-bg-hover);
   box-shadow: var(--ios-tb-pill-shadow-hover);
+}
+
+.dark .ios-tb__select-wrap .ios-tb__select.ss-trigger {
+  background: var(--ios-tb-pill-bg);
+  border-color: var(--ios-tb-pill-border);
+  color: var(--ios-label-2);
+}
+
+.dark .ios-tb__select-wrap .ios-tb__select.ss-trigger:hover {
+  background: var(--ios-tb-pill-bg-hover);
+  box-shadow: var(--ios-tb-pill-shadow-hover);
+}
+
+/* Hide the avatar initial in the topbar language switcher — show label only */
+.ios-tb__select-wrap .ios-tb__select .ss-trigger__initial {
+  display: none;
+}
+
+.ios-tb__select-wrap .ios-tb__select .ss-trigger__text {
+  flex: initial;
 }
 
 .ios-tb__select-wrap::after {
@@ -208,6 +228,8 @@
   border-right: 1.6px solid var(--ios-label-3);
   border-bottom: 1.6px solid var(--ios-label-3);
   transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
   pointer-events: none;
 }
 

@@ -251,6 +251,9 @@ const InnerForm = ({
                       value={field.state.value}
                       onChange={(value) => field.handleChange(value as string)}
                       options={roleOptions.map((r) => ({ value: r.id, label: r.name }))}
+                      placeholder={intl.formatMessage({ id: "users.form.select_role", defaultMessage: "Select a role…" })}
+                      searchPlaceholder={intl.formatMessage({ id: "users.form.search_role", defaultMessage: "Search roles…" })}
+                      emptyLabel={intl.formatMessage({ id: "users.form.no_roles", defaultMessage: "No roles found" })}
                     />
                     {field.state.meta.errors.map((error, i) => (
                       <FieldError key={i}>{String(error)}</FieldError>

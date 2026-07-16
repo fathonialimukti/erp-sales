@@ -16,6 +16,7 @@ import { UserMenuTrigger } from "./UserMenuPopover";
 import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
 import { trpcClient } from "../lib/trpc";
 import { showPushNotification } from "../lib/push-notification";
+import { Select } from "../ui/Select";
 import "./Topbar.css";
 
 const findPageMeta = (
@@ -138,18 +139,18 @@ export const Topbar = () => {
         </div>
 
         <div className="ios-tb__select-wrap">
-          <select
+          <Select
             className="ios-tb__select"
-            aria-label={intl.formatMessage({ id: "nav.language", defaultMessage: "Language" })}
+            ariaLabel={intl.formatMessage({ id: "nav.language", defaultMessage: "Language" })}
             value={locale}
-            onChange={(e) => setLocale(e.target.value as (typeof supportedLocales)[number])}
-          >
-            {supportedLocales.map((code) => (
-              <option key={code} value={code}>
-                {localeSymbols[code]}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setLocale(value as (typeof supportedLocales)[number])}
+            options={supportedLocales.map((code) => ({
+              value: code,
+              label: localeSymbols[code],
+            }))}
+            searchPlaceholder={intl.formatMessage({ id: "nav.language_search", defaultMessage: "Search language…" })}
+            emptyLabel={intl.formatMessage({ id: "nav.language_empty", defaultMessage: "No languages found" })}
+          />
         </div>
 
         <button

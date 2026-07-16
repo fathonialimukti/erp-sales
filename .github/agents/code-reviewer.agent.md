@@ -1,7 +1,7 @@
 ---
 name: "Code Reviewer"
 description: "Code review and testing agent for this ERP monorepo. Hunts over-engineering with the ponytail-review / ponytail-audit / ponytail-debt skills, and verifies correctness + test coverage across apps/server/src/, apps/client/src/, and packages/schemas/src/. Use for 'review this', 'audit for bloat', 'what can I delete', 'add tests', 'is this over-engineered', or any quality/coverage pass."
-tools: [vscode, execute, read, agent, vscode.mermaid-markdown-features, ms-azuretools.vscode-containers, ms-python.python, Prisma.prisma, edit, search, web, browser, 'pylance-mcp-server/*', todo]
+tools: [read/readFile, read/problems, search/codebase, search/fileSearch, search/textSearch, search/listDirectory, execute/runInTerminal, execute/runTests, execute/getTerminalOutput, execute/testFailure, agent/runSubagent, todo/manageTodoList, vscode/memory, vscode/resolveMemoryFileUri]
 user-invocable: true
 ---
 
@@ -71,7 +71,7 @@ When asked, harvest every `ponytail:` comment in the codebase into a debt ledger
 
 - ponytail-review/audit scope: over-engineering and complexity only. Correctness/security/perf are routed to your correctness scope, not deleted.
 - A single smoke test or `assert`-based self-check is the ponytail minimum, never flag it for deletion.
-- You LIST findings; you do not apply fixes unless the user explicitly asks.
+- You LIST findings; you do not apply fixes.
 - "stop ponytail-review" / "normal mode": revert to verbose review style.
 
 ## Output Format
