@@ -1,7 +1,7 @@
 FROM oven/bun:1
 
-# Config Bun
-ENV PATH="~/.bun/bin:${PATH}"
+# The Copilot CLI installer drops `copilot` into /usr/local/bin (already on PATH),
+# so no custom PATH manipulation is needed.
 RUN ln -s /usr/local/bin/bun /usr/local/bin/node
 
 # Update packages
@@ -18,4 +18,4 @@ RUN apt-get install -y \
 
 
 # Install Copilot CLI (BYOK)
-RUN bun install -g @githubnext/github-copilot-cli
+RUN curl -fsSL https://gh.io/copilot-install | bash

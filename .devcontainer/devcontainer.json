@@ -3,26 +3,40 @@
 {
   "name": "erp_sales",
   "dockerFile": "Dockerfile",
-  // Forward dev server ports from container → VPS → your local machine.
-  "runArgs": ["--network=dev", "--name=erp_sales"],
   "forwardPorts": [10021, 10022],
-  "appPort": ["10021:10021", "10022:10022"],
+  // Install deps automatically so reviewers can run the app immediately on open.
+  "postCreateCommand": "bun install",
   "containerEnv": {
     "HOST": "0.0.0.0",
+    "DATABASE_URL": "postgres://erp@postgres:5432/erp_sales",
     "COPILOT_PROVIDER_BASE_URL": "https://routers9.web.id/v1",
-    "COPILOT_PROVIDER_API_KEY": "9r-GpnEZsewPPfMnWfU7dxbL0CJG7hDo7-pRRnO3f0dokc",
-    "COPILOT_MODEL": "9router/R9/glm-5.2",
-    "COPILOT_PROVIDER_MAX_PROMPT_TOKENS": "1000000",
+    "COPILOT_PROVIDER_API_KEY": "******",
+    "COPILOT_MODEL": "9router/sf/tencent/Hy3",
+    "COPILOT_PROVIDER_MAX_PROMPT_TOKENS": "262144",
     "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS": "131072"
   },
   "portsAttributes": {
-    "10011": {
+    "10021": {
       "label": "Vite Client",
       "onAutoForward": "notify"
     },
-    "10012": {
+    "10022": {
       "label": "tRPC Server",
       "onAutoForward": "notify"
+    }
+  },
+  // Self-contained Postgres (trust auth, internal only) so the app is runnable for
+  // reviewers without external setup. DB port is intentionally NOT forwarded publicly.
+  "services": {
+    "postgres": {
+      "image": "postgres:16-alpine",
+      "environment": {
+        "POSTGRES_USER": "erp",
+        "POSTGRES_DB": "erp_sales",
+        "POSTGRES_HOST_AUTH_METHOD": "trust"
+      },
+      "volumes": ["postgres-data:/var/lib/postgresql/data"],
+      "restart": "unless-stopped"
     }
   },
   // Configure tool-specific properties.
