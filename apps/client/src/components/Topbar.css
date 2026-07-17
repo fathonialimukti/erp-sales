@@ -230,8 +230,6 @@
   transform: translateY(-70%) rotate(45deg);
   pointer-events: none;
 }
-  pointer-events: none;
-}
 
 .ios-tb__icon-btn {
   position: relative;
