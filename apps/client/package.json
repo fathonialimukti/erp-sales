@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
-    "preview": "vite preview",
+    "preview": "vite preview --host 0.0.0.0 --port 10021",
     "tauri": "tauri",
     "test": "playwright test",
     "test:watch": "vitest",

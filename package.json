@@ -3,6 +3,10 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "prod": "bun run --cwd apps/server prisma generate && turbo run build && pm2 start ecosystem.config.js",
+    "restart-prod": "pm2 restart ecosystem.config.js",
+    "prod:stop": "pm2 stop ecosystem.config.js",
+    "prod:logs": "pm2 logs",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -12,6 +16,8 @@
   },
   "devDependencies": {
     "@trpc/server": "^11.17.0",
+    "concurrently": "^9.1.2",
+    "pm2": "^5.4.3",
     "prettier": "^3.8.3",
     "turbo": "^2.10.1",
     "typescript": "6.0.3"
