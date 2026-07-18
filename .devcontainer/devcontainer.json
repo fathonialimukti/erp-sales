@@ -8,12 +8,13 @@
   "postCreateCommand": "bun install",
   "containerEnv": {
     "HOST": "0.0.0.0",
-    "DATABASE_URL": "postgres://erp@postgres:5432/erp_sales",
     "COPILOT_PROVIDER_BASE_URL": "https://routers9.web.id/v1",
     "COPILOT_PROVIDER_API_KEY": "******",
     "COPILOT_MODEL": "9router/sf/tencent/Hy3",
     "COPILOT_PROVIDER_MAX_PROMPT_TOKENS": "262144",
-    "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS": "131072"
+    "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS": "131072",
+    "NODE_ENV": "production",
+    "VITE_TRPC_URL": "https://api.yourdomain.com"
   },
   "portsAttributes": {
     "10021": {
