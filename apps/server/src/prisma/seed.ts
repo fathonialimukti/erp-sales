@@ -198,6 +198,30 @@ async function seedUsers(roleIds: Record<string, string>) {
     });
     console.log("✓ Admin user created");
   }
+
+  console.log("Ensuring integration user exists...");
+  const integrationEmail = process.env.ERP_INTEGRATION_EMAIL ?? "n8n@mail.com";
+  const integrationPassword = process.env.ERP_INTEGRATION_PASSWORD ?? "change-me";
+  const hashedIntegrationPassword = hashSync(integrationPassword, 10);
+
+  const existingIntegration = await prisma.user.findUnique({ where: { email: integrationEmail } });
+  if (existingIntegration) {
+    await prisma.user.update({
+      where: { id: existingIntegration.id },
+      data: { name: "Integration", password: hashedIntegrationPassword, roleId: roleIds["Viewer"] },
+    });
+    console.log("✓ Integration user updated");
+  } else {
+    await prisma.user.create({
+      data: {
+        email: integrationEmail,
+        name: "Integration",
+        password: hashedIntegrationPassword,
+        roleId: roleIds["Viewer"],
+      },
+    });
+    console.log("✓ Integration user created");
+  }
 }
 
 // =============================================
