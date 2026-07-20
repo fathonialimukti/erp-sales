@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Prisma, PrismaClient } from '../prisma/generated/client'
 
@@ -23,24 +22,21 @@ const connectionTimeoutMillis = Number(process.env.DB_POOL_CONNECT_TIMEOUT_MS ??
 
 const globalForPrisma = globalThis as unknown as {
     prisma?: PrismaClient
-    pool?: Pool
 }
 
-const pool = globalForPrisma.pool ?? new Pool({
+// ponytail: pass config object so adapter uses its own pg (avoids dual-package instanceof break)
+const adapter = new PrismaPg({
     connectionString,
     max: maxConnections,
     idleTimeoutMillis,
     connectionTimeoutMillis,
 })
-
-const adapter = new PrismaPg(pool)
 const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
 
 export type DbClient = PrismaClient | Prisma.TransactionClient
 
 if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.pool = pool
     globalForPrisma.prisma = prisma
 }
 
-export { prisma, pool }
+export { prisma }

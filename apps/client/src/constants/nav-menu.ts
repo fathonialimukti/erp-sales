@@ -72,6 +72,12 @@ export const NAV_MENU: NavMenuItem[] = [
         href: "/sales-order",
         permission: "sales-order@read",
       },
+      {
+        name: "nav.email_crm",
+        icon: icons.navSalesOrder,
+        href: "/email-crm",
+        permission: "email-crm@read",
+      },
     ],
   },
   {

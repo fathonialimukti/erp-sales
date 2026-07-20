@@ -1,7 +1,7 @@
 ---
 name: "Full-Stack Engineer"
 description: "End-to-end feature delivery orchestrator for this ERP monorepo. Owns complete CRUD features from schema to UI to review. Delegates to Backend Engineer (schema + router), Frontend Engineer (pages + i18n), and Code Reviewer (quality gate) internally. Use for 'add a new resource', 'build X feature', 'scaffold Y', or any request spanning server + client."
-tools: [read/readFile, read/problems, search/codebase, search/fileSearch, search/textSearch, search/listDirectory, edit/createFile, edit/editFiles, execute/runInTerminal, execute/getTerminalOutput, agent/runSubagent, todo/manageTodoList, vscode/memory, vscode/resolveMemoryFileUri]
+tools: [vscode, execute, read, agent, ms-azuretools.vscode-containers, ms-python.python, Prisma.prisma, edit, search, web, browser, 'pylance-mcp-server/*', todo]
 user-invocable: true
 ---
 

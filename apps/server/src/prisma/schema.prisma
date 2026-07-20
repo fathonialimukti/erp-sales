@@ -259,6 +259,7 @@ model Customer {
   contacts       CustomerContact[]
   salesOrders    SalesOrder[]
   payments       Payment[]
+  emailConversations EmailConversation[]
   createdAt      DateTime            @default(now()) @map("created_at")
   updatedAt      DateTime            @updatedAt @map("updated_at")
 
@@ -356,6 +357,8 @@ model SalesOrder {
   expectedDeliveryDate  DateTime?      @map("expected_delivery_date") @db.Date
   notes                 String?        @map("notes")
   source                String         @default("MANUAL") @map("source")
+  emailConversationId   String?        @map("email_conversation_id")
+  emailConversation     EmailConversation? @relation(fields: [emailConversationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   approvalStatus        ApprovalStatus @default(DRAFT) @map("approval_status")
   createdById           String         @map("created_by_id")
@@ -387,7 +390,45 @@ model SalesOrder {
   @@index([documentNumber])
   @@index([date])
   @@index([approvalStatus, date])
+  @@index([emailConversationId])
   @@map("crm_sales_orders")
+}
+
+model EmailConversation {
+  id            String    @id @default(ulid()) @map("id")
+  email         String    @unique @map("email")
+  subject       String?   @map("subject")
+  status        String    @default("OPEN") @map("status")
+  priority      String    @default("NORMAL") @map("priority")
+  sentiment     String?   @map("sentiment")
+  tags          Json?     @map("tags")
+  lastMessageAt DateTime? @map("last_message_at")
+  customerId    String?   @map("customer_id")
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  messages      EmailMessage[]
+  salesOrders   SalesOrder[]
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("email_conversations")
+}
+
+model EmailMessage {
+  id             String            @id @default(ulid()) @map("id")
+  conversationId String            @map("conversation_id")
+  conversation   EmailConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  direction      String            @map("direction")
+  body           String            @map("body") @db.Text
+  messageId      String?           @unique @map("message_id")
+  inReplyTo      String?           @map("in_reply_to")
+  references     String?           @map("email_references")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@index([conversationId])
+  @@map("email_messages")
 }
 
 model SalesOrderItem {

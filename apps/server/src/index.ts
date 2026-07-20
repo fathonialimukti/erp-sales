@@ -7,7 +7,10 @@ import { appRouter } from './router.js';
 import { aiChatHandler, aiChatResumeHandler, aiQueryDatabaseHandler, aiSummarizeHandler, aiDraftHandler } from './routes/ai.js';
 import { aiAdminChatHandler, aiAdminChatResumeHandler } from './routes/ai-admin.js';
 import { aiExtractSalesOrderHandler } from './routes/ai-extract.js';
+import { customerAiChatHandler } from './routes/customer-ai.js';
 import { salesOrderPdfHandler } from './routes/sales-order-pdf.js';
+import { emailInboundHandler } from './routes/email-inbound.js';
+import { emailAutoReplyHandler } from './routes/email-auto-reply.js';
 
 const port = Number(process.env.PORT ?? 10022);
 const corsOrigin = process.env.CORS_ORIGIN;
@@ -53,6 +56,11 @@ app.post('/api/ai/draft', aiDraftHandler);
 
 app.post('/api/ai/admin/chat', aiAdminChatHandler);
 app.get('/api/ai/admin/chat/:chatId/stream', aiAdminChatResumeHandler);
+
+app.post('/api/ai/customer/chat', customerAiChatHandler);
+
+app.post('/api/email/auto-reply', emailAutoReplyHandler);
+app.post('/api/email/inbound', emailInboundHandler);
 
 // Sales order PDF preview — streams inline so the browser's native
 // PDF viewer renders it (preview + print + download).

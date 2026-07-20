@@ -16,6 +16,7 @@ import { accessControlRouter } from './routers/access-control.js';
 import { activityLogRouter } from './routers/activity-log.js';
 import { notificationRouter } from './routers/notification.js';
 import { reportingRouter } from './routers/reporting.js';
+import { emailCrmRouter } from './routers/email-crm.js';
 
 export const appRouter = router({
     hello: publicProcedure.query(() => ({ message: 'Hello World' })),
@@ -36,6 +37,7 @@ export const appRouter = router({
     activityLog: activityLogRouter,
     notification: notificationRouter,
     reporting: reportingRouter,
+    emailCrm: emailCrmRouter,
 });
 
 export type AppRouter = typeof appRouter;

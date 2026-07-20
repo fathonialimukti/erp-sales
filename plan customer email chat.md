@@ -405,7 +405,7 @@ BALASAN:
 ```
 From: john@example.com
 Subject: Tanya harga jasa website
-Body: Halo, saya saya ingin pesan.
+Body: Halo, saya saya ingin pesan membuat pesanan.
 ```
 
 **AI Balasan:**
@@ -416,7 +416,10 @@ Terima kasih telah menghubungi AetherGlo! ✨
 
 Boleh kami tahu nama outlet atau nama owner nya?
 ```
+
 mencocokan data, ini adalah aplikasi b2b jika customer legit kemudian layani
+
+seteleh verifikasi data berhasil ai chat akan membuat sales order dari pesanan customer, note customer email seharusnya tercatat di customer data
 
 ---
 

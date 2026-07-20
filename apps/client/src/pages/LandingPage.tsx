@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { Button } from "../ui/Button";
+import { CustomerAiWidget } from "../components/CustomerAiWidget";
 import { DecorBlob, HeroDashboard, ApprovalFlow, EmailToOrderFlow, AiWorkflow } from "./landing-assets";
 import "./LandingPage.css";
 
@@ -422,6 +423,8 @@ export const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      <CustomerAiWidget />
     </div>
   );
 };

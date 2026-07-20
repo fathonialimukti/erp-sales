@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RouteErrorPage } from './pages/RouteErrorPage';
 import { LandingPage } from './pages/LandingPage';
+import CustomerAssistantPage from './pages/CustomerAssistantPage';
 import { RegionIndexPage } from './pages/region/RegionIndexPage';
 import { RegionDetailPage } from './pages/region/RegionDetailPage';
 import { RegionFormPage } from './pages/region/RegionFormPage';
@@ -48,6 +49,9 @@ import { ActivityLogsIndexPage } from './pages/activity-logs/ActivityLogsIndexPa
 import { ActivityLogDetailPage } from './pages/activity-logs/ActivityLogDetailPage';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import AiAdminChatPage from './pages/ai-admin/AiAdminChatPage';
+import { EmailCrmIndexPage } from './pages/email-crm/EmailCrmIndexPage';
+import { EmailCrmDetailPage } from './pages/email-crm/EmailCrmDetailPage';
+import { EmailCrmFormPage } from './pages/email-crm/EmailCrmFormPage';
 
 export const router = createBrowserRouter([
   {
@@ -64,6 +68,11 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
       },
     ],
+  },
+  {
+    path: '/customer-assistant',
+    element: <CustomerAssistantPage />,
+    errorElement: <RouteErrorPage />,
   },
   {
     path: '/',
@@ -142,6 +151,15 @@ export const router = createBrowserRouter([
           { path: 'create', element: <SalesOrderFormPage /> },
           { path: ':id', element: <SalesOrderDetailPage /> },
           { path: ':id/edit', element: <SalesOrderFormPage /> },
+        ],
+      },
+      {
+        path: 'email-crm',
+        children: [
+          { index: true, element: <EmailCrmIndexPage /> },
+          { path: 'create', element: <EmailCrmFormPage /> },
+          { path: ':id', element: <EmailCrmDetailPage /> },
+          { path: ':id/edit', element: <EmailCrmFormPage /> },
         ],
       },
       {

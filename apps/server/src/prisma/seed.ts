@@ -104,6 +104,12 @@ const PERMISSIONS = [
   { name: "payment@read", description: "Read payments" },
   { name: "payment@create", description: "Create payments" },
   { name: "payment@delete", description: "Delete payments" },
+
+  // Email CRM
+  { name: "email-crm@read", description: "Read email CRM conversations" },
+  { name: "email-crm@create", description: "Create email CRM conversations" },
+  { name: "email-crm@update", description: "Update email CRM conversations and messages" },
+  { name: "email-crm@delete", description: "Delete email CRM conversations" },
 ];
 
 const ROLES = [
