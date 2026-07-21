@@ -47,6 +47,12 @@ const PERMISSIONS = [
   // AI Admin
   { name: "ai-admin@access", description: "Access AI system administrator assistant with full read-write database access" },
 
+  // Knowledge Base
+  { name: "knowledge-base@read", description: "Read knowledge base entries" },
+  { name: "knowledge-base@create", description: "Create knowledge base entries" },
+  { name: "knowledge-base@update", description: "Update knowledge base entries" },
+  { name: "knowledge-base@delete", description: "Delete knowledge base entries" },
+
   // CRM
   { name: "region@read", description: "Read regions" },
   { name: "region@create", description: "Create regions" },

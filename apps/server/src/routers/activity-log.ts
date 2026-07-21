@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { TRPCError } from '@trpc/server';
 import type { Prisma } from '../prisma/generated/client';
 import { buildPaginationMeta, buildPaginationParams, createListInputSchema } from '../lib/list-query.js';

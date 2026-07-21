@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 // Base list and pagination schemas
 export const baseListInputSchema = z.object({

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { TRPCError } from '@trpc/server';
 import { logActivity } from '../lib/activity-log.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';

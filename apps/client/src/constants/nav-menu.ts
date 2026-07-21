@@ -138,6 +138,12 @@ export const NAV_MENU: NavMenuItem[] = [
         href: "/notifications",
         permission: "notification@read",
       },
+      {
+        name: "nav.knowledge_base",
+        icon: icons.dashSparkle,
+        href: "/knowledge-base",
+        permission: "knowledge-base@read",
+      },
     ],
   },
   {

@@ -52,6 +52,9 @@ import AiAdminChatPage from './pages/ai-admin/AiAdminChatPage';
 import { EmailCrmIndexPage } from './pages/email-crm/EmailCrmIndexPage';
 import { EmailCrmDetailPage } from './pages/email-crm/EmailCrmDetailPage';
 import { EmailCrmFormPage } from './pages/email-crm/EmailCrmFormPage';
+import { KnowledgeBaseIndexPage } from './pages/knowledge-base/KnowledgeBaseIndexPage';
+import { KnowledgeBaseDetailPage } from './pages/knowledge-base/KnowledgeBaseDetailPage';
+import { KnowledgeBaseFormPage } from './pages/knowledge-base/KnowledgeBaseFormPage';
 
 export const router = createBrowserRouter([
   {
@@ -216,6 +219,15 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <NotificationsPage />,
+      },
+      {
+        path: 'knowledge-base',
+        children: [
+          { index: true, element: <KnowledgeBaseIndexPage /> },
+          { path: 'create', element: <KnowledgeBaseFormPage /> },
+          { path: ':id', element: <KnowledgeBaseDetailPage /> },
+          { path: ':id/edit', element: <KnowledgeBaseFormPage /> },
+        ],
       },
       {
         path: 'ai-admin',

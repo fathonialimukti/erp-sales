@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 // Shared filter inputs for the read-only reporting router.
 // All reporting procedures accept an optional date range + geo scope so

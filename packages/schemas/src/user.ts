@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 // User schemas
 export const createUserSchema = z.object({

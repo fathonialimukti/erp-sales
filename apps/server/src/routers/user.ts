@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { removePhotoValue } from '../lib/photo-lifecycle.js';
 import { prisma } from '../lib/prisma.js';

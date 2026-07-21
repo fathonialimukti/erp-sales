@@ -14,7 +14,7 @@ import {
   reportDimensionSchema,
   reportPeriodSchema,
 } from '@repo/schemas/report';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const APPROVED = 'APPROVED' as const;
 

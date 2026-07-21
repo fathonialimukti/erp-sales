@@ -54,7 +54,9 @@ When your prompt contains a `## FROZEN CONTRACT` block:
 - **Do NOT invoke `superpowers:brainstorming` or `superpowers:writing-plans`.** Design is already decided by the orchestrator.
 - **Do NOT re-read `.github/instructions/*` files.** The relevant rules are summarized in the contract and your agent file.
 - **Do NOT free-form discover.** Use the reference router/schema files named in the contract as your pattern source.
+- **Read the shared context pack first**: the contract points to docs/plans/<feature>/CONTEXT.md, and that file is the single source of truth for the task.
 - **Implement directly** from the contract: schema → router → registration → tests.
+- If you need more context, update the shared context pack instead of re-gathering the same information from scratch.
 - Only invoke `superpowers:brainstorming` when you are dispatched standalone (no frozen contract) AND a genuine design decision is unresolved.
 
 ## Project Stack (non-negotiable)

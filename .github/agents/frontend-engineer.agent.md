@@ -54,7 +54,9 @@ When your prompt contains a `## FROZEN CONTRACT` block:
 - **Do NOT invoke `superpowers:brainstorming`, `superpowers:writing-plans`, or `trpc-page-scaffold`.** Design is already decided by the orchestrator.
 - **Do NOT re-read `.github/instructions/*` files.** The relevant rules are summarized in the contract and your agent file.
 - **Do NOT free-form discover.** Use the reference pages named in the contract as your pattern source — copy their structure exactly.
+- **Read the shared context pack first**: the contract points to docs/plans/<feature>/CONTEXT.md, and that file is the single source of truth for the task.
 - **Implement directly** from the contract: Index page → Detail page → Form page → i18n keys → routes.
+- If you discover new constraints, update the shared context pack rather than re-gathering the same information from scratch.
 - Only invoke `superpowers:brainstorming` when you are dispatched standalone (no frozen contract) AND a genuine design decision is unresolved.
 
 ## Project Stack (non-negotiable)

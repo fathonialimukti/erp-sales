@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createVisitLogSchema, updateVisitLogSchema, visitLogIdSchema, visitLogListInputSchema } from '@repo/schemas/visit-log';
 import { logActivity } from '../lib/activity-log.js';
 import { buildCreateLogDetail, buildDeleteLogDetail, buildUpdateLogDetail } from '../lib/log-detail.js';

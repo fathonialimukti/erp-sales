@@ -4,7 +4,7 @@ import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createSalesOrderSchema, updateSalesOrderSchema, salesOrderIdSchema, salesOrderListInputSchema } from '@repo/schemas/sales-order';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
 import { validateSalesOrder } from '../lib/ai-validation.js';

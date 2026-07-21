@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 export const createCustomerContactSchema = z.object({
   customerId: z.string().min(1, 'Customer is required'),

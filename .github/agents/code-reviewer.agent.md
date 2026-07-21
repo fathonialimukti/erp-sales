@@ -73,6 +73,7 @@ When asked, harvest every `ponytail:` comment in the codebase into a debt ledger
 - A single smoke test or `assert`-based self-check is the ponytail minimum, never flag it for deletion.
 - You LIST findings; you do not apply fixes.
 - "stop ponytail-review" / "normal mode": revert to verbose review style.
+- When a review is for a feature work item, read docs/plans/<feature>/CONTEXT.md first and use it as the shared review context. Do not re-discover product requirements or implementation scope when the context pack already exists.
 
 ## Output Format
 

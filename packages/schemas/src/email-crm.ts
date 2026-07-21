@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { createListInputSchema } from './common';
 
 export const emailConversationStatusSchema = z.enum(['OPEN', 'PENDING', 'RESOLVED', 'SPAM']);

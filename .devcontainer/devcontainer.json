@@ -3,9 +3,11 @@
 {
   "name": "erp_sales",
   "dockerFile": "Dockerfile",
+  // Forward dev server ports from container → VPS → your local machine.
+  // After rebuild, access at http://localhost:10021 (frontend) and http://localhost:10022 (API).
+  "runArgs": ["--network=dev", "--name=erp_sales"],
   "forwardPorts": [10021, 10022],
-  // Install deps automatically so reviewers can run the app immediately on open.
-  "postCreateCommand": "bun install",
+  "appPort": ["10021:10021", "10022:10022"],
   "containerEnv": {
     "HOST": "0.0.0.0",
     "NODE_ENV": "production",
@@ -19,20 +21,6 @@
     "10022": {
       "label": "tRPC Server",
       "onAutoForward": "notify"
-    }
-  },
-  // Self-contained Postgres (trust auth, internal only) so the app is runnable for
-  // reviewers without external setup. DB port is intentionally NOT forwarded publicly.
-  "services": {
-    "postgres": {
-      "image": "postgres:16-alpine",
-      "environment": {
-        "POSTGRES_USER": "erp",
-        "POSTGRES_DB": "erp_sales",
-        "POSTGRES_HOST_AUTH_METHOD": "trust"
-      },
-      "volumes": ["postgres-data:/var/lib/postgresql/data"],
-      "restart": "unless-stopped"
     }
   },
   // Configure tool-specific properties.

@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "init": "bun run --cwd apps/server prisma generate",
     "prod": "bun run --cwd apps/server prisma generate && turbo run build && pm2 start ecosystem.config.js",
     "restart-prod": "pm2 restart ecosystem.config.js",
     "prod:stop": "pm2 stop ecosystem.config.js",

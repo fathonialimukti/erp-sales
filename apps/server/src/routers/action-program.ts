@@ -5,7 +5,7 @@ import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere } from
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import { createActionProgramSchema } from '@repo/schemas/action-program';
-import { z } from 'zod';
+import * as z from 'zod';
 import { updateActionProgramSchema, actionProgramIdSchema, actionProgramListInputSchema } from '@repo/schemas/action-program';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
 import { validateActionProgram } from '../lib/ai-validation.js';

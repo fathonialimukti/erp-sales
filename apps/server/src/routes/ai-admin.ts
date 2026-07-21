@@ -9,7 +9,7 @@ import {
     stepCountIs,
     tool,
 } from 'ai';
-import { z } from 'zod';
+import * as z from 'zod';
 import { chatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools } from '../lib/ai-tools.js';

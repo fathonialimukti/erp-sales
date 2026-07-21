@@ -5,7 +5,7 @@ import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere } from
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import { createEventProposalSchema } from '@repo/schemas/event-proposal';
-import { z } from 'zod';
+import * as z from 'zod';
 import { updateEventProposalSchema, eventProposalIdSchema, eventProposalListInputSchema } from '@repo/schemas/event-proposal';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
 import { validateEventProposal } from '../lib/ai-validation.js';

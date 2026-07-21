@@ -4,7 +4,7 @@ import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createCustomerSchema, updateCustomerSchema, customerIdSchema } from '@repo/schemas/customer';
 import { createCustomerContactSchema, updateCustomerContactSchema, customerContactIdSchema } from '@repo/schemas/customer-contact';
 

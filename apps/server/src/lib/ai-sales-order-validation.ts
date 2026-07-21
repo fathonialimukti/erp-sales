@@ -1,5 +1,5 @@
 import { generateText, Output } from 'ai';
-import { z } from 'zod';
+import * as z from 'zod';
 import { chatModel } from './ai-provider.js';
 import { prisma } from './prisma.js';
 import { retrieveRelevantChunks } from './rag.js';
