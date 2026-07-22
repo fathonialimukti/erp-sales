@@ -12,7 +12,7 @@ export const emailCrmListInputSchema = createListInputSchema({
 });
 
 export const createEmailConversationSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   subject: z.string().optional(),
   status: emailConversationStatusSchema.default('OPEN'),
   priority: emailConversationPrioritySchema.default('NORMAL'),
@@ -23,7 +23,7 @@ export const createEmailConversationSchema = z.object({
 
 export const updateEmailConversationSchema = z.object({
   currentId: z.string(),
-  email: z.string().email().optional(),
+  email: z.email().optional(),
   subject: z.string().optional().nullable(),
   status: emailConversationStatusSchema.optional(),
   priority: emailConversationPrioritySchema.optional(),
@@ -79,7 +79,24 @@ export const createDraftOrderFromEmailSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const sendEmailMessageSchema = z
+  .object({
+    conversationId: z.string(),
+    body: z.string().min(1).optional(),
+    htmlBody: z.string().min(1).optional(),
+    subject: z.string().optional(),
+  })
+  .refine((v) => Boolean(v.body?.trim() || v.htmlBody?.trim()), {
+    message: 'body or htmlBody required',
+  });
+
+export const retryEmailAgentSchema = z.object({
+  conversationId: z.string(),
+});
+
 export type CreateEmailConversationInput = z.infer<typeof createEmailConversationSchema>;
 export type UpdateEmailConversationInput = z.infer<typeof updateEmailConversationSchema>;
 export type EmailInboundPayload = z.infer<typeof emailInboundPayloadSchema>;
 export type CreateDraftOrderFromEmailInput = z.infer<typeof createDraftOrderFromEmailSchema>;
+export type SendEmailMessageInput = z.infer<typeof sendEmailMessageSchema>;
+export type RetryEmailAgentInput = z.infer<typeof retryEmailAgentSchema>;

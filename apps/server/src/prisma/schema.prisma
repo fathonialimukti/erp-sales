@@ -395,21 +395,25 @@ model SalesOrder {
 }
 
 model EmailConversation {
-  id            String    @id @default(ulid()) @map("id")
-  email         String    @unique @map("email")
-  subject       String?   @map("subject")
-  status        String    @default("OPEN") @map("status")
-  priority      String    @default("NORMAL") @map("priority")
-  sentiment     String?   @map("sentiment")
-  tags          Json?     @map("tags")
-  lastMessageAt DateTime? @map("last_message_at")
-  customerId    String?   @map("customer_id")
-  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  messages      EmailMessage[]
-  salesOrders   SalesOrder[]
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id             String    @id @default(ulid()) @map("id")
+  email          String    @map("email")
+  subject        String?   @map("subject")
+  status         String    @default("OPEN") @map("status")
+  priority       String    @default("NORMAL") @map("priority")
+  sentiment      String?   @map("sentiment")
+  tags           Json?     @map("tags")
+  lastMessageAt  DateTime? @map("last_message_at")
+  customerId     String?   @map("customer_id")
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  agentStatus    String    @default("IDLE") @map("agent_status")
+  agentError     String?   @map("agent_error") @db.Text
+  lastOutboundAt DateTime? @map("last_outbound_at")
+  messages       EmailMessage[]
+  salesOrders    SalesOrder[]
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  @@index([email])
   @@index([customerId])
   @@index([status])
   @@index([lastMessageAt])
@@ -422,9 +426,13 @@ model EmailMessage {
   conversation   EmailConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   direction      String            @map("direction")
   body           String            @map("body") @db.Text
+  htmlBody       String?           @map("html_body") @db.Text
   messageId      String?           @unique @map("message_id")
   inReplyTo      String?           @map("in_reply_to")
   references     String?           @map("email_references")
+  sendStatus     String?           @map("send_status")
+  sentAt         DateTime?         @map("sent_at")
+  error          String?           @map("error") @db.Text
   createdAt      DateTime          @default(now()) @map("created_at")
 
   @@index([conversationId])

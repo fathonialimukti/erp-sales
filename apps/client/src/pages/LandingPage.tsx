@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { Button } from "../ui/Button";
-import { CustomerAiWidget } from "../components/CustomerAiWidget";
 import { DecorBlob, HeroDashboard, ApprovalFlow, EmailToOrderFlow, AiWorkflow } from "./landing-assets";
 import "./LandingPage.css";
 
@@ -62,7 +61,7 @@ const FEATURES = [
   { key: "programs", icon: "medal" as const, titleId: "landing.feature_programs_title", descId: "landing.feature_programs_desc" },
   { key: "approvals", icon: "checkCircle" as const, titleId: "landing.feature_approvals_title", descId: "landing.feature_approvals_desc" },
   { key: "insight", icon: "chart" as const, titleId: "landing.feature_insight_title", descId: "landing.feature_insight_desc" },
-  { key: "n8n", icon: "mail" as const, titleId: "landing.feature_n8n_title", descId: "landing.feature_n8n_desc" },
+  { key: "email_concierge", icon: "mail" as const, titleId: "landing.feature_email_concierge_title", descId: "landing.feature_email_concierge_desc" },
 ] as const;
 
 const STEPS = [
@@ -423,8 +422,6 @@ export const LandingPage = () => {
           </div>
         </div>
       </footer>
-
-      <CustomerAiWidget />
     </div>
   );
 };

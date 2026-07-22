@@ -1,4 +1,8 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../lib/email-concierge.js', () => ({
+  enqueueEmailConcierge: vi.fn(),
+}));
 import { randomUUID } from 'crypto';
 import type { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma.js';
@@ -158,19 +162,78 @@ describe('processInboundEmail', () => {
 
     // Create a different contact with same email pointing elsewhere would be multi-match;
     // instead ensure a later inbound does not clear/change the assigned customer.
+    // Reply with In-Reply-To so it joins the same conversation (header threading)
+    const firstMsg = await prisma.emailMessage.findFirst({
+      where: { conversationId: first.conversationId },
+      orderBy: { createdAt: 'asc' },
+    });
     const second = await processInboundEmail({
       from: email,
       to: 'info@example.com',
       subject: 'Follow-up',
       text: 'Still me',
       messageId: `<sticky-2-${randomUUID()}@example.com>`,
+      inReplyTo: firstMsg?.messageId ?? undefined,
+      references: firstMsg?.messageId ?? undefined,
     });
     if ('skipped' in second) throw new Error('should not skip');
+    expect(second.conversationId).toBe(first.conversationId);
 
     const conversation = await prisma.emailConversation.findUnique({
       where: { id: first.conversationId },
     });
     expect(conversation?.customerId).toBe(customerId);
+  });
+
+  it('starts a new conversation for same sender without reply headers', async () => {
+    const email = `thread-${randomUUID()}@example.com`;
+    const a = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'First topic',
+      text: 'Hello 1',
+      messageId: `<a-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in a) throw new Error('skip');
+    createdConversationIds.push(a.conversationId);
+
+    const b = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Second topic',
+      text: 'Hello 2',
+      messageId: `<b-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in b) throw new Error('skip');
+    createdConversationIds.push(b.conversationId);
+
+    expect(b.conversationId).not.toBe(a.conversationId);
+  });
+
+  it('joins conversation when In-Reply-To matches prior messageId', async () => {
+    const email = `reply-${randomUUID()}@example.com`;
+    const parentMid = `<parent-${randomUUID()}@example.com>`;
+    const first = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Quote',
+      text: 'Need prices',
+      messageId: parentMid,
+    });
+    if ('skipped' in first) throw new Error('skip');
+    createdConversationIds.push(first.conversationId);
+
+    const second = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Re: Quote',
+      text: 'Following up',
+      messageId: `<child-${randomUUID()}@example.com>`,
+      inReplyTo: parentMid,
+      references: parentMid,
+    });
+    if ('skipped' in second) throw new Error('skip');
+    expect(second.conversationId).toBe(first.conversationId);
   });
 });
 

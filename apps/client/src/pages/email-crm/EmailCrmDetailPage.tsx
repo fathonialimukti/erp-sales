@@ -11,10 +11,15 @@ import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 import { EmailCrmIcon } from "./EmailCrmIcons";
 
+type AgentStatus = "IDLE" | "RUNNING" | "SENT" | "FAILED" | string;
+
 type EmailMessage = {
   id: string;
   direction: string;
   body: string;
+  htmlBody?: string | null;
+  sendStatus?: string | null;
+  sentAt?: string | Date | null;
   createdAt: string | Date;
 };
 
@@ -27,6 +32,9 @@ type EmailCrmDetail = {
   sentiment: string | null;
   tags: unknown;
   lastMessageAt: string | Date | null;
+  agentStatus?: AgentStatus | null;
+  agentError?: string | null;
+  lastOutboundAt?: string | Date | null;
   customer: { id: string; name: string; code: string | null } | null;
   messages: EmailMessage[];
   salesOrders: {
@@ -54,6 +62,37 @@ const tagsToLabel = (tags: unknown) => {
   return tags.filter((t): t is string => typeof t === "string").join(", ") || "—";
 };
 
+/**
+ * Outbound-only HTML sanitize (mirror server roughly).
+ * Strips script/iframe/object/form, on* handlers, javascript: URLs.
+ * Returns null when nothing safe remains → caller falls back to plain body.
+ */
+const sanitizeOutboundHtml = (html: string): string | null => {
+  const cleaned = html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<object[\s\S]*?>[\s\S]*?<\/object>/gi, "")
+    .replace(/<form[\s\S]*?>[\s\S]*?<\/form>/gi, "")
+    .replace(/<\/?(?:script|iframe|object|form|embed|link|meta|base)[^>]*>/gi, "")
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/javascript:/gi, "")
+    .trim();
+  return cleaned.length > 0 ? cleaned : null;
+};
+
+const agentStatusTint = (status: AgentStatus | null | undefined) => {
+  switch (status) {
+    case "RUNNING":
+      return { tint: "warning" as const, className: "so-status--warning" };
+    case "SENT":
+      return { tint: "success" as const, className: "so-status--success" };
+    case "FAILED":
+      return { tint: "danger" as const, className: "so-status--danger" };
+    default:
+      return { tint: "neutral" as const, className: "so-status--neutral" };
+  }
+};
+
 export const EmailCrmDetailPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -73,6 +112,11 @@ export const EmailCrmDetailPage = () => {
     queryKey: ["emailCrmDetail", id],
     enabled: Boolean(id),
     queryFn: () => trpcClient.emailCrm.detail.query({ id: id ?? "" }),
+    refetchInterval: (query) => {
+      const status = (query.state.data as EmailCrmDetail | undefined)?.agentStatus;
+      // ponytail: server only uses RUNNING while work is in flight
+      return status === "RUNNING" ? 2000 : false;
+    },
   });
 
   const conversation = data as EmailCrmDetail | undefined;
@@ -82,21 +126,20 @@ export const EmailCrmDetailPage = () => {
     await queryClient.invalidateQueries({ queryKey: ["emailCrmList"] });
   };
 
-  const saveReplyMutation = useMutation({
+  const sendReplyMutation = useMutation({
     mutationFn: (body: string) =>
-      trpcClient.emailCrm.createMessage.mutate({
+      trpcClient.emailCrm.sendMessage.mutate({
         conversationId: id ?? "",
         body,
-        direction: "OUTBOUND",
       }),
     onSuccess: async () => {
       setComposeBody("");
       await invalidateDetail();
       toast.success(
-        intl.formatMessage({ id: "emailCrm.detail.reply_saved", defaultMessage: "Reply saved" }),
+        intl.formatMessage({ id: "emailCrm.detail.reply_sent", defaultMessage: "Reply sent" }),
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to save reply"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to send reply"),
   });
 
   const suggestMutation = useMutation({
@@ -113,6 +156,20 @@ export const EmailCrmDetailPage = () => {
       );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to suggest reply"),
+  });
+
+  const retryAgentMutation = useMutation({
+    mutationFn: () =>
+      trpcClient.emailCrm.retryAgent.mutate({
+        conversationId: id ?? "",
+      }),
+    onSuccess: async () => {
+      await invalidateDetail();
+      toast.success(
+        intl.formatMessage({ id: "emailCrm.detail.agent_running", defaultMessage: "Agent is running…" }),
+      );
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to retry agent"),
   });
 
   const handleDelete = async () => {
@@ -169,7 +226,11 @@ export const EmailCrmDetailPage = () => {
     );
   }
 
-  const busy = saveReplyMutation.isPending || suggestMutation.isPending;
+  const agentStatus = conversation.agentStatus ?? "IDLE";
+  const agentTint = agentStatusTint(agentStatus);
+  const agentRunning = agentStatus === "RUNNING";
+  const busy =
+    sendReplyMutation.isPending || suggestMutation.isPending || retryAgentMutation.isPending || agentRunning;
 
   return (
     <section
@@ -180,6 +241,7 @@ export const EmailCrmDetailPage = () => {
         email: conversation.email,
         status: conversation.status,
         priority: conversation.priority,
+        agentStatus,
         messageCount: conversation.messages?.length ?? 0,
         orderCount: conversation.salesOrders?.length ?? 0,
       })}
@@ -200,6 +262,22 @@ export const EmailCrmDetailPage = () => {
           <ButtonGroup
             size="md"
             items={[
+              ...(canUpdate && agentStatus === "FAILED"
+                ? [
+                    {
+                      key: "retry-agent",
+                      label: intl.formatMessage({
+                        id: "emailCrm.detail.retry_agent",
+                        defaultMessage: "Retry agent",
+                      }),
+                      icon: <EmailCrmIcon name="sparkle" size={14} />,
+                      onClick: () => retryAgentMutation.mutate(),
+                      disabled: retryAgentMutation.isPending,
+                      isLoading: retryAgentMutation.isPending,
+                      variant: "primary" as const,
+                    },
+                  ]
+                : []),
               ...(canUpdate
                 ? [
                     {
@@ -233,6 +311,28 @@ export const EmailCrmDetailPage = () => {
               </span>
               <h1 className="so-detail-hero__title">{conversation.subject ?? conversation.email}</h1>
               <span className="so-detail-hero__sub">{conversation.email}</span>
+              <span className={`so-status ${agentTint.className}`} data-tint={agentTint.tint}>
+                {agentRunning ? <Spinner size="sm" /> : <span className="so-status__dot" aria-hidden="true" />}
+                <span>
+                  {intl.formatMessage({ id: "emailCrm.detail.agent_status", defaultMessage: "Agent" })}:{" "}
+                  {agentRunning
+                    ? intl.formatMessage({
+                        id: "emailCrm.detail.agent_running",
+                        defaultMessage: "Agent is running…",
+                      })
+                    : agentStatus === "FAILED"
+                      ? intl.formatMessage({
+                          id: "emailCrm.detail.agent_failed",
+                          defaultMessage: "Agent failed",
+                        })
+                      : agentStatus}
+                </span>
+              </span>
+              {agentStatus === "FAILED" && conversation.agentError ? (
+                <p style={{ margin: "6px 0 0", color: "var(--ios-state-danger, #DC2626)", fontSize: 13 }}>
+                  {conversation.agentError}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -304,6 +404,12 @@ export const EmailCrmDetailPage = () => {
               </span>
               <span className="so-field__value">{formatDateTime(conversation.lastMessageAt)}</span>
             </div>
+            <div className="so-field">
+              <span className="so-field__label">
+                {intl.formatMessage({ id: "emailCrm.detail.agent_status", defaultMessage: "Agent" })}
+              </span>
+              <span className="so-field__value">{agentStatus}</span>
+            </div>
           </div>
         </div>
       </section>
@@ -327,6 +433,11 @@ export const EmailCrmDetailPage = () => {
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {conversation.messages.map((msg) => {
                 const inbound = msg.direction === "INBOUND";
+                // INBOUND: always plain body (never HTML). OUTBOUND: strict sanitize or fall back to body.
+                const outboundHtml =
+                  !inbound && msg.htmlBody?.trim()
+                    ? sanitizeOutboundHtml(msg.htmlBody)
+                    : null;
                 return (
                   <div
                     key={msg.id}
@@ -340,12 +451,22 @@ export const EmailCrmDetailPage = () => {
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
-                      <span className="m-badge">{msg.direction}</span>
+                      <span className="m-badge">
+                        {msg.direction}
+                        {msg.sendStatus ? ` · ${msg.sendStatus}` : ""}
+                      </span>
                       <span style={{ fontSize: 12, color: "var(--ios-label-2)" }}>
-                        {formatDateTime(msg.createdAt)}
+                        {formatDateTime(msg.sentAt ?? msg.createdAt)}
                       </span>
                     </div>
-                    <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{msg.body}</p>
+                    {outboundHtml ? (
+                      <div
+                        dangerouslySetInnerHTML={{ __html: outboundHtml }}
+                        style={{ margin: 0, wordBreak: "break-word" }}
+                      />
+                    ) : (
+                      <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{msg.body}</p>
+                    )}
                   </div>
                 );
               })}
@@ -420,8 +541,8 @@ export const EmailCrmDetailPage = () => {
                     variant: "default",
                   },
                   {
-                    key: "save",
-                    label: intl.formatMessage({ id: "emailCrm.detail.save_reply", defaultMessage: "Save reply" }),
+                    key: "send",
+                    label: intl.formatMessage({ id: "emailCrm.detail.send_reply", defaultMessage: "Send" }),
                     icon: <EmailCrmIcon name="check" size={14} />,
                     onClick: () => {
                       const body = composeBody.trim();
@@ -434,10 +555,10 @@ export const EmailCrmDetailPage = () => {
                         );
                         return;
                       }
-                      saveReplyMutation.mutate(body);
+                      sendReplyMutation.mutate(body);
                     },
                     disabled: busy || !composeBody.trim(),
-                    isLoading: saveReplyMutation.isPending,
+                    isLoading: sendReplyMutation.isPending,
                     variant: "primary",
                   },
                 ]}
@@ -476,6 +597,14 @@ export const EmailCrmDetailPage = () => {
                     className="so-items-table__row"
                     style={{ cursor: "pointer" }}
                     onClick={() => navigate(`/sales-order/${order.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/sales-order/${order.id}`);
+                      }
+                    }}
                   >
                     <div className="so-items-table__td so-items-table__td--product">
                       <span className="so-items-table__icon" data-tint="blue" aria-hidden="true">
@@ -486,7 +615,11 @@ export const EmailCrmDetailPage = () => {
                           {order.documentNumber ?? order.id}
                         </span>
                         <span className="so-items-table__product-code">
-                          {order.approvalStatus} · {formatDateTime(order.createdAt)}
+                          {intl.formatMessage({
+                            id: "emailCrm.detail.open_order",
+                            defaultMessage: "Open order",
+                          })}{" "}
+                          · {order.approvalStatus} · {formatDateTime(order.createdAt)}
                         </span>
                       </div>
                     </div>

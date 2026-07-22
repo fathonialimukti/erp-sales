@@ -2,12 +2,16 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'crypto';
 import type { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma.js';
-import * as emailAutoReplyAi from '../../lib/email-auto-reply-ai.js';
 import { emailAutoReplyHandler } from '../../routes/email-auto-reply.js';
 
 const SECRET = 'test-email-auto-reply-secret';
 const createdConversationIds: string[] = [];
-const DRAFT = 'Thanks for reaching out. We will follow up shortly.';
+
+vi.mock('../../lib/email-concierge.js', () => ({
+  enqueueEmailConcierge: vi.fn(),
+}));
+
+import { enqueueEmailConcierge } from '../../lib/email-concierge.js';
 
 function mockRes() {
   const state: { statusCode: number; body: unknown } = { statusCode: 200, body: null };
@@ -75,11 +79,8 @@ describe('emailAutoReplyHandler', () => {
     });
   });
 
-  it('stores inbound, saves outbound draft, returns reply text', async () => {
-    const spy = vi
-      .spyOn(emailAutoReplyAi, 'generateEmailAutoReplyDraft')
-      .mockResolvedValue(DRAFT);
-
+  it('stores inbound, enqueues concierge, returns reply:null (no CF AI body)', async () => {
+    vi.mocked(enqueueEmailConcierge).mockClear();
     const { res, state } = mockRes();
     const from = `auto-reply-${randomUUID()}@example.com`;
     await emailAutoReplyHandler(
@@ -101,35 +102,25 @@ describe('emailAutoReplyHandler', () => {
       ok: boolean;
       conversationId?: string;
       messageId?: string;
-      outboundMessageId?: string;
-      reply?: { text: string; subject: string } | null;
+      reply?: unknown;
     };
     expect(body.ok).toBe(true);
     expect(body.conversationId).toBeTruthy();
     expect(body.messageId).toBeTruthy();
-    expect(body.outboundMessageId).toBeTruthy();
-    expect(body.reply?.text).toBe(DRAFT);
-    expect(body.reply?.subject).toBe('Re: Need pricing');
-    expect(spy).toHaveBeenCalledOnce();
+    expect(body.reply).toBeNull();
+    expect(enqueueEmailConcierge).toHaveBeenCalledWith(body.conversationId);
     if (body.conversationId) createdConversationIds.push(body.conversationId);
 
     const messages = await prisma.emailMessage.findMany({
       where: { conversationId: body.conversationId },
       orderBy: { createdAt: 'asc' },
     });
-    expect(messages).toHaveLength(2);
+    expect(messages).toHaveLength(1);
     expect(messages[0]?.direction).toBe('INBOUND');
-    expect(messages[1]?.direction).toBe('OUTBOUND');
-    expect(messages[1]?.body).toBe(DRAFT);
-
-    spy.mockRestore();
   });
 
-  it('does not re-AI on deduped messageId', async () => {
-    const spy = vi
-      .spyOn(emailAutoReplyAi, 'generateEmailAutoReplyDraft')
-      .mockResolvedValue(DRAFT);
-
+  it('does not re-enqueue on deduped messageId', async () => {
+    vi.mocked(enqueueEmailConcierge).mockClear();
     const messageId = `<dedupe-auto-${randomUUID()}@example.com>`;
     const from = `dedupe-auto-${randomUUID()}@example.com`;
     const payload = {
@@ -145,13 +136,11 @@ describe('emailAutoReplyHandler', () => {
     expect(first.state.statusCode).toBe(200);
     const firstBody = first.state.body as {
       conversationId?: string;
-      outboundMessageId?: string;
       reply?: unknown;
     };
     if (firstBody.conversationId) createdConversationIds.push(firstBody.conversationId);
-    expect(firstBody.outboundMessageId).toBeTruthy();
-    expect(firstBody.reply).toBeTruthy();
-    expect(spy).toHaveBeenCalledOnce();
+    expect(firstBody.reply).toBeNull();
+    expect(enqueueEmailConcierge).toHaveBeenCalledOnce();
 
     const second = mockRes();
     await emailAutoReplyHandler(mockReq(payload, SECRET), second.res);
@@ -162,14 +151,7 @@ describe('emailAutoReplyHandler', () => {
       conversationId: firstBody.conversationId,
       reply: null,
     });
-    // still only one AI call (first request)
-    expect(spy).toHaveBeenCalledOnce();
-
-    const outboundCount = await prisma.emailMessage.count({
-      where: { conversationId: firstBody.conversationId, direction: 'OUTBOUND' },
-    });
-    expect(outboundCount).toBe(1);
-
-    spy.mockRestore();
+    // still only one enqueue (first request)
+    expect(enqueueEmailConcierge).toHaveBeenCalledOnce();
   });
 });

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'crypto';
 import { createCaller } from '../helpers/caller.js';
 import {
@@ -18,6 +18,20 @@ import {
   seedTestUser,
 } from '../helpers/seed.js';
 import { prisma } from '../../lib/prisma.js';
+
+
+vi.mock('../../lib/email-smtp.js', () => ({
+  sendSmtpEmail: vi.fn(async () => ({ messageId: `<smtp-test@aetherglo.com>` })),
+  createSmtpTransport: vi.fn(),
+  generateMessageId: vi.fn(() => '<smtp-test@aetherglo.com>'),
+}));
+
+vi.mock('../../lib/email-concierge.js', () => ({
+  enqueueEmailConcierge: vi.fn(),
+}));
+
+import { sendSmtpEmail } from '../../lib/email-smtp.js';
+import { enqueueEmailConcierge } from '../../lib/email-concierge.js';
 
 let caller: ReturnType<typeof createCaller>;
 let actorUserId: string;
@@ -171,5 +185,91 @@ describe('emailCrm router', () => {
 
     await deleteTestUser(user.id);
     await deleteTestRole(role.id);
+  });
+
+  it('sendMessage creates OUTBOUND with sendStatus SENT via SMTP', async () => {
+    vi.mocked(sendSmtpEmail).mockClear();
+    const email = `send-${randomUUID()}@example.com`;
+    const created = await caller.emailCrm.create({
+      email,
+      subject: 'Quote request',
+      customerId,
+    });
+    createdConversationIds.push(created.id);
+
+    await prisma.emailMessage.create({
+      data: {
+        conversationId: created.id,
+        direction: 'INBOUND',
+        body: 'Need pricing',
+        messageId: `<in-${randomUUID()}@example.com>`,
+      },
+    });
+
+    const message = await caller.emailCrm.sendMessage({
+      conversationId: created.id,
+      body: 'Here is our quote.',
+    });
+
+    expect(message.direction).toBe('OUTBOUND');
+    expect(message.sendStatus).toBe('SENT');
+    expect(message.sentAt).toBeTruthy();
+    expect(message.htmlBody).toBeTruthy();
+    expect(sendSmtpEmail).toHaveBeenCalledOnce();
+    const smtpArg = vi.mocked(sendSmtpEmail).mock.calls[0]![0];
+    expect(smtpArg.to).toBe(email.toLowerCase());
+    expect(smtpArg.subject).toMatch(/Re:/);
+
+    const conv = await prisma.emailConversation.findUnique({ where: { id: created.id } });
+    expect(conv?.lastOutboundAt).toBeTruthy();
+  });
+
+  it('retryAgent enqueues concierge', async () => {
+    vi.mocked(enqueueEmailConcierge).mockClear();
+    const created = await caller.emailCrm.create({
+      email: `retry-${randomUUID()}@example.com`,
+      subject: 'Retry me',
+    });
+    createdConversationIds.push(created.id);
+
+    await prisma.emailConversation.update({
+      where: { id: created.id },
+      data: { agentStatus: 'FAILED', agentError: 'missing_finalize' },
+    });
+
+    const result = await caller.emailCrm.retryAgent({ conversationId: created.id });
+    expect(result.ok).toBe(true);
+    expect(enqueueEmailConcierge).toHaveBeenCalledWith(created.id);
+
+    const conv = await prisma.emailConversation.findUnique({ where: { id: created.id } });
+    expect(conv?.agentStatus).toBe('IDLE');
+    expect(conv?.agentError).toBeNull();
+  });
+
+  it('retryAgent unsticks RUNNING', async () => {
+    vi.mocked(enqueueEmailConcierge).mockClear();
+    const created = await caller.emailCrm.create({
+      email: `stuck-${randomUUID()}@example.com`,
+      subject: 'Stuck running',
+    });
+    createdConversationIds.push(created.id);
+
+    await prisma.emailConversation.update({
+      where: { id: created.id },
+      data: {
+        agentStatus: 'RUNNING',
+        agentError: 'crashed mid-run',
+        lastOutboundAt: new Date(),
+      },
+    });
+
+    const result = await caller.emailCrm.retryAgent({ conversationId: created.id });
+    expect(result.ok).toBe(true);
+    expect(enqueueEmailConcierge).toHaveBeenCalledWith(created.id);
+
+    const conv = await prisma.emailConversation.findUnique({ where: { id: created.id } });
+    expect(conv?.agentStatus).toBe('IDLE');
+    expect(conv?.agentError).toBeNull();
+    expect(conv?.lastOutboundAt).toBeNull();
   });
 });

@@ -37,6 +37,7 @@ interface SalesOrderDetail {
   notes: string | null;
   expectedDeliveryDate: string | null;
   source: string;
+  emailConversationId?: string | null;
   items: {
     id: string;
     sku: { id: string; name: string; code: string | null; baseUnit: string };
@@ -242,6 +243,7 @@ export const SalesOrderDetailPage = () => {
         approvalStatus: record.approvalStatus,
         itemCount: record.items.length,
         grandTotal: record.grandTotal,
+        emailConversationId: record.emailConversationId ?? null,
       })}
     >
       {/* iOS hero — toolbar row + title row */}
@@ -413,6 +415,28 @@ export const SalesOrderDetailPage = () => {
             <Field label={intl.formatMessage({ id: "sales_order.detail.source", defaultMessage: "Source" })} value={record.source} />
             <Field label={intl.formatMessage({ id: "sales_order.detail.payment_terms", defaultMessage: "Payment terms" })} value={record.paymentTerms} />
             <Field label={intl.formatMessage({ id: "sales_order.detail.created_by", defaultMessage: "Created by" })} value={record.createdBy?.name} />
+            {record.emailConversationId ? (
+              <div className="so-field">
+                <span className="so-field__label">
+                  {intl.formatMessage({
+                    id: "sales_order.detail.email_conversation",
+                    defaultMessage: "Email conversation",
+                  })}
+                </span>
+                <span className="so-field__value">
+                  <button
+                    type="button"
+                    className="so-btn so-btn--ghost so-btn--sm"
+                    onClick={() => navigate(`/email-crm/${record.emailConversationId}`)}
+                  >
+                    {intl.formatMessage({
+                      id: "sales_order.detail.email_conversation",
+                      defaultMessage: "Email conversation",
+                    })}
+                  </button>
+                </span>
+              </div>
+            ) : null}
             <Field label={intl.formatMessage({ id: "sales_order.detail.currency", defaultMessage: "Currency" })} value={record.currency} />
           </div>
         </div>

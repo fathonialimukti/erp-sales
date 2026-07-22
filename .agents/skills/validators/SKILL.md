@@ -59,7 +59,7 @@ export const appRouter = router({
     return { id: input, name: 'Katt' };
   }),
   userCreate: publicProcedure
-    .input(z.object({ name: z.string(), email: z.string().email() }))
+    .input(z.object({ name: z.string(), email: z.email() }))
     .mutation(({ input }) => {
       return { id: '1', ...input };
     }),

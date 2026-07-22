@@ -28,6 +28,18 @@ export function shouldSkipInbound(payload: EmailInboundPayload): string | null {
   return null;
 }
 
+function parentMessageIdCandidates(payload: EmailInboundPayload): string[] {
+  const refs = (payload.references ?? '')
+    .split(/\s+/)
+    .map((r) => r.trim())
+    .filter(Boolean);
+  const ordered = [payload.inReplyTo?.trim(), ...refs].filter(
+    (v): v is string => Boolean(v),
+  );
+  // preserve order, unique
+  return [...new Set(ordered)];
+}
+
 async function dedupedByMessageId(messageId: string) {
   const existing = await prisma.emailMessage.findUnique({
     where: { messageId },
@@ -45,6 +57,44 @@ async function dedupedByMessageId(messageId: string) {
     linkedCustomerId: existing.conversation.customerId ?? undefined,
     deduped: true as const,
   };
+}
+
+async function resolveConversationId(
+  payload: EmailInboundPayload,
+  email: string,
+  linkedCustomerId: string | undefined,
+): Promise<string> {
+  const candidates = parentMessageIdCandidates(payload);
+  if (candidates.length > 0) {
+    // Prefer In-Reply-To order: walk candidates until a parent message is found
+    for (const mid of candidates) {
+      const parent = await prisma.emailMessage.findFirst({
+        where: { messageId: mid },
+        select: { conversationId: true },
+      });
+      if (parent) {
+        await prisma.emailConversation.update({
+          where: { id: parent.conversationId },
+          data: {
+            lastMessageAt: new Date(),
+            ...(payload.subject ? { subject: payload.subject } : {}),
+          },
+        });
+        return parent.conversationId;
+      }
+    }
+  }
+
+  // Header threading: same sender without reply headers → NEW conversation
+  const created = await prisma.emailConversation.create({
+    data: {
+      email,
+      subject: payload.subject,
+      lastMessageAt: new Date(),
+      customerId: linkedCustomerId,
+    },
+  });
+  return created.id;
 }
 
 export async function processInboundEmail(payload: EmailInboundPayload) {
@@ -68,24 +118,16 @@ export async function processInboundEmail(payload: EmailInboundPayload) {
   });
   if (contacts.length === 1) linkedCustomerId = contacts[0]!.customerId;
 
-  const conversation = await prisma.emailConversation.upsert({
-    where: { email },
-    create: {
-      email,
-      subject: payload.subject,
-      lastMessageAt: new Date(),
-      customerId: linkedCustomerId,
-    },
-    update: {
-      lastMessageAt: new Date(),
-      ...(payload.subject ? { subject: payload.subject } : {}),
-    },
-  });
+  const conversationId = await resolveConversationId(payload, email, linkedCustomerId);
 
   // Never overwrite an existing customerId
-  if (!conversation.customerId && linkedCustomerId) {
+  const conversation = await prisma.emailConversation.findUnique({
+    where: { id: conversationId },
+    select: { id: true, customerId: true },
+  });
+  if (conversation && !conversation.customerId && linkedCustomerId) {
     await prisma.emailConversation.update({
-      where: { id: conversation.id },
+      where: { id: conversationId },
       data: { customerId: linkedCustomerId },
     });
   }
@@ -94,9 +136,10 @@ export async function processInboundEmail(payload: EmailInboundPayload) {
   try {
     message = await prisma.emailMessage.create({
       data: {
-        conversationId: conversation.id,
+        conversationId,
         direction: 'INBOUND',
         body: body || payload.subject || '(empty)',
+        htmlBody: payload.html?.trim() || null,
         messageId,
         inReplyTo: payload.inReplyTo,
         references: payload.references,
@@ -116,13 +159,13 @@ export async function processInboundEmail(payload: EmailInboundPayload) {
   }
 
   const final = await prisma.emailConversation.findUnique({
-    where: { id: conversation.id },
+    where: { id: conversationId },
     select: { customerId: true },
   });
 
   return {
     ok: true as const,
-    conversationId: conversation.id,
+    conversationId,
     messageId: message.id,
     linkedCustomerId: final?.customerId ?? undefined,
   };

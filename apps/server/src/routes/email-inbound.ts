@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { emailInboundPayloadSchema } from '@repo/schemas/email-crm';
+import { enqueueEmailConcierge } from '../lib/email-concierge.js';
 import { processInboundEmail } from '../lib/email-inbound.js';
 import { isValidEmailWebhookSecret } from '../lib/email-webhook-secret.js';
 
@@ -17,6 +18,15 @@ export async function emailInboundHandler(req: Request, res: Response) {
 
   try {
     const result = await processInboundEmail(parsed.data);
+    // Enqueue concierge only for new (non-skip, non-dedupe) inbound
+    if (
+      result.ok &&
+      !('skipped' in result) &&
+      !('deduped' in result && result.deduped) &&
+      'conversationId' in result
+    ) {
+      enqueueEmailConcierge(result.conversationId);
+    }
     res.status(200).json(result);
   } catch (err) {
     console.error('email inbound failed', err);

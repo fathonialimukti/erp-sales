@@ -19,7 +19,7 @@
     "@trpc/server": "^11.17.0",
     "concurrently": "^9.1.2",
     "pm2": "^5.4.3",
-    "prettier": "^3.8.3",
+    "prettier": "^3.9.6",
     "turbo": "^2.10.1",
     "typescript": "6.0.3"
   },
@@ -33,6 +33,6 @@
   ],
   "dependencies": {
     "fast-check": "^4.8.0",
-    "lucide-react": "^1.17.0"
+    "lucide-react": "^1.25.0"
   }
 }

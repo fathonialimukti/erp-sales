@@ -6,11 +6,20 @@ import {
   createEmailMessageSchema,
   emailConversationIdSchema,
   emailCrmListInputSchema,
+  retryEmailAgentSchema,
+  sendEmailMessageSchema,
   suggestEmailReplySchema,
   updateEmailConversationSchema,
 } from '@repo/schemas/email-crm';
 import { logActivity } from '../lib/activity-log.js';
 import { chatModel } from '../lib/ai-provider.js';
+import { enqueueEmailConcierge } from '../lib/email-concierge.js';
+import {
+  htmlToText,
+  sanitizeEmailHtml,
+  wrapPlainTextAsHtml,
+} from '../lib/email-html.js';
+import { sendSmtpEmail } from '../lib/email-smtp.js';
 import {
   buildCreateLogDetail,
   buildDeleteLogDetail,
@@ -104,28 +113,18 @@ export const emailCrmRouter = router({
     .input(createEmailConversationSchema)
     .mutation(async ({ input, ctx }) => {
       const email = normalizeEmail(input.email);
-      let created;
-      try {
-        created = await prisma.emailConversation.create({
-          data: {
-            email,
-            subject: input.subject,
-            status: input.status,
-            priority: input.priority,
-            sentiment: input.sentiment,
-            tags: input.tags ?? undefined,
-            customerId: input.customerId ?? undefined,
-          },
-        });
-      } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: `An email conversation for ${email} already exists.`,
-          });
-        }
-        throw err;
-      }
+      // email is not unique — same sender may have multiple conversations
+      const created = await prisma.emailConversation.create({
+        data: {
+          email,
+          subject: input.subject,
+          status: input.status,
+          priority: input.priority,
+          sentiment: input.sentiment,
+          tags: input.tags ?? undefined,
+          customerId: input.customerId ?? undefined,
+        },
+      });
 
       await logActivity(prisma, {
         action: 'CREATE',
@@ -159,22 +158,10 @@ export const emailCrmRouter = router({
         data.customer = customerId === null ? { disconnect: true } : { connect: { id: customerId } };
       }
 
-      let updated;
-      try {
-        updated = await prisma.emailConversation.update({
-          where: { id: currentId },
-          data,
-        });
-      } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-          const conflictEmail = email !== undefined ? normalizeEmail(email) : existing.email;
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: `An email conversation for ${conflictEmail} already exists.`,
-          });
-        }
-        throw err;
-      }
+      const updated = await prisma.emailConversation.update({
+        where: { id: currentId },
+        data,
+      });
 
       await logActivity(prisma, {
         action: 'UPDATE',
@@ -410,5 +397,154 @@ export const emailCrmRouter = router({
       });
 
       return order;
+    }),
+
+  sendMessage: protectedProcedure
+    .use(hasPermission('email-crm@update'))
+    .input(sendEmailMessageSchema)
+    .mutation(async ({ input, ctx }) => {
+      const conversation = await prisma.emailConversation.findUnique({
+        where: { id: input.conversationId },
+        include: {
+          messages: {
+            where: { direction: 'INBOUND' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      });
+      if (!conversation) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Email conversation not found.' });
+      }
+
+      const plainBody = input.body?.trim() ?? '';
+      const rawHtml = input.htmlBody?.trim() ?? '';
+      let html: string;
+      let text: string;
+
+      if (rawHtml) {
+        const sanitized = sanitizeEmailHtml(rawHtml);
+        if (!sanitized.ok) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Invalid htmlBody: ${sanitized.reason}`,
+          });
+        }
+        html = sanitized.html;
+        text = plainBody || htmlToText(html) || html;
+      } else {
+        text = plainBody;
+        html = wrapPlainTextAsHtml(text);
+      }
+
+      const lastInbound = conversation.messages[0];
+      const inReplyTo = lastInbound?.messageId ?? undefined;
+      const references =
+        [lastInbound?.references, lastInbound?.messageId].filter(Boolean).join(' ').trim() ||
+        undefined;
+
+      const subject =
+        input.subject?.trim() ||
+        (conversation.subject
+          ? /^re:\s/i.test(conversation.subject)
+            ? conversation.subject
+            : `Re: ${conversation.subject}`
+          : 'Re: your message');
+
+      let smtpMessageId: string;
+      try {
+        const sent = await sendSmtpEmail({
+          to: conversation.email,
+          subject,
+          html,
+          text,
+          ...(inReplyTo ? { inReplyTo } : {}),
+          ...(references ? { references } : {}),
+        });
+        smtpMessageId = sent.messageId;
+      } catch (err) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: err instanceof Error ? err.message : 'SMTP send failed',
+        });
+      }
+
+      const now = new Date();
+      const message = await prisma.$transaction(async (tx) => {
+        const created = await tx.emailMessage.create({
+          data: {
+            conversationId: conversation.id,
+            direction: 'OUTBOUND',
+            body: text,
+            htmlBody: html,
+            messageId: smtpMessageId,
+            inReplyTo: inReplyTo ?? null,
+            references: references ?? null,
+            sendStatus: 'SENT',
+            sentAt: now,
+          },
+        });
+        await tx.emailConversation.update({
+          where: { id: conversation.id },
+          data: {
+            lastMessageAt: now,
+            lastOutboundAt: now,
+          },
+        });
+        return created;
+      });
+
+      await logActivity(prisma, {
+        action: 'CREATE',
+        userId: ctx.user.userId,
+        resource: 'email-crm',
+        resourceId: conversation.id,
+        message: `Sent outbound email to ${conversation.email}`,
+        detail: buildCreateLogDetail(message as unknown as Record<string, unknown>),
+      });
+
+      return message;
+    }),
+
+  retryAgent: protectedProcedure
+    .use(hasPermission('email-crm@update'))
+    .input(retryEmailAgentSchema)
+    .mutation(async ({ input, ctx }) => {
+      const conversation = await prisma.emailConversation.findUnique({
+        where: { id: input.conversationId },
+        select: { id: true, email: true, agentStatus: true },
+      });
+      if (!conversation) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Email conversation not found.' });
+      }
+
+      // Unstick FAILED / RUNNING / AWAITING_SEND (and allow re-run from IDLE/SENT).
+      // Always force IDLE so runEmailConcierge can re-enter even if a prior job died mid-run.
+      await prisma.emailConversation.update({
+        where: { id: conversation.id },
+        data: {
+          agentStatus: 'IDLE',
+          agentError: null,
+          // allow retry even if lastOutboundAt was recent
+          lastOutboundAt: null,
+        },
+      });
+
+      enqueueEmailConcierge(conversation.id);
+
+      await logActivity(prisma, {
+        action: 'UPDATE',
+        userId: ctx.user.userId,
+        resource: 'email-crm',
+        resourceId: conversation.id,
+        message: `Retried email concierge for ${conversation.email}`,
+        detail: {
+          agentStatus: 'IDLE',
+          previousAgentStatus: conversation.agentStatus,
+          enqueued: true,
+        },
+      });
+
+      return { ok: true as const };
     }),
 });

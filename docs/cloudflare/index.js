@@ -5,22 +5,28 @@
  *   https://developers.cloudflare.com/email-service/
  *   https://developers.cloudflare.com/email-service/api/route-emails/email-handler/
  *
- * Flow:
+ * Preferred flow (Email Concierge / server-owned SMTP):
  *   1. email() receives message
  *   2. Parse raw MIME (built-in, no postal-mime)
- *   3. POST ERP /api/email/auto-reply (store + AI on server)
- *   4. message.reply() with raw MIME (no mimetext)
+ *   3. POST ERP /api/email/inbound (store + enqueue Email Concierge)
+ *   4. Server agent finalizes HTML and sends via Brevo SMTP (info@aetherglo.com)
+ *   5. Do NOT rely on message.reply() for AI body — outbound is server-owned
+ *
+ * Legacy path (still in this sample for compatibility):
+ *   POST /api/email/auto-reply may return reply text; CF can message.reply()
+ *   Prefer inbound + server SMTP in production. AUTO_REPLY=true means
+ *   "server-side concierge" when using /api/email/inbound (reply body null).
  *
  * Production:
  *   Client: https://erp-sales.aetherglo.com
  *   Server: https://erp-sales-api.aetherglo.com
- *   Auto:   POST .../api/email/auto-reply
- *   Store:  POST .../api/email/inbound
+ *   Preferred: POST .../api/email/inbound
+ *   Legacy:    POST .../api/email/auto-reply
  *
  * Secrets / vars:
  *   EMAIL_WEBHOOK_SECRET  (required)
  *   ERP_BASE_URL          (optional) default https://erp-sales-api.aetherglo.com
- *   AUTO_REPLY            (optional) default "true"
+ *   AUTO_REPLY            (optional) default "true" — server-side concierge preferred
  *   FORWARD_FALLBACK_TO   (optional)
  *
  * Dashboard:
@@ -252,6 +258,9 @@ function buildReplyEmailMessage(message, reply) {
 }
 
 async function postToErp(env, payload, useAutoReply) {
+  // Preferred: always /api/email/inbound — server enqueues SMTP auto-reply.
+  // Legacy auto-reply path kept when AUTO_REPLY=true for older CF deploys that
+  // still call message.reply() with a server-returned body (usually null now).
   const path = useAutoReply ? "/api/email/auto-reply" : "/api/email/inbound";
   const url = `${erpBaseUrl(env)}${path}`;
   return fetch(url, {
@@ -353,9 +362,16 @@ export default {
         from: message.from,
       });
 
+      // Server-owned SMTP: auto-reply path returns reply: null after concierge enqueue.
+      // Only message.reply() when ERP still returns a body (legacy). Prefer inbound + SMTP.
       if (!useAuto) return;
       if (!result || result.skipped || result.deduped) return;
-      if (!result.reply || !result.reply.text) return;
+      if (!result.reply || !result.reply.text) {
+        console.log("no CF reply body — server SMTP concierge owns outbound", {
+          conversationId: result && result.conversationId,
+        });
+        return;
+      }
 
       try {
         const replyMsg = buildReplyEmailMessage(message, {
@@ -363,7 +379,7 @@ export default {
           subject: result.reply.subject,
         });
         await message.reply(replyMsg);
-        console.log("CF reply sent", {
+        console.log("CF reply sent (legacy path)", {
           to: message.from,
           conversationId: result.conversationId,
         });
