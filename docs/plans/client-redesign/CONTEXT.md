@@ -3,7 +3,8 @@
 **Feature:** client-redesign  
 **Spec:** `docs/superpowers/specs/2026-07-23-client-crm-redesign-design.md`  
 **Design system:** `design-system/erp-sales-crm/MASTER.md`  
-**Status:** Design approved 2026-07-23 — implementation not started until plan is written and phases dispatched  
+**Status:** Spec + plan approved 2026-07-23 — ready for Phase 1 (tokens)  
+**Plan:** `docs/superpowers/plans/2026-07-23-client-crm-redesign.md`  
 **Scope:** `apps/client` only (no backend)
 
 ---

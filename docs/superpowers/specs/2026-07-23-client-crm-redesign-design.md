@@ -516,4 +516,5 @@ Every page keeps `data-ai-context` on the outermost wrapper.
 | Icons: SVG iOS module tiles + planning icon | Approved |
 | Shell + UI kit + phased rollout | Approved |
 | Full design (Sections 1–4) | **Approved 2026-07-23** |
-| **CRM tables, charts, pipeline UI (§6–§9)** | **Pending user review** |
+| **CRM tables, charts, pipeline UI (§6–§9)** | **Approved 2026-07-23** |
+| Written spec + implementation plan | **Approved 2026-07-23** |
