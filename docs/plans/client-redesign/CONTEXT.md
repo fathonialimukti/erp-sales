@@ -21,6 +21,10 @@ Style: Glassmorphism shell + solid cards + iOS module tiles
 Icons: SVG only; Family A module tiles (baked colors); Family B chrome mono
 Planning icon: navPlanning (calendar+checklist, teal→emerald); alias navProgram
 New icons required: navEmailCrm, navKnowledge, navAi, navPlanning
+Tables: density modes .tbl--comfortable | .tbl--crm (default CRM indexes) | .tbl--compact (line items)
+Tables: sticky header, status chips, row actions, selected = primary-50 + 3px primary bar
+Charts: Recharts + --chart-1..5 / positive / negative tokens; tooltips+labels required
+Pipeline: Sales Order showcase; Table|Pipeline toggle; v1 read-only board (no drag required)
 Stack: plain CSS + apps/client/src/ui/ — NO Tailwind, NO HeroUI
 Typography: Poppins (UI); optional Open Sans secondary
 Approach: Foundation-first phases 1→6
@@ -49,6 +53,9 @@ Design is FROZEN. Do NOT invoke brainstorming or re-open palette/icon debates.
 | Sidebar | `apps/client/src/components/Sidebar.tsx` + `.css` |
 | Topbar | `apps/client/src/components/Topbar.tsx` |
 | Dashboard | `apps/client/src/pages/Dashboard.tsx` + `.css` |
+| Table styles | `apps/client/src/ui/Table.css`, `styles/module-page.css` |
+| Sales Order pages | `apps/client/src/pages/sales-order/*` |
+| Reports | `apps/client/src/pages/reports/*`, `styles/reports.css` |
 
 ---
 
@@ -59,16 +66,19 @@ Design is FROZEN. Do NOT invoke brainstorming or re-open palette/icon debates.
 - ~80 local SVGs exist; quality mixed; some nav icons already colorful tiles
 - Email CRM reuses sales-order icon; Knowledge/AI reuse sparkle
 - UI kit exists (Button, Card, Table, …) with emerald-leaning primary
+- Table has basic hover/active but no density variants; active bar still emerald-leaning
+- Dashboard uses Recharts without shared chart tokens
+- No pipeline/kanban view yet
 
 ---
 
 ## Phase checklist (implementation)
 
-- [ ] Phase 1 — Tokens (primary blue scale, module accents, shell vars, focus ring)
+- [ ] Phase 1 — Tokens (primary blue, module accents, shell vars, **chart + stage tokens**)
 - [ ] Phase 2 — SVG icon remake + `icons.ts` + nav-menu wiring
-- [ ] Phase 3 — Shell + UI kit recolor/polish
-- [ ] Phase 4 — Dashboard + Customer + Sales Order showcase
-- [ ] Phase 5 — Remaining modules
+- [ ] Phase 3 — Shell + UI kit + **table density + chips + filter bar**
+- [ ] Phase 4 — Dashboard chart theme + **Sales Order table + pipeline v1** + Customer index
+- [ ] Phase 5 — Remaining modules; compact nested tables; optional extra pipelines
 - [ ] Phase 6 — Review, a11y, `bun run check-types`
 
 ---
@@ -76,6 +86,15 @@ Design is FROZEN. Do NOT invoke brainstorming or re-open palette/icon debates.
 ## Module accent map (quick)
 
 Customers `#EC4899` · Orders `#3B82F6` · Visits `#F97316` · SKU `#8B5CF6` · Planning `#14B8A6` · Events fuchsia · Users indigo · Reports cyan · Email sky · Knowledge/AI violet–indigo
+
+---
+
+## Table / chart / pipeline (quick)
+
+- Densities: `.tbl--comfortable` | `.tbl--crm` (CRM indexes) | `.tbl--compact` (line items)
+- Selected row: primary-50 + 3px primary left bar
+- Charts: `--chart-1..5`, positive/negative; Recharts only
+- Pipeline v1: Sales Order, read-only columns, Table|Pipeline toggle
 
 ---
 
@@ -107,3 +126,4 @@ must read at 20–28px
 | Date | Event |
 |------|--------|
 | 2026-07-23 | Design approved; spec + MASTER + CONTEXT written |
+| 2026-07-23 | Tweak: CRM table density, chart tokens, pipeline UI added to spec/MASTER/CONTEXT |

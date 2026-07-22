@@ -217,15 +217,15 @@
 
 ## Motion
 
-**Stagger List** (Standard) — Trigger: load or scroll | Duration: 300-450ms | Easing: `back.out(1.4)`
+- Default UI transitions: 150–250ms
+- Page enter: subtle fade/slide ok
+- KPI grids: light CSS stagger ok — **no GSAP required**
+- Charts: disable series animation when `prefers-reduced-motion`
+- Avoid overshoot easing on dense tables
 
-```js
-gsap.from('.grid-item', { opacity: 0, scale: 0.92, y: 16, duration: 0.4, stagger: { each: 0.06, from: 'start', grid: 'auto' }, ease: 'back.out(1.4)' });
-```
+---
 
-**Framework notes:** grid: 'auto' lets GSAP infer rows/columns from a CSS grid layout for a natural wave stagger
-
-- ✅Icon system (project)
+## Icon system (project)
 
 ### Family A — Module tiles
 - SVG 64×64, rx=16 gradient + shine + multi-layer white glyph
@@ -241,6 +241,79 @@ gsap.from('.grid-item', { opacity: 0, scale: 0.92, y: 16, duration: 0.4, stagger
 
 ---
 
+## CRM Table system
+
+### Density
+
+| Mode | Class | Row min-h | Cell pad | Font | Default for |
+|------|-------|-----------|----------|------|-------------|
+| Comfortable | `.tbl--comfortable` | 48px | 12×16 | 13.5–14px | Small masters (region/area) |
+| **CRM** | `.tbl--crm` | **40px** | **8×12** | **13px** | **Customer, Order, Visit, Email, Outlet** |
+| Compact | `.tbl--compact` | 32px | 6×10 | 12–12.5px | Line items, nested, reports |
+
+### Anatomy
+Filter bar → sticky thead → rows (entity + status chip + money/date/owner + ⋯ actions) → empty/skeleton → pagination.
+
+### Interaction
+- Selected/active row: `primary-50` + **3px primary left bar** (not green)
+- Hover: surface-2; clickable rows navigate; actions `stopPropagation`
+- Money: right-align + `tabular-nums`
+- Status: chip only (never raw enum alone)
+- Loading: skeleton rows at same density
+- No default zebra stripes
+
+### Filter bar
+Search (300ms debounce) + filters + removable active chips + optional **Table | Pipeline** toggle.
+
+Touchpoints: `ui/Table.css`, `styles/module-page.css`, `styles/page-system.css`.
+
+---
+
+## CRM Chart system (Recharts)
+
+### Tokens
+`--chart-1` `#2563EB` · `--chart-2` `#06B6D4` · `--chart-3` `#8B5CF6` · `--chart-4` `#F97316` · `--chart-5` `#EC4899` · `--chart-positive` `#059669` · `--chart-negative` `#DC2626` · `--chart-grid` · `--chart-axis` · `--chart-tooltip-bg`
+
+### Type map
+| Need | Chart |
+|------|-------|
+| Time series revenue/orders | Area + line |
+| Top N categories | Bar (horizontal if many labels) |
+| Stage conversion | Funnel or staged bar + % text |
+| KPI vs target | Bullet / progress + visible % |
+| Pipeline by stage | Stacked bar or summary cards |
+
+Rules: tooltips + labels required; no color-only meaning; fixed heights to avoid CLS; max ~10 bars then “Other”.
+
+---
+
+## CRM Pipeline UI
+
+### When
+**Sales Order = yes (showcase).** Email/Programs optional later. Customer/SKU/Region = table only.
+
+### Board
+- Stage summary strip (count · value)
+- Columns 280–300px, header with stage color top bar + count + sum
+- Cards: title, subtitle, amount, owner, date, stage chip
+- **v1 read-only** (no drag required); stage change via detail/actions
+- View toggle Table | Pipeline; same filters; remember view in localStorage
+
+### Stage colors
+draft=neutral · proposed=info blue · approved/won=deal green · rejected/lost=danger · in_progress=primary blue
+
+---
+
+## Other CRM patterns
+
+- **KPI strip:** icon tile + value + delta chip (green up / red down)
+- **Chips:** neutral / info / success / warning / danger / primary
+- **Activity timeline:** spine + dots + relative time
+- **Detail header:** title + status + metrics + permission actions
+- **Empty/error/loading:** module empty state; chart empty copy; skeleton matching density
+
+---
+
 ## Anti-Patterns (Do NOT Use)
 
 - ❌ Excessive animation
@@ -248,6 +321,9 @@ gsap.from('.grid-item', { opacity: 0, scale: 0.92, y: 16, duration: 0.4, stagger
 - ❌ Emerald-only brand / green as default primary button
 - ❌ Tailwind / HeroUI
 - ❌ Raw one-off hex in pages when a token exists
+- ❌ Sparse “marketing” tables on CRM indexes (use `.tbl--crm`)
+- ❌ Color-only status or chart meaning
+- ❌ Pipeline drag-drop required in v1
 
 ### Additional Forbidden Patterns
 
@@ -270,14 +346,14 @@ Before delivering any UI code, verify:
 - [ ] Tiles identical in light and dark
 - [ ] No emojis used as icons (local SVG instead)
 - [ ] Icons from project registry (`assets/icons.ts`), not ad-hoc remote sets
-## Pre-Delivery Checklist
-
-Before delivering any UI code, verify:
-
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
+- [ ] CRM indexes use `.tbl--crm`; nested line items use `.tbl--compact`
+- [ ] Tables: sticky header, status chips, row actions, selected = primary bar
+- [ ] Charts use `--chart-*` tokens; tooltips + labels present
+- [ ] Sales Order has Table | Pipeline toggle; pipeline v1 read-only
 - [ ] `cursor-pointer` on all clickable elements
 - [ ] Hover states with smooth transitions (150-300ms)
+- [ ] Focus visible; reduced-motion respected
+- [ ] Responsive sanity: 375 / 768 / 1024 / 1440
 - [ ] Light mode: text contrast 4.5:1 minimum
 - [ ] Focus states visible for keyboard navigation
 - [ ] `prefers-reduced-motion` respected
