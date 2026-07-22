@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-event" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E879F9"/>
+      <stop offset="1" stop-color="#7E22CE"/>
+    </linearGradient>
+    <linearGradient id="shine-event" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-event)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-event)"/>
+  <path d="M14 20 C14 18 16 16 18 16 H46 C48 16 50 18 50 20 V48 C50 50 48 52 46 52 H18 C16 52 14 50 14 48 Z" fill="#FFFFFF"/>
+  <rect x="22" y="12" width="5" height="8" rx="1.5" fill="#FFFFFF"/>
+  <rect x="37" y="12" width="5" height="8" rx="1.5" fill="#FFFFFF"/>
+  <rect x="14" y="24" width="36" height="6" fill="#E879F9" opacity="0.55"/>
+  <path d="M32 30 L33.6 34.2 L38 34.6 L34.8 37.6 L35.7 42 L32 39.6 L28.3 42 L29.2 37.6 L26 34.6 L30.4 34.2 Z" fill="#E879F9" opacity="0.95"/>
+</svg>

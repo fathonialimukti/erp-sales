@@ -17,22 +17,26 @@
 /* ── Brand ── */
 import brandLogo from "./icons/brand-logo.svg";
 
-/* ── Navigation (sidebar) ── */
-import navDashboard from "./icons/chrome-nav-dashboard.svg";
-import navRegion from "./icons/chrome-nav-region.svg";
-import navArea from "./icons/chrome-nav-area.svg";
-import navCustomer from "./icons/chrome-nav-customer.svg";
-import navOutlet from "./icons/chrome-nav-outlet.svg";
-import navSkuCategory from "./icons/chrome-nav-sku-category.svg";
-import navSku from "./icons/chrome-nav-sku.svg";
-import navSalesOrder from "./icons/chrome-nav-sales-order.svg";
-import navVisit from "./icons/chrome-nav-visit.svg";
-import navProgram from "./icons/chrome-nav-program.svg";
-import navEvent from "./icons/chrome-nav-event.svg";
-import navUsers from "./icons/chrome-nav-users.svg";
-import navRoles from "./icons/chrome-nav-roles.svg";
-import navActivity from "./icons/chrome-nav-activity.svg";
-import navNotifications from "./icons/chrome-nav-notifications.svg";
+/* ── Navigation (sidebar Family A tiles) ── */
+import navDashboard from "./icons/nav-dashboard.svg";
+import navReports from "./icons/nav-reports.svg";
+import navRegion from "./icons/nav-region.svg";
+import navArea from "./icons/nav-area.svg";
+import navCustomer from "./icons/nav-customer.svg";
+import navOutlet from "./icons/nav-outlet.svg";
+import navSkuCategory from "./icons/nav-sku-category.svg";
+import navSku from "./icons/nav-sku.svg";
+import navSalesOrder from "./icons/nav-sales-order.svg";
+import navEmailCrm from "./icons/nav-email-crm.svg";
+import navVisit from "./icons/nav-visit.svg";
+import navPlanning from "./icons/nav-planning.svg";
+import navEvent from "./icons/nav-event.svg";
+import navUsers from "./icons/nav-users.svg";
+import navRoles from "./icons/nav-roles.svg";
+import navActivity from "./icons/nav-activity.svg";
+import navNotifications from "./icons/nav-notifications.svg";
+import navKnowledge from "./icons/nav-knowledge.svg";
+import navAi from "./icons/nav-ai.svg";
 
 /* ── UI controls ── */
 import uiSearch from "./icons/ui-search.svg";
@@ -54,7 +58,6 @@ import dashNewSku from "./icons/dash-new-sku.svg";
 import dashNewProgram from "./icons/dash-new-program.svg";
 import dashNewEvent from "./icons/dash-new-event.svg";
 import dashChart from "./icons/dash-chart.svg";
-import navReports from "./icons/dash-chart.svg";
 import dashTrophy from "./icons/dash-trophy.svg";
 import dashInbox from "./icons/dash-inbox.svg";
 import dashSparkle from "./icons/dash-sparkle.svg";
@@ -118,6 +121,7 @@ export const icons = {
 
   /* Navigation */
   navDashboard,
+  navReports,
   navRegion,
   navArea,
   navCustomer,
@@ -125,13 +129,17 @@ export const icons = {
   navSkuCategory,
   navSku,
   navSalesOrder,
+  navEmailCrm,
   navVisit,
-  navProgram,
+  navPlanning,
+  navProgram: navPlanning, // migration alias
   navEvent,
   navUsers,
   navRoles,
   navActivity,
   navNotifications,
+  navKnowledge,
+  navAi,
 
   /* UI controls */
   uiSearch,
@@ -153,7 +161,6 @@ export const icons = {
   dashNewProgram,
   dashNewEvent,
   dashChart,
-  navReports,
   dashTrophy,
   dashInbox,
   dashSparkle,

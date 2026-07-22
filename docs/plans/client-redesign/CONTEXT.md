@@ -76,7 +76,7 @@ Design is FROZEN. Do NOT invoke brainstorming or re-open palette/icon debates.
 ## Phase checklist (implementation)
 
 - [x] Phase 1 — Tokens (primary blue, module accents, shell vars, **chart + stage tokens**)
-- [ ] Phase 2 — SVG icon remake + `icons.ts` + nav-menu wiring
+- [x] Phase 2 — SVG icon remake + `icons.ts` + nav-menu wiring
 - [ ] Phase 3 — Shell + UI kit + **table density + chips + filter bar**
 - [ ] Phase 4 — Dashboard chart theme + **Sales Order table + pipeline v1** + Customer index
 - [ ] Phase 5 — Remaining modules; compact nested tables; optional extra pipelines
@@ -130,3 +130,4 @@ must read at 20–28px
 | 2026-07-23 | Tweak: CRM table density, chart tokens, pipeline UI added to spec/MASTER/CONTEXT |
 | 2026-07-23 | Spec OK; implementation plan written |
 | 2026-07-23 | **Task 1 complete** — primary blue scale, cool border, module/chart/stage tokens; focus ring → primary. Files: `apps/client/src/styles/tokens.css`, `apps/client/src/index.css`, `docs/plans/client-redesign/CONTEXT.md` |
+| 2026-07-23 | **Task 2 complete** — Family A iOS module tiles remade (`nav-*.svg`, unique gradient ids); new `navPlanning`/`navEmailCrm`/`navKnowledge`/`navAi`; alias `navProgram→navPlanning`; nav-menu wired. Files: `apps/client/src/assets/icons/nav-*.svg`, `apps/client/src/assets/icons.ts`, `apps/client/src/constants/nav-menu.ts`, `docs/plans/client-redesign/CONTEXT.md` |

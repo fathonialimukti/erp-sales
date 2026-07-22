@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-dashboard" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34D399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="shine-dashboard" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-dashboard)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-dashboard)"/>
+  <g fill="#FFFFFF">
+    <rect x="14" y="34" width="9" height="16" rx="2"/>
+    <rect x="27.5" y="24" width="9" height="26" rx="2" opacity="0.85"/>
+    <rect x="41" y="14" width="9" height="36" rx="2" opacity="0.7"/>
+  </g>
+</svg>

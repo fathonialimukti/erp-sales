@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-notifications" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F87171"/>
+      <stop offset="1" stop-color="#BE123C"/>
+    </linearGradient>
+    <linearGradient id="shine-notifications" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-notifications)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-notifications)"/>
+  <path d="M32 12 C25 12 20 17 20 24 V32 C20 36 18 39 16 41 C15 42 16 44 17 44 H47 C48 44 49 42 48 41 C46 39 44 36 44 32 V24 C44 17 39 12 32 12 Z" fill="#FFFFFF"/>
+  <path d="M27 47 C27 50 29.2 52 32 52 C34.8 52 37 50 37 47 Z" fill="#FFFFFF" opacity="0.95"/>
+  <circle cx="44" cy="18" r="6" fill="#FFFFFF"/>
+  <circle cx="44" cy="18" r="3.5" fill="#BE123C"/>
+</svg>

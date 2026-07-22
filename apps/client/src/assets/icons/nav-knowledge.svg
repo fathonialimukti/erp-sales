@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-knowledge" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#4338CA"/>
+    </linearGradient>
+    <linearGradient id="shine-knowledge" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-knowledge)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-knowledge)"/>
+  <path d="M14 16 H30 C31 16 32 17 32 18 V50 C32 49 31 48 30 48 H16 C15 48 14 47 14 46 Z" fill="#FFFFFF"/>
+  <path d="M50 16 H34 C33 16 32 17 32 18 V50 C32 49 33 48 34 48 H48 C49 48 50 47 50 46 Z" fill="#FFFFFF" opacity="0.85"/>
+  <path d="M32 18 V48" stroke="#A78BFA" stroke-width="2" opacity="0.55"/>
+  <rect x="18" y="22" width="10" height="2" rx="1" fill="#A78BFA" opacity="0.55"/>
+  <rect x="18" y="28" width="8" height="2" rx="1" fill="#A78BFA" opacity="0.4"/>
+  <rect x="36" y="22" width="10" height="2" rx="1" fill="#A78BFA" opacity="0.55"/>
+  <rect x="36" y="28" width="8" height="2" rx="1" fill="#A78BFA" opacity="0.4"/>
+  <path d="M48 10 L49.4 13.6 L53 15 L49.4 16.4 L48 20 L46.6 16.4 L43 15 L46.6 13.6 Z" fill="#FFFFFF"/>
+</svg>

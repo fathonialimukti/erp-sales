@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-outlet" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FBBF24"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="shine-outlet" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-outlet)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-outlet)"/>
+  <path d="M12 28 L18 16 H46 L52 28 V30 H12 Z" fill="#FFFFFF"/>
+  <path d="M14 30 H50 V50 C50 51 49 52 48 52 H16 C15 52 14 51 14 50 Z" fill="#FFFFFF" opacity="0.9"/>
+  <rect x="26" y="36" width="12" height="16" rx="1.5" fill="#FBBF24" opacity="0.85"/>
+  <rect x="18" y="34" width="8" height="8" rx="1" fill="#FBBF24" opacity="0.55"/>
+  <rect x="38" y="34" width="8" height="8" rx="1" fill="#FBBF24" opacity="0.55"/>
+</svg>

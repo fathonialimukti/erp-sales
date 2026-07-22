@@ -74,7 +74,7 @@ export const NAV_MENU: NavMenuItem[] = [
       },
       {
         name: "nav.email_crm",
-        icon: icons.navSalesOrder,
+        icon: icons.navEmailCrm,
         href: "/email-crm",
         permission: "email-crm@read",
       },
@@ -94,11 +94,11 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.programs",
-    icon: icons.navProgram,
+    icon: icons.navPlanning,
     children: [
       {
         name: "nav.action_program",
-        icon: icons.navProgram,
+        icon: icons.navPlanning,
         href: "/action-program",
         permission: "action-program@read",
       },
@@ -140,7 +140,7 @@ export const NAV_MENU: NavMenuItem[] = [
       },
       {
         name: "nav.knowledge_base",
-        icon: icons.dashSparkle,
+        icon: icons.navKnowledge,
         href: "/knowledge-base",
         permission: "knowledge-base@read",
       },
@@ -148,7 +148,7 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.ai_admin",
-    icon: icons.dashSparkle,
+    icon: icons.navAi,
     href: "/ai-admin",
     permission: "ai-admin@access",
   },
