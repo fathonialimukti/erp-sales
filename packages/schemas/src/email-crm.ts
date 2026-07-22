@@ -45,6 +45,12 @@ export const createEmailMessageSchema = z.object({
   references: z.string().optional(),
 });
 
+export const emailInboundAttachmentSchema = z.object({
+  filename: z.string(),
+  contentType: z.string(),
+  size: z.number().nonnegative(),
+});
+
 export const emailInboundPayloadSchema = z.object({
   from: z.string().min(1),
   to: z.string().min(1),
@@ -56,6 +62,10 @@ export const emailInboundPayloadSchema = z.object({
   references: z.string().optional(),
   date: z.string().optional(),
   rawSize: z.number().optional(),
+  cc: z.string().optional(),
+  bcc: z.string().optional(),
+  hasAttachments: z.boolean().optional(),
+  attachments: z.array(emailInboundAttachmentSchema).optional(),
 });
 
 export const suggestEmailReplySchema = z.object({

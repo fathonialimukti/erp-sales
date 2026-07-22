@@ -2610,7 +2610,7 @@
   "landing.faq_q_3": "How does the approval workflow work?",
   "landing.faq_a_3": "Every document (sales orders, visit logs, action programs, event proposals) goes through a multi-level approval workflow: Draft → Proposed → Approved/Rejected. Each step is logged with timestamps and user attribution, creating a complete audit trail.",
   "landing.faq_q_4": "Can customers place orders via email?",
-  "landing.faq_a_4": "Yes. Email Concierge receives inbound customer email, drafts an AI HTML reply from your company inbox, and can create an optional draft sales order linked to the thread — so replies and orders stay connected without manual entry.",
+  "landing.faq_a_4": "Yes. Email Concierge receives inbound customer email, drafts an AI HTML reply from your company inbox, and can create an optional draft sales order linked to the thread — so replies and orders stay connected without manual entry. Put order details in the email body; file attachments are not processed yet.",
   "landing.faq_q_5": "Is my data secure?",
   "landing.faq_a_5": "Absolutely. ERP Sales uses role-based access control with granular permissions, JWT authentication, and a full activity log. Every action is attributed to a specific user, and all data is stored in a PostgreSQL database with proper access controls.",
   "landing.about_title": "About the Developer",

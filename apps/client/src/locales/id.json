@@ -2597,7 +2597,7 @@
   "landing.faq_q_3": "Bagaimana alur persetujuan bekerja?",
   "landing.faq_a_3": "Setiap dokumen (pesanan penjualan, log kunjungan, program aksi, proposal acara) melalui alur persetujuan multi-level: Draft → Diajukan → Disetujui/Ditolak. Setiap langkah dicatat dengan stempel waktu dan atribusi pengguna, menciptakan jejak audit yang lengkap.",
   "landing.faq_q_4": "Bisakah pelanggan memesan lewat email?",
-  "landing.faq_a_4": "Ya. Email Concierge menerima email pelanggan masuk, menyusun balasan HTML dengan AI dari kotak masuk perusahaan Anda, dan dapat membuat draft pesanan penjualan opsional yang terhubung ke utas — sehingga balasan dan pesanan tetap tersambung tanpa entri manual.",
+  "landing.faq_a_4": "Ya. Email Concierge menerima email pelanggan masuk, menyusun balasan HTML dengan AI dari kotak masuk perusahaan Anda, dan dapat membuat draft pesanan penjualan opsional yang terhubung ke utas — sehingga balasan dan pesanan tetap tersambung tanpa entri manual. Cantumkan detail pesanan di isi email; lampiran file belum diproses.",
   "landing.faq_q_5": "Apakah data saya aman?",
   "landing.faq_a_5": "Tentu saja. ERP Sales menggunakan kontrol akses berbasis peran dengan izin terperinci, autentikasi JWT, dan log aktivitas lengkap. Setiap tindakan diatribusikan ke pengguna tertentu, dan semua data disimpan dalam database PostgreSQL dengan kontrol akses yang tepat.",
   "landing.about_title": "Tentang Pengembang",

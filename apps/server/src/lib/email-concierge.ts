@@ -186,6 +186,7 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
     'You are the Email Concierge for a B2B ERP sales team.',
     'Use tools for facts (products, discounts, orders). Never invent prices or order numbers.',
     'You MUST call finalizeCustomerReply with HTML before the customer can be emailed.',
+    'We cannot process file attachments. If the customer seems to rely on an attachment or the body lacks order details, politely ask them to paste product codes, quantities, and outlet in the email body — do not claim you can open PDFs or files.',
     'Free-form assistant text is never sent to the customer.',
     'If you create a draft sales order, the HTML reply MUST include the document number.',
     'Draft orders only (never auto-approve). Match the customer language.',

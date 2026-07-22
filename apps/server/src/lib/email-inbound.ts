@@ -14,6 +14,19 @@ export function extractBody(payload: EmailInboundPayload): string {
   return '';
 }
 
+/** Metadata-only note so the agent can see filenames (no binary stored). */
+export function formatAttachmentNote(payload: EmailInboundPayload): string {
+  const list = payload.attachments ?? [];
+  if (!payload.hasAttachments && list.length === 0) return '';
+  if (list.length === 0) {
+    return '\n\n[Attachments detected (not stored)]';
+  }
+  const parts = list.map(
+    (a) => `${a.filename} (${a.contentType}, ${a.size} bytes)`,
+  );
+  return `\n\n[Attachments detected (not stored): ${parts.join('; ')}]`;
+}
+
 export function shouldSkipInbound(payload: EmailInboundPayload): string | null {
   const from = normalizeEmail(payload.from);
   if (/^(noreply@|no-reply@|mailer-daemon@|postmaster@|bounce@)/.test(from)) {
@@ -102,7 +115,9 @@ export async function processInboundEmail(payload: EmailInboundPayload) {
   if (skip) return { ok: true as const, skipped: skip };
 
   const email = normalizeEmail(payload.from);
-  const body = extractBody(payload);
+  const body =
+    (extractBody(payload) || payload.subject || '(empty)') +
+    formatAttachmentNote(payload);
   const messageId = payload.messageId?.trim() || null;
 
   if (messageId) {
@@ -138,7 +153,7 @@ export async function processInboundEmail(payload: EmailInboundPayload) {
       data: {
         conversationId,
         direction: 'INBOUND',
-        body: body || payload.subject || '(empty)',
+        body,
         htmlBody: payload.html?.trim() || null,
         messageId,
         inReplyTo: payload.inReplyTo,

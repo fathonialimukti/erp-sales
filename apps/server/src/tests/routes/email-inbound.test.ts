@@ -143,6 +143,35 @@ describe('processInboundEmail', () => {
     expect(result).toEqual({ ok: true, skipped: 'empty_body' });
   });
 
+  it('appends attachment metadata note to stored body (no binary)', async () => {
+    const messageId = `<att-${randomUUID()}@example.com>`;
+    const result = await processInboundEmail({
+      from: `att-${randomUUID()}@example.com`,
+      to: 'info@example.com',
+      subject: 'Invoice attached',
+      text: 'Please process',
+      messageId,
+      hasAttachments: true,
+      attachments: [
+        {
+          filename: 'invoice.pdf',
+          contentType: 'application/pdf',
+          size: 24580,
+        },
+      ],
+    });
+    if ('skipped' in result) throw new Error('should not skip');
+    createdConversationIds.push(result.conversationId);
+
+    const msg = await prisma.emailMessage.findUnique({
+      where: { id: result.messageId },
+    });
+    expect(msg?.body).toContain('Please process');
+    expect(msg?.body).toContain(
+      '[Attachments detected (not stored): invoice.pdf (application/pdf, 24580 bytes)]',
+    );
+  });
+
   it('never overwrites existing customerId', async () => {
     const email = `sticky-${randomUUID()}@example.com`;
     const first = await processInboundEmail({
