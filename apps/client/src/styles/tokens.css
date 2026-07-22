@@ -1,16 +1,17 @@
 /* =========================================================
- * Design Tokens — ERP Sales Redesign
+ * Design Tokens — ERP Sales CRM Redesign
  *
- * Style: Glassmorphism + Modern Minimalist
- * Palette: 60-30-10 (Cool Slate + Emerald Accent)
- * Typography: Poppins (geometric, friendly, modern)
+ * Style: Glassmorphism shell + solid cards + iOS module tiles
+ * Palette: Professional Blue primary + colorful module accents
+ * Typography: Poppins (UI); optional Open Sans secondary
  *
  * 60%  --color-surface-*        Neutral page / card backgrounds
  * 30%  --color-slate-*           Chrome, borders, text, sidebar
- * 10%  --color-accent-*          Single brand accent (emerald)
+ * 10%  --color-primary-*         Brand chrome (professional blue)
+ *      --color-accent-*          Deal / success only (emerald) — not CTA
  *
  * Semantic state colors live separately so
- * approval/danger/warning never compete with the brand accent.
+ * approval/danger/warning never compete with the brand primary.
  * ============================================================ */
 
 /* --- Google Font: Poppins --- */
@@ -37,7 +38,19 @@
   --color-slate-900: #0f172a;
   --color-slate-950: #020617;
 
-  /* ===== 10% accent (single brand color — emerald) ===== */
+  /* ===== Brand primary (professional blue) ===== */
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #2563eb;
+  --color-primary-600: #1d4ed8;
+  --color-primary-700: #1e40af;
+  --color-primary-800: #1e3a8a;
+  --color-primary-900: #1e3a8a;
+
+  /* ===== Deal / success only (emerald) — NOT primary CTA ===== */
   --color-accent-50:  #ecfdf5;
   --color-accent-100: #d1fae5;
   --color-accent-200: #a7f3d0;
@@ -49,7 +62,7 @@
   --color-accent-800: #065f46;
   --color-accent-900: #064e3b;
 
-  /* ===== Semantic state (not the accent) ===== */
+  /* ===== Semantic state (not the brand primary) ===== */
   --color-state-success:       #10b981;
   --color-state-success-bg:    #ecfdf5;
   --color-state-success-border: #a7f3d0;
@@ -70,10 +83,46 @@
   --color-foreground:        var(--color-slate-900);
   --color-muted:             var(--color-slate-500);
   --color-muted-foreground:  var(--color-slate-400);
-  --color-border:            var(--color-slate-200);
-  --color-border-strong:     var(--color-slate-300);
+  --color-border:            #e4ecfc;
+  --color-border-strong:     #cfd9f0;
   --color-input:             var(--color-surface-1);
-  --color-ring:              var(--color-accent-500);
+  --color-ring:              var(--color-primary-500);
+
+  /* ===== Module accents (tiles / KPIs only — not chrome) ===== */
+  --module-customers: #ec4899;
+  --module-orders:    #3b82f6;
+  --module-visits:    #f97316;
+  --module-sku:       #8b5cf6;
+  --module-planning:  #14b8a6;
+  --module-events:    #d946ef;
+  --module-users:     #6366f1;
+  --module-reports:   #06b6d4;
+  --module-email:     #0ea5e9;
+  --module-knowledge: #8b5cf6;
+
+  /* ===== Charts (Recharts series + chrome) ===== */
+  --chart-1: #2563eb;
+  --chart-2: #06b6d4;
+  --chart-3: #8b5cf6;
+  --chart-4: #f97316;
+  --chart-5: #ec4899;
+  --chart-positive: #059669;
+  --chart-negative: #dc2626;
+  --chart-grid: var(--color-slate-200);
+  --chart-axis: var(--color-slate-500);
+  --chart-tooltip-bg: var(--color-surface-1);
+
+  /* ===== Pipeline / approval stages ===== */
+  --stage-draft: var(--color-slate-500);
+  --stage-draft-bg: var(--color-slate-100);
+  --stage-proposed: var(--color-state-info);
+  --stage-proposed-bg: var(--color-state-info-bg);
+  --stage-approved: var(--color-state-success);
+  --stage-approved-bg: var(--color-state-success-bg);
+  --stage-rejected: var(--color-state-danger);
+  --stage-rejected-bg: var(--color-state-danger-bg);
+  --stage-in-progress: var(--color-primary-500);
+  --stage-in-progress-bg: var(--color-primary-50);
 
   /* ===== Glass effect tokens ===== */
   --glass-bg:          rgba(255, 255, 255, 0.82);
@@ -231,6 +280,10 @@
   --color-muted:             var(--color-slate-400);
   --color-muted-foreground:  var(--color-slate-500);
   --color-input:             var(--color-surface-2);
+
+  --chart-grid: var(--color-slate-700);
+  --chart-axis: var(--color-slate-400);
+  --chart-tooltip-bg: var(--color-surface-1);
 
   --glass-bg:          rgba(15, 23, 42, 0.78);
   --glass-bg-heavy:    rgba(15, 23, 42, 0.88);

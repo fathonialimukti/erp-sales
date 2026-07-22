@@ -75,7 +75,7 @@ Design is FROZEN. Do NOT invoke brainstorming or re-open palette/icon debates.
 
 ## Phase checklist (implementation)
 
-- [ ] Phase 1 — Tokens (primary blue, module accents, shell vars, **chart + stage tokens**)
+- [x] Phase 1 — Tokens (primary blue, module accents, shell vars, **chart + stage tokens**)
 - [ ] Phase 2 — SVG icon remake + `icons.ts` + nav-menu wiring
 - [ ] Phase 3 — Shell + UI kit + **table density + chips + filter bar**
 - [ ] Phase 4 — Dashboard chart theme + **Sales Order table + pipeline v1** + Customer index
@@ -128,3 +128,5 @@ must read at 20–28px
 |------|--------|
 | 2026-07-23 | Design approved; spec + MASTER + CONTEXT written |
 | 2026-07-23 | Tweak: CRM table density, chart tokens, pipeline UI added to spec/MASTER/CONTEXT |
+| 2026-07-23 | Spec OK; implementation plan written |
+| 2026-07-23 | **Task 1 complete** — primary blue scale, cool border, module/chart/stage tokens; focus ring → primary. Files: `apps/client/src/styles/tokens.css`, `apps/client/src/index.css`, `docs/plans/client-redesign/CONTEXT.md` |
