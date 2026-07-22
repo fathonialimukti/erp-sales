@@ -11,7 +11,7 @@ Use:
 - **TypeScript** (strict mode) for all code
 - **React 19** + **Vite** + **Tauri** for the frontend
 - **tRPC** (v11+) for end-to-end typesafe communication
-- **HeroUI** + **Tailwind CSS** for UI
+- **Plain CSS** (design tokens + colocated `.css` files) + local UI kit in `apps/client/src/ui/`
 - **Turborepo** for monorepo management
 
 Always respect the current project structure and recent file edits.
@@ -22,12 +22,16 @@ Only refer to files provided in context, focus on them and feel free to ask for 
 
 ---
 
-## HeroUI Rules (Strict)
+## CSS & UI Rules (Strict)
 
-- Use **only** HeroUI props, variants, slots, and composition.
-- **Never** pass `className` or `classNames` to any HeroUI component.
-- If HeroUI cannot achieve the desired UI cleanly, **explicitly state** it and ask for permission before adding custom Tailwind classes.
-- Prefer composition (`<HeroCard><HeroButton>...</HeroButton></HeroCard>`) over deep prop drilling.
+- **No HeroUI. No Tailwind. No CSS-in-JS.** Styling is plain CSS only.
+- Design tokens live in `apps/client/src/styles/tokens.css` — use CSS variables (`var(--color-*)`, `var(--space-*)`, `var(--radius-*)`, etc.).
+- Global layers: `index.css` imports `tokens.css`, `animations.css`, `utilities.css`, `page-system.css`, `module-page.css`, `reports.css`.
+- Prefer components from `apps/client/src/ui/` (`Button`, `Card`, `Input`, `Modal`, `Table`, `Select`, `Spinner`, …) before inventing new primitives.
+- Colocate component styles as `ComponentName.css` next to `ComponentName.tsx`.
+- Prefer semantic class names (`btn`, `btn--primary`, `card`) over utility soup.
+- Icons: `@iconify/react` `<Icon icon="solar:..." />` or existing `apps/client/src/ui/Icon.tsx` / lucide — **no emoji as UI icons**.
+- Accessibility is manual: labels, focus rings, keyboard nav, contrast via tokens.
 
 ---
 
@@ -117,9 +121,9 @@ appRouter
 
 ### Accessibility & Design
 
-- Leverage HeroUI’s built-in accessibility features
+- Use design tokens and semantic HTML; pair color with icon/text for status
 - Follow modern minimalist design: generous whitespace, clean typography, subtle interactions
-- Ensure high contrast and keyboard navigation
+- Ensure high contrast and keyboard navigation; respect `prefers-reduced-motion`
 
 ---
 
@@ -141,11 +145,26 @@ Follow these instructions **strictly** for every code suggestion and generation.
 ### Monorepo Structure
 
 ```
-apps/client/     — React 19 + Vite + Tauri frontend (port: Vite default)
-apps/server/     — Express + tRPC v11 backend (port: 10022)
-packages/schemas — Shared Zod schemas (@repo/schemas) — use these first before defining locally
-packages/ui      — Turborepo scaffold placeholder, NOT used by client (client uses @heroui/react directly)
+apps/client/              — React 19 + Vite + Tauri frontend (plain CSS + local ui kit)
+apps/server/              — Express + tRPC v11 backend (port: 10022)
+packages/schemas          — Shared Zod schemas (@repo/schemas) — use these first before defining locally
+packages/ui               — Turborepo scaffold placeholder, NOT used by client
+.agents/skills/           — Canonical agent skills (source of truth; install via bunx skills)
+.github/agents/           — Custom Copilot agents (Frontend / Backend / Full-Stack / Code Reviewer)
+.github/instructions/     — Path-scoped coding rules (client, server, schemas, i18n)
+.github/copilot-instructions.md — Global project rules for all agents
+.vscode/mcp.json          — Project MCP servers (Prisma, Prisma-Local, Context7)
 ```
+
+### Agent / skills layout (do not reintroduce dups)
+
+| Path | Keep? | Role |
+|------|-------|------|
+| `.agents/skills/` | **Yes** | Real skill files. Only install target. |
+| `.github/agents/` | **Yes** | Custom agent personas for Copilot. |
+| `.github/instructions/` | **Yes** | `applyTo` path rules. |
+| `.claude/skills/` | **No** | Claude Code symlink mirror only. Not used by Copilot. Do not recreate unless using Claude Code. |
+| `agent/skills/` | **No** | Broken duplicate path. Never recreate. |
 
 > **Module-level docs**: Read `apps/server/src/routers/*/CLAUDE.md` before editing a feature — they contain data flows, business rules, and gotchas specific to each domain.
 
@@ -224,7 +243,7 @@ packages/ui      — Turborepo scaffold placeholder, NOT used by client (client 
 2. `useQuery` with `trpcClient.*.list.query({ page, limit, search })`
 3. Debounced search (300ms) + TanStack Table for columns
 4. Delete modal state (`deleteModalOpen`, `itemToDelete`)
-5. HeroUI: `Card`, `Table`, `Input`, `Button`, `Dropdown`, `Pagination`, `Modal`, `Spinner`
+5. Local UI kit: `Card`, `Table`, `Input`, `Button`, `Dropdown`, `Pagination`, `Modal`, `Spinner` from `apps/client/src/ui/`
 6. Icons via `@iconify/react` `<Icon icon="solar:..." />`
 
 ### Detail Page Template
