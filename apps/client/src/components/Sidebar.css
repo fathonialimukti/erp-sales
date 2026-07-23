@@ -63,7 +63,7 @@
   height: 42px;
   border-radius: 12px;
   box-shadow:
-    0 4px 16px rgba(124, 58, 237, 0.30),
+    0 4px 16px rgba(37, 99, 235, 0.30),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
@@ -146,8 +146,8 @@
 
 /* Active row state in collapsed mode — single clean border ring */
 .ios-sb--collapsed .ios-sb__row--active {
-  background: var(--ios-row-active-bg, rgba(124, 58, 237, 0.15));
-  box-shadow: 0 0 0 2px var(--ios-accent, #7C3AED);
+  background: var(--ios-row-active-bg, var(--color-primary-50));
+  box-shadow: 0 0 0 2px var(--ios-accent, var(--color-primary-500));
 }
 
 .ios-sb--collapsed .ios-sb__row--active .ios-sb__row-icon img {
@@ -322,7 +322,7 @@
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25),
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25),
               inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: transform 200ms var(--ease-spring);
 }
@@ -422,7 +422,7 @@
   background: var(--ios-search-bg-hover);
   transform: translateY(-1px) scale(1.04);
   box-shadow:
-    0 4px 12px rgba(124, 58, 237, 0.18),
+    0 4px 12px rgba(37, 99, 235, 0.18),
     var(--ios-search-shadow);
 }
 
@@ -752,15 +752,15 @@
 
 .ios-sb__row--active .ios-sb__row-label {
   font-weight: 700;
-  color: var(--ios-accent, var(--ios-violet-600, #7C3AED));
+  color: var(--ios-accent, var(--color-primary-700));
   letter-spacing: -0.01em;
 }
 
 .dark .ios-sb__row--active .ios-sb__row-label {
-  color: var(--ios-accent, #C4B5FD);
+  color: var(--ios-accent, var(--color-primary-200));
 }
 
-/* Left accent bar — gradient stripe */
+/* Left accent bar — primary stripe */
 .ios-sb__row--active .ios-sb__row-label::before {
   content: "";
   position: absolute;
@@ -770,7 +770,7 @@
   width: 3px;
   height: 60%;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #7C3AED, #EC4899, #3B82F6);
+  background: var(--color-primary-500);
 }
 
 /* Respect reduced-motion */
@@ -942,10 +942,10 @@
   --ios-search-bg:          rgba(255, 255, 255, 0.72);
   --ios-search-bg-hover:    rgba(255, 255, 255, 0.92);
   --ios-search-border:      rgba(15, 23, 42, 0.06);
-  --ios-search-border-hover: rgba(124, 58, 237, 0.25);
-  --ios-search-ring:        rgba(124, 58, 237, 0.30);
+  --ios-search-border-hover: rgba(37, 99, 235, 0.25);
+  --ios-search-ring:        rgba(37, 99, 235, 0.30);
   --ios-search-shadow:        0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.80);
-  --ios-search-shadow-hover:  0 4px 14px rgba(124, 58, 237, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --ios-search-shadow-hover:  0 4px 14px rgba(37, 99, 235, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --ios-search-kbd-bg:       rgba(255, 255, 255, 0.70);
   --ios-search-kbd-border:   rgba(15, 23, 42, 0.10);
   --ios-search-kbd-shadow:   rgba(15, 23, 42, 0.10);
@@ -953,13 +953,14 @@
 
   --ios-row-hover:        rgba(15, 23, 42, 0.04);
   --ios-row-press:        rgba(15, 23, 42, 0.08);
-  --ios-row-active-bg:    rgba(124, 58, 237, 0.10);
+  --ios-row-active-bg:    var(--color-primary-50);
   --ios-row-active-overlay: linear-gradient(
                             90deg,
                             rgba(255, 255, 255, 0.55) 0%,
                             rgba(255, 255, 255, 0.30) 100%
                           );
-  --ios-accent-soft:      rgba(124, 58, 237, 0.35);
+  --ios-accent:           var(--color-primary-700);
+  --ios-accent-soft:      rgba(37, 99, 235, 0.35);
 
   --ios-pill-bg:          rgba(15, 23, 42, 0.06);
   --ios-pill-bg-hover:    rgba(15, 23, 42, 0.10);
@@ -992,8 +993,8 @@
   --ios-search-bg:          rgba(255, 255, 255, 0.08);
   --ios-search-bg-hover:    rgba(255, 255, 255, 0.14);
   --ios-search-border:      rgba(255, 255, 255, 0.08);
-  --ios-search-border-hover: rgba(167, 139, 250, 0.30);
-  --ios-search-ring:        rgba(167, 139, 250, 0.40);
+  --ios-search-border-hover: rgba(96, 165, 250, 0.30);
+  --ios-search-ring:        rgba(96, 165, 250, 0.40);
   --ios-search-shadow:        0 1px 2px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --ios-search-shadow-hover:  0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.10);
   --ios-search-kbd-bg:       rgba(255, 255, 255, 0.10);
@@ -1003,13 +1004,14 @@
 
   --ios-row-hover:        rgba(255, 255, 255, 0.06);
   --ios-row-press:        rgba(255, 255, 255, 0.10);
-  --ios-row-active-bg:    rgba(167, 139, 250, 0.18);
+  --ios-row-active-bg:    rgba(37, 99, 235, 0.15);
   --ios-row-active-overlay: linear-gradient(
                             90deg,
                             rgba(255, 255, 255, 0.06) 0%,
                             rgba(255, 255, 255, 0.02) 100%
                           );
-  --ios-accent-soft:      rgba(167, 139, 250, 0.40);
+  --ios-accent:           var(--color-primary-200);
+  --ios-accent-soft:      rgba(37, 99, 235, 0.40);
 
   --ios-pill-bg:          rgba(255, 255, 255, 0.08);
   --ios-pill-bg-hover:    rgba(255, 255, 255, 0.14);

@@ -1,16 +1,16 @@
 /* ============================================================
  * Card — surface container with variants
  * Prefix: .card-
- * 60-30-10: surface bg (60%), slate border (30%), accent for highlights
+ * 60-30-10: surface bg (60%), cool border (30%), primary for highlights
  * ============================================================ */
 
 .card {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl, var(--radius-lg));
   border: 1px solid var(--color-border);
   background: var(--color-surface-1);
   box-shadow: var(--shadow-xs);
   overflow: visible;
-  transition: box-shadow 200ms ease;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
 }
 
 .card:hover {
@@ -55,8 +55,8 @@
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-1);
-  border-top-left-radius: var(--radius-lg);
-  border-top-right-radius: var(--radius-lg);
+  border-top-left-radius: var(--radius-xl, var(--radius-lg));
+  border-top-right-radius: var(--radius-xl, var(--radius-lg));
 }
 
 .dark .card__header {

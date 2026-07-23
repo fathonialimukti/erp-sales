@@ -48,6 +48,17 @@
   color: var(--color-state-info);
 }
 
+.chip--primary {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+}
+
+.dark .chip--primary {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--color-primary-200);
+}
+
+/* Deal / success alias — keep emerald, not brand CTA */
 .chip--accent {
   background: var(--color-accent-50);
   color: var(--color-accent-700);

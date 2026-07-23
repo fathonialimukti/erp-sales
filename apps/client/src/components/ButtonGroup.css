@@ -67,7 +67,7 @@
 }
 
 .bgrp__btn:focus-visible {
-  outline: 0.125rem solid rgba(124, 58, 237, 0.40);
+  outline: 0.125rem solid rgba(37, 99, 235, 0.40);
   outline-offset: 0.125rem;
 }
 
@@ -151,21 +151,21 @@
 }
 
 .bgrp__btn--primary {
-  color: #6D28D9;
+  color: var(--color-primary-700);
 }
 
 .bgrp__btn--primary:hover:not(.bgrp__btn--disabled) {
-  background: rgba(124, 58, 237, 0.10);
-  color: #5B21B6;
+  background: rgba(37, 99, 235, 0.10);
+  color: var(--color-primary-800);
 }
 
 .dark .bgrp__btn--primary {
-  color: #C4B5FD;
+  color: var(--color-primary-200);
 }
 
 .dark .bgrp__btn--primary:hover:not(.bgrp__btn--disabled) {
-  background: rgba(167, 139, 250, 0.16);
-  color: #DDD6FE;
+  background: rgba(37, 99, 235, 0.16);
+  color: var(--color-primary-100);
 }
 
 .bgrp__btn--success {

@@ -49,8 +49,8 @@
 }
 
 .dp-trigger:focus-within {
-  border-color: var(--color-accent-500);
-  box-shadow: 0 0 0 1px var(--color-accent-500);
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 1px var(--color-primary-500);
 }
 
 .dp-trigger--error {
@@ -160,17 +160,17 @@
 }
 
 .dp-popover .rdp-day_selected {
-  background: var(--color-accent-500) !important;
+  background: var(--color-primary-500) !important;
   color: white !important;
 }
 
 .dp-popover .rdp-day_selected:hover {
-  background: var(--color-accent-600) !important;
+  background: var(--color-primary-600) !important;
 }
 
 .dp-popover .rdp-day_today {
   font-weight: 600;
-  color: var(--color-accent-700);
+  color: var(--color-primary-700);
 }
 
 @media (max-width: 768px) {

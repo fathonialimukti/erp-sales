@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import "./Chip.css";
 
-type Tone = "neutral" | "success" | "warning" | "danger" | "info" | "accent";
+type Tone = "neutral" | "success" | "warning" | "danger" | "info" | "primary" | "accent";
 
 interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: Tone;

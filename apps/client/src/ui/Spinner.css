@@ -13,7 +13,7 @@
   border-style: solid;
   border-color: currentColor;
   border-top-color: transparent;
-  color: var(--color-accent-500);
+  color: var(--color-primary-500);
   animation: spin 600ms linear infinite;
 }
 

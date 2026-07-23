@@ -363,17 +363,18 @@
 
   --ios-tb-pill-bg:        rgba(255, 255, 255, 0.85);
   --ios-tb-pill-bg-hover:  rgba(245, 245, 250, 1);
-  --ios-tb-pill-bg-active: rgba(124, 58, 237, 0.10);
+  --ios-tb-pill-bg-active: rgba(37, 99, 235, 0.10);
   --ios-tb-pill-border:    rgba(15, 23, 42, 0.06);
-  --ios-tb-pill-border-active: rgba(124, 58, 237, 0.20);
+  --ios-tb-pill-border-active: rgba(37, 99, 235, 0.20);
   --ios-tb-pill-shadow:        0 1px 1px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.70);
   --ios-tb-pill-shadow-hover:  0 2px 4px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.80);
 
   --ios-tb-icon-filter:        invert(0%) brightness(0.20);
-  --ios-tb-icon-filter-active:  invert(35%) sepia(85%) saturate(4500%) hue-rotate(245deg) brightness(0.95);
+  /* Approximate primary-600 blue for mono icons */
+  --ios-tb-icon-filter-active:  invert(32%) sepia(98%) saturate(1800%) hue-rotate(210deg) brightness(0.95);
 
   --ios-state-danger:      #FF3B30;
-  --ios-accent-text:       #7C3AED;
+  --ios-accent-text:       var(--color-primary-700);
 }
 
 .dark {
@@ -384,14 +385,14 @@
 
   --ios-tb-pill-bg:        rgba(255, 255, 255, 0.08);
   --ios-tb-pill-bg-hover:  rgba(255, 255, 255, 0.14);
-  --ios-tb-pill-bg-active: rgba(167, 139, 250, 0.22);
+  --ios-tb-pill-bg-active: rgba(37, 99, 235, 0.22);
   --ios-tb-pill-border:    rgba(255, 255, 255, 0.10);
-  --ios-tb-pill-border-active: rgba(167, 139, 250, 0.30);
+  --ios-tb-pill-border-active: rgba(96, 165, 250, 0.30);
   --ios-tb-pill-shadow:        0 1px 2px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --ios-tb-pill-shadow-hover:  0 2px 4px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.10);
 
   --ios-tb-icon-filter:        invert(100%) brightness(2);
-  --ios-tb-icon-filter-active:  invert(78%) sepia(60%) saturate(1200%) hue-rotate(220deg) brightness(1.05);
+  --ios-tb-icon-filter-active:  invert(70%) sepia(50%) saturate(1200%) hue-rotate(190deg) brightness(1.05);
 
-  --ios-accent-text:       #C4B5FD;
+  --ios-accent-text:       var(--color-primary-200);
 }

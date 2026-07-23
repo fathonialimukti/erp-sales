@@ -64,8 +64,8 @@
 
 /* Checked state */
 .chk-input:checked + .chk-box {
-  border-color: var(--color-accent-500);
-  background: var(--color-accent-500);
+  border-color: var(--color-primary-500);
+  background: var(--color-primary-500);
 }
 
 .chk-input:checked + .chk-box::after {
@@ -74,8 +74,8 @@
 
 /* Indeterminate state (for group toggles) */
 .chk-input:indeterminate + .chk-box {
-  border-color: var(--color-accent-500);
-  background: var(--color-accent-500);
+  border-color: var(--color-primary-500);
+  background: var(--color-primary-500);
 }
 
 .chk-input:indeterminate + .chk-box::after {
@@ -89,12 +89,12 @@
 
 /* Focus ring */
 .chk-input:focus-visible + .chk-box {
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.20);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.20);
 }
 
 /* Hover */
 .chk-label:hover .chk-box {
-  border-color: var(--color-accent-400);
+  border-color: var(--color-primary-400);
 }
 
 /* Disabled */
@@ -111,12 +111,12 @@
 
 .dark .chk-input:checked + .chk-box,
 .dark .chk-input:indeterminate + .chk-box {
-  border-color: var(--color-accent-500);
-  background: var(--color-accent-500);
+  border-color: var(--color-primary-500);
+  background: var(--color-primary-500);
 }
 
 .dark .chk-label:hover .chk-box {
-  border-color: var(--color-accent-400);
+  border-color: var(--color-primary-400);
 }
 
 /* Text */

@@ -171,8 +171,8 @@
   --shadow-xl:    0 20px 25px -5px rgba(15, 23, 42, 0.10), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
   --shadow-2xl:   0 25px 50px -12px rgba(15, 23, 42, 0.20);
   --shadow-inner: inset 0 2px 4px 0 rgba(15, 23, 42, 0.04);
-  --shadow-glow:  0 0 12px 2px rgba(16, 185, 129, 0.25);
-  --shadow-glow-strong: 0 0 20px 4px rgba(16, 185, 129, 0.35);
+  --shadow-glow:  0 0 12px 2px rgba(37, 99, 235, 0.25);
+  --shadow-glow-strong: 0 0 20px 4px rgba(37, 99, 235, 0.35);
 
   /* ===== Typography =====
      Poppins is imported at the top of this file and is the primary
@@ -404,23 +404,23 @@
   --ios-search-bg:        rgba(15, 23, 42, 0.05);
   --ios-search-bg-focus:  rgba(255, 255, 255, 0.95);
   --ios-search-shadow:    0 0.0625rem 0.125rem rgba(15, 23, 42, 0.04), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.7);
-  --ios-search-ring:      rgba(124, 58, 237, 0.18);
-  --ios-search-border-hover: rgba(124, 58, 237, 0.20);
+  --ios-search-ring:      rgba(37, 99, 235, 0.18);
+  --ios-search-border-hover: rgba(37, 99, 235, 0.20);
 
   --ios-pill-bg:        rgba(15, 23, 42, 0.06);
   --ios-pill-bg-hover:  rgba(15, 23, 42, 0.10);
   --ios-row-hover:      rgba(15, 23, 42, 0.035);
-  --ios-row-active-bg:  rgba(124, 58, 237, 0.08);
+  --ios-row-active-bg:  var(--color-primary-50);
   --ios-icon-bg:        rgba(15, 23, 42, 0.06);
   --ios-footer-bg:      rgba(15, 23, 42, 0.02);
   --ios-icon-filter:    brightness(0) saturate(100%);
 
-  /* ===== iOS accent (brand — emerald) ===== */
-  --ios-accent:           #047857;   /* emerald-700 — strong on light */
-  --ios-accent-soft:      rgba(16, 185, 129, 0.10);
-  --ios-accent-border:    rgba(16, 185, 129, 0.22);
-  --ios-accent-500:       #10B981;
-  --ios-accent-600:       #059669;
+  /* ===== iOS accent (brand chrome — primary blue) ===== */
+  --ios-accent:           var(--color-primary-700);
+  --ios-accent-soft:      rgba(37, 99, 235, 0.10);
+  --ios-accent-border:    rgba(37, 99, 235, 0.22);
+  --ios-accent-500:       var(--color-primary-500);
+  --ios-accent-600:       var(--color-primary-600);
 
   --ios-state-neutral-bg:      rgba(100, 116, 139, 0.10);
   --ios-state-neutral:         #64748B;
@@ -480,23 +480,23 @@
   --ios-search-bg:        rgba(255, 255, 255, 0.08);
   --ios-search-bg-focus:  rgba(58, 58, 60, 0.95);
   --ios-search-shadow:    0 0.0625rem 0.125rem rgba(0, 0, 0, 0.30), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.06);
-  --ios-search-ring:      rgba(167, 139, 250, 0.28);
-  --ios-search-border-hover: rgba(167, 139, 250, 0.25);
+  --ios-search-ring:      rgba(96, 165, 250, 0.28);
+  --ios-search-border-hover: rgba(96, 165, 250, 0.25);
 
   --ios-pill-bg:        rgba(255, 255, 255, 0.08);
   --ios-pill-bg-hover:  rgba(255, 255, 255, 0.14);
   --ios-row-hover:      rgba(255, 255, 255, 0.045);
-  --ios-row-active-bg:  rgba(167, 139, 250, 0.12);
+  --ios-row-active-bg:  rgba(37, 99, 235, 0.15);
   --ios-icon-bg:        rgba(255, 255, 255, 0.08);
   --ios-footer-bg:      rgba(255, 255, 255, 0.02);
   --ios-icon-filter:    brightness(0) invert(1);
 
-  /* ===== iOS accent (brand — emerald, brightened for dark) ===== */
-  --ios-accent:           #6EE7B7;   /* emerald-300 — readable on dark */
-  --ios-accent-soft:      rgba(16, 185, 129, 0.18);
-  --ios-accent-border:    rgba(16, 185, 129, 0.35);
-  --ios-accent-500:       #10B981;
-  --ios-accent-600:       #34D399;
+  /* ===== iOS accent (brand chrome — primary blue, brightened for dark) ===== */
+  --ios-accent:           var(--color-primary-200);
+  --ios-accent-soft:      rgba(37, 99, 235, 0.18);
+  --ios-accent-border:    rgba(37, 99, 235, 0.35);
+  --ios-accent-500:       var(--color-primary-500);
+  --ios-accent-600:       var(--color-primary-400);
 
   --ios-state-neutral-bg:      rgba(120, 120, 128, 0.24);
   --ios-state-neutral:         #C7C7CC;

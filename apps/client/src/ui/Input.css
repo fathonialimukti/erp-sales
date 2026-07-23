@@ -20,8 +20,8 @@
 }
 
 .inp-box:focus-within {
-  border-color: var(--color-accent-500);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
 .dark .inp-box {
