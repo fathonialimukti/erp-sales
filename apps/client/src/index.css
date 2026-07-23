@@ -1,8 +1,9 @@
 /* ============================================================
- * Global styles — No Tailwind
- * Imports: tokens, animations, utilities, react-day-picker
+ * Global styles — Tailwind v4 entry + legacy kit (temporary)
+ * Imports: tailwind, tokens, animations, utilities, react-day-picker
  * ============================================================ */
 
+@import "tailwindcss";
 @import "./styles/tokens.css";
 @import "./styles/animations.css";
 @import "./styles/utilities.css";
