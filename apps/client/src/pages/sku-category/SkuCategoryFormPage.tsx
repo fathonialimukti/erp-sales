@@ -1,17 +1,28 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { Loader2, Save } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { Spinner } from "../../ui/Spinner";
-import { useToast } from "../../ui/useToast";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { ModulePage } from "../../components/ModulePage";
-import { SkuCategoryIcon } from "./SkuCategoryIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FormValues {
   code: string;
@@ -29,7 +40,6 @@ export const SkuCategoryFormPage = () => {
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
   const canSave = hasPermission(id ? "skuCategory@update" : "skuCategory@create");
-  const toast = useToast();
 
   const isEdit = Boolean(id);
   const [modalStage, setModalStage] = useState<ModalStage>("idle");
@@ -42,17 +52,33 @@ export const SkuCategoryFormPage = () => {
   });
 
   const form = useForm({
-    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    defaultValues: (isEdit && data
+      ? { code: data.code ?? "", name: data.name }
+      : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
     },
   });
 
+  useEffect(() => {
+    if (isEdit && data) {
+      form.setFieldValue("code", data.code ?? "");
+      form.setFieldValue("name", data.name);
+    }
+    // ponytail: only seed when detail arrives
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, data]);
+
   const createMutation = useMutation({
     mutationFn: (d: FormValues) => trpcClient.skuCategory.create.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["skuCategoryList"] });
-      setResultMessage(intl.formatMessage({ id: "sku_category.form.success.created", defaultMessage: "Region created" }));
+      setResultMessage(
+        intl.formatMessage({
+          id: "sku_category.form.success.created",
+          defaultMessage: "Category created",
+        }),
+      );
       setModalStage("success");
       setTimeout(() => navigate("/skuCategory"), 1200);
     },
@@ -63,11 +89,17 @@ export const SkuCategoryFormPage = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (d: FormValues & { currentId: string }) => trpcClient.skuCategory.update.mutate(d),
+    mutationFn: (d: FormValues & { currentId: string }) =>
+      trpcClient.skuCategory.update.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["skuCategoryList"] });
       queryClient.invalidateQueries({ queryKey: ["skuCategoryDetail", id] });
-      setResultMessage(intl.formatMessage({ id: "sku_category.form.success.updated", defaultMessage: "Region updated" }));
+      setResultMessage(
+        intl.formatMessage({
+          id: "sku_category.form.success.updated",
+          defaultMessage: "Category updated",
+        }),
+      );
       setModalStage("success");
       setTimeout(() => navigate(`/skuCategory/${id}`), 1200);
     },
@@ -93,7 +125,9 @@ export const SkuCategoryFormPage = () => {
         e.preventDefault();
         if (modalStage === "idle") form.handleSubmit();
       }
-      if (e.key === "Escape" && modalStage !== "idle") setModalStage("idle");
+      if (e.key === "Escape" && modalStage !== "idle" && modalStage !== "loading") {
+        setModalStage("idle");
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
@@ -101,188 +135,203 @@ export const SkuCategoryFormPage = () => {
 
   if (isLoading) {
     return (
-      <ModulePage accent="#F59E0B" accentEnd="#D97706" aiContext={{ section: "skuCategory-form", loading: true }}>
-        <div className="m-loading"><Spinner size="lg" /></div>
-      </ModulePage>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "skuCategory-form", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-48 w-full" />
+      </section>
     );
   }
 
   return (
-    <ModulePage accent="#F59E0B" accentEnd="#D97706" aiContext={{ section: "skuCategory-form", isEdit, id: id ?? null }}>
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "skuCategory-form",
+        isEdit,
+        id: id ?? null,
+      })}
+    >
       <form
-        className="m-page"
-        onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
-        style={{ gap: "1.25rem" }}
+        className="flex flex-col gap-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
       >
-        {/* ── Header ── */}
-        <div className="so-form__header">
-          <div>
-            <h1 className="so-form__title">
-              {isEdit
-                ? intl.formatMessage({ id: "sku_category.form.title_edit", defaultMessage: "Edit skuCategory" })
-                : intl.formatMessage({ id: "sku_category.form.title_create", defaultMessage: "New skuCategory" })}
-            </h1>
-            <p className="so-form__subtitle">
-              {isEdit ? "Update skuCategory details" : "Create a new geographical skuCategory"}
-            </p>
-          </div>
-          <button type="button" className="so-form__back" onClick={() => navigate(isEdit && id ? `/skuCategory/${id}` : "/skuCategory")}>
-            <SkuCategoryIcon name="back" size={14} />
-            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-          </button>
-        </div>
+        <PageHeader
+          module="sku"
+          title={
+            isEdit
+              ? intl.formatMessage({
+                  id: "sku_category.form.title_edit",
+                  defaultMessage: "Edit category",
+                })
+              : intl.formatMessage({
+                  id: "sku_category.form.title_create",
+                  defaultMessage: "New category",
+                })
+          }
+          description={
+            isEdit
+              ? intl.formatMessage({
+                  id: "sku_category.form.subtitle_edit",
+                  defaultMessage: "Update category details",
+                })
+              : intl.formatMessage({
+                  id: "sku_category.form.subtitle_create",
+                  defaultMessage: "Create a new product category",
+                })
+          }
+          onBack={() => navigate(isEdit && id ? `/skuCategory/${id}` : "/skuCategory")}
+          actions={
+            <Button
+              type="submit"
+              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {intl.formatMessage({ id: "sku_category.form.save_button", defaultMessage: "Save" })}
+            </Button>
+          }
+        />
 
-        {/* ── Fields ── */}
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><SkuCategoryIcon name="tag" size={14} /></span>
-              {intl.formatMessage({ id: "sku_category.form.section_basic", defaultMessage: "Basic information" })}
-            </h2>
-          </div>
-          <div className="so-card__body">
-            <div className="so-section">
-              <form.Field name="code">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "sku_category.form.field_code", defaultMessage: "Code" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "sku_category.form.field_code_placeholder", defaultMessage: "Optional" })}
-                    />
-                  </div>
-                )}
-              </form.Field>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "sku_category.form.section_basic",
+                defaultMessage: "Basic information",
+              })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-2">
+            <form.Field name="code">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="sku-category-code">
+                    {intl.formatMessage({
+                      id: "sku_category.form.field_code",
+                      defaultMessage: "Code",
+                    })}
+                  </Label>
+                  <Input
+                    id="sku-category-code"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    placeholder={intl.formatMessage({
+                      id: "sku_category.form.field_code_placeholder",
+                      defaultMessage: "Optional",
+                    })}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "sku_category.form.field_name", defaultMessage: "Name" })} *
-                    </label>
-                    <input
-                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "sku_category.form.field_name_placeholder", defaultMessage: "Region name" })}
-                    />
-                    {f.state.meta.errors.length > 0 && (
-                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Actions ── */}
-        <div className="so-actions">
-          <ButtonGroup
-            items={[
-              {
-                key: "save",
-                label: intl.formatMessage({ id: "sku_category.form.save_button", defaultMessage: "Save" }),
-                icon: <SkuCategoryIcon name="check" size={14} />,
-                onClick: () => { form.handleSubmit(); },
-                disabled: !canSave || createMutation.isPending || updateMutation.isPending,
-                isLoading: createMutation.isPending || updateMutation.isPending,
-                variant: "primary",
-              },
-            ]}
-          />
-        </div>
+            <form.Field
+              name="name"
+              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+            >
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="sku-category-name">
+                    {intl.formatMessage({
+                      id: "sku_category.form.field_name",
+                      defaultMessage: "Name",
+                    })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="sku-category-name"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    aria-invalid={f.state.meta.errors.length > 0}
+                    placeholder={intl.formatMessage({
+                      id: "sku_category.form.field_name_placeholder",
+                      defaultMessage: "Category name",
+                    })}
+                  />
+                  {f.state.meta.errors.length > 0 ? (
+                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                  ) : null}
+                </div>
+              )}
+            </form.Field>
+          </CardContent>
+        </Card>
       </form>
 
-      {/* ── Modal ── */}
-      {modalStage !== "idle" && createPortal(
-        <div className="so-modal__backdrop" onClick={() => modalStage !== "loading" && modalStage !== "confirm" && setModalStage("idle")}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            {modalStage === "confirm" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>
-                    {intl.formatMessage({ id: "sku_category.form.modal.confirm_title", defaultMessage: "Confirm save" })}
-                  </h3>
-                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
-                    <SkuCategoryIcon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <SkuCategoryIcon name="check" size={28} />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage({ id: "sku_category.form.modal.confirm_body", defaultMessage: "Save changes to this skuCategory?" })}
-                  </h3>
-                </div>
-                <div className="so-modal__footer">
-                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
-                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-                  </button>
-                  <button className="so-btn so-btn--primary" onClick={runSave}>
-                    {intl.formatMessage({ id: "common.action.confirm", defaultMessage: "Confirm" })}
-                  </button>
-                </div>
-              </>
-            )}
+      <ConfirmDialog
+        open={modalStage === "confirm"}
+        onOpenChange={(open) => {
+          if (!open) setModalStage("idle");
+        }}
+        title={intl.formatMessage({
+          id: "sku_category.form.modal.confirm_title",
+          defaultMessage: "Confirm save",
+        })}
+        description={intl.formatMessage({
+          id: "sku_category.form.modal.confirm_body",
+          defaultMessage: "Save changes to this category?",
+        })}
+        confirmLabel={intl.formatMessage({
+          id: "common.action.confirm",
+          defaultMessage: "Confirm",
+        })}
+        onConfirm={runSave}
+      />
 
-            {modalStage === "loading" && (
-              <div className="so-modal__body">
-                <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
-                  <span className="so-spinner so-spinner--lg" />
-                </div>
-                <p className="so-modal__msg">{intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}</p>
-              </div>
-            )}
-
-            {modalStage === "success" && (
-              <>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <SkuCategoryIcon name="check" size={28} />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage({ id: "sku_category.form.modal.success", defaultMessage: "Success!" })}
-                  </h3>
-                  <p className="so-modal__msg">{resultMessage}</p>
-                </div>
-              </>
-            )}
-
-            {modalStage === "error" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>
-                    {intl.formatMessage({ id: "sku_category.form.modal.error_title", defaultMessage: "Error" })}
-                  </h3>
-                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
-                    <SkuCategoryIcon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--error">
-                    <SkuCategoryIcon name="close" size={28} />
-                  </div>
-                  <p className="so-modal__msg">{resultMessage}</p>
-                </div>
-                <div className="so-modal__footer">
-                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
-                    {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>,
-        document.body,
-      )}
-    </ModulePage>
+      <Dialog
+        open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
+        onOpenChange={(open) => {
+          if (!open && modalStage !== "loading") setModalStage("idle");
+        }}
+      >
+        <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
+          {modalStage === "loading" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <DialogDescription>
+                {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
+              </DialogDescription>
+            </div>
+          ) : null}
+          {modalStage === "success" ? (
+            <DialogHeader>
+              <DialogTitle>
+                {intl.formatMessage({
+                  id: "sku_category.form.modal.success",
+                  defaultMessage: "Success!",
+                })}
+              </DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+          ) : null}
+          {modalStage === "error" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {intl.formatMessage({
+                    id: "sku_category.form.modal.error_title",
+                    defaultMessage: "Error",
+                  })}
+                </DialogTitle>
+                <DialogDescription>{resultMessage}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setModalStage("idle")}>
+                  {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 };
