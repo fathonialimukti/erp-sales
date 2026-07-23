@@ -52,6 +52,29 @@ type SalesDashboard = {
   }[];
 };
 
+const chartColors = {
+  primary: "var(--chart-1)",
+  secondary: "var(--chart-2)",
+  tertiary: "var(--chart-3)",
+  positive: "var(--chart-positive)",
+  negative: "var(--chart-negative)",
+  grid: "var(--chart-grid)",
+  axis: "var(--chart-axis)",
+  tooltipBg: "var(--chart-tooltip-bg)",
+  border: "var(--color-border)",
+} as const;
+
+const chartTooltipStyle = {
+  background: chartColors.tooltipBg,
+  border: `1px solid ${chartColors.border}`,
+  borderRadius: 12,
+  fontSize: 12,
+  boxShadow: "var(--ios-shadow-card)",
+  color: "var(--ios-label)",
+} as const;
+
+const MAIN_CHART_HEIGHT = 280;
+
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
 
@@ -337,14 +360,14 @@ export const Dashboard = () => {
               <AreaChart data={revenueChartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="iosHeroFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.55} />
-                    <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
+                    <stop offset="0%" stopColor={chartColors.primary} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={chartColors.primary} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <Area
                   type="monotone"
                   dataKey="total"
-                  stroke="#FFFFFF"
+                  stroke={chartColors.primary}
                   strokeWidth={2.5}
                   fill="url(#iosHeroFill)"
                   isAnimationActive={false}
@@ -422,48 +445,44 @@ export const Dashboard = () => {
         </header>
         <div className="ios-dash__card-body">
           {isLoading ? (
-            <Skeleton style={{ height: 200, width: "100%", borderRadius: 16 }} />
+            <Skeleton
+              className="ios-dash__chart-skeleton"
+              style={{ height: MAIN_CHART_HEIGHT, width: "100%", borderRadius: 16 }}
+            />
           ) : (
-            <div style={{ height: 200, width: "100%" }}>
+            <div className="ios-dash__chart" style={{ height: MAIN_CHART_HEIGHT }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="iosRevFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--ios-green)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--ios-green)" stopOpacity={0} />
+                      <stop offset="0%" stopColor={chartColors.primary} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={chartColors.primary} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="var(--ios-separator)" vertical={false} />
+                  <CartesianGrid stroke={chartColors.grid} vertical={false} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: "var(--ios-label-3)", fontSize: 11 }}
+                    tick={{ fill: chartColors.axis, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     interval="preserveStartEnd"
                     minTickGap={24}
                   />
                   <YAxis
-                    tick={{ fill: "var(--ios-label-3)", fontSize: 11 }}
+                    tick={{ fill: chartColors.axis, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     width={48}
                     tickFormatter={(v) => formatCompact(Number(v))}
                   />
                   <Tooltip
-                    contentStyle={{
-                      background: "var(--ios-bg-elevated)",
-                      border: "1px solid var(--ios-separator)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                      boxShadow: "var(--ios-shadow-card)",
-                      color: "var(--ios-label)",
-                    }}
+                    contentStyle={chartTooltipStyle}
                     formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
                   />
                   <Area
                     type="monotone"
                     dataKey="total"
-                    stroke="var(--ios-green)"
+                    stroke={chartColors.primary}
                     strokeWidth={2.5}
                     fill="url(#iosRevFill)"
                   />
@@ -498,15 +517,22 @@ export const Dashboard = () => {
           ) : sales?.topCustomers?.length ? (
             <div style={{ height: 220, width: "100%" }}>
               <ResponsiveContainer width="100%" height="100%">
+                <BarC
+              className="ios-dash__chart-skeleton"
+              style={{ height: MAIN_CHART_HEIGHT, width: "100%", borderRadius: 16 }}
+            />
+          ) : sales?.topCustomers?.length ? (
+            <div className="ios-dash__chart" style={{ height: MAIN_CHART_HEIGHT }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={sales.topCustomers}
                   layout="vertical"
                   margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid stroke="var(--ios-separator)" horizontal={false} />
+                  <CartesianGrid stroke={chartColors.grid} horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fill: "var(--ios-label-3)", fontSize: 11 }}
+                    tick={{ fill: chartColors.axis, fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v) => formatCompact(Number(v))}
@@ -514,27 +540,16 @@ export const Dashboard = () => {
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fill: "var(--ios-label-2)", fontSize: 12 }}
+                    tick={{ fill: chartColors.axis, fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
                     width={110}
                   />
                   <Tooltip
-                    contentStyle={{
-                      background: "var(--ios-bg-elevated)",
-                      border: "1px solid var(--ios-separator)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                      boxShadow: "var(--ios-shadow-card)",
-                      color: "var(--ios-label)",
-                    }}
+                    contentStyle={chartTooltipStyle}
                     formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
                   />
-                  <Bar dataKey="total" fill="var(--ios-yellow)" radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
+                  <Bar dataKey="total" fill={chartColors.secondary}
             <div className="ios-dash__empty">
               <img src={icons.dashInbox} alt="" className="ios-dash__empty-icon" />
               <span className="ios-dash__empty-title">
