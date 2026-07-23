@@ -2,8 +2,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
   <defs>
     <linearGradient id="g-ai" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#818CF8"/>
-      <stop offset="1" stop-color="#6D28D9"/>
+      <stop offset="0" stop-color="#A5B4FC"/>
+      <stop offset="1" stop-color="#4338CA"/>
     </linearGradient>
     <linearGradient id="shine-ai" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>

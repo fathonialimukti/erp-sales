@@ -2,8 +2,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
   <defs>
     <linearGradient id="g-customer" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F472B6"/>
-      <stop offset="1" stop-color="#BE185D"/>
+      <stop offset="0" stop-color="#F9A8D4"/>
+      <stop offset="1" stop-color="#DB2777"/>
     </linearGradient>
     <linearGradient id="shine-customer" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>

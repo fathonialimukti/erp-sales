@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
   <defs>
     <linearGradient id="g-planning" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2DD4BF"/>
+      <stop offset="0" stop-color="#5EEAD4"/>
       <stop offset="1" stop-color="#0F766E"/>
     </linearGradient>
     <linearGradient id="shine-planning" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
@@ -15,12 +15,12 @@
   <path d="M16 18 C16 16 18 14 20 14 H44 C46 14 48 16 48 18 V50 C48 52 46 54 44 54 H20 C18 54 16 52 16 50 Z" fill="#FFFFFF"/>
   <rect x="22" y="10" width="5" height="8" rx="1.5" fill="#FFFFFF"/>
   <rect x="37" y="10" width="5" height="8" rx="1.5" fill="#FFFFFF"/>
-  <rect x="16" y="22" width="32" height="5" fill="#2DD4BF" opacity="0.55"/>
-  <rect x="22" y="32" width="14" height="2.5" rx="1" fill="#0F766E" opacity="0.55"/>
-  <rect x="22" y="39" width="12" height="2.5" rx="1" fill="#0F766E" opacity="0.45"/>
-  <rect x="22" y="46" width="16" height="2.5" rx="1" fill="#0F766E" opacity="0.35"/>
-  <circle cx="19" cy="33.2" r="1.6" fill="#0F766E" opacity="0.7"/>
-  <circle cx="19" cy="40.2" r="1.6" fill="#0F766E" opacity="0.55"/>
-  <circle cx="19" cy="47.2" r="1.6" fill="#0F766E" opacity="0.4"/>
-  <path d="M36 34 L39 37 L45 29" stroke="#10B981" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="16" y="22" width="32" height="5" fill="#14B8A6" opacity="0.55"/>
+  <rect x="22" y="32" width="14" height="2.5" rx="1" fill="#14B8A6" opacity="0.55"/>
+  <rect x="22" y="39" width="12" height="2.5" rx="1" fill="#14B8A6" opacity="0.45"/>
+  <rect x="22" y="46" width="16" height="2.5" rx="1" fill="#14B8A6" opacity="0.35"/>
+  <circle cx="19" cy="33.2" r="1.6" fill="#14B8A6" opacity="0.7"/>
+  <circle cx="19" cy="40.2" r="1.6" fill="#14B8A6" opacity="0.55"/>
+  <circle cx="19" cy="47.2" r="1.6" fill="#14B8A6" opacity="0.4"/>
+  <path d="M36 34 L39 37 L45 29" stroke="#14B8A6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>
