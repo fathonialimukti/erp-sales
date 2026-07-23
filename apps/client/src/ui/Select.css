@@ -1,7 +1,0 @@
-/* Select.css — kept for backwards compatibility.
- * The Select component now uses SelectSearch.css classes (.ss-*).
- * Import SelectSearch.css directly in Select.tsx.
- */
-@import './SelectSearch.css';
-
-
