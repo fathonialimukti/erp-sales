@@ -1,18 +1,21 @@
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
-import { useMemo, useState, useCallback, useRef } from "react";
-import { icons } from "../assets/icons";
-import { Avatar } from "../ui";
+import { Search } from "lucide-react";
+
+import { icons } from "@/assets/icons";
+import { NavModuleTile } from "@/components/NavModuleTile";
+import { UserAvatarMenu } from "@/components/UserAvatarMenu";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
-  authUserAtom,
   hasPermissionAtom,
   searchOpenAtom,
   sidebarOpenAtom,
-} from "../lib/atoms";
-import { UserMenuTrigger } from "./UserMenuPopover";
-import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
-import "./Sidebar.css";
+} from "@/lib/atoms";
+import { cn } from "@/lib/utils";
+import type { ModuleKey } from "@/types/module";
+import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
 
 interface NavLeaf {
   name: string;
@@ -55,18 +58,42 @@ const flattenLeaves = (items: NavMenuItem[]): NavLeaf[] => {
   return leaves;
 };
 
+/** href → Aurora module accent for active wash (P2 / NavModuleTile). */
+const HREF_MODULE: Record<string, ModuleKey> = {
+  "/customer": "customer",
+  "/outlet": "outlet",
+  "/sales-order": "order",
+  "/visit-log": "visit",
+  "/sku": "sku",
+  "/sku-category": "sku",
+  "/action-program": "planning",
+  "/event-proposal": "event",
+  "/users": "user",
+  "/access-control": "user",
+  "/activity-logs": "user",
+  "/notifications": "user",
+  "/reports": "report",
+  "/email-crm": "email",
+  "/knowledge-base": "knowledge",
+  "/ai-admin": "ai",
+};
+
 export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const intl = useIntl();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const user = useAtomValue(authUserAtom);
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
   const setSearchOpen = useSetAtom(searchOpenAtom);
+  const isLgUp = useMediaQuery("(min-width: 1024px)");
 
-  // Tooltip portal state — renders outside nav overflow
-  const [tooltip, setTooltip] = useState<{ label: string; top: number } | null>(null);
+  const [tooltip, setTooltip] = useState<{ label: string; top: number } | null>(
+    null,
+  );
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isCollapsed = !sidebarOpen;
+  const showAvatarInSidebar = sidebarOpen && isLgUp;
 
   const showTooltip = useCallback((label: string, el: HTMLElement) => {
     if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
@@ -78,8 +105,6 @@ export const Sidebar = () => {
     tooltipTimeoutRef.current = setTimeout(() => setTooltip(null), 80);
   }, []);
 
-  const isCollapsed = !sidebarOpen;
-
   const sections = useMemo<NavSection[]>(() => {
     const visible = flattenLeaves(NAV_MENU).filter(
       (l) => !l.permission || hasPermission(l.permission),
@@ -87,195 +112,264 @@ export const Sidebar = () => {
     return [
       {
         id: "favorites",
-        name: intl.formatMessage({ id: "nav.section.favorites", defaultMessage: "Favorites" }),
-        items: visible.filter((l) => ["/dashboard", "/sales-order", "/invoice", "/visit-log"].includes(l.href)),
+        name: intl.formatMessage({
+          id: "nav.section.favorites",
+          defaultMessage: "Favorites",
+        }),
+        items: visible.filter((l) =>
+          ["/dashboard", "/sales-order", "/invoice", "/visit-log"].includes(
+            l.href,
+          ),
+        ),
       },
       {
         id: "master_data",
-        name: intl.formatMessage({ id: "nav.section.master_data", defaultMessage: "Master Data" }),
+        name: intl.formatMessage({
+          id: "nav.section.master_data",
+          defaultMessage: "Master Data",
+        }),
         items: visible.filter((l) =>
-          ["/region", "/area", "/customer", "/outlet", "/sku-category", "/sku"].includes(l.href),
+          [
+            "/region",
+            "/area",
+            "/customer",
+            "/outlet",
+            "/sku-category",
+            "/sku",
+          ].includes(l.href),
         ),
       },
       {
         id: "programs",
-        name: intl.formatMessage({ id: "nav.section.programs", defaultMessage: "Programs" }),
-        items: visible.filter((l) => ["/action-program", "/event-proposal"].includes(l.href)),
+        name: intl.formatMessage({
+          id: "nav.section.programs",
+          defaultMessage: "Programs",
+        }),
+        items: visible.filter((l) =>
+          ["/action-program", "/event-proposal"].includes(l.href),
+        ),
       },
       {
         id: "admin",
-        name: intl.formatMessage({ id: "nav.section.admin", defaultMessage: "Administration" }),
+        name: intl.formatMessage({
+          id: "nav.section.admin",
+          defaultMessage: "Administration",
+        }),
         items: visible.filter((l) =>
-          ["/users", "/access-control", "/activity-logs", "/notifications"].includes(l.href),
+          [
+            "/users",
+            "/access-control",
+            "/activity-logs",
+            "/notifications",
+          ].includes(l.href),
         ),
       },
     ].filter((s) => s.items.length > 0);
   }, [hasPermission, intl]);
 
-  const renderItem = (item: NavLeaf) => {
-    const active = isPathActive(location.pathname, item.href);
-    const label = intl.formatMessage({ id: item.name, defaultMessage: item.name });
-    return (
-      <button
-        type="button"
-        key={item.href}
-        className={`ios-sb__row ${active ? "ios-sb__row--active" : ""}`}
-        onClick={() => navigate(item.href)}
-        aria-current={active ? "page" : undefined}
-        data-tooltip={label}
-        onMouseEnter={(e) => isCollapsed && showTooltip(label, e.currentTarget)}
-        onMouseLeave={isCollapsed ? hideTooltip : undefined}
-        onFocus={(e) => isCollapsed && showTooltip(label, e.currentTarget)}
-        onBlur={isCollapsed ? hideTooltip : undefined}
-      >
-        <span className="ios-sb__row-icon" aria-hidden="true">
-          {item.icon ? <img src={item.icon} alt="" /> : null}
-        </span>
-        <span className="ios-sb__row-label">{label}</span>
-        <span className="ios-sb__row-chevron" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </span>
-      </button>
-    );
-  };
+  const searchLabel = intl.formatMessage({
+    id: "nav.search.label",
+    defaultMessage: "Search",
+  });
+  const searchOpenLabel = intl.formatMessage({
+    id: "nav.search.open",
+    defaultMessage: "Open search",
+  });
 
   return (
     <aside
-      className={`ios-sb ${sidebarOpen ? "" : "ios-sb--collapsed"}`}
       aria-label="Sidebar"
+      data-collapsed={isCollapsed || undefined}
+      className={cn(
+        "fixed top-3 bottom-3 left-3 z-100 flex flex-col overflow-visible",
+        "rounded-2xl border border-border bg-card/95 shadow-sm backdrop-blur-xl",
+        "transition-[width] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+        "motion-reduce:transition-none",
+        isCollapsed ? "w-20" : "w-68",
+      )}
     >
-      {/* SECTION 1 — Header: app brand + search */}
-      <header className="ios-sb__header">
-        <div className="ios-sb__brand">
-          <img src={icons.brandLogo} alt="" className="ios-sb__brand-logo" />
-          <div className="ios-sb__brand-text">
-            <span className="ios-sb__brand-title">
-              {intl.formatMessage({ id: "nav.erp_sales", defaultMessage: "CRM" })}
-            </span>
-            <span className="ios-sb__brand-sub">
-              {intl.formatMessage({ id: "nav.brand_sub", defaultMessage: "Sales OS" })}
-            </span>
-          </div>
-        </div>
-
-        <div className="ios-sb__search">
-          {/* Full search trigger (expanded) */}
-          <button
-            type="button"
-            className="ios-sb__search-trigger"
-            onClick={() => setSearchOpen(true)}
-            aria-label={intl.formatMessage({
-              id: "nav.search.open",
-              defaultMessage: "Open search",
-            })}
-          >
-            <span className="ios-sb__search-icon-tile" aria-hidden="true">
-              <img src={icons.uiSearchTile} alt="" />
-            </span>
-            <span className="ios-sb__search-text">
-              <span className="ios-sb__search-label">
+      {/* Header — brand + search */}
+      <header
+        className={cn(
+          "flex shrink-0 flex-col gap-3 border-b border-border/70",
+          isCollapsed ? "items-center px-2.5 py-4" : "px-3.5 py-4",
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center gap-3",
+            isCollapsed && "justify-center",
+          )}
+        >
+          <img
+            src={icons.brandLogo}
+            alt=""
+            className={cn(
+              "shrink-0 rounded-xl object-contain shadow-sm",
+              isCollapsed ? "size-10" : "size-9",
+            )}
+          />
+          {!isCollapsed && (
+            <div className="min-w-0 leading-tight">
+              <span className="block truncate font-heading text-sm font-semibold text-foreground">
                 {intl.formatMessage({
-                  id: "nav.search.label",
-                  defaultMessage: "Search",
+                  id: "nav.erp_sales",
+                  defaultMessage: "CRM",
                 })}
               </span>
-              <span className="ios-sb__search-hint">
+              <span className="block truncate text-xs text-muted-foreground">
+                {intl.formatMessage({
+                  id: "nav.brand_sub",
+                  defaultMessage: "Sales OS",
+                })}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {isCollapsed ? (
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label={searchOpenLabel}
+            title={searchLabel}
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-secondary/60 text-primary outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            onMouseEnter={(e) => showTooltip(searchLabel, e.currentTarget)}
+            onMouseLeave={hideTooltip}
+            onFocus={(e) => showTooltip(searchLabel, e.currentTarget)}
+            onBlur={hideTooltip}
+          >
+            <Search className="size-4" aria-hidden />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label={searchOpenLabel}
+            className="group relative flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border border-border bg-secondary/50 px-2.5 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Search className="size-4" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-foreground">
+                {searchLabel}
+              </span>
+              <span className="block truncate text-xs text-muted-foreground">
                 {intl.formatMessage({
                   id: "nav.search.hint",
                   defaultMessage: "pages, customers, SKUs…",
                 })}
               </span>
             </span>
-            <span className="ios-sb__search-kbd" aria-hidden="true">
-              <kbd>⌘</kbd>
-              <kbd>K</kbd>
-            </span>
-            <span className="ios-sb__search-shine" aria-hidden="true" />
-          </button>
-          {/* Compact search trigger (collapsed) */}
-          <button
-            type="button"
-            className="ios-sb__search-compact"
-            onClick={() => setSearchOpen(true)}
-            aria-label={intl.formatMessage({
-              id: "nav.search.open",
-              defaultMessage: "Open search",
-            })}
-            title={intl.formatMessage({ id: "nav.search.label", defaultMessage: "Search" })}
-          >
-            <span className="ios-sb__search-compact-icon" aria-hidden="true">
-              <img src={icons.uiSearchTile} alt="" />
+            <span
+              className="hidden shrink-0 items-center gap-0.5 sm:inline-flex"
+              aria-hidden
+            >
+              <kbd className="rounded-md border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                ⌘
+              </kbd>
+              <kbd className="rounded-md border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                K
+              </kbd>
             </span>
           </button>
-        </div>
+        )}
       </header>
 
-      {/* SECTION 2 — Scrollable nav menu */}
-      <nav className="ios-sb__nav" aria-label="Primary">
-        <div className="ios-sb__nav-scroll">
+      {/* Nav */}
+      <nav
+        aria-label="Primary"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 py-3"
+      >
+        <div className="flex flex-col gap-4">
           {sections.map((section) => (
-            <section key={section.id} className="ios-sb__group" aria-labelledby={`ios-sb-group-${section.id}`}>
-              <header className="ios-sb__group-header" id={`ios-sb-group-${section.id}`}>
-                <span>{section.name}</span>
-                <span className="ios-sb__group-count">{section.items.length}</span>
-              </header>
-              <div className="ios-sb__group-card">{section.items.map(renderItem)}</div>
+            <section
+              key={section.id}
+              aria-labelledby={`aurora-sb-group-${section.id}`}
+              className="flex flex-col gap-1.5"
+            >
+              {!isCollapsed && (
+                <header
+                  id={`aurora-sb-group-${section.id}`}
+                  className="flex items-center justify-between px-2"
+                >
+                  <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                    {section.name}
+                  </span>
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                    {section.items.length}
+                  </span>
+                </header>
+              )}
+              <div
+                className={cn(
+                  "flex flex-col gap-0.5",
+                  !isCollapsed &&
+                    "rounded-xl border border-border/60 bg-background/40 p-1",
+                )}
+              >
+                {section.items.map((item) => {
+                  const label = intl.formatMessage({
+                    id: item.name,
+                    defaultMessage: item.name,
+                  });
+                  const active = isPathActive(location.pathname, item.href);
+                  return (
+                    <NavModuleTile
+                      key={item.href}
+                      label={label}
+                      icon={item.icon}
+                      active={active}
+                      collapsed={isCollapsed}
+                      module={HREF_MODULE[item.href]}
+                      onClick={() => navigate(item.href)}
+                      onMouseEnter={
+                        isCollapsed
+                          ? (el) => showTooltip(label, el)
+                          : undefined
+                      }
+                      onMouseLeave={isCollapsed ? hideTooltip : undefined}
+                      onFocus={
+                        isCollapsed
+                          ? (el) => showTooltip(label, el)
+                          : undefined
+                      }
+                      onBlur={isCollapsed ? hideTooltip : undefined}
+                    />
+                  );
+                })}
+              </div>
             </section>
           ))}
         </div>
       </nav>
 
-      {/* SECTION 3 — Profile / user footer */}
-      {user && (
-        <footer className="ios-sb__footer">
-          <UserMenuTrigger
-            className="ios-sb__user"
-            aria-label={user.name}
-          >
-            <Avatar name={user.name} size="md" />
-            <div className="ios-sb__user-text">
-              <span className="ios-sb__user-name">{user.name}</span>
-              <span className="ios-sb__user-role">{user.roleName}</span>
-            </div>
-          </UserMenuTrigger>
+      {/* Footer — P12 avatar only when expanded + lg */}
+      {showAvatarInSidebar && (
+        <footer className="shrink-0 border-t border-border/70 p-2.5">
+          <UserAvatarMenu variant="sidebar" />
         </footer>
       )}
 
-      {/* Compact user avatar (collapsed) — opens the same UserMenuPopover */}
-      {user && (
-        <UserMenuTrigger
-          className="ios-sb__user-compact"
-          aria-label={user.name}
-        >
-          <span aria-hidden="true">
-            {user.name
-              .split(/\s+/)
-              .slice(0, 2)
-              .map((s) => s[0]?.toUpperCase() ?? "")
-              .join("")}
-          </span>
-        </UserMenuTrigger>
-      )}
-
-      {/* Tooltip portal — renders as direct child of <aside> to escape nav overflow */}
+      {/* Collapsed tooltip portal (escapes nav overflow) */}
       {tooltip && isCollapsed && (
         <div
-          className="ios-sb__tooltip-portal"
-          style={{ top: tooltip.top }}
+          role="tooltip"
+          className="pointer-events-none fixed z-120 -translate-y-1/2 rounded-md bg-foreground px-2.5 py-1 text-xs font-medium text-background shadow-md"
+          style={{ top: tooltip.top, left: 92 }}
         >
           {tooltip.label}
         </div>
       )}
 
+      {/* Hidden collapse control kept for any external hooks / a11y parity */}
       <button
         type="button"
         onClick={() => setSidebarOpen((prev) => !prev)}
-        className="ios-sb__collapse-hidden"
-        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
-        aria-hidden="true"
+        className="sr-only"
         tabIndex={-1}
+        aria-hidden
       />
     </aside>
   );
