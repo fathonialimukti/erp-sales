@@ -11,6 +11,9 @@
 @import "./styles/module-page.css";
 @import "./styles/reports.css";
 @import "react-day-picker/style.css";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* ============================================================
  * Aurora Commerce — shadcn-compatible semantic tokens

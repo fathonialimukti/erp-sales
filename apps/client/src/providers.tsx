@@ -1,5 +1,7 @@
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { IntlProvider } from 'react-intl';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useLocale } from './lib/useLocale';
 import { getLocaleMessages } from './lib/i18n';
 import { ToastContainer } from './ui/useToast';
@@ -33,8 +35,12 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <IntlProviderCompat locale={locale} messages={messages} defaultLocale="en">
-        {children}
-        <ToastContainer />
+        <TooltipProvider>
+          {children}
+          <Toaster />
+          {/* ponytail: keep legacy toast host until Phase 6 purge */}
+          <ToastContainer />
+        </TooltipProvider>
       </IntlProviderCompat>
     </QueryClientProvider>
   );
