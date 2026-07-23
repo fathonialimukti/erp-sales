@@ -384,6 +384,53 @@
   gap: 8px;
 }
 
+/* View toggle — Table | Pipeline (and similar) */
+.pg__view-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+
+.dark .pg__view-toggle {
+  border-color: var(--color-slate-700);
+  background: var(--color-slate-800);
+}
+
+.pg__view-toggle-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-muted);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 150ms var(--ease-default), color 150ms var(--ease-default), box-shadow 150ms var(--ease-default);
+}
+
+.pg__view-toggle-btn:hover {
+  color: var(--color-foreground);
+}
+
+.pg__view-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+}
+
+.pg__view-toggle-btn--active {
+  background: var(--color-surface-1);
+  color: var(--color-primary-700);
+  box-shadow: var(--shadow-xs);
+}
+
+.dark .pg__view-toggle-btn--active {
+  background: var(--color-slate-700);
+  color: var(--color-primary-300);
+}
+
 /* ============================================================
  * 7. INFO FIELD — for detail pages
  * ============================================================ */

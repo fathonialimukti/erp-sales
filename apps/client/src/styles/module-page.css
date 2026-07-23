@@ -590,13 +590,19 @@
   overflow: hidden;
 }
 
-/* Override the default Table chrome inside the card */
-.m-table-card .m-table {
+/* Override the default Table chrome inside the card.
+ * Padding matches .tbl--crm (8×12 / min-height 40) so module indexes
+ * and ui/Table density variants don't fight each other. */
+.m-table-card .m-table,
+.m-table-card .tbl {
+  width: 100%;
   background: transparent;
   border-collapse: collapse;
+  font-size: 13px;
 }
 
-.m-table-card .m-table thead th {
+.m-table-card .m-table thead th,
+.m-table-card .tbl__head-cell {
   background: transparent;
   border-bottom: 0.0625rem solid var(--ios-divider);
   color: var(--ios-label-3);
@@ -604,17 +610,24 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.5rem 1rem 0.625rem;
+  padding: 8px 12px;
 }
 
-.m-table-card .m-table tbody td {
+.m-table-card .m-table tbody td,
+.m-table-card .tbl__cell {
   border-bottom: 0.0625rem solid var(--ios-divider);
-  padding: 0.875rem 1rem;
+  padding: 8px 12px;
   background: transparent;
   vertical-align: middle;
 }
 
-.m-table-card .m-table tbody tr:last-child td {
+.m-table-card .m-table tbody tr,
+.m-table-card .tbl__body-row {
+  min-height: 40px;
+}
+
+.m-table-card .m-table tbody tr:last-child td,
+.m-table-card .tbl__body-row:last-child .tbl__cell {
   border-bottom: 0;
 }
 
@@ -628,6 +641,42 @@
 
 .dark .m-table-card .m-table tbody .m-row:hover td {
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* Selected / active row — primary, not emerald */
+.m-table-card .m-table tbody .m-row--active td,
+.m-table-card .m-table tbody .m-row--selected td {
+  background: var(--color-primary-50);
+  position: relative;
+  box-shadow: inset 3px 0 0 var(--color-primary-500);
+}
+
+.dark .m-table-card .m-table tbody .m-row--active td,
+.dark .m-table-card .m-table tbody .m-row--selected td {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+/* Density overrides inside module table card (ui/Table) */
+.m-table-card .tbl--comfortable .tbl__head-cell,
+.m-table-card .tbl--comfortable .tbl__cell {
+  padding: 12px 16px;
+}
+
+.m-table-card .tbl--comfortable .tbl__body-row {
+  min-height: 48px;
+}
+
+.m-table-card .tbl--compact {
+  font-size: 12.5px;
+}
+
+.m-table-card .tbl--compact .tbl__head-cell,
+.m-table-card .tbl--compact .tbl__cell {
+  padding: 6px 10px;
+}
+
+.m-table-card .tbl--compact .tbl__body-row {
+  min-height: 32px;
 }
 
 /* ---------- Document number cell ---------- */
@@ -646,7 +695,7 @@
   min-width: 0;
 }
 
-.m-doc:hover .m-doc__number { color: var(--ios-accent-600, #059669); }
+.m-doc:hover .m-doc__number { color: var(--ios-accent-600, var(--color-primary-600)); }
 
 .m-doc__icon {
   width: 2.5rem;

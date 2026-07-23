@@ -1,9 +1,19 @@
 import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import "./Table.css";
 
-export const Table = ({ className, ...rest }: HTMLAttributes<HTMLTableElement>) => (
+export type TableDensity = "comfortable" | "crm" | "compact";
+
+interface TableProps extends HTMLAttributes<HTMLTableElement> {
+  /** Row density. Opt in per page — CRM indexes use `"crm"`, line items `"compact"`. */
+  density?: TableDensity;
+}
+
+export const Table = ({ className, density, ...rest }: TableProps) => (
   <div className="tbl-wrapper">
-    <table className={`tbl ${className ?? ""}`} {...rest} />
+    <table
+      className={["tbl", density ? `tbl--${density}` : null, className].filter(Boolean).join(" ")}
+      {...rest}
+    />
   </div>
 );
 

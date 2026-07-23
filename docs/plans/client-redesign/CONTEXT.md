@@ -77,7 +77,7 @@ Design is FROZEN. Do NOT invoke brainstorming or re-open palette/icon debates.
 
 - [x] Phase 1 — Tokens (primary blue, module accents, shell vars, **chart + stage tokens**)
 - [x] Phase 2 — SVG icon remake + `icons.ts` + nav-menu wiring
-- [ ] Phase 3 — Shell + UI kit + **table density + chips + filter bar** (shell/UI kit recolor done; density still open)
+- [ ] Phase 3 — Shell + UI kit + **table density + chips + filter bar** (shell/UI kit recolor + table density done; chips still open)
 - [ ] Phase 4 — Dashboard chart theme + **Sales Order table + pipeline v1** + Customer index
 - [ ] Phase 5 — Remaining modules; compact nested tables; optional extra pipelines
 - [ ] Phase 6 — Review, a11y, `bun run check-types`
@@ -132,3 +132,4 @@ must read at 20–28px
 | 2026-07-23 | **Task 1 complete** — primary blue scale, cool border, module/chart/stage tokens; focus ring → primary. Files: `apps/client/src/styles/tokens.css`, `apps/client/src/index.css`, `docs/plans/client-redesign/CONTEXT.md` |
 | 2026-07-23 | **Task 2 complete** — Family A iOS module tiles remade (`nav-*.svg`, unique gradient ids); new `navPlanning`/`navEmailCrm`/`navKnowledge`/`navAi`; alias `navProgram→navPlanning`; nav-menu wired. Files: `apps/client/src/assets/icons/nav-*.svg`, `apps/client/src/assets/icons.ts`, `apps/client/src/constants/nav-menu.ts`, `docs/plans/client-redesign/CONTEXT.md` |
 | 2026-07-23 | **Task 3 complete** — Shell + core UI kit recolor to primary blue. Primary CTA/focus/active chrome → `--color-primary-*`; deal/success stays emerald. Files: `ui/Button|Chip|Card|Input|Textarea|Checkbox|Dropdown|Spinner|Avatar|FormDatePicker|SelectSearch.css`, `Chip.tsx`, `Sidebar|Topbar|PageHeader|SearchPalette|Navbar|NotificationDrawer|ButtonGroup|RowActions.css`, `PrivateLayout.css`, `tokens.css` (`--ios-accent*` → primary), `docs/plans/client-redesign/CONTEXT.md` |
+| 2026-07-23 | **Task 4 complete** — Table density (`.tbl--comfortable` / `.tbl--crm` / `.tbl--compact`), selected row primary-50 + 3px primary bar, `.tbl__cell--money`, optional `Table density` prop, `.pg__view-toggle*` styles, `.m-table-card` padding aligned to CRM. Files: `ui/Table.css`, `ui/Table.tsx`, `styles/page-system.css`, `styles/module-page.css`, `docs/plans/client-redesign/CONTEXT.md` |
