@@ -1,17 +1,28 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { Loader2, Save } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { Spinner } from "../../ui/Spinner";
-import { useToast } from "../../ui/useToast";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { ModulePage } from "../../components/ModulePage";
-import { RegionIcon } from "./RegionIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FormValues {
   code: string;
@@ -29,7 +40,6 @@ export const RegionFormPage = () => {
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
   const canSave = hasPermission(id ? "region@update" : "region@create");
-  const toast = useToast();
 
   const isEdit = Boolean(id);
   const [modalStage, setModalStage] = useState<ModalStage>("idle");
@@ -42,17 +52,33 @@ export const RegionFormPage = () => {
   });
 
   const form = useForm({
-    defaultValues: (isEdit && data ? { code: data.code ?? "", name: data.name } : defaults()) as FormValues,
+    defaultValues: (isEdit && data
+      ? { code: data.code ?? "", name: data.name }
+      : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
     },
   });
 
+  useEffect(() => {
+    if (isEdit && data) {
+      form.setFieldValue("code", data.code ?? "");
+      form.setFieldValue("name", data.name);
+    }
+    // ponytail: only seed when detail arrives
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, data]);
+
   const createMutation = useMutation({
     mutationFn: (d: FormValues) => trpcClient.region.create.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["regionList"] });
-      setResultMessage(intl.formatMessage({ id: "region.form.success.created", defaultMessage: "Region created" }));
+      setResultMessage(
+        intl.formatMessage({
+          id: "region.form.success.created",
+          defaultMessage: "Region created",
+        }),
+      );
       setModalStage("success");
       setTimeout(() => navigate("/region"), 1200);
     },
@@ -67,7 +93,12 @@ export const RegionFormPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["regionList"] });
       queryClient.invalidateQueries({ queryKey: ["regionDetail", id] });
-      setResultMessage(intl.formatMessage({ id: "region.form.success.updated", defaultMessage: "Region updated" }));
+      setResultMessage(
+        intl.formatMessage({
+          id: "region.form.success.updated",
+          defaultMessage: "Region updated",
+        }),
+      );
       setModalStage("success");
       setTimeout(() => navigate(`/region/${id}`), 1200);
     },
@@ -93,7 +124,9 @@ export const RegionFormPage = () => {
         e.preventDefault();
         if (modalStage === "idle") form.handleSubmit();
       }
-      if (e.key === "Escape" && modalStage !== "idle") setModalStage("idle");
+      if (e.key === "Escape" && modalStage !== "idle" && modalStage !== "loading") {
+        setModalStage("idle");
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
@@ -101,189 +134,197 @@ export const RegionFormPage = () => {
 
   if (isLoading) {
     return (
-      <ModulePage accent="#007AFF" accentEnd="#5856D6" aiContext={{ section: "region-form", loading: true }}>
-        <div className="m-state m-state--loading">
-          <Spinner size="lg" />
-          <span className="m-state__title">{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
-        </div>
-      </ModulePage>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "region-form", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-48 w-full" />
+      </section>
     );
   }
 
   return (
-    <ModulePage accent="#007AFF" accentEnd="#5856D6" aiContext={{ section: "region-form", isEdit, id: id ?? null }}>
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "region-form",
+        isEdit,
+        id: id ?? null,
+      })}
+    >
       <form
-        onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+        className="flex flex-col gap-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
       >
-        {/* ── Header ── */}
-        <div className="m-form__header">
-          <div>
-            <h1 className="m-form__title">
-              {isEdit
-                ? intl.formatMessage({ id: "region.form.title_edit", defaultMessage: "Edit region" })
-                : intl.formatMessage({ id: "region.form.title_create", defaultMessage: "New region" })}
-            </h1>
-            <p className="m-form__subtitle">
-              {isEdit ? "Update region details" : "Create a new geographical region"}
-            </p>
-          </div>
-          <button type="button" className="m-form__back" onClick={() => navigate(isEdit && id ? `/region/${id}` : "/region")}>
-            <RegionIcon name="back" size={14} />
-            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-          </button>
-        </div>
+        <PageHeader
+          module="region"
+          title={
+            isEdit
+              ? intl.formatMessage({
+                  id: "region.form.title_edit",
+                  defaultMessage: "Edit region",
+                })
+              : intl.formatMessage({
+                  id: "region.form.title_create",
+                  defaultMessage: "New region",
+                })
+          }
+          description={
+            isEdit
+              ? intl.formatMessage({
+                  id: "region.form.subtitle_edit",
+                  defaultMessage: "Update region details",
+                })
+              : intl.formatMessage({
+                  id: "region.form.subtitle_create",
+                  defaultMessage: "Create a new geographical region",
+                })
+          }
+          onBack={() => navigate(isEdit && id ? `/region/${id}` : "/region")}
+          actions={
+            <Button
+              type="submit"
+              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {intl.formatMessage({ id: "region.form.save_button", defaultMessage: "Save" })}
+            </Button>
+          }
+        />
 
-        {/* ── Fields ── */}
-        <section className="m-card">
-          <div className="m-card__header">
-            <h2 className="m-card__title">
-              <span className="m-card__icon"><RegionIcon name="map" size={14} /></span>
-              {intl.formatMessage({ id: "region.form.section_basic", defaultMessage: "Basic information" })}
-            </h2>
-          </div>
-          <div className="m-card__body">
-            <div className="m-section">
-              <form.Field name="code">
-                {(f) => (
-                  <div className="m-field">
-                    <label className="m-field__label">
-                      {intl.formatMessage({ id: "region.form.field_code", defaultMessage: "Code" })}
-                    </label>
-                    <input
-                      className="m-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "region.form.field_code_placeholder", defaultMessage: "Optional" })}
-                    />
-                  </div>
-                )}
-              </form.Field>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "region.form.section_basic",
+                defaultMessage: "Basic information",
+              })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-2">
+            <form.Field name="code">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="region-code">
+                    {intl.formatMessage({ id: "region.form.field_code", defaultMessage: "Code" })}
+                  </Label>
+                  <Input
+                    id="region-code"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    placeholder={intl.formatMessage({
+                      id: "region.form.field_code_placeholder",
+                      defaultMessage: "Optional",
+                    })}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
-                {(f) => (
-                  <div className="m-field">
-                    <label className="m-field__label">
-                      {intl.formatMessage({ id: "region.form.field_name", defaultMessage: "Name" })} *
-                    </label>
-                    <input
-                      className={`m-field__input${f.state.meta.errors.length ? " m-field__input--invalid" : ""}`}
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "region.form.field_name_placeholder", defaultMessage: "Region name" })}
-                    />
-                    {f.state.meta.errors.length > 0 && (
-                      <span className="m-field__error">{f.state.meta.errors[0]}</span>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Actions ── */}
-        <div className="m-actions">
-          <ButtonGroup
-            items={[
-              {
-                key: "save",
-                label: intl.formatMessage({ id: "region.form.save_button", defaultMessage: "Save" }),
-                icon: <RegionIcon name="check" size={14} />,
-                onClick: () => { form.handleSubmit(); },
-                disabled: !canSave || createMutation.isPending || updateMutation.isPending,
-                isLoading: createMutation.isPending || updateMutation.isPending,
-                variant: "primary",
-              },
-            ]}
-          />
-        </div>
+            <form.Field
+              name="name"
+              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+            >
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="region-name">
+                    {intl.formatMessage({ id: "region.form.field_name", defaultMessage: "Name" })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="region-name"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    aria-invalid={f.state.meta.errors.length > 0}
+                    placeholder={intl.formatMessage({
+                      id: "region.form.field_name_placeholder",
+                      defaultMessage: "Region name",
+                    })}
+                  />
+                  {f.state.meta.errors.length > 0 ? (
+                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                  ) : null}
+                </div>
+              )}
+            </form.Field>
+          </CardContent>
+        </Card>
       </form>
 
-      {/* ── Modal ── */}
-      {modalStage !== "idle" && createPortal(
-        <div className="m-modal__backdrop" onClick={() => modalStage !== "loading" && modalStage !== "confirm" && setModalStage("idle")}>
-          <div className="m-modal" onClick={(e) => e.stopPropagation()}>
-            {modalStage === "confirm" && (
-              <>
-                <div className="m-modal__header">
-                  <h3>
-                    {intl.formatMessage({ id: "region.form.modal.confirm_title", defaultMessage: "Confirm save" })}
-                  </h3>
-                  <button className="m-btn m-btn--ghost m-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
-                    <RegionIcon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="m-modal__body">
-                  <div className="m-modal__icon m-modal__icon--success">
-                    <RegionIcon name="check" size={28} />
-                  </div>
-                  <h3 className="m-modal__title">
-                    {intl.formatMessage({ id: "region.form.modal.confirm_body", defaultMessage: "Save changes to this region?" })}
-                  </h3>
-                </div>
-                <div className="m-modal__footer">
-                  <button className="m-btn m-btn--ghost" onClick={() => setModalStage("idle")}>
-                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-                  </button>
-                  <button className="m-btn m-btn--primary" onClick={runSave}>
-                    {intl.formatMessage({ id: "common.action.confirm", defaultMessage: "Confirm" })}
-                  </button>
-                </div>
-              </>
-            )}
+      <ConfirmDialog
+        open={modalStage === "confirm"}
+        onOpenChange={(open) => {
+          if (!open) setModalStage("idle");
+        }}
+        title={intl.formatMessage({
+          id: "region.form.modal.confirm_title",
+          defaultMessage: "Confirm save",
+        })}
+        description={intl.formatMessage({
+          id: "region.form.modal.confirm_body",
+          defaultMessage: "Save changes to this region?",
+        })}
+        confirmLabel={intl.formatMessage({
+          id: "common.action.confirm",
+          defaultMessage: "Confirm",
+        })}
+        onConfirm={runSave}
+      />
 
-            {modalStage === "loading" && (
-              <div className="m-modal__body">
-                <div className="m-modal__icon m-modal__icon--success" style={{ background: "var(--m-surface-2)", color: "var(--m-accent)" }}>
-                  <span className="m-spinner m-spinner--lg" />
-                </div>
-                <p className="m-modal__msg">{intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}</p>
-              </div>
-            )}
-
-            {modalStage === "success" && (
-              <>
-                <div className="m-modal__body">
-                  <div className="m-modal__icon m-modal__icon--success">
-                    <RegionIcon name="check" size={28} />
-                  </div>
-                  <h3 className="m-modal__title">
-                    {intl.formatMessage({ id: "region.form.modal.success", defaultMessage: "Success!" })}
-                  </h3>
-                  <p className="m-modal__msg">{resultMessage}</p>
-                </div>
-              </>
-            )}
-
-            {modalStage === "error" && (
-              <>
-                <div className="m-modal__header">
-                  <h3>
-                    {intl.formatMessage({ id: "region.form.modal.error_title", defaultMessage: "Error" })}
-                  </h3>
-                  <button className="m-btn m-btn--ghost m-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
-                    <RegionIcon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="m-modal__body">
-                  <div className="m-modal__icon m-modal__icon--error">
-                    <RegionIcon name="close" size={28} />
-                  </div>
-                  <p className="m-modal__msg">{resultMessage}</p>
-                </div>
-                <div className="m-modal__footer">
-                  <button className="m-btn m-btn--ghost" onClick={() => setModalStage("idle")}>
-                    {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>,
-        document.body,
-      )}
-    </ModulePage>
+      <Dialog
+        open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
+        onOpenChange={(open) => {
+          if (!open && modalStage !== "loading") setModalStage("idle");
+        }}
+      >
+        <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
+          {modalStage === "loading" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <DialogDescription>
+                {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
+              </DialogDescription>
+            </div>
+          ) : null}
+          {modalStage === "success" ? (
+            <DialogHeader>
+              <DialogTitle>
+                {intl.formatMessage({
+                  id: "region.form.modal.success",
+                  defaultMessage: "Success!",
+                })}
+              </DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+          ) : null}
+          {modalStage === "error" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {intl.formatMessage({
+                    id: "region.form.modal.error_title",
+                    defaultMessage: "Error",
+                  })}
+                </DialogTitle>
+                <DialogDescription>{resultMessage}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setModalStage("idle")}>
+                  {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 };
