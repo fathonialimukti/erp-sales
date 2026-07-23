@@ -1,6 +1,11 @@
 import "./AiAssistant.css";
 
-import { Chip, Input, Spinner } from '../../ui';
+import { Chip } from '../../ui';
+import { Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { useChat } from '@ai-sdk/react';
 import { useIntl } from 'react-intl';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
@@ -652,61 +657,82 @@ export const AiAssistant = () => {
   });
 
   return (
-    <div className="ai-anchor">
+    <div className="ai-anchor fixed right-6 bottom-6 z-1000 flex flex-col items-end gap-3">
       {open && (
-        <div className={`ai-panel ${isExpanded ? 'ai-panel--expanded' : 'ai-panel--compact'}`}>
-          <div className="ai-header">
-            <div className="ai-header__brand">
-              <span className="ai-header__brand-icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 3v4M3 5h4M6 17v4M4 19h4" />
-                  <path d="M13 3l2.5 5.5L21 11l-5.5 2.5L13 19l-2.5-5.5L5 11l5.5-2.5z" />
-                </svg>
+        <div
+          className={cn(
+            'ai-panel flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl',
+            'animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none',
+            isExpanded ? 'w-170' : 'w-96',
+          )}
+        >
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
+                aria-hidden
+              >
+                <Sparkles className="size-3.5" />
               </span>
-              <span className="ai-header__brand-text">ERP Assistant</span>
+              <span className="font-heading text-sm font-semibold text-foreground">
+                ERP Assistant
+              </span>
             </div>
-            <div className="ai-header__actions">
-              <button type="button" className="ai-header__btn" onClick={clearChat} aria-label="Clear chat history">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </svg>
-              </button>
-              <button type="button" className="ai-header__btn" onClick={() => setIsExpanded((v) => !v)} aria-label="Expand chat">
+            <div className="flex items-center gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-lg text-muted-foreground"
+                onClick={clearChat}
+                aria-label="Clear chat history"
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-lg text-muted-foreground"
+                onClick={() => setIsExpanded((v) => !v)}
+                aria-label="Expand chat"
+              >
                 {isExpanded ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="8 4 4 4 4 8" />
-                    <polyline points="16 4 20 4 20 8" />
-                    <polyline points="8 20 4 20 4 16" />
-                    <polyline points="16 20 20 20 20 16" />
-                  </svg>
+                  <Minimize2 className="size-4" aria-hidden />
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 3 21 3 21 9" />
-                    <polyline points="9 21 3 21 3 15" />
-                    <line x1="21" y1="3" x2="14" y2="10" />
-                    <line x1="3" y1="21" x2="10" y2="14" />
-                  </svg>
+                  <Maximize2 className="size-4" aria-hidden />
                 )}
-              </button>
-              <button type="button" className="ai-header__btn" onClick={() => { setOpen(false); setIsExpanded(false); }} aria-label="Close chat">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-lg text-muted-foreground"
+                onClick={() => {
+                  setOpen(false);
+                  setIsExpanded(false);
+                }}
+                aria-label="Close chat"
+              >
+                <X className="size-4" aria-hidden />
+              </Button>
             </div>
           </div>
 
-          <div className={`ai-messages ${isExpanded ? 'ai-messages--expanded' : 'ai-messages--compact'}`}>
+          <div
+            className={cn(
+              'ai-messages min-h-0 flex-1 overflow-y-auto px-4 pt-4',
+              isExpanded ? 'h-[65vh]' : 'h-[50vh]',
+            )}
+          >
             {messages.length === 0 && (
-              <div className="ai-empty">
-                <span className="ai-empty__icon" aria-hidden="true">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                  </svg>
+              <div className="flex flex-col items-center gap-2.5 px-6 py-8 text-center">
+                <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Sparkles className="size-5" aria-hidden />
                 </span>
-                <span className="ai-empty__text">Ask me anything about this ERP system or ask me to navigate somewhere.</span>
+                <span className="max-w-64 text-xs leading-relaxed text-muted-foreground">
+                  Ask me anything about this ERP system or ask me to navigate somewhere.
+                </span>
               </div>
             )}
             {messages.map((message, messageIdx) => {
@@ -782,85 +808,71 @@ export const AiAssistant = () => {
               );
             })}
             {isLoading && (
-              <div className="ai-loading">
-                <div className="ai-loading__bubble">
-                  <Spinner size="sm" />
+              <div className="mb-3 flex justify-start">
+                <div className="rounded-xl bg-muted px-3 py-2">
+                  <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />
                 </div>
               </div>
             )}
             {error && (
-              <div className="ai-error">
+              <div className="ai-error mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
                 Something went wrong. Please try again.
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="ai-footer">
-            <div className="ai-footer__chips">
+          <div className="shrink-0 border-t border-border px-4 pt-3 pb-4">
+            <div className="mb-2.5 flex gap-2">
               <button
                 type="button"
-                className="ai-footer__chip-btn"
+                className="cursor-pointer border-0 bg-transparent p-0 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleSummarizePage}
                 disabled={isLoading || summarizing}
               >
-                <Chip>
-                  {summarizing && <Spinner size="sm" />}
+                <Badge variant="secondary" className="gap-1.5 px-2.5 py-1 text-xs font-medium">
+                  {summarizing ? <Loader2 className="size-3 animate-spin" aria-hidden /> : null}
                   {intl.formatMessage({ id: 'common.action.summarize_page', defaultMessage: 'Summarize this page' })}
-                </Chip>
+                </Badge>
               </button>
             </div>
-            <div className="ai-footer__row">
-              <div className="ai-footer__input">
-                <Input
-                  placeholder="Ask a question..."
-                  value={input}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={isLoading}
-                />
-              </div>
-              <button
+            <div className="flex w-full items-end gap-2">
+              <Input
+                placeholder="Ask a question..."
+                value={input}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isLoading}
+                className="h-10 rounded-xl"
+              />
+              <Button
                 type="button"
-                className="ai-send-btn"
+                size="icon"
+                className="size-10 shrink-0 rounded-xl"
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
                 aria-label="Send message"
               >
                 {isLoading ? (
-                  <Spinner size="sm" />
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
+                  <Send className="size-4" aria-hidden />
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="ai-toggle">
-        <button
-          type="button"
-          className="ai-toggle__btn"
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Close AI assistant" : "Open AI assistant"}
-        >
-          {open ? (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          ) : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 3v4M3 5h4M6 17v4M4 19h4" />
-              <path d="M13 3l2.5 5.5L21 11l-5.5 2.5L13 19l-2.5-5.5L5 11l5.5-2.5z" />
-            </svg>
-          )}
-        </button>
-      </div>
+      <Button
+        type="button"
+        size="icon"
+        className="size-13 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? 'Close AI assistant' : 'Open AI assistant'}
+      >
+        {open ? <X className="size-5" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
+      </Button>
     </div>
   );
 };
