@@ -3,7 +3,8 @@
 **Feature:** aurora-commerce client UI rebuild  
 **Spec:** `docs/superpowers/specs/2026-07-23-aurora-commerce-rebuild-design.md`  
 **Design system:** `design-system/aurora-commerce/MASTER.md`  
-**Status:** Design approved + tweaked 2026-07-23 (icons, shell, avatar) — ready for implementation plan after user LGTM  
+**Status:** Spec + plan approved 2026-07-23 — ready for Phase 1 (foundation)
+**Plan:** `docs/superpowers/plans/2026-07-23-aurora-commerce-rebuild.md`  
 **Scope:** `apps/client` presentation layer only (no backend)
 
 ---
