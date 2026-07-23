@@ -13,6 +13,7 @@ import {
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { Button } from "../../ui/Button";
+import { Chip } from "../../ui/Chip";
 import { Input } from "../../ui/Input";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
 import { Select } from "../../ui/Select";
@@ -28,6 +29,7 @@ import {
   printOrder,
   type SalesOrderPrintRecord,
 } from "./SalesOrderPrint";
+import { SalesOrderPipeline } from "./SalesOrderPipeline";
 import { SOIcon } from "./SalesOrderIcons";
 import "./SalesOrder.css";
 
@@ -43,15 +45,27 @@ type SalesOrderRow = {
   _count: { items: number };
 };
 
+type IndexView = "table" | "pipeline";
+
+const VIEW_STORAGE_KEY = "view:sales-order";
+
 const STATUS_META: Record<
   string,
-  { label: string; tint: "neutral" | "info" | "success" | "warning" | "danger"; tintClass: string }
+  { label: string; tone: "neutral" | "info" | "success" | "warning" | "danger" }
 > = {
-  DRAFT:      { label: "Draft",              tint: "neutral", tintClass: "so-status--neutral" },
-  VALIDATING: { label: "AI Processing",      tint: "warning", tintClass: "so-status--warning" },
-  PROPOSED:   { label: "Pending Approval",   tint: "info",    tintClass: "so-status--info" },
-  APPROVED:   { label: "Approved",           tint: "success", tintClass: "so-status--success" },
-  REJECTED:   { label: "Rejected",           tint: "danger",  tintClass: "so-status--danger" },
+  DRAFT:      { label: "Draft",            tone: "neutral" },
+  VALIDATING: { label: "AI Processing",    tone: "warning" },
+  PROPOSED:   { label: "Pending Approval", tone: "info" },
+  APPROVED:   { label: "Approved",         tone: "success" },
+  REJECTED:   { label: "Rejected",         tone: "danger" },
+};
+
+const readStoredView = (): IndexView => {
+  try {
+    return localStorage.getItem(VIEW_STORAGE_KEY) === "pipeline" ? "pipeline" : "table";
+  } catch {
+    return "table";
+  }
 };
 
 const formatCurrency = (value: number) =>
@@ -92,6 +106,16 @@ export const SalesOrderIndexPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<SalesOrderRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [view, setView] = useState<IndexView>(readStoredView);
+
+  const selectView = (next: IndexView) => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // ponytail: ignore storage failures (private mode)
+    }
+  };
 
   // Print state — fetched on demand
   const [printRecord, setPrintRecord] = useState<SalesOrderPrintRecord | null>(null);
@@ -209,10 +233,9 @@ export const SalesOrderIndexPage = () => {
         cell: ({ row }) => {
           const meta = STATUS_META[row.original.approvalStatus] ?? STATUS_META.DRAFT;
           return (
-            <span className={`so-status ${meta.tintClass}`} data-tint={meta.tint}>
-              <span className="so-status__dot" aria-hidden="true" />
-              <span>{meta.label}</span>
-            </span>
+            <Chip tone={meta.tone} size="sm">
+              {meta.label}
+            </Chip>
           );
         },
       },
@@ -309,6 +332,7 @@ export const SalesOrderIndexPage = () => {
         itemCount: totalRows,
         page: pagination.pageIndex + 1,
         search,
+        view,
       })}
     >
       {/* iOS hero — two-row layout: title+CTA top, stats strip bottom */}
@@ -476,6 +500,29 @@ export const SalesOrderIndexPage = () => {
           )}
         </div>
 
+        <div
+          className="pg__view-toggle"
+          role="group"
+          aria-label={intl.formatMessage({ id: "sales_order.index.view_toggle", defaultMessage: "View mode" })}
+        >
+          <button
+            type="button"
+            className={`pg__view-toggle-btn${view === "table" ? " pg__view-toggle-btn--active" : ""}`}
+            onClick={() => selectView("table")}
+            aria-pressed={view === "table"}
+          >
+            {intl.formatMessage({ id: "sales_order.index.view_table", defaultMessage: "Table" })}
+          </button>
+          <button
+            type="button"
+            className={`pg__view-toggle-btn${view === "pipeline" ? " pg__view-toggle-btn--active" : ""}`}
+            onClick={() => selectView("pipeline")}
+            aria-pressed={view === "pipeline"}
+          >
+            {intl.formatMessage({ id: "sales_order.index.view_pipeline", defaultMessage: "Pipeline" })}
+          </button>
+        </div>
+
         <span className="so-toolbar__count">
           {intl.formatMessage(
             { id: "sales_order.index.count_label", defaultMessage: "{count, plural, one {# order} other {# orders}}" },
@@ -484,7 +531,7 @@ export const SalesOrderIndexPage = () => {
         </span>
       </div>
 
-      {/* Content */}
+      {/* Content — same filters feed both views */}
       {isLoading ? (
         <div className="so-state so-state--loading">
           <Spinner />
@@ -492,6 +539,32 @@ export const SalesOrderIndexPage = () => {
             {intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}
           </span>
         </div>
+      ) : view === "pipeline" ? (
+        rows.length === 0 ? (
+          <div className="so-state">
+            <span className="so-state__title">
+              {search || statusFilter || dateFrom
+                ? intl.formatMessage({ id: "sales_order.index.empty_search", defaultMessage: "No orders found" })
+                : intl.formatMessage({ id: "sales_order.index.empty_state", defaultMessage: "No orders yet" })}
+            </span>
+            <span className="so-state__text">
+              {search || statusFilter || dateFrom
+                ? intl.formatMessage({
+                    id: "sales_order.index.empty_search_sub",
+                    defaultMessage: "Try adjusting your filters or search terms.",
+                  })
+                : intl.formatMessage({
+                    id: "sales_order.index.empty_state_sub",
+                    defaultMessage: "Create your first sales order to get started.",
+                  })}
+            </span>
+          </div>
+        ) : (
+          <SalesOrderPipeline
+            items={rows}
+            onOpen={(id) => navigate(`/sales-order/${id}`)}
+          />
+        )
       ) : rows.length === 0 ? (
         <div className="so-state">
           <div className="so-state__illustration">
@@ -533,7 +606,7 @@ export const SalesOrderIndexPage = () => {
         </div>
       ) : (
         <div className="so-table-card">
-          <Table className="so-table">
+          <Table className="so-table" density="crm">
             <THead>
               {table.getHeaderGroups().map((hg) => (
                 <TR key={hg.id}>
@@ -553,7 +626,12 @@ export const SalesOrderIndexPage = () => {
                   onClick={() => navigate(`/sales-order/${row.original.id}`)}
                 >
                   {row.getVisibleCells().map((c) => (
-                    <TD key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</TD>
+                    <TD
+                      key={c.id}
+                      className={c.column.id === "total" ? "tbl__cell--money" : undefined}
+                    >
+                      {flexRender(c.column.columnDef.cell, c.getContext())}
+                    </TD>
                   ))}
                 </TR>
               ))}

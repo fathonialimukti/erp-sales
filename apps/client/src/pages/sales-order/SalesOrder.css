@@ -586,7 +586,8 @@
   overflow: hidden;
 }
 
-/* Override the default Table chrome inside the card */
+/* Override the default Table chrome inside the card.
+ * Padding aligns with .tbl--crm (8×12 / min-height 40). */
 .so-table-card .so-table {
   background: transparent;
 }
@@ -599,14 +600,20 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.5rem 1rem 0.625rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .so-table-card .so-table tbody td {
   border-bottom: 0.0625rem solid var(--ios-divider);
-  padding: 0.875rem 1rem;
+  padding: 0.5rem 0.75rem;
   background: transparent;
   vertical-align: middle;
+  min-height: 2.5rem;
+}
+
+.so-table-card .so-table tbody td.tbl__cell--money {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .so-table-card .so-table tbody tr:last-child td {

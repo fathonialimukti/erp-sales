@@ -78,7 +78,7 @@ Design is FROZEN. Do NOT invoke brainstorming or re-open palette/icon debates.
 - [x] Phase 1 — Tokens (primary blue, module accents, shell vars, **chart + stage tokens**)
 - [x] Phase 2 — SVG icon remake + `icons.ts` + nav-menu wiring
 - [ ] Phase 3 — Shell + UI kit + **table density + chips + filter bar** (shell/UI kit recolor + table density done; chips still open)
-- [ ] Phase 4 — Dashboard chart theme ✅ + **Sales Order table + pipeline v1** + Customer index ✅
+- [ ] Phase 4 — Dashboard chart theme ✅ + Sales Order table + pipeline v1 ✅ + Customer index ✅
 - [ ] Phase 5 — Remaining modules; compact nested tables; optional extra pipelines
 - [ ] Phase 6 — Review, a11y, `bun run check-types`
 
@@ -135,3 +135,4 @@ must read at 20–28px
 | 2026-07-23 | **Task 4 complete** — Table density (`.tbl--comfortable` / `.tbl--crm` / `.tbl--compact`), selected row primary-50 + 3px primary bar, `.tbl__cell--money`, optional `Table density` prop, `.pg__view-toggle*` styles, `.m-table-card` padding aligned to CRM. Files: `ui/Table.css`, `ui/Table.tsx`, `styles/page-system.css`, `styles/module-page.css`, `docs/plans/client-redesign/CONTEXT.md` |
 | 2026-07-23 | **Task 6 complete** — Customer index CRM density showcase: `ModuleTable density="crm"` → `.tbl--crm`, status `Chip` column, skeleton loading rows, filter toolbar spacing. Files: `pages/customer/CustomerIndexPage.tsx`, `components/ModulePage.tsx`, `locales/en.json`, `locales/id.json`, `docs/plans/client-redesign/CONTEXT.md` |
 | 2026-07-23 | **Task 5 complete** — Dashboard charts themed with `--chart-*` tokens; main chart/skeleton height 280px; KPI delta chips use chart-positive/negative + % text. Files: `pages/Dashboard.tsx`, `pages/Dashboard.css`, `docs/plans/client-redesign/CONTEXT.md` |
+| 2026-07-23 | **Task 7 complete** — Sales Order CRM density + pipeline v1 (read-only). Table `density="crm"`, status `Chip`, money cells tabular; Table\|Pipeline toggle with `localStorage` key `view:sales-order`; board groups DRAFT/PROPOSED/APPROVED/REJECTED with stage tokens. Files: `pages/sales-order/SalesOrderIndexPage.tsx`, `SalesOrderPipeline.tsx`, `SalesOrderPipeline.css`, `SalesOrder.css`, `locales/en.json`, `locales/id.json`, `docs/plans/client-redesign/CONTEXT.md` |
