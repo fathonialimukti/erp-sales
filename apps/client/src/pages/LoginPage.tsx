@@ -5,47 +5,56 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { motion, useReducedMotion } from "motion/react";
 import {
+  ArrowRight,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Globe,
+  Lock,
+  Mail,
+  MapPin,
+  Quote,
+  Shield,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Users,
+  Zap,
+  AlertTriangle,
+} from "lucide-react";
+
+import {
   getMotionProps,
   pageEnter,
   staggerContainer,
   staggerItem,
 } from "../lib/motion";
-
-const Svg = ({ d, size = 18 }: { d: string; size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
-
-const ICONS = {
-  brand: "M3 3v4M5 5h4M6 17v4M4 19h4 M13 3l2.5 5.5L21 11l-5.5 2.5L13 19l-2.5-5.5L5 11l5.5-2.5z",
-  orders: "M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z M3 6h18 M16 10a4 4 0 0 1-8 0",
-  visits: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-  approvals: "M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3",
-  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-  users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
-  bolt: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
-  quote: "M3 21c3 0 7-1 7-8V5c0-1-1-2-2-2H4c-1 0-2 1-2 2v6c0 1 1 2 2 2h2 M15 21c3 0 7-1 7-8V5c0-1-1-2-2-2h-4c-1 0-2 1-2 2v6c0 1 1 2 2 2h2",
-  globe: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
-  mail: "M4 4h16c1 0 2 1 2 2v12c0 1-1 2-2 2H4c-1 0-2-1-2-2V6c0-1 1-2 2-2z M22 6l-10 7L2 6",
-  lock: "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z M7 11V7a5 5 0 0 1 10 0v4",
-  eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-  eyeOff: "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94 M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19 M14.12 14.12a3 3 0 1 1-4.24-4.24 M1 1l22 22",
-  check: "M20 6L9 17l-5-5",
-  warning: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01",
-  arrowRight: "M5 12h14 M12 5l7 7-7 7",
-  shieldCheck: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4",
-};
 import { useAuthActions } from "../lib/useAuth";
 import { isAuthenticatedAtom } from "../lib/atoms";
 import { useLocale } from "../lib/useLocale";
 import { type Locale } from "../lib/i18n";
 import { isLocale } from "../lib/locale";
-import { Button } from "../ui/Button";
-import { Input } from "../ui/Input";
-import { FormField } from "../ui/FormField";
 import { useToast } from "../ui/useToast";
-import "./LoginPage.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 const LOCALE_OPTIONS: Array<{ value: Locale; label: string }> = [
   { value: "en", label: "English" },
@@ -63,7 +72,6 @@ export const LoginPage = () => {
   const toast = useToast();
   const reducedMotion = useReducedMotion();
   const enterProps = getMotionProps(reducedMotion);
-
   const copyrightYear = useMemo(() => new Date().getFullYear(), []);
 
   const form = useForm({
@@ -84,335 +92,346 @@ export const LoginPage = () => {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="login-page" data-ai-context={JSON.stringify({ section: "login-page" })}>
-      <div className="login-shell">
-        {/* ── LEFT: Aurora brand panel ── */}
-        <aside className="login-brand" aria-label="Brand">
-          <div className="login-brand__mesh" aria-hidden="true">
-            <span className="login-brand__glow login-brand__glow--a" />
-            <span className="login-brand__glow login-brand__glow--b" />
-            <span className="login-brand__glow login-brand__glow--c" />
-            <span className="login-brand__grid" />
-            <span className="login-brand__noise" />
+    <div
+      className="relative min-h-dvh w-full overflow-hidden bg-background text-foreground"
+      data-ai-context={JSON.stringify({ section: "login-page" })}
+    >
+      <div className="relative grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+        <aside
+          className="relative hidden overflow-hidden bg-slate-950 text-slate-50 lg:block"
+          aria-label="Brand"
+        >
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <span className="absolute -top-28 -left-24 size-130 rounded-full bg-[radial-gradient(circle,var(--primary)_0%,transparent_65%)] opacity-50 blur-[80px] motion-safe:animate-pulse" />
+            <span className="absolute top-1/3 -right-20 size-105 rounded-full bg-[radial-gradient(circle,var(--aurora-cyan)_0%,transparent_65%)] opacity-40 blur-[80px]" />
+            <span className="absolute -bottom-24 left-1/4 size-120 rounded-full bg-[radial-gradient(circle,var(--aurora-rose)_0%,transparent_65%)] opacity-35 blur-[90px]" />
+            <span
+              className="absolute inset-0 opacity-[0.08]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+                backgroundSize: "48px 48px",
+              }}
+            />
           </div>
 
           <motion.div
-            className="login-brand__inner"
+            className="relative z-10 flex h-full flex-col justify-between gap-10 p-10 xl:p-14"
             variants={staggerContainer}
             {...enterProps}
           >
-            <motion.div className="login-brand__top" variants={staggerItem}>
-              <div className="login-brand__mark">
-                <Svg d={ICONS.brand} />
+            <motion.div className="flex items-center gap-3" variants={staggerItem}>
+              <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                <Sparkles className="size-5" />
               </div>
-              <span className="login-brand__name">ERP Sales</span>
+              <span className="font-heading text-lg font-semibold tracking-tight">
+                ERP Sales
+              </span>
             </motion.div>
 
-            <motion.div className="login-brand__hero" variants={staggerItem}>
-              <span className="login-brand__kicker">
+            <motion.div className="max-w-lg space-y-4" variants={staggerItem}>
+              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-indigo-100">
                 {intl.formatMessage({ id: "login.brand_kicker" })}
               </span>
-              <h1 className="login-brand__title">
+              <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
                 {intl.formatMessage({ id: "login.brand_title" })}
               </h1>
-              <p className="login-brand__subtitle">
+              <p className="text-base leading-relaxed text-slate-300">
                 {intl.formatMessage({ id: "login.brand_subtitle" })}
               </p>
             </motion.div>
 
-            <motion.div
-              className="login-brand__stats"
-              role="list"
-              variants={staggerItem}
-            >
-              <div className="login-stat" role="listitem">
-                <span className="login-stat__icon">
-                  <Svg d={ICONS.orders} />
-                </span>
-                <span className="login-stat__value">2,481</span>
-                <span className="login-stat__label">
-                  {intl.formatMessage({ id: "login.stat_orders_label" })}
-                </span>
-              </div>
-              <div className="login-stat" role="listitem">
-                <span className="login-stat__icon">
-                  <Svg d={ICONS.visits} />
-                </span>
-                <span className="login-stat__value">312</span>
-                <span className="login-stat__label">
-                  {intl.formatMessage({ id: "login.stat_visits_label" })}
-                </span>
-              </div>
-              <div className="login-stat" role="listitem">
-                <span className="login-stat__icon">
-                  <Svg d={ICONS.approvals} />
-                </span>
-                <span className="login-stat__value">98.4%</span>
-                <span className="login-stat__label">
-                  {intl.formatMessage({ id: "login.stat_approvals_label" })}
-                </span>
-              </div>
+            <motion.div className="grid grid-cols-3 gap-3" role="list" variants={staggerItem}>
+              {[
+                {
+                  icon: ShoppingBag,
+                  value: "2,481",
+                  label: intl.formatMessage({ id: "login.stat_orders_label" }),
+                },
+                {
+                  icon: MapPin,
+                  value: "312",
+                  label: intl.formatMessage({ id: "login.stat_visits_label" }),
+                },
+                {
+                  icon: CheckCircle2,
+                  value: "98.4%",
+                  label: intl.formatMessage({ id: "login.stat_approvals_label" }),
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  role="listitem"
+                  className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm"
+                >
+                  <stat.icon className="mb-2 size-4 text-indigo-300" />
+                  <div className="font-heading text-xl font-semibold tabular-nums">
+                    {stat.value}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-slate-400">{stat.label}</div>
+                </div>
+              ))}
             </motion.div>
 
-            <motion.ul className="login-brand__features" variants={staggerItem}>
-              <li className="login-feature">
-                <span className="login-feature__icon">
-                  <Svg d={ICONS.shield} />
-                </span>
-                <div className="login-feature__body">
-                  <span className="login-feature__title">
-                    {intl.formatMessage({ id: "login.feature_audit_title" })}
+            <motion.ul className="space-y-3" variants={staggerItem}>
+              {[
+                {
+                  icon: Shield,
+                  title: intl.formatMessage({ id: "login.feature_audit_title" }),
+                  desc: intl.formatMessage({ id: "login.feature_audit_desc" }),
+                },
+                {
+                  icon: Users,
+                  title: intl.formatMessage({ id: "login.feature_role_title" }),
+                  desc: intl.formatMessage({ id: "login.feature_role_desc" }),
+                },
+                {
+                  icon: Zap,
+                  title: intl.formatMessage({ id: "login.feature_realtime_title" }),
+                  desc: intl.formatMessage({ id: "login.feature_realtime_desc" }),
+                },
+              ].map((feature) => (
+                <li key={feature.title} className="flex gap-3">
+                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-indigo-200">
+                    <feature.icon className="size-4" />
                   </span>
-                  <span className="login-feature__desc">
-                    {intl.formatMessage({ id: "login.feature_audit_desc" })}
-                  </span>
-                </div>
-              </li>
-              <li className="login-feature">
-                <span className="login-feature__icon">
-                  <Svg d={ICONS.users} />
-                </span>
-                <div className="login-feature__body">
-                  <span className="login-feature__title">
-                    {intl.formatMessage({ id: "login.feature_role_title" })}
-                  </span>
-                  <span className="login-feature__desc">
-                    {intl.formatMessage({ id: "login.feature_role_desc" })}
-                  </span>
-                </div>
-              </li>
-              <li className="login-feature">
-                <span className="login-feature__icon">
-                  <Svg d={ICONS.bolt} />
-                </span>
-                <div className="login-feature__body">
-                  <span className="login-feature__title">
-                    {intl.formatMessage({ id: "login.feature_realtime_title" })}
-                  </span>
-                  <span className="login-feature__desc">
-                    {intl.formatMessage({ id: "login.feature_realtime_desc" })}
-                  </span>
-                </div>
-              </li>
+                  <div>
+                    <div className="text-sm font-medium text-slate-100">{feature.title}</div>
+                    <div className="text-xs leading-relaxed text-slate-400">{feature.desc}</div>
+                  </div>
+                </li>
+              ))}
             </motion.ul>
 
-            <motion.figure className="login-brand__quote" variants={staggerItem}>
-              <span className="login-brand__quote-mark"><Svg d={ICONS.quote} /></span>
-              <blockquote className="login-brand__quote-text">
+            <motion.figure
+              className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
+              variants={staggerItem}
+            >
+              <Quote className="mb-3 size-4 text-indigo-300" />
+              <blockquote className="text-sm leading-relaxed text-slate-200">
                 {intl.formatMessage({ id: "login.testimonial_quote" })}
               </blockquote>
-              <figcaption className="login-brand__quote-author">
+              <figcaption className="mt-3 text-xs font-medium text-slate-400">
                 {intl.formatMessage({ id: "login.testimonial_author" })}
               </figcaption>
             </motion.figure>
           </motion.div>
         </aside>
 
-        {/* ── RIGHT: Form panel ── */}
-        <main className="login-form-panel">
-          <div className="login-form-panel__top">
-            <label className="login-locale" htmlFor="login-locale">
-              <span className="login-locale__label">
-                <Svg d={ICONS.globe} />
+        <main className="aurora-mesh relative flex min-h-dvh flex-col">
+          <div className="flex items-center justify-end p-4 sm:p-6">
+            <div className="flex items-center gap-2">
+              <Globe className="size-4 text-muted-foreground" aria-hidden="true" />
+              <Label htmlFor="login-locale" className="sr-only">
                 {intl.formatMessage({ id: "login.language_label" })}
-              </span>
-              <select
-                id="login-locale"
-                className="login-locale__select"
+              </Label>
+              <Select
                 value={locale}
-                onChange={(event) => {
-                  const next = event.target.value;
+                onValueChange={(next) => {
                   if (isLocale(next)) setLocale(next);
                 }}
               >
-                {LOCALE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <SelectTrigger id="login-locale" className="w-45 bg-card">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCALE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="login-form-panel__center">
-            <motion.div
-              className="login-form-card"
-              variants={pageEnter}
-              {...enterProps}
-            >
-              <header className="login-form-card__head">
-                <span className="login-form-card__kicker">
-                  {intl.formatMessage({ id: "login.form_kicker" })}
-                </span>
-                <h2 className="login-form-card__title">
-                  {intl.formatMessage({ id: "login.form_title" })}
-                </h2>
-                <p className="login-form-card__subtitle">
-                  {intl.formatMessage({ id: "login.form_subtitle" })}
-                </p>
-              </header>
+          <div className="flex flex-1 items-center justify-center px-4 pb-8 sm:px-8">
+            <motion.div className="w-full max-w-md" variants={pageEnter} {...enterProps}>
+              <Card className="border-border/80 shadow-lg shadow-primary/5">
+                <CardHeader className="space-y-2">
+                  <span className="text-xs font-semibold tracking-wide text-primary uppercase">
+                    {intl.formatMessage({ id: "login.form_kicker" })}
+                  </span>
+                  <CardTitle className="font-heading text-2xl">
+                    {intl.formatMessage({ id: "login.form_title" })}
+                  </CardTitle>
+                  <CardDescription>
+                    {intl.formatMessage({ id: "login.form_subtitle" })}
+                  </CardDescription>
+                </CardHeader>
 
-              <form
-                className="login-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  void form.handleSubmit();
-                }}
-              >
-                <form.Field
-                  name="email"
-                  validators={{
-                    onChange: ({ value }) =>
-                      value
-                        ? undefined
-                        : intl.formatMessage({ id: "login.error_required_email" }),
-                  }}
-                >
-                  {(field) => (
-                    <FormField
-                      label={intl.formatMessage({ id: "login.email_label" })}
-                      error={
-                        field.state.meta.errors[0]
-                          ? String(field.state.meta.errors[0])
-                          : undefined
-                      }
-                    >
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder={intl.formatMessage({ id: "login.email_placeholder" })}
-                        value={field.state.value}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                          field.handleChange(event.target.value)
-                        }
-                        autoComplete="email"
-                        leftIcon={<Svg d={ICONS.mail} />}
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <form.Field
-                  name="password"
-                  validators={{
-                    onChange: ({ value }) =>
-                      value
-                        ? undefined
-                        : intl.formatMessage({ id: "login.error_required_password" }),
-                  }}
-                >
-                  {(field) => (
-                    <FormField
-                      label={intl.formatMessage({ id: "login.password_label" })}
-                      error={
-                        field.state.meta.errors[0]
-                          ? String(field.state.meta.errors[0])
-                          : undefined
-                      }
-                    >
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder={intl.formatMessage({ id: "login.password_placeholder" })}
-                        value={field.state.value}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                          field.handleChange(event.target.value)
-                        }
-                        autoComplete="current-password"
-                        leftIcon={<Svg d={ICONS.lock} />}
-                        rightIcon={
-                          <button
-                            type="button"
-                            className="login-password-toggle"
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            aria-label={intl.formatMessage({
-                              id: showPassword ? "login.password_hide" : "login.password_show",
-                            })}
-                          >
-                            <Svg d={showPassword ? ICONS.eyeOff : ICONS.eye} />
-                          </button>
-                        }
-                      />
-                    </FormField>
-                  )}
-                </form.Field>
-
-                <div className="login-form-row">
-                  <form.Field name="remember">
-                    {(field) => (
-                      <label className="login-check">
-                        <input
-                          type="checkbox"
-                          checked={field.state.value}
-                          onChange={(event) => field.handleChange(event.target.checked)}
-                        />
-                        <span className="login-check__box" aria-hidden="true">
-                          <Svg d={ICONS.check} size={14} />
-                        </span>
-                        <span className="login-check__label">
-                          {intl.formatMessage({ id: "login.remember_me" })}
-                        </span>
-                      </label>
-                    )}
-                  </form.Field>
-
-                  <button
-                    type="button"
-                    className="login-link"
-                    onClick={() =>
-                      toast.info(
-                        `${intl.formatMessage({ id: "login.forgot_password" })} — Please contact your workspace administrator.`,
-                      )
-                    }
+                <CardContent>
+                  <form
+                    className="space-y-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      void form.handleSubmit();
+                    }}
                   >
-                    {intl.formatMessage({ id: "login.forgot_password" })}
-                  </button>
-                </div>
+                    <form.Field
+                      name="email"
+                      validators={{
+                        onChange: ({ value }) =>
+                          value
+                            ? undefined
+                            : intl.formatMessage({ id: "login.error_required_email" }),
+                      }}
+                    >
+                      {(field) => {
+                        const error = field.state.meta.errors[0]
+                          ? String(field.state.meta.errors[0])
+                          : undefined;
+                        return (
+                          <div className="space-y-2">
+                            <Label htmlFor="email">
+                              {intl.formatMessage({ id: "login.email_label" })}
+                            </Label>
+                            <div className="relative">
+                              <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                              <Input
+                                id="email"
+                                type="email"
+                                placeholder={intl.formatMessage({
+                                  id: "login.email_placeholder",
+                                })}
+                                value={field.state.value}
+                                onChange={(event) => field.handleChange(event.target.value)}
+                                autoComplete="email"
+                                aria-invalid={Boolean(error)}
+                                className="pl-9"
+                              />
+                            </div>
+                            {error ? <p className="text-xs text-destructive">{error}</p> : null}
+                          </div>
+                        );
+                      }}
+                    </form.Field>
 
-                {submitError && (
-                  <div className="login-error" role="alert">
-                    <span className="login-error__icon">
-                      <Svg d={ICONS.warning} />
-                    </span>
-                    <div className="login-error__body">
-                      <span className="login-error__title">
-                        {intl.formatMessage({ id: "login.error_title" })}
-                      </span>
-                      <span className="login-error__msg">{submitError}</span>
+                    <form.Field
+                      name="password"
+                      validators={{
+                        onChange: ({ value }) =>
+                          value
+                            ? undefined
+                            : intl.formatMessage({ id: "login.error_required_password" }),
+                      }}
+                    >
+                      {(field) => {
+                        const error = field.state.meta.errors[0]
+                          ? String(field.state.meta.errors[0])
+                          : undefined;
+                        return (
+                          <div className="space-y-2">
+                            <Label htmlFor="password">
+                              {intl.formatMessage({ id: "login.password_label" })}
+                            </Label>
+                            <div className="relative">
+                              <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                              <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                placeholder={intl.formatMessage({
+                                  id: "login.password_placeholder",
+                                })}
+                                value={field.state.value}
+                                onChange={(event) => field.handleChange(event.target.value)}
+                                autoComplete="current-password"
+                                aria-invalid={Boolean(error)}
+                                className="pr-10 pl-9"
+                              />
+                              <button
+                                type="button"
+                                className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                aria-label={intl.formatMessage({
+                                  id: showPassword
+                                    ? "login.password_hide"
+                                    : "login.password_show",
+                                })}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="size-4" />
+                                ) : (
+                                  <Eye className="size-4" />
+                                )}
+                              </button>
+                            </div>
+                            {error ? <p className="text-xs text-destructive">{error}</p> : null}
+                          </div>
+                        );
+                      }}
+                    </form.Field>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <form.Field name="remember">
+                        {(field) => (
+                          <label className="flex cursor-pointer items-center gap-2 text-sm">
+                            <Checkbox
+                              checked={field.state.value}
+                              onCheckedChange={(checked) =>
+                                field.handleChange(checked === true)
+                              }
+                            />
+                            <span className="text-muted-foreground">
+                              {intl.formatMessage({ id: "login.remember_me" })}
+                            </span>
+                          </label>
+                        )}
+                      </form.Field>
+
+                      <button
+                        type="button"
+                        className="cursor-pointer text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                        onClick={() =>
+                          toast.info(
+                            `${intl.formatMessage({ id: "login.forgot_password" })} — Please contact your workspace administrator.`,
+                          )
+                        }
+                      >
+                        {intl.formatMessage({ id: "login.forgot_password" })}
+                      </button>
                     </div>
-                  </div>
-                )}
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  isLoading={form.state.isSubmitting}
-                  rightIcon={
-                    !form.state.isSubmitting ? (
-                      <Svg d={ICONS.arrowRight} />
-                    ) : undefined
-                  }
-                >
-                  {form.state.isSubmitting
-                    ? intl.formatMessage({ id: "login.submit_loading" })
-                    : intl.formatMessage({ id: "login.submit" })}
-                </Button>
-              </form>
+                    {submitError ? (
+                      <div
+                        className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3"
+                        role="alert"
+                      >
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-destructive">
+                            {intl.formatMessage({ id: "login.error_title" })}
+                          </p>
+                          <p className="text-xs text-destructive/90">{submitError}</p>
+                        </div>
+                      </div>
+                    ) : null}
 
-              <footer className="login-form-card__foot">
-                <Svg d={ICONS.shieldCheck} size={16} />
-                <span>{intl.formatMessage({ id: "login.secure_note" })}</span>
-              </footer>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full"
+                      disabled={form.state.isSubmitting}
+                    >
+                      {form.state.isSubmitting
+                        ? intl.formatMessage({ id: "login.submit_loading" })
+                        : intl.formatMessage({ id: "login.submit" })}
+                      {!form.state.isSubmitting ? <ArrowRight className="size-4" /> : null}
+                    </Button>
+                  </form>
+                </CardContent>
+
+                <CardFooter className="justify-center gap-2 border-t pt-6 text-xs text-muted-foreground">
+                  <ShieldCheck className="size-4 text-primary" />
+                  <span>{intl.formatMessage({ id: "login.secure_note" })}</span>
+                </CardFooter>
+              </Card>
             </motion.div>
           </div>
 
-          <div className="login-form-panel__bottom">
-            <span>
-              {intl.formatMessage({ id: "login.copyright" }, { year: copyrightYear })}
-            </span>
+          <div className={cn("px-4 pb-6 text-center text-xs text-muted-foreground sm:px-8")}>
+            {intl.formatMessage({ id: "login.copyright" }, { year: copyrightYear })}
           </div>
         </main>
       </div>

@@ -1,9 +1,8 @@
-import { Outlet } from 'react-router';
-import './PublicLayout.css';
+import { Outlet } from "react-router";
 
 export const PublicLayout = () => (
-  <div className="pub-layout">
-    <main className="pub-layout__inner">
+  <div className="h-dvh overflow-hidden">
+    <main className="h-full w-full">
       <Outlet />
     </main>
   </div>

@@ -2,13 +2,43 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { motion, useReducedMotion } from "motion/react";
+import {
+  ArrowDown,
+  BarChart3,
+  Building2,
+  ChartColumn,
+  CheckCircle2,
+  ChevronDown,
+  Code2,
+  FilePlus2,
+  Handshake,
+  Link2,
+  LogIn,
+  Mail,
+  MapPin,
+  Medal,
+  MessageSquare,
+  Phone,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  User,
+} from "lucide-react";
+
 import { Stagger, StaggerItem } from "../components/motion/Stagger";
 import { fadeIn, getMotionProps } from "../lib/motion";
-import { Button } from "../ui/Button";
-import { DecorBlob, HeroDashboard, ApprovalFlow, EmailToOrderFlow, AiWorkflow } from "./landing-assets";
-import "./LandingPage.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  DecorBlob,
+  HeroDashboard,
+  ApprovalFlow,
+  EmailToOrderFlow,
+  AiWorkflow,
+} from "./landing-assets";
 
-// ── Contact URLs ──
 const CONTACT = {
   email: "mailto:fathoni@example.com",
   whatsapp: "https://wa.me/6281234567890",
@@ -17,61 +47,21 @@ const CONTACT = {
   hire: "https://fathoni.dev/hire",
 };
 
-// ── Inline SVG icons (24x24 viewBox, stroke-based) ──
-const PATHS: Record<string, string> = {
-  star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-  login: "M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3",
-  arrowDown: "M12 5v14M19 12l-7 7-7-7",
-  user: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 7a4 4 0 100 8 4 4 0 000-8z",
-  cart: "M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6M9 21a1 1 0 100-2 1 1 0 000 2zM20 21a1 1 0 100-2 1 1 0 000 2z",
-  mapPin: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 10a3 3 0 100-6 3 3 0 000 6z",
-  medal: "M12 8a7 7 0 100 14 7 7 0 000-14zM8.21 13.89L7 23l5-3 5 3-1.21-9.11",
-  checkCircle: "M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01 9 11.01",
-  chart: "M18 20V10M12 20V4M6 20v-6",
-  mail: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6L12 13 2 6",
-  building: "M4 2h16v20H4zM9 6h.01M15 6h.01M9 10h.01M15 10h.01M9 14h.01M15 14h.01M9 18h6v4H9z",
-  docAdd: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M12 18v-6M9 15h6",
-  chartBar: "M3 3h18v18H3zM8 16v-3M12 16V10M16 16V8",
-  chevronDown: "M6 9l6 6 6-6",
-  handShake: "M20.42 4.58a5.4 5.4 0 00-7.65 0l-.77.78-.77-.78a5.4 5.4 0 00-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42zM12 2L8 8l4 4 4-4-4-6z",
-  phone: "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z",
-  code: "M16 18l6-6-6-6M8 6l-6 6 6 6",
-  link: "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71",
-  chat: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
-};
-
-const Icon = ({ name, className }: { name: keyof typeof PATHS; className?: string }) => (
-  <svg
-    className={className}
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d={PATHS[name]} />
-  </svg>
-);
-
 const FEATURES = [
-  { key: "customers", icon: "user" as const, titleId: "landing.feature_customers_title", descId: "landing.feature_customers_desc" },
-  { key: "orders", icon: "cart" as const, titleId: "landing.feature_orders_title", descId: "landing.feature_orders_desc" },
-  { key: "visits", icon: "mapPin" as const, titleId: "landing.feature_visits_title", descId: "landing.feature_visits_desc" },
-  { key: "programs", icon: "medal" as const, titleId: "landing.feature_programs_title", descId: "landing.feature_programs_desc" },
-  { key: "approvals", icon: "checkCircle" as const, titleId: "landing.feature_approvals_title", descId: "landing.feature_approvals_desc" },
-  { key: "insight", icon: "chart" as const, titleId: "landing.feature_insight_title", descId: "landing.feature_insight_desc" },
-  { key: "email_concierge", icon: "mail" as const, titleId: "landing.feature_email_concierge_title", descId: "landing.feature_email_concierge_desc" },
+  { key: "customers", icon: User, titleId: "landing.feature_customers_title", descId: "landing.feature_customers_desc", accent: "var(--module-customer)" },
+  { key: "orders", icon: ShoppingCart, titleId: "landing.feature_orders_title", descId: "landing.feature_orders_desc", accent: "var(--module-order)" },
+  { key: "visits", icon: MapPin, titleId: "landing.feature_visits_title", descId: "landing.feature_visits_desc", accent: "var(--module-visit)" },
+  { key: "programs", icon: Medal, titleId: "landing.feature_programs_title", descId: "landing.feature_programs_desc", accent: "var(--module-planning)" },
+  { key: "approvals", icon: CheckCircle2, titleId: "landing.feature_approvals_title", descId: "landing.feature_approvals_desc", accent: "var(--success)" },
+  { key: "insight", icon: ChartColumn, titleId: "landing.feature_insight_title", descId: "landing.feature_insight_desc", accent: "var(--module-report)" },
+  { key: "email_concierge", icon: Mail, titleId: "landing.feature_email_concierge_title", descId: "landing.feature_email_concierge_desc", accent: "var(--module-email)" },
 ] as const;
 
 const STEPS = [
-  { key: "1", icon: "building" as const, titleId: "landing.step_1_title", descId: "landing.step_1_desc" },
-  { key: "2", icon: "docAdd" as const, titleId: "landing.step_2_title", descId: "landing.step_2_desc" },
-  { key: "3", icon: "mapPin" as const, titleId: "landing.step_3_title", descId: "landing.step_3_desc" },
-  { key: "4", icon: "chartBar" as const, titleId: "landing.step_4_title", descId: "landing.step_4_desc" },
+  { key: "1", icon: Building2, titleId: "landing.step_1_title", descId: "landing.step_1_desc" },
+  { key: "2", icon: FilePlus2, titleId: "landing.step_2_title", descId: "landing.step_2_desc" },
+  { key: "3", icon: MapPin, titleId: "landing.step_3_title", descId: "landing.step_3_desc" },
+  { key: "4", icon: BarChart3, titleId: "landing.step_4_title", descId: "landing.step_4_desc" },
 ] as const;
 
 const FAQS = [
@@ -88,10 +78,10 @@ const SKILLS = [
 ];
 
 const CONTACT_ITEMS = [
-  { key: "email", icon: "mail" as const, labelId: "landing.contact_email", href: CONTACT.email },
-  { key: "whatsapp", icon: "phone" as const, labelId: "landing.contact_whatsapp", href: CONTACT.whatsapp },
-  { key: "github", icon: "code" as const, labelId: "landing.contact_github", href: CONTACT.github },
-  { key: "linkedin", icon: "link" as const, labelId: "landing.contact_linkedin", href: CONTACT.linkedin },
+  { key: "email", icon: Mail, labelId: "landing.contact_email", href: CONTACT.email },
+  { key: "whatsapp", icon: Phone, labelId: "landing.contact_whatsapp", href: CONTACT.whatsapp },
+  { key: "github", icon: Code2, labelId: "landing.contact_github", href: CONTACT.github },
+  { key: "linkedin", icon: Link2, labelId: "landing.contact_linkedin", href: CONTACT.linkedin },
 ] as const;
 
 const FOOTER_LINKS = [
@@ -107,14 +97,16 @@ export const LandingPage = () => {
   const reducedMotion = useReducedMotion();
   const softEnter = getMotionProps(reducedMotion);
 
-  const t = (id: string, fallback: string) => intl.formatMessage({ id, defaultMessage: fallback });
+  const t = (id: string, fallback: string) =>
+    intl.formatMessage({ id, defaultMessage: fallback });
 
-  // SEO: set document title + meta description on mount, restore on unmount
   useEffect(() => {
     const prevTitle = document.title;
-    const metaEls = Array.from(document.querySelectorAll<HTMLMetaElement>(
-      'meta[name="description"], meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"]',
-    ));
+    const metaEls = Array.from(
+      document.querySelectorAll<HTMLMetaElement>(
+        'meta[name="description"], meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"]',
+      ),
+    );
     const prevMeta = metaEls.map((el) => ({
       el,
       content: el.getAttribute("content") ?? "",
@@ -127,18 +119,26 @@ export const LandingPage = () => {
     };
 
     document.title = "ERP Sales — Sales Management Platform";
-    setMeta('meta[name="description"]', "content",
-      "One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office.");
+    setMeta(
+      'meta[name="description"]',
+      "content",
+      "One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office.",
+    );
     setMeta('meta[property="og:title"]', "content", "ERP Sales — Sales Management Platform");
-    setMeta('meta[property="og:description"]', "content",
-      "One platform to manage customers, outlets, sales orders, visits, and approvals — built for field teams and back-office alike.");
+    setMeta(
+      'meta[property="og:description"]',
+      "content",
+      "One platform to manage customers, outlets, sales orders, visits, and approvals — built for field teams and back-office alike.",
+    );
     setMeta('meta[property="og:type"]', "content", "website");
     setMeta('meta[name="twitter:card"]', "content", "summary_large_image");
     setMeta('meta[name="twitter:title"]', "content", "ERP Sales — Sales Management Platform");
-    setMeta('meta[name="twitter:description"]', "content",
-      "One platform to manage customers, outlets, sales orders, visits, and approvals — built for field teams and back-office alike.");
+    setMeta(
+      'meta[name="twitter:description"]',
+      "content",
+      "One platform to manage customers, outlets, sales orders, visits, and approvals — built for field teams and back-office alike.",
+    );
 
-    // JSON-LD structured data (SoftwareApplication + Organization)
     const jsonLd = {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
@@ -174,254 +174,339 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="landing" data-ai-context={JSON.stringify({ section: "landing" })}>
-      {/* ── Hero ── */}
-      <header className="landing__hero">
-        <div className="landing__aurora" aria-hidden="true" />
-        <DecorBlob className="landing__hero-blob landing__hero-blob--1" variant="a" />
-        <DecorBlob className="landing__hero-blob landing__hero-blob--2" variant="b" />
-        <div className="landing__hero-inner">
-          <Stagger className="landing__hero-copy">
+    <div
+      className="flex min-h-dvh flex-col bg-background text-foreground"
+      data-ai-context={JSON.stringify({ section: "landing" })}
+    >
+      <header className="relative overflow-hidden border-b border-border px-6 pb-16 pt-16 sm:px-8 sm:pb-24 sm:pt-24">
+        <div className="aurora-mesh pointer-events-none absolute inset-0 opacity-90" aria-hidden="true" />
+        <DecorBlob className="pointer-events-none absolute -right-10 -top-16 size-80 opacity-15" variant="a" />
+        <DecorBlob className="pointer-events-none absolute -bottom-20 -left-16 size-64 opacity-10" variant="b" />
+
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+          <Stagger className="space-y-6">
             <StaggerItem>
-              <span className="landing__badge">
-                <Icon name="star" />
+              <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-xs font-semibold">
+                <Star className="size-3.5" />
                 {t("landing.badge", "ERP SALES")}
-              </span>
+              </Badge>
             </StaggerItem>
             <StaggerItem>
-              <h1 className="landing__title">{t("landing.hero_title", "Sales Management, Reimagined")}</h1>
+              <h1 className="font-heading text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                {t("landing.hero_title", "Sales Management, Reimagined")}
+              </h1>
             </StaggerItem>
             <StaggerItem>
-              <p className="landing__desc">{t("landing.hero_subtitle", "One platform to manage customers, outlets, sales orders, visits, and approvals.")}</p>
+              <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                {t(
+                  "landing.hero_subtitle",
+                  "One platform to manage customers, outlets, sales orders, visits, and approvals.",
+                )}
+              </p>
             </StaggerItem>
             <StaggerItem>
-              <div className="landing__actions">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() => navigate("/login")}
-                  leftIcon={<Icon name="login" />}
-                >
+              <div className="flex flex-wrap gap-3">
+                <Button size="lg" onClick={() => navigate("/login")}>
+                  <LogIn className="size-4" />
                   {t("landing.cta_primary", "Sign In")}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => scrollTo("features")}
-                  rightIcon={<Icon name="arrowDown" />}
-                >
+                <Button size="lg" variant="outline" onClick={() => scrollTo("features")}>
                   {t("landing.cta_secondary", "Learn More")}
+                  <ArrowDown className="size-4" />
                 </Button>
               </div>
             </StaggerItem>
           </Stagger>
-          <motion.div
-            className="landing__hero-art"
-            variants={fadeIn}
-            {...softEnter}
-          >
-            <HeroDashboard className="landing__hero-dashboard" />
+
+          <motion.div className="relative" variants={fadeIn} {...softEnter}>
+            <HeroDashboard className="mx-auto w-full max-w-xl drop-shadow-xl" />
           </motion.div>
         </div>
-        <div className="landing__scroll-hint" aria-hidden="true">
-          <Icon name="arrowDown" />
+
+        <div className="relative z-10 mt-12 flex justify-center text-muted-foreground" aria-hidden="true">
+          <ArrowDown className="size-5 animate-bounce" />
         </div>
       </header>
 
-      <main className="landing__main">
-        {/* ── Features ── */}
-        <section className="landing__features" id="features" aria-labelledby="features-title">
-          <div className="landing__features-head">
-            <h2 id="features-title" className="landing__features-title reveal stagger-1">{t("landing.features_title", "Everything your sales operation needs")}</h2>
-            <p className="landing__features-sub reveal stagger-2">{t("landing.features_subtitle", "From the first customer touch to the final approval.")}</p>
+      <main className="flex-1">
+        <section id="features" aria-labelledby="features-title" className="mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-20">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <h2 id="features-title" className="font-heading text-3xl font-bold tracking-tight">
+              {t("landing.features_title", "Everything your sales operation needs")}
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              {t("landing.features_subtitle", "From the first customer touch to the final approval.")}
+            </p>
           </div>
-          <div className="landing__grid">
-            {FEATURES.map((f, i) => (
-              <article className={`landing__card reveal stagger-${i + 1}`} key={f.key}>
-                <span className="landing__card-icon" aria-hidden="true">
-                  <Icon name={f.icon} />
-                </span>
-                <h3 className="landing__card-title">{t(f.titleId, f.key)}</h3>
-                <p className="landing__card-desc">{t(f.descId, "")}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {/* ── How It Works ── */}
-        <section className="landing__how" id="how-it-works" aria-labelledby="how-title">
-          <div className="landing__how-head">
-            <h2 id="how-title" className="landing__how-title reveal stagger-1">{t("landing.how_it_works_title", "How It Works")}</h2>
-            <p className="landing__how-sub reveal stagger-2">{t("landing.how_it_works_subtitle", "Four steps from setup to insight.")}</p>
-          </div>
-          <div className="landing__steps">
-            {STEPS.map((step, i) => (
-              <div className={`landing__step reveal stagger-${i + 1}`} key={step.key}>
-                <div className="landing__step-badge">
-                  <span className="landing__step-num">{i + 1}</span>
-                  <span className="landing__step-icon" aria-hidden="true">
-                    <Icon name={step.icon} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <Card key={f.key} className="border-border/80 transition-shadow hover:shadow-md">
+                <CardHeader className="gap-3">
+                  <span
+                    className="flex size-11 items-center justify-center rounded-xl"
+                    style={{
+                      background: `color-mix(in srgb, ${f.accent} 14%, transparent)`,
+                      color: f.accent,
+                    }}
+                  >
+                    <f.icon className="size-5" />
                   </span>
-                </div>
-                <h3 className="landing__step-title">{t(step.titleId, "")}</h3>
-                <p className="landing__step-desc">{t(step.descId, "")}</p>
-              </div>
+                  <CardTitle className="font-heading text-lg">
+                    {t(f.titleId, f.key)}
+                  </CardTitle>
+                  <CardDescription>{t(f.descId, "")}</CardDescription>
+                </CardHeader>
+              </Card>
             ))}
           </div>
         </section>
 
-        {/* ── Approval Workflow ── */}
-        <section className="landing__workflow" id="workflow" aria-labelledby="workflow-title">
-          <div className="landing__workflow-inner">
-            <div className="landing__workflow-copy reveal reveal--slideInLeft">
-              <span className="landing__eyebrow">{t("landing.workflow_eyebrow", "Governance")}</span>
-              <h2 id="workflow-title" className="landing__workflow-title">{t("landing.workflow_title", "Approval, with a paper trail")}</h2>
-              <p className="landing__workflow-sub">{t("landing.workflow_subtitle", "Every document moves through a clear, multi-level workflow. An AI reviews each order before it can be proposed, and every transition is logged with who, when, and why — so nothing slips through unnoticed.")}</p>
-              <ul className="landing__workflow-list">
-                <li><Icon name="checkCircle" />{t("landing.workflow_point_1", "Draft → AI review → Proposed → Approved or Rejected")}</li>
-                <li><Icon name="checkCircle" />{t("landing.workflow_point_2", "LLM checks pricing, quantity & discount risk")}</li>
-                <li><Icon name="checkCircle" />{t("landing.workflow_point_3", "Full audit trail on every transition")}</li>
-              </ul>
+        <section id="how-it-works" aria-labelledby="how-title" className="border-y border-border bg-card/40 px-6 py-16 sm:px-8 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mx-auto mb-10 max-w-2xl text-center">
+              <h2 id="how-title" className="font-heading text-3xl font-bold tracking-tight">
+                {t("landing.how_it_works_title", "How It Works")}
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                {t("landing.how_it_works_subtitle", "Four steps from setup to insight.")}
+              </p>
             </div>
-            <div className="landing__workflow-art reveal reveal--slideInRight stagger-2">
-              <ApprovalFlow className="landing__workflow-diagram" />
-            </div>
-          </div>
-        </section>
-
-        {/* ── Email-to-Order Automation ── */}
-        <section className="landing__automation" id="automation" aria-labelledby="automation-title">
-          <div className="landing__automation-inner">
-            <div className="landing__automation-art reveal reveal--slideInLeft">
-              <EmailToOrderFlow className="landing__automation-diagram" />
-            </div>
-            <div className="landing__automation-copy reveal reveal--slideInRight stagger-2">
-              <span className="landing__eyebrow">{t("landing.automation_eyebrow", "Automation")}</span>
-              <h2 id="automation-title" className="landing__automation-title">{t("landing.automation_title", "Orders that file themselves")}</h2>
-              <p className="landing__automation-sub">{t("landing.automation_subtitle", "Customers email their orders. An n8n workflow parses the message, creates a draft sales order, and routes it straight into your approval pipeline — zero manual entry.")}</p>
-              <ul className="landing__automation-list">
-                <li><Icon name="mail" />{t("landing.automation_point_1", "Inbound email → webhook trigger")}</li>
-                <li><Icon name="code" />{t("landing.automation_point_2", "n8n parses and validates the order")}</li>
-                <li><Icon name="cart" />{t("landing.automation_point_3", "Draft sales order, ready to approve")}</li>
-              </ul>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {STEPS.map((step, i) => (
+                <Card key={step.key} className="border-border/80">
+                  <CardHeader className="gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                        {i + 1}
+                      </span>
+                      <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-primary">
+                        <step.icon className="size-4" />
+                      </span>
+                    </div>
+                    <CardTitle className="font-heading text-base">
+                      {t(step.titleId, "")}
+                    </CardTitle>
+                    <CardDescription>{t(step.descId, "")}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ── AI / LLM Features ── */}
-        <section className="landing__ai" id="ai" aria-labelledby="ai-title">
-          <div className="landing__ai-inner">
-            <div className="landing__ai-copy reveal reveal--slideInLeft">
-              <span className="landing__eyebrow">{t("landing.ai_eyebrow", "Built-in AI")}</span>
-              <h2 id="ai-title" className="landing__ai-title">{t("landing.ai_title", "An AI assistant that actually does the work")}</h2>
-              <p className="landing__ai-sub">{t("landing.ai_subtitle", "A streaming LLM engine sits inside the app — grounded in your docs via RAG and wired to real tools, so it answers, navigates, and drafts instead of just chatting.")}</p>
-              <ul className="landing__ai-list">
-                <li><Icon name="chat" />{t("landing.ai_point_1", "Chat with RAG over your knowledge base")}</li>
-                <li><Icon name="docAdd" />{t("landing.ai_point_2", "Extract orders from free-text or email")}</li>
-                <li><Icon name="chartBar" />{t("landing.ai_point_3", "Ask data in plain language → read-only SQL")}</li>
-                <li><Icon name="checkCircle" />{t("landing.ai_point_4", "Auto-summarize pages & draft follow-ups")}</li>
-              </ul>
-            </div>
-            <div className="landing__ai-art reveal reveal--slideInRight stagger-2">
-              <AiWorkflow className="landing__ai-diagram" />
-            </div>
-          </div>
-        </section>
-
-        {/* ── FAQ ── */}
-        <section className="landing__faq" id="faq" aria-labelledby="faq-title">
-          <div className="landing__faq-head">
-            <h2 id="faq-title" className="landing__faq-title reveal stagger-1">{t("landing.faq_title", "Frequently Asked Questions")}</h2>
-          </div>
-          <div className="landing__faq-list">
-            {FAQS.map((faq, i) => (
-              <details className={`landing__faq-item reveal stagger-${i + 1}`} key={faq.key}>
-                <summary className="landing__faq-q">
-                  <span>{t(faq.qId, "")}</span>
-                  <span className="landing__faq-chevron" aria-hidden="true">
-                    <Icon name="chevronDown" />
-                  </span>
-                </summary>
-                <p className="landing__faq-a">{t(faq.aId, "")}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        {/* ── About the Developer ── */}
-        <section className="landing__about" id="about" aria-labelledby="about-title">
-          <div className="landing__about-card">
-            <div className="landing__about-left reveal reveal--slideInLeft">
-              <div className="landing__about-avatar" aria-hidden="true">
-                <span>F</span>
-              </div>
-              <h3 className="landing__about-name">{t("landing.about_name", "Fathoni")}</h3>
-              <p className="landing__about-role">{t("landing.about_role", "Full-Stack Developer & ERP Specialist")}</p>
-            </div>
-            <div className="landing__about-right reveal reveal--slideInRight stagger-2">
-              <h2 id="about-title" className="landing__about-title">{t("landing.about_title", "About the Developer")}</h2>
-              <p className="landing__about-bio">{t("landing.about_bio", "")}</p>
-              <div className="landing__about-skills">
-                {SKILLS.map((skill) => (
-                  <span className="landing__about-chip" key={skill}>{skill}</span>
+        <section id="workflow" aria-labelledby="workflow-title" className="mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <div className="space-y-4">
+              <Badge variant="outline">{t("landing.workflow_eyebrow", "Governance")}</Badge>
+              <h2 id="workflow-title" className="font-heading text-3xl font-bold tracking-tight">
+                {t("landing.workflow_title", "Approval, with a paper trail")}
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                {t(
+                  "landing.workflow_subtitle",
+                  "Every document moves through a clear, multi-level workflow. An AI reviews each order before it can be proposed, and every transition is logged with who, when, and why — so nothing slips through unnoticed.",
+                )}
+              </p>
+              <ul className="space-y-2.5 text-sm">
+                {[
+                  t("landing.workflow_point_1", "Draft → AI review → Proposed → Approved or Rejected"),
+                  t("landing.workflow_point_2", "LLM checks pricing, quantity & discount risk"),
+                  t("landing.workflow_point_3", "Full audit trail on every transition"),
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+                    <span>{item}</span>
+                  </li>
                 ))}
-              </div>
-              <a
-                href={CONTACT.hire}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="landing__about-cta"
-              >
-                <Icon name="handShake" />
-                {t("landing.about_hire_cta", "Hire Me")}
-              </a>
+              </ul>
+            </div>
+            <div>
+              <ApprovalFlow className="w-full drop-shadow-md" />
             </div>
           </div>
         </section>
 
-        {/* ── Contact ── */}
-        <section className="landing__contact" id="contact" aria-labelledby="contact-title">
-          <div className="landing__contact-head">
-            <h2 id="contact-title" className="landing__contact-title reveal stagger-1">{t("landing.contact_title", "Get in Touch")}</h2>
-            <p className="landing__contact-sub reveal stagger-2">{t("landing.contact_subtitle", "Have questions? Reach out.")}</p>
+        <section id="automation" aria-labelledby="automation-title" className="border-y border-border bg-card/40 px-6 py-16 sm:px-8 sm:py-20">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <div className="order-2 lg:order-1">
+              <EmailToOrderFlow className="w-full drop-shadow-md" />
+            </div>
+            <div className="order-1 space-y-4 lg:order-2">
+              <Badge variant="outline">{t("landing.automation_eyebrow", "Automation")}</Badge>
+              <h2 id="automation-title" className="font-heading text-3xl font-bold tracking-tight">
+                {t("landing.automation_title", "Orders that file themselves")}
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                {t(
+                  "landing.automation_subtitle",
+                  "Customers email their orders. An n8n workflow parses the message, creates a draft sales order, and routes it straight into your approval pipeline — zero manual entry.",
+                )}
+              </p>
+              <ul className="space-y-2.5 text-sm">
+                {[
+                  { icon: Mail, text: t("landing.automation_point_1", "Inbound email → webhook trigger") },
+                  { icon: Code2, text: t("landing.automation_point_2", "n8n parses and validates the order") },
+                  { icon: ShoppingCart, text: t("landing.automation_point_3", "Draft sales order, ready to approve") },
+                ].map((item) => (
+                  <li key={item.text} className="flex items-start gap-2">
+                    <item.icon className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <span>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <div className="landing__contact-grid">
-            {CONTACT_ITEMS.map((item, i) => (
-              <a
-                className={`landing__contact-card reveal stagger-${i + 1}`}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                key={item.key}
-              >
-                <span className="landing__card-icon" aria-hidden="true">
-                  <Icon name={item.icon} />
-                </span>
-                <span className="landing__contact-label">{t(item.labelId, "")}</span>
-              </a>
-            ))}
+        </section>
+
+        <section id="ai" aria-labelledby="ai-title" className="mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <div className="space-y-4">
+              <Badge variant="outline">{t("landing.ai_eyebrow", "Built-in AI")}</Badge>
+              <h2 id="ai-title" className="font-heading text-3xl font-bold tracking-tight">
+                {t("landing.ai_title", "An AI assistant that actually does the work")}
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                {t(
+                  "landing.ai_subtitle",
+                  "A streaming LLM engine sits inside the app — grounded in your docs via RAG and wired to real tools, so it answers, navigates, and drafts instead of just chatting.",
+                )}
+              </p>
+              <ul className="space-y-2.5 text-sm">
+                {[
+                  { icon: MessageSquare, text: t("landing.ai_point_1", "Chat with RAG over your knowledge base") },
+                  { icon: FilePlus2, text: t("landing.ai_point_2", "Extract orders from free-text or email") },
+                  { icon: BarChart3, text: t("landing.ai_point_3", "Ask data in plain language → read-only SQL") },
+                  { icon: CheckCircle2, text: t("landing.ai_point_4", "Auto-summarize pages & draft follow-ups") },
+                ].map((item) => (
+                  <li key={item.text} className="flex items-start gap-2">
+                    <item.icon className="mt-0.5 size-4 shrink-0 text-module-ai" />
+                    <span>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <AiWorkflow className="w-full drop-shadow-md" />
+            </div>
+          </div>
+        </section>
+
+        <section id="faq" aria-labelledby="faq-title" className="border-y border-border bg-card/40 px-6 py-16 sm:px-8 sm:py-20">
+          <div className="mx-auto max-w-3xl">
+            <h2 id="faq-title" className="mb-8 text-center font-heading text-3xl font-bold tracking-tight">
+              {t("landing.faq_title", "Frequently Asked Questions")}
+            </h2>
+            <div className="space-y-3">
+              {FAQS.map((faq) => (
+                <details
+                  key={faq.key}
+                  className="group rounded-xl border border-border bg-card px-5 py-4 shadow-sm open:shadow-md"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium">
+                    <span>{t(faq.qId, "")}</span>
+                    <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                  </summary>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    {t(faq.aId, "")}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="about" aria-labelledby="about-title" className="mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-20">
+          <Card className="overflow-hidden border-border/80">
+            <CardContent className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[220px_1fr] lg:gap-10">
+              <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+                <div className="flex size-20 items-center justify-center rounded-2xl bg-primary font-heading text-3xl font-bold text-primary-foreground shadow-lg shadow-primary/25">
+                  F
+                </div>
+                <h3 className="mt-4 font-heading text-xl font-semibold">
+                  {t("landing.about_name", "Fathoni")}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t("landing.about_role", "Full-Stack Developer & ERP Specialist")}
+                </p>
+              </div>
+              <div className="space-y-4">
+                <h2 id="about-title" className="font-heading text-2xl font-bold tracking-tight">
+                  {t("landing.about_title", "About the Developer")}
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {t("landing.about_bio", "")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SKILLS.map((skill) => (
+                    <Badge key={skill} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+                <Button asChild>
+                  <a href={CONTACT.hire} target="_blank" rel="noopener noreferrer">
+                    <Handshake className="size-4" />
+                    {t("landing.about_hire_cta", "Hire Me")}
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="contact" aria-labelledby="contact-title" className="border-t border-border bg-card/40 px-6 py-16 sm:px-8 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mx-auto mb-10 max-w-2xl text-center">
+              <h2 id="contact-title" className="font-heading text-3xl font-bold tracking-tight">
+                {t("landing.contact_title", "Get in Touch")}
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                {t("landing.contact_subtitle", "Have questions? Reach out.")}
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {CONTACT_ITEMS.map((item) => (
+                <a
+                  key={item.key}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center shadow-sm transition-all",
+                    "hover:border-primary/40 hover:shadow-md",
+                  )}
+                >
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-secondary text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                    <item.icon className="size-5" />
+                  </span>
+                  <span className="text-sm font-medium">{t(item.labelId, "")}</span>
+                </a>
+              ))}
+            </div>
           </div>
         </section>
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="landing__footer">
-        <div className="landing__footer-inner">
-          <div className="landing__footer-links">
+      <footer className="border-t border-border bg-card px-6 py-10 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
             {FOOTER_LINKS.map((link) =>
               link.isRoute ? (
                 <a
                   key={link.key}
-                  className="landing__footer-link"
+                  className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-primary"
                   href={link.href}
-                  onClick={(e) => { e.preventDefault(); navigate(link.href); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(link.href);
+                  }}
                 >
                   {t(link.labelId, "")}
                 </a>
               ) : (
                 <a
                   key={link.key}
-                  className="landing__footer-link"
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
                   href={link.href}
                 >
                   {t(link.labelId, "")}
@@ -429,9 +514,12 @@ export const LandingPage = () => {
               ),
             )}
           </div>
-          <div className="landing__footer-info">
-            <p className="landing__footer-tagline">{t("landing.footer_tagline", "ERP Sales — the operating system for your sales team.")}</p>
-            <p className="landing__footer-credit">
+          <div className="space-y-1 text-center text-sm text-muted-foreground sm:text-left">
+            <p className="flex items-center justify-center gap-1.5 sm:justify-start">
+              <Sparkles className="size-3.5 text-primary" />
+              {t("landing.footer_tagline", "ERP Sales — the operating system for your sales team.")}
+            </p>
+            <p>
               {t("landing.footer_built_by", "Built by Fathoni")}
               {" · "}
               {t("landing.footer_copyright", "© 2026 ERP Sales. All rights reserved.")}
