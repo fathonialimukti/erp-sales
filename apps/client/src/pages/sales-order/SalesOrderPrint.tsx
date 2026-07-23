@@ -1,4 +1,5 @@
 import { useIntl } from "react-intl";
+import "./SalesOrder.css";
 
 /**
  * SalesOrderPrint — print-friendly sales order document.

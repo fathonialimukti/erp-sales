@@ -1,21 +1,34 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useAtomValue, useSetAtom } from "jotai";
 import type { inferProcedureInput } from "@trpc/server";
+import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2 } from "lucide-react";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom, aiFormFillAtom } from "../../lib/atoms";
-import { ButtonGroup } from "../../components/ButtonGroup";
 import { DatePicker } from "../../components/DatePicker";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SelectSearch } from "../../ui/SelectSearch";
-import { SOIcon } from "./SalesOrderIcons";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
-import "./SalesOrderFormPage.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /* ----------------------------------------------------------------
  * Types
@@ -144,111 +157,6 @@ const formatCurrency = (v: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(v);
 
 /* ----------------------------------------------------------------
- * Icons (inline SVG — no external icon font)
- * ---------------------------------------------------------------- */
-
-const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d={d} />
-  </svg>
-);
-
-const IconCaret = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
-
-const IconSearch = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <circle cx="11" cy="11" r="7" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-
-const IconCheck = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const IconCalendar = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="3" y="4" width="18" height="18" rx="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-
-const IconCheckCircle = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="9 12 11 14 15 10" />
-  </svg>
-);
-
-const IconAlertCircle = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="12" />
-    <line x1="12" y1="16" x2="12.01" y2="16" />
-  </svg>
-);
-
-const IconPlus = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
-const IconTrash = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <line x1="3" y1="6" x2="21" y2="6" />
-    <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-    <path d="M5 6v14a2 2 0 002 2h10a2 2 0 002-2V6" />
-    <line x1="10" y1="11" x2="10" y2="17" />
-    <line x1="14" y1="11" x2="14" y2="17" />
-  </svg>
-);
-
-const IconUser = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
-const IconBuilding = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="4" y="2" width="16" height="20" rx="2" />
-    <line x1="9" y1="6" x2="9" y2="6.01" />
-    <line x1="15" y1="6" x2="15" y2="6.01" />
-    <line x1="9" y1="10" x2="9" y2="10.01" />
-    <line x1="15" y1="10" x2="15" y2="10.01" />
-    <line x1="9" y1="14" x2="9" y2="14.01" />
-    <line x1="15" y1="14" x2="15" y2="14.01" />
-    <path d="M10 22v-4h4v4" />
-  </svg>
-);
-
-const IconBox = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-    <line x1="12" y1="22.08" x2="12" y2="12" />
-  </svg>
-);
-
-const IconArrowLeft = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <line x1="19" y1="12" x2="5" y2="12" />
-    <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-
-/* ----------------------------------------------------------------
  * Page
  * ---------------------------------------------------------------- */
 
@@ -274,7 +182,6 @@ export const SalesOrderFormPage = () => {
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode>("DRAFT");
   const [proposeMessage, setProposeMessage] = useState("");
   const [resultMessage, setResultMessage] = useState("");
-  const [formValid, setFormValid] = useState(true);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -291,7 +198,7 @@ export const SalesOrderFormPage = () => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
         if (modalStage === "idle") {
-          const formEl = document.querySelector(".so-form__shell") as HTMLFormElement | null;
+          const formEl = document.querySelector("[data-so-form]") as HTMLFormElement | null;
           formEl?.requestSubmit();
         }
       }
@@ -592,36 +499,28 @@ export const SalesOrderFormPage = () => {
 
   if (isEdit && isLoading) {
     return (
-      <div className="so-form">
-        <div className="so-loading">
-          <span className="so-spinner so-spinner--lg" />
-          <span>Loading order…</span>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "sales-order-form", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-48 w-full" />
+      </section>
     );
   }
 
   if (isEdit && !data) {
     return (
-      <div className="so-form">
-        <div className="so-shell" style={{ maxWidth: 480, margin: "60px auto" }}>
-          <div className="so-card">
-            <div className="so-card__body">
-              <p style={{ color: "var(--so-danger)", margin: 0 }}>
-                {intl.formatMessage({ id: "sales_order.form.not_found", defaultMessage: "Order not found." })}
-              </p>
-              <button
-                className="so-btn so-btn--ghost"
-                style={{ marginTop: 12 }}
-                onClick={() => navigate("/sales-order")}
-              >
-                <IconArrowLeft />
-                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "sales-order-form", notFound: true })}
+      >
+        <PageHeader
+          module="order"
+          title={intl.formatMessage({ id: "sales_order.form.not_found", defaultMessage: "Order not found." })}
+          onBack={() => navigate("/sales-order")}
+        />
+      </section>
     );
   }
 
@@ -662,8 +561,8 @@ export const SalesOrderFormPage = () => {
   }, [formValues.expectedDeliveryDate, grandTotal, itemsVal, skuList]);
 
   return (
-    <div
-      className="so-form"
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
         section: "sales-order-form",
         mode: isEdit ? "edit" : "create",
@@ -672,102 +571,115 @@ export const SalesOrderFormPage = () => {
       })}
     >
       {/* AI Draft from Description */}
-      {!isEdit && (
-        <div className="so-card" style={{ marginBottom: "1.5rem" }}>
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><SOIcon name="sparkle" size={16} /></span>
+      {!isEdit ? (
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-heading text-base">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-ai)_14%,transparent)] text-[var(--module-ai)]">
+                <Sparkles className="size-4" aria-hidden />
+              </span>
               {intl.formatMessage({ id: "sales_order.form.ai_draft_label", defaultMessage: "Draft from description" })}
-            </h2>
-            <p className="so-card__hint">AI will extract order details and pre-fill the form below</p>
-          </div>
-          <div className="so-card__body">
-            <textarea
-              className="so-field__input"
+            </CardTitle>
+            <CardDescription>AI will extract order details and pre-fill the form below</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Textarea
               rows={4}
               value={draftText}
               onChange={(e) => setDraftText(e.target.value)}
               placeholder={intl.formatMessage({ id: "sales_order.form.ai_draft_placeholder", defaultMessage: "Paste or describe the order..." })}
               disabled={draftLoading}
-              style={{ width: "100%", resize: "vertical" }}
             />
-            {draftError && (
-              <p style={{ color: "#e53e3e", fontSize: "0.875rem", marginTop: "0.5rem" }}>
+            {draftError ? (
+              <p className="text-sm text-destructive">
                 {intl.formatMessage({ id: "sales_order.form.ai_draft_error", defaultMessage: "Could not extract order data" })}: {draftError}
               </p>
-            )}
-            <button
-              type="button"
-              className="so-btn so-btn--primary"
-              onClick={handleAiDraft}
-              disabled={!draftText.trim() || draftLoading}
-              style={{ marginTop: "0.75rem" }}
-            >
+            ) : null}
+            <Button type="button" onClick={handleAiDraft} disabled={!draftText.trim() || draftLoading}>
+              {draftLoading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
               {draftLoading ? "Processing..." : intl.formatMessage({ id: "sales_order.form.ai_draft_button", defaultMessage: "Auto-fill form" })}
-            </button>
-          </div>
-        </div>
-      )}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
       <form
-        className="so-form__shell"
+        data-so-form
+        className="flex flex-col gap-6"
         onSubmit={(e) => {
           e.preventDefault();
           form.handleSubmit();
         }}
       >
-        {/* Header */}
-        <div className="so-form__header">
-          <div>
-            <h1 className="so-form__title">
-              {isEdit
-                ? intl.formatMessage({ id: "sales_order.form.title_edit", defaultMessage: "Edit sales order" })
-                : intl.formatMessage({ id: "sales_order.form.title_create", defaultMessage: "Create sales order" })}
-            </h1>
-            <p className="so-form__subtitle">
-              {isEdit
-                ? "Update line items, totals, and customer information"
-                : "Create a new sales order with line items and customer details"}
-            </p>
-          </div>
-          <button type="button" className="so-form__back" onClick={() => navigate(isEdit && id ? `/sales-order/${id}` : "/sales-order")}>
-            <IconArrowLeft />
-            Back
-          </button>
-        </div>
+        <PageHeader
+          module="order"
+          title={
+            isEdit
+              ? intl.formatMessage({ id: "sales_order.form.title_edit", defaultMessage: "Edit sales order" })
+              : intl.formatMessage({ id: "sales_order.form.title_create", defaultMessage: "Create sales order" })
+          }
+          description={
+            isEdit
+              ? "Update line items, totals, and customer information"
+              : "Create a new sales order with line items and customer details"
+          }
+          onBack={() => navigate(isEdit && id ? `/sales-order/${id}` : "/sales-order")}
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPendingSaveMode("DRAFT");
+                  setModalStage("draft-confirm");
+                }}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                <Save className="size-4" />
+                {intl.formatMessage({ id: "sales_order.form.save_draft", defaultMessage: "Save as draft" })}
+              </Button>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                <Send className="size-4" />
+                {intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" })}
+              </Button>
+            </div>
+          }
+        />
 
         {/* Validation Warnings */}
-        {validationWarnings.length > 0 && (
-          <div className="so-validation-warnings">
-            <div className="so-validation-warnings__header">
-              <SOIcon name="alert" size={16} />
-              <span>Validation Warnings</span>
+        {validationWarnings.length > 0 ? (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="size-4" />
+              Validation Warnings
             </div>
-            <ul className="so-validation-warnings__list">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-300">
               {validationWarnings.map((warning, idx) => (
                 <li key={idx}>{warning}</li>
               ))}
             </ul>
           </div>
-        )}
+        ) : null}
 
         {/* Outlet & Location */}
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><IconUser /></span>
+        <Card className="shadow-sm">
+          <div className="flex items-center justify-between gap-3 px-6 pt-6">
+            <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
               Outlet &amp; Location
             </h2>
-            <p className="so-card__hint">Select outlet to auto-fill customer and area</p>
+            <p className="text-sm text-muted-foreground">Select outlet to auto-fill customer and area</p>
           </div>
-          <div className="so-card__body">
-            <div className="so-section">
+          <div className="space-y-4 px-6 pb-6 pt-4">
+            <div className="grid gap-5 sm:grid-cols-2">
               {/* Document Number */}
               <form.Field name="documentNumber">
                 {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">Document Number</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium">Document Number</label>
                     <input
-                      className="so-field__input"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
                       type="text"
                       value={f.state.value ?? ""}
                       onChange={(e) => f.handleChange(e.target.value)}
@@ -828,31 +740,30 @@ export const SalesOrderFormPage = () => {
               </form.Field>
             </div>
           </div>
-        </section>
+        </Card>
 
         {/* Items */}
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><IconBox /></span>
+        <Card className="shadow-sm">
+          <div className="flex items-center justify-between gap-3 px-6 pt-6">
+            <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
               Line items
             </h2>
-            <button type="button" className="so-btn so-btn--outline so-btn--sm" onClick={handleAddItem}>
-              <IconPlus />
+            <button type="button" className="inline-flex h-8 items-center gap-1 rounded-md border border-input px-3 text-sm hover:bg-muted" onClick={handleAddItem}>
+              <Plus className="size-4" />
               Add item
             </button>
           </div>
-          <div className="so-card__body">
-            <div className="so-items">
+          <div className="space-y-4 px-6 pb-6 pt-4">
+            <div className="space-y-4">
               <form.Subscribe
                 selector={(s) => (s.values.items ?? []) as LineItem[]}
               >
                 {(items) => (
                   <>
                   {items.map((item, idx) => (
-                <div className="so-item" key={idx}>
+                <div className="grid gap-3 rounded-lg border p-3 lg:grid-cols-[1.4fr_0.6fr_0.8fr_0.6fr_0.6fr_0.9fr_auto]" key={idx}>
                   <div>
-                    {idx === 0 && <div className="so-item__label">Product</div>}
+                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Product</div>}
                     <SelectSearch
                       value={item.skuId}
                       onChange={(v) => handleItemChange(idx, "skuId", Array.isArray(v) ? v[0] ?? "" : v)}
@@ -867,9 +778,9 @@ export const SalesOrderFormPage = () => {
                     />
                   </div>
                   <div>
-                    {idx === 0 && <div className="so-item__label">Qty</div>}
+                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Qty</div>}
                     <input
-                      className="so-field__input"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
                       type="number"
                       min={1}
                       value={String(item.quantity)}
@@ -877,9 +788,9 @@ export const SalesOrderFormPage = () => {
                     />
                   </div>
                   <div>
-                    {idx === 0 && <div className="so-item__label">Unit price</div>}
+                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Unit price</div>}
                     <input
-                      className="so-field__input"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
                       type="number"
                       min={0}
                       value={String(item.unitPrice)}
@@ -887,9 +798,9 @@ export const SalesOrderFormPage = () => {
                     />
                   </div>
                   <div>
-                    {idx === 0 && <div className="so-item__label">Disc %</div>}
+                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Disc %</div>}
                     <input
-                      className={`so-field__input ${autoDiscounts[idx] ? "so-field__input--auto" : ""}`}
+                      className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs ${autoDiscounts[idx] ? "bg-emerald-500/5" : ""}`}
                       type="number"
                       min={0}
                       value={String(item.discountPercent ?? "")}
@@ -907,16 +818,16 @@ export const SalesOrderFormPage = () => {
                       }
                     />
                     {autoDiscounts[idx] && (
-                      <span className="so-item__auto-badge" title={`${autoDiscounts[idx].programName} - ${autoDiscounts[idx].discountPercent}%`}>
-                        <SOIcon name="check" size={12} />
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-600" title={`${autoDiscounts[idx].programName} - ${autoDiscounts[idx].discountPercent}%`}>
+                        <span>✓</span>
                         {intl.formatMessage({ id: "sales_order.form.discount_auto_filled_short", defaultMessage: "Auto" })}
                       </span>
                     )}
                   </div>
                   <div>
-                    {idx === 0 && <div className="so-item__label">Tax %</div>}
+                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Tax %</div>}
                     <input
-                      className="so-field__input"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
                       type="number"
                       min={0}
                       value={String(item.taxPercent ?? "")}
@@ -926,31 +837,16 @@ export const SalesOrderFormPage = () => {
                     />
                   </div>
                   <div>
-                    {idx === 0 && <div className="so-item__label">Line total</div>}
-                    <div
-                      style={{
-                        height: 40,
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "0 12px",
-                        fontWeight: 600,
-                        fontFamily: "var(--so-mono)",
-                        color: "var(--so-fg)",
-                        background: "var(--so-surface)",
-                        border: "1px solid var(--so-border)",
-                        borderRadius: "var(--so-radius-sm)",
-                      }}
-                    >
-                      {formatCurrency(item.lineTotal)}
-                    </div>
+                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Line total</div>}
+                    <div className="flex h-9 items-center rounded-md border border-input bg-muted/30 px-3 text-sm font-semibold tabular-nums">{formatCurrency(item.lineTotal)}</div>
                   </div>
                   <button
                     type="button"
-                    className="so-item__remove"
+                    className="inline-flex size-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
                     aria-label="Remove item"
                     onClick={() => handleRemoveItem(idx)}
                   >
-                    <IconTrash />
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               ))}
@@ -959,40 +855,39 @@ export const SalesOrderFormPage = () => {
               </form.Subscribe>
             </div>
 
-            <div className="so-totals">
+            <div className="flex justify-end">
               <form.Subscribe
                 selector={(s) => (s.values.items ?? []) as LineItem[]}
               >
                 {(items) => {
                   const totals = recalcTotals(items);
                   return (
-                    <div className="so-totals__card">
-                      <p className="so-totals__label">Grand total</p>
-                      <p className="so-totals__value">{formatCurrency(totals.grandTotal)}</p>
+                    <div className="rounded-lg border bg-muted/30 px-4 py-3 text-right">
+                      <p className="text-xs text-muted-foreground">Grand total</p>
+                      <p className="text-lg font-semibold tabular-nums text-[var(--module-order)]">{formatCurrency(totals.grandTotal)}</p>
                     </div>
                   );
                 }}
               </form.Subscribe>
             </div>
           </div>
-        </section>
+        </Card>
 
         {/* Additional info */}
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><IconBuilding /></span>
+        <Card className="shadow-sm">
+          <div className="flex items-center justify-between gap-3 px-6 pt-6">
+            <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
               Additional information
             </h2>
           </div>
-          <div className="so-card__body">
-            <div className="so-section so-section--2">
+          <div className="space-y-4 px-6 pb-6 pt-4">
+            <div className="grid gap-5 sm:grid-cols-2">
               <form.Field name="paymentTerms">
                 {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">Payment terms</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium">Payment terms</label>
                     <input
-                      className="so-field__input"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
                       placeholder="e.g. NET 30"
                       value={f.state.value}
                       onChange={(e) => f.handleChange(e.target.value)}
@@ -1002,10 +897,10 @@ export const SalesOrderFormPage = () => {
               </form.Field>
               <form.Field name="notes">
                 {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">Notes</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium">Notes</label>
                     <textarea
-                      className="so-field__input so-field__textarea"
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
                       placeholder="Add order notes…"
                       value={f.state.value}
                       onChange={(e) => f.handleChange(e.target.value)}
@@ -1015,222 +910,126 @@ export const SalesOrderFormPage = () => {
               </form.Field>
             </div>
           </div>
-        </section>
+        </Card>
 
-        {/* Actions */}
-        <div className="so-actions">
-          <ButtonGroup
-            items={[
-              {
-                key: "draft",
-                label: intl.formatMessage({ id: "sales_order.form.save_draft", defaultMessage: "Save as draft" }),
-                icon: <SOIcon name="check" size={14} />,
-                onClick: () => {
-                  setPendingSaveMode("DRAFT");
-                  setModalStage("draft-confirm");
-                },
-                disabled: createMutation.isPending || updateMutation.isPending,
-                isLoading: createMutation.isPending || updateMutation.isPending,
-                variant: "primary",
-              },
-              {
-                key: "submit",
-                label: intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" }),
-                icon: <SOIcon name="propose" size={14} />,
-                onClick: () => {
-                  const form = document.querySelector(".so-form__shell") as HTMLFormElement | null;
-                  form?.requestSubmit();
-                },
-                disabled: createMutation.isPending || updateMutation.isPending,
-                isLoading: createMutation.isPending || updateMutation.isPending,
-                variant: "warning",
-              },
-            ]}
-          />
-        </div>
       </form>
 
-      {/* Result modal — rendered into a portal at the document root so
-          position:fixed anchors to the viewport regardless of any
-          ancestor's overflow or transform (the form lives inside a
-          scrollable container). */}
-      {modalStage !== "idle" && createPortal(
-        <div
-          className="so-modal__backdrop"
-          onClick={() => modalStage !== "loading" && modalStage !== "propose-confirm" && modalStage !== "draft-confirm" && setModalStage("idle")}
-        >
-          <div
-            className={`so-modal ${modalStage === "propose-confirm" || modalStage === "draft-confirm" ? "so-modal--choose" : ""}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {modalStage === "draft-confirm" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>
-                    {intl.formatMessage({
-                      id: "sales_order.form.draft_title",
-                      defaultMessage: "Save as draft",
-                    })}
-                  </h3>
-                  <button
-                    className="so-btn so-btn--ghost so-btn--sm"
-                    onClick={() => setModalStage("idle")}
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <IconCheckCircle />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage({
-                      id: "sales_order.form.draft_confirm",
-                      defaultMessage: "Save this order as draft?",
-                    })}
-                  </h3>
-                  <p className="so-modal__msg so-modal__msg--lead">
-                    {intl.formatMessage({
-                      id: "sales_order.form.draft_body",
-                      defaultMessage:
-                        "You can continue editing this order later. It will not be submitted for approval.",
-                    })}
-                  </p>
-                </div>
-                <div className="so-modal__footer">
-                  <button
-                    className="so-btn so-btn--ghost"
-                    onClick={() => setModalStage("idle")}
-                  >
-                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-                  </button>
-                  <button
-                    className="so-btn so-btn--primary"
-                    onClick={() => {
-                      const values = form.state.values as FormValues;
-                      runSave(values, "DRAFT");
-                    }}
-                  >
-                    {intl.formatMessage({ id: "sales_order.form.save_draft", defaultMessage: "Save as draft" })}
-                  </button>
-                </div>
-              </>
-            )}
-            {modalStage === "propose-confirm" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>
-                    {intl.formatMessage({
-                      id: "sales_order.form.propose_title",
-                      defaultMessage: "Propose order",
-                    })}
-                  </h3>
-                  <button
-                    className="so-btn so-btn--ghost so-btn--sm"
-                    onClick={() => setModalStage("idle")}
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <p className="so-modal__msg so-modal__msg--lead">
-                    {intl.formatMessage({
-                      id: "sales_order.form.propose_body",
-                      defaultMessage:
-                        "This will submit the order for AI validation. Add an optional message for the approval history.",
-                    })}
-                  </p>
-                  <div style={{ width: "100%", marginTop: "1rem" }}>
-                    <label className="so-field__label" htmlFor="propose-message">
-                      {intl.formatMessage({
-                        id: "sales_order.form.propose_message_label",
-                        defaultMessage: "Message (optional)",
-                      })}
-                    </label>
-                    <textarea
-                      id="propose-message"
-                      className="so-field__input so-field__textarea"
-                      placeholder={intl.formatMessage({
-                        id: "sales_order.form.propose_message_placeholder",
-                        defaultMessage: "Add a note about this submission…",
-                      })}
-                      value={proposeMessage}
-                      onChange={(e) => setProposeMessage(e.target.value)}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-                <div className="so-modal__footer">
-                  <button
-                    className="so-btn so-btn--ghost"
-                    onClick={() => setModalStage("idle")}
-                  >
-                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-                  </button>
-                  <button
-                    className="so-btn so-btn--primary"
-                    onClick={() => {
-                      const values = form.state.values as FormValues;
-                      runSave(values, "PROPOSED");
-                    }}
-                  >
-                    {intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" })}
-                  </button>
-                </div>
-              </>
-            )}
-            {modalStage === "loading" && (
-              <div className="so-modal__body">
-                <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
-                  <span className="so-spinner so-spinner--lg" />
-                </div>
-                <p className="so-modal__msg">Saving your order…</p>
-              </div>
-            )}
-            {modalStage === "success" && (
-              <>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <IconCheckCircle />
-                  </div>
-                  <h3 className="so-modal__title">Order saved</h3>
-                  <p className="so-modal__msg">{resultMessage}</p>
-                </div>
-                <div className="so-modal__footer">
-                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
-                    Close
-                  </button>
-                </div>
-              </>
-            )}
-            {modalStage === "error" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>Save failed</h3>
-                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")}>
-                    ✕
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--error">
-                    <IconAlertCircle />
-                  </div>
-                  <h3 className="so-modal__title">Could not save</h3>
-                  <p className="so-modal__msg">{resultMessage}</p>
-                </div>
-                <div className="so-modal__footer">
-                  <button className="so-btn so-btn--primary" onClick={() => setModalStage("idle")}>
-                    Close
-                  </button>
-                </div>
-              </>
-            )}
+      
+      <ConfirmDialog
+        open={modalStage === "draft-confirm"}
+        onOpenChange={(open) => {
+          if (!open) setModalStage("idle");
+        }}
+        title={intl.formatMessage({
+          id: "sales_order.form.draft_title",
+          defaultMessage: "Save as draft",
+        })}
+        description={intl.formatMessage({
+          id: "sales_order.form.draft_body",
+          defaultMessage:
+            "You can continue editing this order later. It will not be submitted for approval.",
+        })}
+        confirmLabel={intl.formatMessage({
+          id: "sales_order.form.save_draft",
+          defaultMessage: "Save as draft",
+        })}
+        onConfirm={() => {
+          const values = form.state.values as FormValues;
+          runSave(values, "DRAFT");
+        }}
+      />
+
+      <Dialog
+        open={modalStage === "propose-confirm"}
+        onOpenChange={(open) => {
+          if (!open) setModalStage("idle");
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {intl.formatMessage({
+                id: "sales_order.form.propose_title",
+                defaultMessage: "Propose order",
+              })}
+            </DialogTitle>
+            <DialogDescription>
+              {intl.formatMessage({
+                id: "sales_order.form.propose_body",
+                defaultMessage:
+                  "This will submit the order for AI validation. Add an optional message for the approval history.",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="propose-message">
+              {intl.formatMessage({
+                id: "sales_order.form.propose_message_label",
+                defaultMessage: "Message (optional)",
+              })}
+            </Label>
+            <Textarea
+              id="propose-message"
+              value={proposeMessage}
+              onChange={(e) => setProposeMessage(e.target.value)}
+              placeholder={intl.formatMessage({
+                id: "sales_order.form.propose_message_placeholder",
+                defaultMessage: "Add a note about this submission…",
+              })}
+              rows={4}
+            />
           </div>
-        </div>,
-        document.body,
-      )}
-    </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setModalStage("idle")}>
+              {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const values = form.state.values as FormValues;
+                runSave(values, "PROPOSED");
+              }}
+            >
+              {intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
+        onOpenChange={(open) => {
+          if (!open && modalStage !== "loading") setModalStage("idle");
+        }}
+      >
+        <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
+          {modalStage === "loading" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <DialogDescription>Saving your order…</DialogDescription>
+            </div>
+          ) : null}
+          {modalStage === "success" ? (
+            <DialogHeader>
+              <DialogTitle>Order saved</DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+          ) : null}
+          {modalStage === "error" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Save failed</DialogTitle>
+                <DialogDescription>{resultMessage}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" onClick={() => setModalStage("idle")}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 };

@@ -1,21 +1,59 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Copy,
+  Loader2,
+  Mail,
+  Package,
+  Pencil,
+  Printer,
+  Send,
+  StickyNote,
+  ThumbsDown,
+  ThumbsUp,
+  Trash2,
+  UserRound,
+  XCircle,
+} from "lucide-react";
+
 import { ApprovalTimeline } from "../../components/ApprovalTimeline";
-import { ButtonGroup } from "../../components/ButtonGroup";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { StatusChip } from "../../components/StatusChip";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { trpcClient } from "../../lib/trpc";
-import { Spinner } from "../../ui/Spinner";
-import { Textarea } from "../../ui/Textarea";
-import { FormField } from "../../ui/FormField";
 import { useToast } from "../../ui/useToast";
-import { SalesOrderPrint, SalesOrderPdfPreview, type SalesOrderPrintRecord } from "./SalesOrderPrint";
-import { SOIcon } from "./SalesOrderIcons";
-
-import "./SalesOrder.css";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import {
+  SalesOrderPrint,
+  SalesOrderPdfPreview,
+  type SalesOrderPrintRecord,
+} from "./SalesOrderPrint";
 
 interface SalesOrderDetail {
   id: string;
@@ -38,6 +76,7 @@ interface SalesOrderDetail {
   expectedDeliveryDate: string | null;
   source: string;
   emailConversationId?: string | null;
+  aiValidationStatus?: string | null;
   items: {
     id: string;
     sku: { id: string; name: string; code: string | null; baseUnit: string };
@@ -51,19 +90,19 @@ interface SalesOrderDetail {
   createdAt: string;
 }
 
-const STATUS_META: Record<
-  string,
-  { label: string; tint: "neutral" | "info" | "success" | "warning" | "danger"; tintClass: string }
-> = {
-  DRAFT:       { label: "Draft",              tint: "neutral", tintClass: "so-status--neutral" },
-  VALIDATING:  { label: "AI Processing",      tint: "warning", tintClass: "so-status--warning" },
-  PROPOSED:    { label: "Pending Approval",   tint: "info",    tintClass: "so-status--info" },
-  APPROVED:    { label: "Approved",           tint: "success", tintClass: "so-status--success" },
-  REJECTED:    { label: "Rejected",           tint: "danger",  tintClass: "so-status--danger" },
-};
-
 const formatCurrency = (v: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(v);
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(v);
+
+const Field = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
+  <div className="space-y-1">
+    <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
+    <dd className="text-sm font-medium text-foreground">{value ?? "—"}</dd>
+  </div>
+);
 
 export const SalesOrderDetailPage = () => {
   const { id } = useParams();
@@ -110,7 +149,12 @@ export const SalesOrderDetailPage = () => {
         setProposeModalOpen(false);
         setProposeStage("confirm");
         setProposeMessage("");
-        toast.success(intl.formatMessage({ id: "sales_order.detail.proposed_toast", defaultMessage: "Order submitted for AI validation" }));
+        toast.success(
+          intl.formatMessage({
+            id: "sales_order.detail.proposed_toast",
+            defaultMessage: "Order submitted for AI validation",
+          }),
+        );
       }, 1000);
     },
     onError: (e) => {
@@ -123,7 +167,12 @@ export const SalesOrderDetailPage = () => {
     mutationFn: (soid: string) => trpcClient.salesOrder.retryValidation.mutate({ id: soid }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["salesOrderDetail", id] });
-      toast.success(intl.formatMessage({ id: "sales_order.detail.retry_validation_toast", defaultMessage: "Retrying AI validation" }));
+      toast.success(
+        intl.formatMessage({
+          id: "sales_order.detail.retry_validation_toast",
+          defaultMessage: "Retrying AI validation",
+        }),
+      );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to retry validation"),
   });
@@ -134,14 +183,22 @@ export const SalesOrderDetailPage = () => {
       queryClient.invalidateQueries({ queryKey: ["salesOrderDetail", id] });
       queryClient.invalidateQueries({ queryKey: ["salesOrderList"] });
       setValidateModalOpen(false);
-      toast.success(intl.formatMessage({ id: "sales_order.detail.validated_toast", defaultMessage: "Order validated successfully" }));
+      toast.success(
+        intl.formatMessage({
+          id: "sales_order.detail.validated_toast",
+          defaultMessage: "Order validated successfully",
+        }),
+      );
     },
     onError: (e) => {
       setValidateModalOpen(false);
       toast.error(
         e instanceof Error
           ? `${intl.formatMessage({ id: "sales_order.detail.validate_failed", defaultMessage: "Validation failed" })}: ${e.message}`
-          : intl.formatMessage({ id: "sales_order.detail.validate_failed", defaultMessage: "Validation failed" }),
+          : intl.formatMessage({
+              id: "sales_order.detail.validate_failed",
+              defaultMessage: "Validation failed",
+            }),
       );
     },
   });
@@ -155,7 +212,12 @@ export const SalesOrderDetailPage = () => {
       setApproveModalOpen(false);
       setDecisionMessage("");
       setModalError(null);
-      toast.success(intl.formatMessage({ id: "sales_order.detail.approved_toast", defaultMessage: "Order approved" }));
+      toast.success(
+        intl.formatMessage({
+          id: "sales_order.detail.approved_toast",
+          defaultMessage: "Order approved",
+        }),
+      );
     },
     onError: (e) => {
       setModalError(e instanceof Error ? e.message : "Failed to approve");
@@ -171,7 +233,12 @@ export const SalesOrderDetailPage = () => {
       setRejectModalOpen(false);
       setDecisionMessage("");
       setModalError(null);
-      toast.success(intl.formatMessage({ id: "sales_order.detail.rejected_toast", defaultMessage: "Order rejected" }));
+      toast.success(
+        intl.formatMessage({
+          id: "sales_order.detail.rejected_toast",
+          defaultMessage: "Order rejected",
+        }),
+      );
     },
     onError: (e) => {
       setModalError(e instanceof Error ? e.message : "Failed to reject");
@@ -185,7 +252,12 @@ export const SalesOrderDetailPage = () => {
       await trpcClient.salesOrder.delete.mutate({ id: record.id });
       await queryClient.invalidateQueries({ queryKey: ["salesOrderList"] });
       setDeleteModalOpen(false);
-      toast.success(intl.formatMessage({ id: "sales_order.detail.deleted_toast", defaultMessage: "Order deleted" }));
+      toast.success(
+        intl.formatMessage({
+          id: "sales_order.detail.deleted_toast",
+          defaultMessage: "Order deleted",
+        }),
+      );
       navigate("/sales-order");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
@@ -196,45 +268,42 @@ export const SalesOrderDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="so-page">
-        <div className="so-loading">
-          <Spinner size="lg" />
-          <span>{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "sales-order-detail", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </section>
     );
   }
 
   if (!record) {
     return (
-      <div className="so-page">
-        <div className="so-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
-          <div className="so-card">
-            <div className="so-card__body">
-              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
-                {intl.formatMessage({ id: "sales_order.detail.not_found", defaultMessage: "Order not found." })}
-              </p>
-              <button
-                type="button"
-                className="so-btn so-btn--ghost"
-                style={{ marginTop: 12 }}
-                onClick={() => navigate("/sales-order")}
-              >
-                <SOIcon name="back" size={14} />
-                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "sales-order-detail", notFound: true })}
+      >
+        <PageHeader
+          module="order"
+          title={intl.formatMessage({
+            id: "sales_order.detail.not_found",
+            defaultMessage: "Order not found.",
+          })}
+          onBack={() => navigate("/sales-order")}
+        />
+      </section>
     );
   }
 
-  const meta = STATUS_META[record.approvalStatus] ?? STATUS_META.DRAFT;
+  const editable = record.approvalStatus === "DRAFT" || record.approvalStatus === "REJECTED";
+  const statusOrder = ["DRAFT", "VALIDATING", "PROPOSED", "APPROVED", "REJECTED"];
+  const currentIdx = statusOrder.indexOf(record.approvalStatus);
 
   return (
     <section
-      className="so-page"
+      className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
         section: "sales-order-detail",
         id: record.id,
@@ -246,739 +315,776 @@ export const SalesOrderDetailPage = () => {
         emailConversationId: record.emailConversationId ?? null,
       })}
     >
-      {/* iOS hero — toolbar row + title row */}
-      <header className="so-detail-hero">
-        <div className="so-detail-hero__top">
-          <ButtonGroup
-            size="md"
-            items={[
-              {
-                key: "back",
-                label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }),
-                icon: <SOIcon name="back" size={14} />,
-                to: "/sales-order",
-              },
-            ]}
-          />
-          <ButtonGroup
-            size="md"
-            items={[
-              {
-                key: "print",
-                label: intl.formatMessage({ id: "sales_order.action.print_label", defaultMessage: "Print" }),
-                icon: <SOIcon name="print" size={14} />,
-                onClick: () => setPdfPreviewId(record.id),
-              },
-              ...(canUpdate && (record.approvalStatus === "DRAFT" || record.approvalStatus === "REJECTED")
-                ? [
-                    {
-                      key: "edit",
-                      label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }),
-                      icon: <SOIcon name="edit" size={14} />,
-                      to: `/sales-order/${record.id}/edit`,
-                    },
-                    {
-                      key: "duplicate",
-                      label: intl.formatMessage({ id: "sales_order.action.duplicate", defaultMessage: "Duplicate" }),
-                      icon: <SOIcon name="duplicate" size={14} />,
-                      onClick: () => {
-                        // Navigate to create page with order data in state
-                        navigate("/sales-order/create", {
-                          state: {
-                            duplicateFrom: {
-                              outletId: record.outlet.id,
-                              items: record.items.map(item => ({
-                                skuId: item.sku.id,
-                                quantity: item.quantity,
-                                unitPrice: item.unitPrice,
-                                discountPercent: item.discountPercent,
-                                taxPercent: item.taxPercent,
-                                notes: item.notes,
-                              })),
-                              paymentTerms: record.paymentTerms,
-                              notes: record.notes,
-                            },
-                          },
-                        });
-                        toast.success(
-                          intl.formatMessage({
-                            id: "sales_order.detail.duplicated_toast",
-                            defaultMessage: "Order duplicated. Edit and save as new.",
-                          }),
-                        );
+      <PageHeader
+        module="order"
+        eyebrow={intl.formatMessage({ id: "nav.sales_order", defaultMessage: "Sales Order" })}
+        title={record.documentNumber ?? `SO #${record.id.slice(0, 8).toUpperCase()}`}
+        description={record.customer?.name ?? record.outlet?.name ?? undefined}
+        onBack={() => navigate("/sales-order")}
+        actions={
+          <>
+            <Button type="button" variant="outline" onClick={() => setPdfPreviewId(record.id)}>
+              <Printer className="size-4" />
+              {intl.formatMessage({
+                id: "sales_order.action.print_label",
+                defaultMessage: "Print",
+              })}
+            </Button>
+            {canUpdate && editable ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(`/sales-order/${record.id}/edit`)}
+                >
+                  <Pencil className="size-4" />
+                  {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    navigate("/sales-order/create", {
+                      state: {
+                        duplicateFrom: {
+                          outletId: record.outlet.id,
+                          items: record.items.map((item) => ({
+                            skuId: item.sku.id,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice,
+                            discountPercent: item.discountPercent,
+                            taxPercent: item.taxPercent,
+                            notes: item.notes,
+                          })),
+                          paymentTerms: record.paymentTerms,
+                          notes: record.notes,
+                        },
                       },
-                    },
-                  ]
-                : []),
-              ...(canDelete && (record.approvalStatus === "DRAFT" || record.approvalStatus === "REJECTED")
-                ? [
-                    {
-                      key: "delete",
-                      label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }),
-                      icon: <SOIcon name="trash" size={14} />,
-                      onClick: () => setDeleteModalOpen(true),
-                      variant: "danger" as const,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </div>
+                    });
+                    toast.success(
+                      intl.formatMessage({
+                        id: "sales_order.detail.duplicated_toast",
+                        defaultMessage: "Order duplicated. Edit and save as new.",
+                      }),
+                    );
+                  }}
+                >
+                  <Copy className="size-4" />
+                  {intl.formatMessage({
+                    id: "sales_order.action.duplicate",
+                    defaultMessage: "Duplicate",
+                  })}
+                </Button>
+              </>
+            ) : null}
+            {canDelete && editable ? (
+              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+                <Trash2 className="size-4" />
+                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
-        <div className="so-detail-hero__title-block">
-          <div className="so-detail-hero__title-row">
-            <div className="so-detail-hero__title-stack">
-              <span className="so-detail-hero__kicker">
-                {intl.formatMessage({ id: "nav.sales_order", defaultMessage: "Sales Order" })}
-              </span>
-              <h1 className="so-detail-hero__title">
-                {record.documentNumber ?? `SO #${record.id.slice(0, 8).toUpperCase()}`}
-              </h1>
-              <span className={`so-status ${meta.tintClass}`} data-tint={meta.tint}>
-                <span className="so-status__dot" aria-hidden="true" />
-                <span>{meta.label}</span>
-              </span>
-            </div>
-            <ButtonGroup
-              size="sm"
-              items={[
-                ...(canPropose && (record.approvalStatus === "DRAFT" || record.approvalStatus === "REJECTED")
-                  ? [
-                      {
-                        key: "propose",
-                        label: intl.formatMessage({ id: "sales_order.detail.propose", defaultMessage: "Propose" }),
-                        icon: <SOIcon name="propose" size={12} />,
-                        onClick: () => setProposeModalOpen(true),
-                        variant: "primary" as const,
-                      },
-                    ]
-                  : []),
-                ...(canValidate && record.approvalStatus === "VALIDATING" && (record as any).aiValidationStatus === "FAILED"
-                  ? [
-                      {
-                        key: "retry",
-                        label: intl.formatMessage({ id: "sales_order.detail.retry_validation", defaultMessage: "Retry Validation" }),
-                        icon: <SOIcon name="check" size={12} />,
-                        onClick: () => retryValidationMutation.mutate(record.id),
-                        disabled: retryValidationMutation.isPending,
-                        isLoading: retryValidationMutation.isPending,
-                        variant: "primary" as const,
-                      },
-                    ]
-                  : []),
-                ...(canApprove && record.approvalStatus === "PROPOSED"
-                  ? [
-                      {
-                        key: "approve",
-                        label: intl.formatMessage({ id: "sales_order.detail.approve", defaultMessage: "Approve" }),
-                        icon: <SOIcon name="approve" size={12} />,
-                        onClick: () => setApproveModalOpen(true),
-                        variant: "success" as const,
-                      },
-                    ]
-                  : []),
-                ...(canApprove && record.approvalStatus === "PROPOSED"
-                  ? [
-                      {
-                        key: "reject",
-                        label: intl.formatMessage({ id: "sales_order.detail.reject", defaultMessage: "Reject" }),
-                        icon: <SOIcon name="reject" size={12} />,
-                        onClick: () => setRejectModalOpen(true),
-                        variant: "danger" as const,
-                      },
-                    ]
-                  : []),
-              ]}
-            />
-          </div>
-        </div>
-      </header>
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusChip status={record.approvalStatus} />
+        {canPropose && editable ? (
+          <Button type="button" onClick={() => setProposeModalOpen(true)}>
+            <Send className="size-4" />
+            {intl.formatMessage({ id: "sales_order.detail.propose", defaultMessage: "Propose" })}
+          </Button>
+        ) : null}
+        {canValidate &&
+        record.approvalStatus === "VALIDATING" &&
+        record.aiValidationStatus === "FAILED" ? (
+          <Button
+            type="button"
+            onClick={() => retryValidationMutation.mutate(record.id)}
+            disabled={retryValidationMutation.isPending}
+          >
+            {retryValidationMutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            {intl.formatMessage({
+              id: "sales_order.detail.retry_validation",
+              defaultMessage: "Retry Validation",
+            })}
+          </Button>
+        ) : null}
+        {canApprove && record.approvalStatus === "PROPOSED" ? (
+          <>
+            <Button
+              type="button"
+              onClick={() => {
+                setModalError(null);
+                setApproveModalOpen(true);
+              }}
+            >
+              <ThumbsUp className="size-4" />
+              {intl.formatMessage({ id: "sales_order.detail.approve", defaultMessage: "Approve" })}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                setModalError(null);
+                setRejectModalOpen(true);
+              }}
+            >
+              <ThumbsDown className="size-4" />
+              {intl.formatMessage({ id: "sales_order.detail.reject", defaultMessage: "Reject" })}
+            </Button>
+          </>
+        ) : null}
+      </div>
 
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon"><SOIcon name="user" size={14} /></span>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+              <UserRound className="size-4" aria-hidden />
+            </span>
             {intl.formatMessage({ id: "sales_order.detail.summary", defaultMessage: "Summary" })}
-          </h2>
-          <p className="so-card__hint">
-            {intl.formatMessage({ id: "sales_order.detail.summary_hint", defaultMessage: "Customer, location, and order details" })}
-          </p>
-        </div>
-        <div className="so-card__body">
-          <div className="so-section so-section--2">
-            <Field label={intl.formatMessage({ id: "sales_order.detail.document_number", defaultMessage: "Document number" })} value={record.documentNumber} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.area", defaultMessage: "Area" })} value={record.area.name} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.customer", defaultMessage: "Customer" })} value={record.customer?.name} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.outlet", defaultMessage: "Outlet" })} value={record.outlet?.name} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.order_date", defaultMessage: "Order date" })} value={record.date ? new Date(record.date).toLocaleDateString() : null} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.eta", defaultMessage: "ETA" })} value={record.expectedDeliveryDate ? new Date(record.expectedDeliveryDate).toLocaleDateString() : null} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.source", defaultMessage: "Source" })} value={record.source} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.payment_terms", defaultMessage: "Payment terms" })} value={record.paymentTerms} />
-            <Field label={intl.formatMessage({ id: "sales_order.detail.created_by", defaultMessage: "Created by" })} value={record.createdBy?.name} />
+          </CardTitle>
+          <CardDescription>
+            {intl.formatMessage({
+              id: "sales_order.detail.summary_hint",
+              defaultMessage: "Customer, location, and order details",
+            })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.document_number",
+                defaultMessage: "Document number",
+              })}
+              value={record.documentNumber}
+            />
+            <Field
+              label={intl.formatMessage({ id: "sales_order.detail.area", defaultMessage: "Area" })}
+              value={record.area.name}
+            />
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.customer",
+                defaultMessage: "Customer",
+              })}
+              value={record.customer?.name}
+            />
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.outlet",
+                defaultMessage: "Outlet",
+              })}
+              value={record.outlet?.name}
+            />
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.order_date",
+                defaultMessage: "Order date",
+              })}
+              value={record.date ? new Date(record.date).toLocaleDateString() : null}
+            />
+            <Field
+              label={intl.formatMessage({ id: "sales_order.detail.eta", defaultMessage: "ETA" })}
+              value={
+                record.expectedDeliveryDate
+                  ? new Date(record.expectedDeliveryDate).toLocaleDateString()
+                  : null
+              }
+            />
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.source",
+                defaultMessage: "Source",
+              })}
+              value={record.source}
+            />
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.payment_terms",
+                defaultMessage: "Payment terms",
+              })}
+              value={record.paymentTerms}
+            />
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.created_by",
+                defaultMessage: "Created by",
+              })}
+              value={record.createdBy?.name}
+            />
+            <Field
+              label={intl.formatMessage({
+                id: "sales_order.detail.currency",
+                defaultMessage: "Currency",
+              })}
+              value={record.currency}
+            />
             {record.emailConversationId ? (
-              <div className="so-field">
-                <span className="so-field__label">
+              <div className="space-y-1">
+                <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   {intl.formatMessage({
                     id: "sales_order.detail.email_conversation",
                     defaultMessage: "Email conversation",
                   })}
-                </span>
-                <span className="so-field__value">
-                  <button
+                </dt>
+                <dd>
+                  <Button
                     type="button"
-                    className="so-btn so-btn--ghost so-btn--sm"
+                    variant="outline"
+                    size="sm"
                     onClick={() => navigate(`/email-crm/${record.emailConversationId}`)}
                   >
+                    <Mail className="size-4" />
                     {intl.formatMessage({
                       id: "sales_order.detail.email_conversation",
                       defaultMessage: "Email conversation",
                     })}
-                  </button>
-                </span>
+                  </Button>
+                </dd>
               </div>
             ) : null}
-            <Field label={intl.formatMessage({ id: "sales_order.detail.currency", defaultMessage: "Currency" })} value={record.currency} />
-          </div>
-        </div>
-      </section>
+          </dl>
+        </CardContent>
+      </Card>
 
-      {/* Status Timeline */}
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon"><SOIcon name="check" size={14} /></span>
-            {intl.formatMessage({ id: "sales_order.detail.status_timeline", defaultMessage: "Status Timeline" })}
-          </h2>
-        </div>
-        <div className="so-card__body">
-          <div className="so-timeline">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="font-heading text-base">
+            {intl.formatMessage({
+              id: "sales_order.detail.status_timeline",
+              defaultMessage: "Status Timeline",
+            })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="grid gap-3 sm:grid-cols-4">
             {[
-              { status: "DRAFT", label: "Draft", icon: "edit" },
-              { status: "VALIDATING", label: "AI Processing", icon: "check" },
-              { status: "PROPOSED", label: "Pending Approval", icon: "propose" },
-              { status: "APPROVED", label: "Approved", icon: "approve" },
+              { status: "DRAFT", label: "Draft" },
+              { status: "VALIDATING", label: "AI Processing" },
+              { status: "PROPOSED", label: "Pending Approval" },
+              { status: "APPROVED", label: "Approved" },
             ].map((step, idx) => {
-              const statusOrder = ["DRAFT", "VALIDATING", "PROPOSED", "APPROVED", "REJECTED"];
-              const currentIdx = statusOrder.indexOf(record.approvalStatus);
               const stepIdx = statusOrder.indexOf(step.status);
               const isCompleted = stepIdx < currentIdx;
               const isCurrent = stepIdx === currentIdx;
-              const isRejected = record.approvalStatus === "REJECTED" && step.status === "PROPOSED";
-
+              const isRejected =
+                record.approvalStatus === "REJECTED" && step.status === "PROPOSED";
               return (
-                <div key={step.status} className="so-timeline__step">
-                  <div className={`so-timeline__dot ${isCompleted ? "so-timeline__dot--completed" : ""} ${isCurrent ? "so-timeline__dot--current" : ""} ${isRejected ? "so-timeline__dot--rejected" : ""}`}>
-                    {isCompleted ? (
-                      <SOIcon name="check" size={12} />
-                    ) : isRejected ? (
-                      <SOIcon name="reject" size={12} />
-                    ) : (
-                      <SOIcon name={step.icon as any} size={12} />
+                <li key={step.status} className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-full border text-xs",
+                      isCompleted && "border-emerald-500 bg-emerald-500 text-white",
+                      isCurrent && !isRejected && "border-[var(--module-order)] bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]",
+                      isRejected && "border-destructive bg-destructive text-white",
+                      !isCompleted && !isCurrent && !isRejected && "border-border text-muted-foreground",
                     )}
-                  </div>
-                  {idx < 3 && <div className={`so-timeline__line ${isCompleted ? "so-timeline__line--completed" : ""}`} />}
-                  <div className="so-timeline__label">
-                    <span className={`so-timeline__label-text ${isCurrent ? "so-timeline__label-text--current" : ""}`}>
-                      {step.label}
-                    </span>
-                  </div>
-                </div>
+                  >
+                    {isCompleted ? (
+                      <Check className="size-3.5" />
+                    ) : isRejected ? (
+                      <XCircle className="size-3.5" />
+                    ) : (
+                      idx + 1
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-sm",
+                      isCurrent ? "font-semibold text-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    {step.label}
+                  </span>
+                </li>
               );
             })}
-          </div>
-        </div>
-      </section>
+          </ol>
+        </CardContent>
+      </Card>
 
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon"><SOIcon name="box" size={14} /></span>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+              <Package className="size-4" aria-hidden />
+            </span>
             {intl.formatMessage({ id: "sales_order.detail.items", defaultMessage: "Items" })}
-          </h2>
-          <p className="so-card__hint">
+          </CardTitle>
+          <CardDescription>
             {record.items.length}{" "}
             {record.items.length === 1
-              ? intl.formatMessage({ id: "sales_order.detail.item_one", defaultMessage: "line item" })
-              : intl.formatMessage({ id: "sales_order.detail.item_other", defaultMessage: "line items" })}
-          </p>
-        </div>
-        <div className="so-card__body" style={{ padding: 0 }}>
-          <div className="so-items-table">
-            <div className="so-items-table__header">
-              <div className="so-items-table__th so-items-table__th--product">
-                {intl.formatMessage({ id: "sales_order.detail.product", defaultMessage: "Product" })}
-              </div>
-              <div className="so-items-table__th so-items-table__th--num">
-                {intl.formatMessage({ id: "sales_order.detail.qty", defaultMessage: "Qty" })}
-              </div>
-              <div className="so-items-table__th so-items-table__th--num">
-                {intl.formatMessage({ id: "sales_order.detail.unit_price", defaultMessage: "Unit price" })}
-              </div>
-              <div className="so-items-table__th so-items-table__th--num">
-                {intl.formatMessage({ id: "sales_order.detail.disc", defaultMessage: "Disc %" })}
-              </div>
-              <div className="so-items-table__th so-items-table__th--num">
-                {intl.formatMessage({ id: "sales_order.detail.tax", defaultMessage: "Tax %" })}
-              </div>
-              <div className="so-items-table__th so-items-table__th--num">
-                {intl.formatMessage({ id: "sales_order.detail.line_total", defaultMessage: "Total" })}
-              </div>
+              ? intl.formatMessage({
+                  id: "sales_order.detail.item_one",
+                  defaultMessage: "line item",
+                })
+              : intl.formatMessage({
+                  id: "sales_order.detail.item_other",
+                  defaultMessage: "line items",
+                })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-0 px-0 pb-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-y bg-muted/40 text-left text-xs tracking-wide text-muted-foreground uppercase">
+                  <th className="px-6 py-3 font-medium">
+                    {intl.formatMessage({
+                      id: "sales_order.detail.product",
+                      defaultMessage: "Product",
+                    })}
+                  </th>
+                  <th className="px-3 py-3 text-right font-medium">
+                    {intl.formatMessage({ id: "sales_order.detail.qty", defaultMessage: "Qty" })}
+                  </th>
+                  <th className="px-3 py-3 text-right font-medium">
+                    {intl.formatMessage({
+                      id: "sales_order.detail.unit_price",
+                      defaultMessage: "Unit price",
+                    })}
+                  </th>
+                  <th className="px-3 py-3 text-right font-medium">
+                    {intl.formatMessage({
+                      id: "sales_order.detail.disc",
+                      defaultMessage: "Disc %",
+                    })}
+                  </th>
+                  <th className="px-3 py-3 text-right font-medium">
+                    {intl.formatMessage({ id: "sales_order.detail.tax", defaultMessage: "Tax %" })}
+                  </th>
+                  <th className="px-6 py-3 text-right font-medium">
+                    {intl.formatMessage({
+                      id: "sales_order.detail.line_total",
+                      defaultMessage: "Total",
+                    })}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {record.items.map((item) => (
+                  <tr key={item.id} className="border-b last:border-0">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_14%,transparent)] text-[var(--module-sku)]">
+                          <Package className="size-4" aria-hidden />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">{item.sku.name}</p>
+                          {item.sku.code ? (
+                            <p className="font-mono text-xs text-muted-foreground">{item.sku.code}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums">
+                      {item.quantity}{" "}
+                      <span className="text-muted-foreground">{item.sku.baseUnit}</span>
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums">
+                      {formatCurrency(item.unitPrice)}
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
+                      {item.discountPercent ?? 0}%
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
+                      {item.taxPercent ?? 0}%
+                    </td>
+                    <td className="px-6 py-3 text-right font-semibold tabular-nums">
+                      {formatCurrency(item.lineTotal)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="space-y-2 border-t bg-muted/20 px-6 py-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {intl.formatMessage({
+                  id: "sales_order.detail.subtotal",
+                  defaultMessage: "Subtotal",
+                })}
+              </span>
+              <span className="tabular-nums">{formatCurrency(record.subtotal ?? 0)}</span>
             </div>
-            <div className="so-items-table__body">
-              {record.items.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className={`so-items-table__row ${idx % 2 === 1 ? "so-items-table__row--alt" : ""}`}
-                >
-                  <div className="so-items-table__td so-items-table__td--product">
-                    <span className="so-items-table__icon" data-tint="blue" aria-hidden="true">
-                      <SOIcon name="package" size={16} />
-                    </span>
-                    <div className="so-items-table__product">
-                      <span className="so-items-table__product-name">{item.sku.name}</span>
-                      {item.sku.code && (
-                        <span className="so-items-table__product-code">{item.sku.code}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="so-items-table__td so-items-table__td--num">
-                    <span className="so-items-table__qty-num">{item.quantity}</span>
-                    <span className="so-items-table__qty-unit">{item.sku.baseUnit}</span>
-                  </div>
-                  <div className="so-items-table__td so-items-table__td--num so-items-table__td--money">
-                    {formatCurrency(item.unitPrice)}
-                  </div>
-                  <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
-                    {item.discountPercent ?? 0}%
-                  </div>
-                  <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
-                    {item.taxPercent ?? 0}%
-                  </div>
-                  <div className="so-items-table__td so-items-table__td--num so-items-table__td--money so-items-table__td--strong">
-                    {formatCurrency(item.lineTotal)}
-                  </div>
-                </div>
-              ))}
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {intl.formatMessage({
+                  id: "sales_order.detail.discount",
+                  defaultMessage: "Discount",
+                })}
+              </span>
+              <span className="tabular-nums">−{formatCurrency(record.discountTotal ?? 0)}</span>
             </div>
-
-            {/* Totals panel */}
-            <div className="so-items-totals">
-              <div className="so-items-totals__row">
-                <span className="so-items-totals__label">
-                  {intl.formatMessage({ id: "sales_order.detail.subtotal", defaultMessage: "Subtotal" })}
-                </span>
-                <span className="so-items-totals__value">{formatCurrency(record.subtotal ?? 0)}</span>
-              </div>
-              <div className="so-items-totals__row">
-                <span className="so-items-totals__label">
-                  {intl.formatMessage({ id: "sales_order.detail.discount", defaultMessage: "Discount" })}
-                </span>
-                <span className="so-items-totals__value">−{formatCurrency(record.discountTotal ?? 0)}</span>
-              </div>
-              <div className="so-items-totals__row">
-                <span className="so-items-totals__label">
-                  {intl.formatMessage({ id: "sales_order.detail.tax_total", defaultMessage: "Tax" })}
-                </span>
-                <span className="so-items-totals__value">{formatCurrency(record.taxTotal ?? 0)}</span>
-              </div>
-              <div className="so-items-totals__row so-items-totals__row--grand">
-                <span className="so-items-totals__label so-items-totals__label--grand">
-                  {intl.formatMessage({ id: "sales_order.detail.grand_total", defaultMessage: "Grand total" })}
-                </span>
-                <span className="so-items-totals__value so-items-totals__value--grand">
-                  {formatCurrency(record.grandTotal ?? 0)}
-                </span>
-              </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {intl.formatMessage({ id: "sales_order.detail.tax_total", defaultMessage: "Tax" })}
+              </span>
+              <span className="tabular-nums">{formatCurrency(record.taxTotal ?? 0)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 text-base font-semibold">
+              <span>
+                {intl.formatMessage({
+                  id: "sales_order.detail.grand_total",
+                  defaultMessage: "Grand total",
+                })}
+              </span>
+              <span className="tabular-nums text-[var(--module-order)]">
+                {formatCurrency(record.grandTotal ?? 0)}
+              </span>
             </div>
           </div>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      {record.notes && (
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><SOIcon name="tag" size={14} /></span>
+      {record.notes ? (
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-heading text-base">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+                <StickyNote className="size-4" aria-hidden />
+              </span>
               {intl.formatMessage({ id: "sales_order.detail.notes", defaultMessage: "Notes" })}
-            </h2>
-          </div>
-          <div className="so-card__body">
-            <p style={{ whiteSpace: "pre-wrap", margin: 0, color: "var(--ios-label-2)", lineHeight: 1.6 }}>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
               {record.notes}
             </p>
-          </div>
-        </section>
-      )}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <section className="so-card">
-        <div
-          className="so-card__header"
-          style={{
-            cursor: "pointer",
-            userSelect: "none",
-            borderBottom: approvalHistoryOpen ? "0.0625rem solid var(--ios-divider)" : "none",
-          }}
-          onClick={() => setApprovalHistoryOpen(!approvalHistoryOpen)}
+      <Card className="shadow-sm">
+        <button
+          type="button"
+          className="flex w-full cursor-pointer items-center justify-between gap-3 px-6 py-4 text-left"
+          onClick={() => setApprovalHistoryOpen((v) => !v)}
         >
-          <h2 className="so-card__title" style={{ flex: 1 }}>
-            <span className="so-card__icon"><SOIcon name="check" size={14} /></span>
-            {intl.formatMessage({ id: "sales_order.detail.approval_history", defaultMessage: "Approval history" })}
-          </h2>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-              transform: approvalHistoryOpen ? "rotate(0deg)" : "rotate(-90deg)",
-            }}
-          >
-            <SOIcon name="chevron-down" size={16} />
+          <span className="flex items-center gap-2 font-heading text-base font-semibold">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+              <CheckCircle2 className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({
+              id: "sales_order.detail.approval_history",
+              defaultMessage: "Approval history",
+            })}
           </span>
-        </div>
-        <div
-          style={{
-            maxHeight: approvalHistoryOpen ? "2000px" : "0",
-            overflow: "hidden",
-            transition: "max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease",
-            opacity: approvalHistoryOpen ? 1 : 0,
-          }}
-        >
-          <div className="so-card__body">
+          <ChevronDown
+            className={cn(
+              "size-4 text-muted-foreground transition-transform duration-150",
+              approvalHistoryOpen ? "rotate-0" : "-rotate-90",
+            )}
+          />
+        </button>
+        {approvalHistoryOpen ? (
+          <CardContent className="border-t pt-4">
             <ApprovalTimeline
               approvalHistory={Array.isArray(record.approvalHistory) ? record.approvalHistory : []}
             />
-          </div>
-        </div>
-      </section>
+          </CardContent>
+        ) : null}
+      </Card>
 
-      {/* Modals — render via portal so they escape any scrollable ancestor */}
-      {deleteModalOpen && createPortal(
-        <div className="so-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="so-modal__header">
-              <h3>
-                <SOIcon name="trash" size={16} />
-                {intl.formatMessage({ id: "sales_order.detail.delete_title", defaultMessage: "Delete order" })}
-              </h3>
-              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close">
-                <SOIcon name="close" size={14} />
-              </button>
-            </div>
-            <div className="so-modal__body">
-              <div className="so-modal__icon so-modal__icon--error">
-                <SOIcon name="alert" size={28} />
+      <ConfirmDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title={intl.formatMessage({
+          id: "sales_order.detail.delete_title",
+          defaultMessage: "Delete order",
+        })}
+        description={intl.formatMessage(
+          {
+            id: "sales_order.detail.delete_confirm_body",
+            defaultMessage: 'Delete "{name}"? This action cannot be undone.',
+          },
+          { name: record.documentNumber ?? "this order" },
+        )}
+        confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={handleDelete}
+      />
+
+      <Dialog
+        open={proposeModalOpen}
+        onOpenChange={(open) => {
+          if (!open && proposeStage === "confirm") {
+            setProposeModalOpen(false);
+            setModalError(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          {proposeStage === "confirm" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {intl.formatMessage({
+                    id: "sales_order.detail.propose_title",
+                    defaultMessage: "Propose order",
+                  })}
+                </DialogTitle>
+                <DialogDescription>
+                  {intl.formatMessage({
+                    id: "sales_order.detail.propose_body",
+                    defaultMessage:
+                      "This will submit the order for AI validation. Add an optional message for the approval history.",
+                  })}
+                </DialogDescription>
+              </DialogHeader>
+              {modalError ? <p className="text-sm text-destructive">{modalError}</p> : null}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="propose-msg">
+                  {intl.formatMessage({
+                    id: "sales_order.detail.propose_message_label",
+                    defaultMessage: "Message (optional)",
+                  })}
+                </Label>
+                <Textarea
+                  id="propose-msg"
+                  value={proposeMessage}
+                  onChange={(e) => setProposeMessage(e.target.value)}
+                  placeholder={intl.formatMessage({
+                    id: "sales_order.detail.propose_message_placeholder",
+                    defaultMessage: "Add a note about this submission…",
+                  })}
+                />
               </div>
-              <h3 className="so-modal__title">
-                {intl.formatMessage({ id: "sales_order.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}
-              </h3>
-              <p className="so-modal__msg">
-                {intl.formatMessage(
-                  { id: "sales_order.detail.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' },
-                  { name: record.documentNumber ?? "this order" },
-                )}
-              </p>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setProposeModalOpen(false)}>
+                  {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setProposeStage("loading");
+                    proposeMutation.mutate({
+                      id: record.id,
+                      message: proposeMessage || undefined,
+                    });
+                  }}
+                  disabled={proposeMutation.isPending}
+                >
+                  {intl.formatMessage({
+                    id: "sales_order.detail.propose",
+                    defaultMessage: "Propose",
+                  })}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+          {proposeStage === "loading" ? (
+            <div className="flex flex-col items-center gap-3 py-6">
+              <Loader2 className="size-8 animate-spin text-primary" />
+              <DialogDescription>
+                {intl.formatMessage({
+                  id: "sales_order.detail.proposing",
+                  defaultMessage: "Proposing order…",
+                })}
+              </DialogDescription>
             </div>
-            <div className="so-modal__footer">
-              <button className="so-btn so-btn--ghost" onClick={() => setDeleteModalOpen(false)}>
-                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-              </button>
-              <button className="so-btn so-btn--danger" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting && <span className="so-spinner" />}
-                <SOIcon name="trash" size={14} />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          ) : null}
+          {proposeStage === "success" ? (
+            <DialogHeader>
+              <DialogTitle>
+                {intl.formatMessage({
+                  id: "sales_order.detail.proposed_success",
+                  defaultMessage: "Order proposed!",
+                })}
+              </DialogTitle>
+              <DialogDescription>
+                {intl.formatMessage({
+                  id: "sales_order.detail.proposed_success_body",
+                  defaultMessage: "Your order has been submitted for AI validation.",
+                })}
+              </DialogDescription>
+            </DialogHeader>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
-      {proposeModalOpen && createPortal(
-        <div className="so-modal__backdrop" onClick={() => proposeStage === "confirm" && setProposeModalOpen(false)}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            {proposeStage === "confirm" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>
-                    <SOIcon name="propose" size={16} />
-                    {intl.formatMessage({ id: "sales_order.detail.propose_title", defaultMessage: "Propose order" })}
-                  </h3>
-                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setProposeModalOpen(false)} aria-label="Close">
-                    <SOIcon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <SOIcon name="propose" size={28} />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage(
-                      { id: "sales_order.detail.propose_confirm", defaultMessage: 'Propose "{name}"?' },
-                      { name: record.documentNumber ?? "this order" },
-                    )}
-                  </h3>
-                  <p className="so-modal__msg">
-                    {intl.formatMessage({
-                      id: "sales_order.detail.propose_body",
-                      defaultMessage: "This will submit the order for AI validation. Add an optional message for the approval history.",
-                    })}
-                  </p>
-                  {modalError && (
-                    <div className="so-modal__error">
-                      <SOIcon name="alert" size={16} />
-                      <span>{modalError}</span>
-                    </div>
-                  )}
-                  <div style={{ width: "100%" }}>
-                    <FormField label={intl.formatMessage({ id: "sales_order.detail.propose_message_label", defaultMessage: "Message (optional)" })}>
-                      <Textarea
-                        value={proposeMessage}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setProposeMessage(e.target.value)}
-                        placeholder={intl.formatMessage({ id: "sales_order.detail.propose_message_placeholder", defaultMessage: "Add a note about this submission…" })}
-                      />
-                    </FormField>
-                  </div>
-                </div>
-                <div className="so-modal__footer">
-                  <button className="so-btn so-btn--ghost" onClick={() => setProposeModalOpen(false)}>
-                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-                  </button>
-                  <button
-                    className="so-btn so-btn--primary"
-                    onClick={() => {
-                      setProposeStage("loading");
-                      proposeMutation.mutate({ id: record.id, message: proposeMessage || undefined });
-                    }}
-                    disabled={proposeMutation.isPending}
-                  >
-                    {intl.formatMessage({ id: "sales_order.detail.propose", defaultMessage: "Propose" })}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {proposeStage === "loading" && (
-              <div className="so-modal__body">
-                <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
-                  <span className="so-spinner so-spinner--lg" />
-                </div>
-                <p className="so-modal__msg">
-                  {intl.formatMessage({ id: "sales_order.detail.proposing", defaultMessage: "Proposing order…" })}
-                </p>
-              </div>
-            )}
-
-            {proposeStage === "success" && (
-              <>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <SOIcon name="check" size={28} />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage({ id: "sales_order.detail.proposed_success", defaultMessage: "Order proposed!" })}
-                  </h3>
-                  <p className="so-modal__msg">
-                    {intl.formatMessage({
-                      id: "sales_order.detail.proposed_success_body",
-                      defaultMessage: "Your order has been submitted for AI validation.",
-                    })}
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      {approveModalOpen && createPortal(
-        <div className="so-modal__backdrop" onClick={() => !approveMutation.isPending && setApproveModalOpen(false)}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="so-modal__header">
-              <h3>
-                <SOIcon name="approve" size={16} />
-                {intl.formatMessage({ id: "sales_order.detail.approve_title", defaultMessage: "Approve order" })}
-              </h3>
-              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setApproveModalOpen(false)} aria-label="Close">
-                <SOIcon name="close" size={14} />
-              </button>
-            </div>
-            <div className="so-modal__body">
-              <div className="so-modal__icon so-modal__icon--success">
-                <SOIcon name="approve" size={28} />
-              </div>
-              <h3 className="so-modal__title">
-                {intl.formatMessage(
-                  { id: "sales_order.detail.approve_confirm", defaultMessage: 'Approve "{name}"?' },
-                  { name: record.documentNumber ?? "this order" },
-                )}
-              </h3>
-              {modalError && (
-                <div className="so-modal__error">
-                  <SOIcon name="alert" size={16} />
-                  <span>{modalError}</span>
-                </div>
+      <Dialog
+        open={approveModalOpen}
+        onOpenChange={(open) => {
+          if (!open && !approveMutation.isPending) {
+            setApproveModalOpen(false);
+            setModalError(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {intl.formatMessage({
+                id: "sales_order.detail.approve_title",
+                defaultMessage: "Approve order",
+              })}
+            </DialogTitle>
+            <DialogDescription>
+              {intl.formatMessage(
+                {
+                  id: "sales_order.detail.approve_confirm",
+                  defaultMessage: 'Approve "{name}"?',
+                },
+                { name: record.documentNumber ?? "this order" },
               )}
-              <div style={{ width: "100%" }}>
-                <FormField label={intl.formatMessage({ id: "sales_order.detail.decision_message", defaultMessage: "Message (optional)" })}>
-                  <Textarea
-                    value={decisionMessage}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDecisionMessage(e.target.value)}
-                    placeholder={intl.formatMessage({ id: "sales_order.detail.decision_message_placeholder", defaultMessage: "Add an approval note…" })}
-                  />
-                </FormField>
-              </div>
-            </div>
-            <div className="so-modal__footer">
-              <button className="so-btn so-btn--ghost" onClick={() => setApproveModalOpen(false)}>
-                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-              </button>
-              <button
-                className="so-btn so-btn--primary"
-                onClick={() => approveMutation.mutate({ id: record.id, message: decisionMessage || undefined })}
-                disabled={approveMutation.isPending}
-              >
-                {approveMutation.isPending && <span className="so-spinner" />}
-                <SOIcon name="approve" size={14} />
-                {intl.formatMessage({ id: "sales_order.detail.approve", defaultMessage: "Approve" })}
-              </button>
-            </div>
+            </DialogDescription>
+          </DialogHeader>
+          {modalError ? <p className="text-sm text-destructive">{modalError}</p> : null}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="approve-msg">
+              {intl.formatMessage({
+                id: "sales_order.detail.decision_message",
+                defaultMessage: "Message (optional)",
+              })}
+            </Label>
+            <Textarea
+              id="approve-msg"
+              value={decisionMessage}
+              onChange={(e) => setDecisionMessage(e.target.value)}
+              placeholder={intl.formatMessage({
+                id: "sales_order.detail.decision_message_placeholder",
+                defaultMessage: "Add an approval note…",
+              })}
+            />
           </div>
-        </div>,
-        document.body,
-      )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setApproveModalOpen(false)}>
+              {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+            </Button>
+            <Button
+              type="button"
+              onClick={() =>
+                approveMutation.mutate({
+                  id: record.id,
+                  message: decisionMessage || undefined,
+                })
+              }
+              disabled={approveMutation.isPending}
+            >
+              {approveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              {intl.formatMessage({ id: "sales_order.detail.approve", defaultMessage: "Approve" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {rejectModalOpen && createPortal(
-        <div className="so-modal__backdrop" onClick={() => !rejectMutation.isPending && setRejectModalOpen(false)}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="so-modal__header">
-              <h3>
-                <SOIcon name="reject" size={16} />
-                {intl.formatMessage({ id: "sales_order.detail.reject_title", defaultMessage: "Reject order" })}
-              </h3>
-              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setRejectModalOpen(false)} aria-label="Close">
-                <SOIcon name="close" size={14} />
-              </button>
-            </div>
-            <div className="so-modal__body">
-              <div className="so-modal__icon so-modal__icon--error">
-                <SOIcon name="reject" size={28} />
-              </div>
-              <h3 className="so-modal__title">
-                {intl.formatMessage(
-                  { id: "sales_order.detail.reject_confirm", defaultMessage: 'Reject "{name}"?' },
-                  { name: record.documentNumber ?? "this order" },
-                )}
-              </h3>
-              {modalError && (
-                <div className="so-modal__error">
-                  <SOIcon name="alert" size={16} />
-                  <span>{modalError}</span>
-                </div>
+      <Dialog
+        open={rejectModalOpen}
+        onOpenChange={(open) => {
+          if (!open && !rejectMutation.isPending) {
+            setRejectModalOpen(false);
+            setModalError(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {intl.formatMessage({
+                id: "sales_order.detail.reject_title",
+                defaultMessage: "Reject order",
+              })}
+            </DialogTitle>
+            <DialogDescription>
+              {intl.formatMessage(
+                {
+                  id: "sales_order.detail.reject_confirm",
+                  defaultMessage: 'Reject "{name}"?',
+                },
+                { name: record.documentNumber ?? "this order" },
               )}
-              <div style={{ width: "100%" }}>
-                <FormField label={intl.formatMessage({ id: "sales_order.detail.decision_message", defaultMessage: "Reason" })}>
-                  <Textarea
-                    value={decisionMessage}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDecisionMessage(e.target.value)}
-                    placeholder={intl.formatMessage({ id: "sales_order.detail.reject_reason_placeholder", defaultMessage: "Why are you rejecting this order?" })}
-                  />
-                </FormField>
-              </div>
-            </div>
-            <div className="so-modal__footer">
-              <button className="so-btn so-btn--ghost" onClick={() => setRejectModalOpen(false)}>
-                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-              </button>
-              <button
-                className="so-btn so-btn--danger"
-                onClick={() => rejectMutation.mutate({ id: record.id, message: decisionMessage || undefined })}
-                disabled={rejectMutation.isPending}
-              >
-                {rejectMutation.isPending && <span className="so-spinner" />}
-                <SOIcon name="reject" size={14} />
-                {intl.formatMessage({ id: "sales_order.detail.reject", defaultMessage: "Reject" })}
-              </button>
-            </div>
+            </DialogDescription>
+          </DialogHeader>
+          {modalError ? <p className="text-sm text-destructive">{modalError}</p> : null}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="reject-msg">
+              {intl.formatMessage({
+                id: "sales_order.detail.decision_message",
+                defaultMessage: "Reason",
+              })}
+            </Label>
+            <Textarea
+              id="reject-msg"
+              value={decisionMessage}
+              onChange={(e) => setDecisionMessage(e.target.value)}
+              placeholder={intl.formatMessage({
+                id: "sales_order.detail.reject_reason_placeholder",
+                defaultMessage: "Why are you rejecting this order?",
+              })}
+            />
           </div>
-        </div>,
-        document.body,
-      )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRejectModalOpen(false)}>
+              {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() =>
+                rejectMutation.mutate({
+                  id: record.id,
+                  message: decisionMessage || undefined,
+                })
+              }
+              disabled={rejectMutation.isPending}
+            >
+              {rejectMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              {intl.formatMessage({ id: "sales_order.detail.reject", defaultMessage: "Reject" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Validate modal */}
-      {validateModalOpen && createPortal(
-        <div className="so-modal__backdrop" onClick={() => !validateMutation.isPending && setValidateModalOpen(false)}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="so-modal__header">
-              <h3>
-                <SOIcon name="check" size={16} />
-                {intl.formatMessage({ id: "sales_order.detail.validate_title", defaultMessage: "Validate order" })}
-              </h3>
-              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setValidateModalOpen(false)} aria-label="Close">
-                <SOIcon name="close" size={14} />
-              </button>
-            </div>
-            <div className="so-modal__body">
-              <div className="so-modal__icon so-modal__icon--success">
-                <SOIcon name="check" size={28} />
-              </div>
-              <h3 className="so-modal__title">
-                {intl.formatMessage(
-                  { id: "sales_order.detail.validate_confirm", defaultMessage: 'Validate "{name}"? This will run AI validation checks.' },
-                  { name: record.documentNumber ?? "this order" },
-                )}
-              </h3>
-              <p className="so-modal__msg">
-                {intl.formatMessage({ id: "sales_order.detail.validate_running", defaultMessage: "Validating order…" })}
-              </p>
-            </div>
-            <div className="so-modal__footer">
-              <button className="so-btn so-btn--ghost" onClick={() => setValidateModalOpen(false)}>
-                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-              </button>
-              <button
-                className="so-btn so-btn--primary"
-                onClick={() => validateMutation.mutate(record.id)}
-                disabled={validateMutation.isPending}
-              >
-                {validateMutation.isPending && <span className="so-spinner" />}
-                <SOIcon name="check" size={14} />
-                {intl.formatMessage({ id: "sales_order.detail.validate", defaultMessage: "Validate" })}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <Dialog open={validateModalOpen} onOpenChange={setValidateModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {intl.formatMessage({
+                id: "sales_order.detail.validate_title",
+                defaultMessage: "Validate order",
+              })}
+            </DialogTitle>
+            <DialogDescription>
+              {intl.formatMessage(
+                {
+                  id: "sales_order.detail.validate_confirm",
+                  defaultMessage: 'Validate "{name}"? This will run AI validation checks.',
+                },
+                { name: record.documentNumber ?? "this order" },
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setValidateModalOpen(false)}>
+              {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => validateMutation.mutate(record.id)}
+              disabled={validateMutation.isPending}
+            >
+              {validateMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              {intl.formatMessage({
+                id: "sales_order.detail.validate",
+                defaultMessage: "Validate",
+              })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Print document — hidden on screen, visible when printing */}
       <SalesOrderPrint record={record as SalesOrderPrintRecord} />
-
-      {/* PDF preview modal — native browser PDF viewer in an iframe */}
       <SalesOrderPdfPreview orderId={pdfPreviewId} onClose={() => setPdfPreviewId(null)} />
     </section>
   );
 };
-
-const Field = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-    <span style={{
-      fontSize: "0.6875rem",
-      fontWeight: 700,
-      letterSpacing: "0.06em",
-      textTransform: "uppercase",
-      color: "var(--ios-label-3)",
-    }}>
-      {label}
-    </span>
-    <span style={{
-      fontSize: "0.875rem",
-      fontWeight: 600,
-      color: "var(--ios-label)",
-      letterSpacing: "-0.005em",
-      wordBreak: "break-word",
-    }}>
-      {value ?? "—"}
-    </span>
-  </div>
-);
