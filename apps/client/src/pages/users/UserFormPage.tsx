@@ -1,30 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
-import { useIntl } from 'react-intl';
-import { useNavigate, useParams } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from '@tanstack/react-form';
-import { Icon } from "../../ui";
+import { useEffect, useRef, useState } from "react";
+import { useIntl } from "react-intl";
+import { useNavigate, useParams } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { Loader2, Save } from "lucide-react";
+
+import { trpcClient } from "../../lib/trpc";
+import { PageHeader } from "../../components/PageHeader";
+import { ImageUploadField } from "../../components/ImageUploadField";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Button,
-  Card,
-  CardBody,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  FieldError,
-  Input,
-  Label,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  Select,
-  Spinner,
-  useToast,
-} from '../../ui';
-import { PageHeader } from '../../components/PageHeader';
-import { ImageUploadField } from '../../components/ImageUploadField';
-import { trpcClient } from '../../lib/trpc';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type UserFormValues = {
   name: string;
@@ -42,20 +38,25 @@ type UserDetail = {
   role: { id: string; name: string } | null;
 };
 
+type ModalStage = "idle" | "loading" | "success" | "error";
+
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
+
 const defaultFormValues = (): UserFormValues => ({
-  name: '',
-  email: '',
-  password: '',
-  roleId: '',
-  photo: '',
+  name: "",
+  email: "",
+  password: "",
+  roleId: "",
+  photo: "",
 });
 
 const transformDetailToFormValues = (detail: UserDetail): UserFormValues => ({
-  name: detail.name ?? '',
+  name: detail.name ?? "",
   email: detail.email,
-  password: '',
-  roleId: detail.role?.id ?? '',
-  photo: detail.photo ?? '',
+  password: "",
+  roleId: detail.role?.id ?? "",
+  photo: detail.photo ?? "",
 });
 
 const InnerForm = ({
@@ -70,10 +71,9 @@ const InnerForm = ({
   const intl = useIntl();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const toast = useToast();
 
-  const [modalStage, setModalStage] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [resultMessage, setResultMessage] = useState('');
+  const [modalStage, setModalStage] = useState<ModalStage>("idle");
+  const [resultMessage, setResultMessage] = useState("");
   const successRedirectIdRef = useRef<string | null>(null);
   const resultTimerRef = useRef<number | null>(null);
 
@@ -86,51 +86,73 @@ const InnerForm = ({
   useEffect(() => () => clearResultTimer(), []);
 
   const handleModalClose = () => {
-    if (modalStage === 'loading') return;
+    if (modalStage === "loading") return;
     clearResultTimer();
     const redirectId = successRedirectIdRef.current;
     successRedirectIdRef.current = null;
-    setModalStage('idle');
+    setModalStage("idle");
     if (redirectId) navigate(`/users/${redirectId}`);
   };
 
   const createMutation = useMutation({
-    mutationFn: (payload: { name: string; email: string; password: string; roleId: string; photo?: string }) =>
-      trpcClient.user.create.mutate(payload),
+    mutationFn: (payload: {
+      name: string;
+      email: string;
+      password: string;
+      roleId: string;
+      photo?: string;
+    }) => trpcClient.user.create.mutate(payload),
     onSuccess: async (created: { id: string }) => {
-      await queryClient.invalidateQueries({ queryKey: ['userList'] });
-      queryClient.removeQueries({ queryKey: ['userDetail', created.id] });
+      await queryClient.invalidateQueries({ queryKey: ["userList"] });
+      queryClient.removeQueries({ queryKey: ["userDetail", created.id] });
       successRedirectIdRef.current = created.id;
-      setResultMessage(intl.formatMessage({ id: 'users.form.success_created', defaultMessage: 'User created successfully.' }));
-      setModalStage('success');
+      setResultMessage(
+        intl.formatMessage({
+          id: "users.form.success_created",
+          defaultMessage: "User created successfully.",
+        }),
+      );
+      setModalStage("success");
       resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : 'Failed to create user.');
-      setModalStage('error');
+      setResultMessage(e instanceof Error ? e.message : "Failed to create user.");
+      setModalStage("error");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: { id: string; name?: string; email?: string; password?: string; roleId?: string; photo?: string }) =>
-      trpcClient.user.update.mutate(payload),
+    mutationFn: (payload: {
+      id: string;
+      name?: string;
+      email?: string;
+      password?: string;
+      roleId?: string;
+      photo?: string;
+    }) => trpcClient.user.update.mutate(payload),
     onSuccess: async (updated: { id: string }) => {
-      await queryClient.invalidateQueries({ queryKey: ['userList'] });
-      await queryClient.invalidateQueries({ queryKey: ['userDetail', updated.id] });
+      await queryClient.invalidateQueries({ queryKey: ["userList"] });
+      await queryClient.invalidateQueries({ queryKey: ["userDetail", updated.id] });
       successRedirectIdRef.current = updated.id;
-      setResultMessage(intl.formatMessage({ id: 'users.form.success_updated', defaultMessage: 'User updated successfully.' }));
-      setModalStage('success');
+      setResultMessage(
+        intl.formatMessage({
+          id: "users.form.success_updated",
+          defaultMessage: "User updated successfully.",
+        }),
+      );
+      setModalStage("success");
       resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : 'Failed to update user.');
-      setModalStage('error');
+      setResultMessage(e instanceof Error ? e.message : "Failed to update user.");
+      setModalStage("error");
     },
   });
 
   const form = useForm({
     defaultValues: initialValues,
     onSubmit: async ({ value }) => {
+      setModalStage("loading");
       const photo = value.photo || undefined;
       if (isEdit && userId) {
         updateMutation.mutate({
@@ -156,240 +178,348 @@ const InnerForm = ({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   const { data: rolesData } = useQuery({
-    queryKey: ['rolesListForSelect'],
+    queryKey: ["rolesListForSelect"],
     queryFn: () => trpcClient.accessControl.role.list.query({ page: 1, limit: 100 }),
   });
 
   const roleOptions = (rolesData?.data ?? []) as { id: string; name: string }[];
 
   return (
-    <>
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "user-form",
+        isEdit,
+        id: userId ?? null,
+      })}
+    >
       <form
+        className="flex flex-col gap-6"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
           void form.handleSubmit();
         }}
       >
-        <section className="space-y-6">
-          <PageHeader
-            title={
-              isEdit
-                ? intl.formatMessage({ id: 'users.form.title_edit', defaultMessage: 'Edit user' })
-                : intl.formatMessage({ id: 'users.form.title_create', defaultMessage: 'Create user' })
-            }
-            onBack={() => navigate(isEdit && userId ? `/users/${userId}` : '/users')}
-          />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{intl.formatMessage({ id: 'users.form.identity', defaultMessage: 'Identity' })}</CardTitle>
-              <CardDescription>{intl.formatMessage({ id: 'users.form.identity_description', defaultMessage: 'Display name and contact details.' })}</CardDescription>
-            </CardHeader>
-            <CardBody className="grid gap-6 md:grid-cols-2">
-              <form.Field name="name" validators={{ onChange: ({ value }) => (value && value.trim().length > 0 ? undefined : 'Name is required.') }}>
-                {(field) => (
-                  <div className="flex flex-col gap-1.5">
-                    <Label>
-                      {intl.formatMessage({ id: 'users.form.name', defaultMessage: 'Name' })}
-                      <span className="ml-0.5 text-red-500">*</span>
-                    </Label>
-                    <Input value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} />
-                    {field.state.meta.errors.map((error, i) => (
-                      <FieldError key={i}>{String(error)}</FieldError>
-                    ))}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="email" validators={{ onChange: ({ value }) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value ?? '') ? undefined : 'Invalid email address.') }}>
-                {(field) => (
-                  <div className="flex flex-col gap-1.5">
-                    <Label>
-                      {intl.formatMessage({ id: 'users.form.email', defaultMessage: 'Email' })}
-                      <span className="ml-0.5 text-red-500">*</span>
-                    </Label>
-                    <Input type="email" value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} />
-                    {field.state.meta.errors.map((error, i) => (
-                      <FieldError key={i}>{String(error)}</FieldError>
-                    ))}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field
-                name="password"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (isEdit) return undefined;
-                    return (value && value.length >= 6) || !value ? undefined : 'Password must be at least 6 characters.';
-                  },
-                }}
-              >
-                {(field) => (
-                  <div className="flex flex-col gap-1.5">
-                    <Label>
-                      {intl.formatMessage({ id: 'users.form.password', defaultMessage: 'Password' })}
-                      {!isEdit && <span className="ml-0.5 text-red-500">*</span>}
-                    </Label>
-                    <Input type="password" value={field.state.value} onValueChange={field.handleChange} onBlur={field.handleBlur} placeholder={isEdit ? 'Leave blank to keep current' : ''} />
-                    {field.state.meta.errors.map((error, i) => (
-                      <FieldError key={i}>{String(error)}</FieldError>
-                    ))}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="roleId" validators={{ onChange: ({ value }) => (value ? undefined : 'Role is required.') }}>
-                {(field) => (
-                  <div className="flex flex-col gap-1.5">
-                    <Label>
-                      {intl.formatMessage({ id: 'users.form.role', defaultMessage: 'Role' })}
-                      <span className="ml-0.5 text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={field.state.value}
-                      onChange={(value) => field.handleChange(value as string)}
-                      options={roleOptions.map((r) => ({ value: r.id, label: r.name }))}
-                      placeholder={intl.formatMessage({ id: "users.form.select_role", defaultMessage: "Select a role…" })}
-                      searchPlaceholder={intl.formatMessage({ id: "users.form.search_role", defaultMessage: "Search roles…" })}
-                      emptyLabel={intl.formatMessage({ id: "users.form.no_roles", defaultMessage: "No roles found" })}
-                    />
-                    {field.state.meta.errors.map((error, i) => (
-                      <FieldError key={i}>{String(error)}</FieldError>
-                    ))}
-                  </div>
-                )}
-              </form.Field>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{intl.formatMessage({ id: 'users.form.photo', defaultMessage: 'Profile photo' })}</CardTitle>
-              <CardDescription>{intl.formatMessage({ id: 'users.form.photo_description', defaultMessage: 'Square image, at least 256×256px.' })}</CardDescription>
-            </CardHeader>
-            <CardBody>
-              <form.Field name="photo">
-                {(field) => (
-                  <ImageUploadField
-                    value={field.state.value}
-                    onChange={(v) => field.handleChange(v ?? '')}
-                  />
-                )}
-              </form.Field>
-            </CardBody>
-          </Card>
-
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(isEdit && userId ? `/users/${userId}` : '/users')}
-            >
-              {intl.formatMessage({ id: 'common.action.cancel', defaultMessage: 'Cancel' })}
-            </Button>
-            <Button variant="primary" type="submit" disabled={isPending}>
-              {isPending ? <Spinner size="sm" /> : isEdit ? (
-                intl.formatMessage({ id: 'common.action.save', defaultMessage: 'Save' })
+        <PageHeader
+          module="user"
+          title={
+            isEdit
+              ? intl.formatMessage({ id: "users.form.title_edit", defaultMessage: "Edit user" })
+              : intl.formatMessage({
+                  id: "users.form.title_create",
+                  defaultMessage: "Create user",
+                })
+          }
+          description={
+            isEdit
+              ? intl.formatMessage({
+                  id: "users.form.subtitle_edit",
+                  defaultMessage: "Update user account details",
+                })
+              : intl.formatMessage({
+                  id: "users.form.subtitle_create",
+                  defaultMessage: "Create a new system user",
+                })
+          }
+          onBack={() => navigate(isEdit && userId ? `/users/${userId}` : "/users")}
+          actions={
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : (
-                intl.formatMessage({ id: 'common.action.create', defaultMessage: 'Create' })
+                <Save className="size-4" aria-hidden />
               )}
+              {isEdit
+                ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })
+                : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
-          </div>
-        </section>
+          }
+        />
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({ id: "users.form.identity", defaultMessage: "Identity" })}
+            </CardTitle>
+            <CardDescription>
+              {intl.formatMessage({
+                id: "users.form.identity_description",
+                defaultMessage: "Display name and contact details.",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-2">
+            <form.Field
+              name="name"
+              validators={{
+                onChange: ({ value }) =>
+                  value && value.trim().length > 0 ? undefined : "Name is required.",
+              }}
+            >
+              {(field) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="user-name">
+                    {intl.formatMessage({ id: "users.form.name", defaultMessage: "Name" })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="user-name"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={field.state.meta.errors.length > 0}
+                  />
+                  {field.state.meta.errors.map((error, i) => (
+                    <p key={i} className="text-xs text-destructive">
+                      {String(error)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="email"
+              validators={{
+                onChange: ({ value }) =>
+                  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value ?? "")
+                    ? undefined
+                    : "Invalid email address.",
+              }}
+            >
+              {(field) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="user-email">
+                    {intl.formatMessage({ id: "users.form.email", defaultMessage: "Email" })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="user-email"
+                    type="email"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={field.state.meta.errors.length > 0}
+                  />
+                  {field.state.meta.errors.map((error, i) => (
+                    <p key={i} className="text-xs text-destructive">
+                      {String(error)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="password"
+              validators={{
+                onChange: ({ value }) => {
+                  if (isEdit) return undefined;
+                  if (!value || value.length < 6) return "Password must be at least 6 characters.";
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="user-password">
+                    {intl.formatMessage({ id: "users.form.password", defaultMessage: "Password" })}
+                    {!isEdit ? <span className="text-destructive">*</span> : null}
+                  </Label>
+                  <Input
+                    id="user-password"
+                    type="password"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder={isEdit ? "Leave blank to keep current" : ""}
+                    aria-invalid={field.state.meta.errors.length > 0}
+                  />
+                  {field.state.meta.errors.map((error, i) => (
+                    <p key={i} className="text-xs text-destructive">
+                      {String(error)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="roleId"
+              validators={{
+                onChange: ({ value }) => (value ? undefined : "Role is required."),
+              }}
+            >
+              {(field) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="user-role">
+                    {intl.formatMessage({ id: "users.form.role", defaultMessage: "Role" })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <select
+                    id="user-role"
+                    className={selectClass}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={field.state.meta.errors.length > 0}
+                  >
+                    <option value="">
+                      {intl.formatMessage({
+                        id: "users.form.select_role",
+                        defaultMessage: "Select a role…",
+                      })}
+                    </option>
+                    {roleOptions.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                  {field.state.meta.errors.map((error, i) => (
+                    <p key={i} className="text-xs text-destructive">
+                      {String(error)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </form.Field>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({ id: "users.form.photo", defaultMessage: "Profile photo" })}
+            </CardTitle>
+            <CardDescription>
+              {intl.formatMessage({
+                id: "users.form.photo_description",
+                defaultMessage: "Square image, at least 256×256px.",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form.Field name="photo">
+              {(field) => (
+                <ImageUploadField
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v ?? "")}
+                />
+              )}
+            </form.Field>
+          </CardContent>
+        </Card>
       </form>
 
-      <Modal isOpen={modalStage !== 'idle'} onClose={() => handleModalClose()}>
-        <ModalBody>
-          {modalStage === 'loading' ? (
-            <ModalBody>
-              <div className="flex justify-center py-8">
-                <Spinner size="lg" />
-              </div>
-            </ModalBody>
-          ) : modalStage === 'success' ? (
-            <ModalBody>
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="flex size-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                  <Icon icon="solar:check-circle-bold" className="size-7 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <p className="text-center text-sm">{resultMessage}</p>
-              </div>
-            </ModalBody>
-          ) : (
+      <Dialog
+        open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
+        onOpenChange={(open) => {
+          if (!open && modalStage !== "loading") handleModalClose();
+        }}
+      >
+        <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
+          {modalStage === "loading" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <DialogDescription>
+                {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
+              </DialogDescription>
+            </div>
+          ) : null}
+          {modalStage === "success" ? (
+            <DialogHeader>
+              <DialogTitle>
+                {intl.formatMessage({ id: "common.success", defaultMessage: "Success!" })}
+              </DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+          ) : null}
+          {modalStage === "error" ? (
             <>
-              <ModalHeader>{intl.formatMessage({ id: 'common.error', defaultMessage: 'Error' })}</ModalHeader>
-              <ModalBody>
-                <p className="text-sm text-red-600">{resultMessage}</p>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={handleModalClose}>
-                  {intl.formatMessage({ id: 'common.action.close', defaultMessage: 'Close' })}
+              <DialogHeader>
+                <DialogTitle>
+                  {intl.formatMessage({ id: "common.error", defaultMessage: "Error" })}
+                </DialogTitle>
+                <DialogDescription>{resultMessage}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={handleModalClose}>
+                  {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
                 </Button>
-              </ModalFooter>
+              </DialogFooter>
             </>
-          )}
-        </ModalBody>
-      </Modal>
-    </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 };
 
 const UserFormPage = () => {
   const { id } = useParams();
   const intl = useIntl();
+  const navigate = useNavigate();
   const isEdit = Boolean(id);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['userDetail', id],
+    queryKey: ["userDetail", id],
     enabled: isEdit,
-    queryFn: () => trpcClient.user.detail.query({ id: id ?? '' }),
+    queryFn: () => trpcClient.user.detail.query({ id: id ?? "" }),
   });
 
   if (isEdit) {
     if (isLoading) {
       return (
-        <section className="m-page">
-          <div className="m-state m-state--loading">
-            <Spinner size="lg" />
-            <span className="m-state__title">{intl.formatMessage({ id: 'common.loading', defaultMessage: 'Loading…' })}</span>
-          </div>
+        <section
+          className="flex flex-col gap-6 pt-2 pb-8"
+          data-ai-context={JSON.stringify({ section: "user-form", loading: true })}
+        >
+          <Skeleton className="h-16 w-full max-w-xl" />
+          <Skeleton className="h-48 w-full" />
         </section>
       );
     }
     if (isError) {
       return (
-        <section className="m-page">
-          <div className="m-card">
-            <div className="m-card__body">
-              <p style={{ color: 'var(--ios-state-danger, #DC2626)', margin: 0 }}>
-                {error instanceof Error ? error.message : 'Failed to load user.'}
-              </p>
-            </div>
-          </div>
+        <section
+          className="flex flex-col gap-6 pt-2 pb-8"
+          data-ai-context={JSON.stringify({ section: "user-form", error: true })}
+        >
+          <PageHeader
+            module="user"
+            title={error instanceof Error ? error.message : "Failed to load user."}
+            onBack={() => navigate("/users")}
+          />
         </section>
       );
     }
     if (!data) {
       return (
-        <section className="m-page">
-          <div className="m-card">
-            <div className="m-card__body">
-              <p style={{ color: 'var(--ios-state-warning, #D97706)', margin: 0 }}>
-                {intl.formatMessage({ id: 'users.form.not_found', defaultMessage: 'User not found.' })}
-              </p>
-            </div>
-          </div>
+        <section
+          className="flex flex-col gap-6 pt-2 pb-8"
+          data-ai-context={JSON.stringify({ section: "user-form", notFound: true })}
+        >
+          <PageHeader
+            module="user"
+            title={intl.formatMessage({
+              id: "users.form.not_found",
+              defaultMessage: "User not found.",
+            })}
+            onBack={() => navigate("/users")}
+          />
         </section>
       );
     }
   }
 
-  const initialValues = isEdit && data ? transformDetailToFormValues(data as UserDetail) : defaultFormValues();
+  const initialValues =
+    isEdit && data ? transformDetailToFormValues(data as UserDetail) : defaultFormValues();
 
   return (
     <InnerForm
-      key={isEdit ? (id ?? 'new') : 'new'}
+      key={isEdit ? (id ?? "new") : "new"}
       initialValues={initialValues}
       isEdit={isEdit}
       userId={id}
