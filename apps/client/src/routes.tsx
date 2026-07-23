@@ -8,7 +8,6 @@ import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RouteErrorPage } from './pages/RouteErrorPage';
 import { LandingPage } from './pages/LandingPage';
-import CustomerAssistantPage from './pages/CustomerAssistantPage';
 import { RegionIndexPage } from './pages/region/RegionIndexPage';
 import { RegionDetailPage } from './pages/region/RegionDetailPage';
 import { RegionFormPage } from './pages/region/RegionFormPage';
@@ -71,11 +70,6 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
       },
     ],
-  },
-  {
-    path: '/customer-assistant',
-    element: <CustomerAssistantPage />,
-    errorElement: <RouteErrorPage />,
   },
   {
     path: '/',
