@@ -513,11 +513,7 @@ export const Dashboard = () => {
         </header>
         <div className="ios-dash__card-body">
           {isLoading ? (
-            <Skeleton style={{ height: 220, width: "100%", borderRadius: 16 }} />
-          ) : sales?.topCustomers?.length ? (
-            <div style={{ height: 220, width: "100%" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarC
+            <Skeleton
               className="ios-dash__chart-skeleton"
               style={{ height: MAIN_CHART_HEIGHT, width: "100%", borderRadius: 16 }}
             />
@@ -549,7 +545,11 @@ export const Dashboard = () => {
                     contentStyle={chartTooltipStyle}
                     formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
                   />
-                  <Bar dataKey="total" fill={chartColors.secondary}
+                  <Bar dataKey="total" fill={chartColors.secondary} radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
             <div className="ios-dash__empty">
               <img src={icons.dashInbox} alt="" className="ios-dash__empty-icon" />
               <span className="ios-dash__empty-title">
