@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { useIntl } from "react-intl";
-import { Chip } from "../../ui/Chip";
-import "./SalesOrderPipeline.css";
+import { motion, useReducedMotion } from "motion/react";
+
+import { StatusChip } from "../../components/StatusChip";
+import { fadeIn, getMotionProps } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 export type PipelineOrder = {
   id: string;
@@ -17,18 +20,18 @@ type StageKey = "DRAFT" | "PROPOSED" | "APPROVED" | "REJECTED";
 
 const STAGES: StageKey[] = ["DRAFT", "PROPOSED", "APPROVED", "REJECTED"];
 
-const STAGE_TONE: Record<StageKey, "neutral" | "info" | "success" | "danger"> = {
-  DRAFT: "neutral",
-  PROPOSED: "info",
-  APPROVED: "success",
-  REJECTED: "danger",
+const STAGE_ACCENT: Record<StageKey, string> = {
+  DRAFT: "border-t-slate-400",
+  PROPOSED: "border-t-primary",
+  APPROVED: "border-t-success",
+  REJECTED: "border-t-destructive",
 };
 
-const STAGE_CLASS: Record<StageKey, string> = {
-  DRAFT: "pipe__col--draft",
-  PROPOSED: "pipe__col--proposed",
-  APPROVED: "pipe__col--approved",
-  REJECTED: "pipe__col--rejected",
+const STAGE_COUNT: Record<StageKey, string> = {
+  DRAFT: "bg-slate-100 text-slate-700",
+  PROPOSED: "bg-primary/10 text-primary",
+  APPROVED: "bg-success/15 text-success",
+  REJECTED: "bg-destructive/10 text-destructive",
 };
 
 /** Map non-board statuses into a board column (v1). */
@@ -37,7 +40,6 @@ const toStage = (status: string): StageKey => {
   if (s === "PROPOSED") return "PROPOSED";
   if (s === "APPROVED") return "APPROVED";
   if (s === "REJECTED") return "REJECTED";
-  // DRAFT, VALIDATING, unknown → draft column
   return "DRAFT";
 };
 
@@ -62,6 +64,7 @@ interface SalesOrderPipelineProps {
 
 export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) => {
   const intl = useIntl();
+  const reduced = useReducedMotion();
 
   const stageLabel = (stage: StageKey) => {
     switch (stage) {
@@ -94,22 +97,46 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
   }, [items]);
 
   return (
-    <div className="pipe" role="list" aria-label={intl.formatMessage({ id: "sales_order.index.view_pipeline", defaultMessage: "Pipeline" })}>
+    <motion.div
+      className="flex gap-3 overflow-x-auto pb-2"
+      role="list"
+      aria-label={intl.formatMessage({
+        id: "sales_order.index.view_pipeline",
+        defaultMessage: "Pipeline",
+      })}
+      variants={fadeIn}
+      {...getMotionProps(reduced)}
+    >
       {columns.map(({ stage, list, sum }) => (
         <section
           key={stage}
-          className={`pipe__col ${STAGE_CLASS[stage]}`}
+          className={cn(
+            "flex min-h-[280px] w-[290px] shrink-0 flex-col overflow-hidden rounded-xl border border-t-[3px] bg-card shadow-sm",
+            STAGE_ACCENT[stage],
+          )}
           role="listitem"
           aria-label={stageLabel(stage)}
         >
-          <header className="pipe__header">
-            <div className="pipe__header-row">
-              <h3 className="pipe__stage">{stageLabel(stage)}</h3>
-              <span className="pipe__count">{list.length}</span>
+          <header className="flex flex-col gap-1 border-b bg-muted/30 px-3 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="truncate text-sm font-semibold tracking-tight text-foreground">
+                {stageLabel(stage)}
+              </h3>
+              <span
+                className={cn(
+                  "inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
+                  STAGE_COUNT[stage],
+                )}
+              >
+                {list.length}
+              </span>
             </div>
-            <span className="pipe__sum">
+            <span className="text-xs text-muted-foreground">
               {intl.formatMessage(
-                { id: "sales_order.pipeline.summary", defaultMessage: "{count} orders · {total}" },
+                {
+                  id: "sales_order.pipeline.summary",
+                  defaultMessage: "{count} orders · {total}",
+                },
                 {
                   count: list.length,
                   total: formatCurrency(sum),
@@ -118,36 +145,41 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
             </span>
           </header>
 
-          <div className="pipe__body">
+          <div className="flex flex-1 flex-col gap-2 p-2">
             {list.length === 0 ? (
-              <p className="pipe__empty">
-                {intl.formatMessage({ id: "sales_order.pipeline.empty_stage", defaultMessage: "No items" })}
+              <p className="px-2 py-6 text-center text-xs text-muted-foreground">
+                {intl.formatMessage({
+                  id: "sales_order.pipeline.empty_stage",
+                  defaultMessage: "No items",
+                })}
               </p>
             ) : (
               list.map((row) => (
                 <button
                   key={row.id}
                   type="button"
-                  className="pipe__card"
+                  className="flex cursor-pointer flex-col gap-1 rounded-lg border bg-background px-3 py-2.5 text-left shadow-xs transition-colors duration-150 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   onClick={() => onOpen(row.id)}
                 >
-                  <span className="pipe__card-title">
+                  <span className="truncate font-mono text-xs font-semibold text-foreground">
                     {row.documentNumber ?? row.id.slice(0, 8)}
                   </span>
-                  <span className="pipe__card-sub">
+                  <span className="truncate text-xs text-muted-foreground">
                     {row.customer.name}
                     {row.outlet ? ` · ${row.outlet.name}` : ""}
                   </span>
                   {row.grandTotal != null && row.grandTotal > 0 ? (
-                    <span className="pipe__card-amount">{formatCurrency(row.grandTotal)}</span>
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      {formatCurrency(row.grandTotal)}
+                    </span>
                   ) : (
-                    <span className="pipe__card-amount pipe__card-amount--muted">—</span>
+                    <span className="text-sm text-muted-foreground">—</span>
                   )}
-                  <div className="pipe__card-meta">
-                    <span className="pipe__card-date">{formatDate(row.date)}</span>
-                    <Chip tone={STAGE_TONE[stage]} size="sm">
-                      {stageLabel(stage)}
-                    </Chip>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                      {formatDate(row.date)}
+                    </span>
+                    <StatusChip status={stage} />
                   </div>
                 </button>
               ))
@@ -155,6 +187,6 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
           </div>
         </section>
       ))}
-    </div>
+    </motion.div>
   );
 };
