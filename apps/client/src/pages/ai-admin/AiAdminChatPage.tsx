@@ -1,4 +1,3 @@
-import "./AiAdminChatPage.css";
 import "../../components/AiAssistant/AiAssistant.css";
 
 import { useChat } from "@ai-sdk/react";
@@ -11,10 +10,19 @@ import { UIMessage } from "ai";
 import { useNavigate } from "react-router";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  AlertTriangle,
+  Layers,
+  Loader2,
+  SendHorizontal,
+  Trash2,
+} from "lucide-react";
 import { aiFormFillAtom, authUserAtom } from "../../lib/atoms";
-import { Button, Textarea } from "../../ui";
-import { Spinner } from "../../ui/Spinner";
-import { Chip } from "../../ui";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const ROUTE_ALIASES: Record<string, string> = {
   "/": "/dashboard",
@@ -247,31 +255,31 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
     detail = ` (${count} field${count !== 1 ? "s" : ""})`;
   }
 
-  const tone =
+  const variant =
     state === "output-available"
-      ? "success"
+      ? "default"
       : state === "output-error"
-        ? "danger"
+        ? "destructive"
         : state === "input-streaming"
-          ? "warning"
-          : "neutral";
+          ? "outline"
+          : "secondary";
 
   const prefix =
     state === "output-available"
-      ? "✓"
+      ? "✓ "
       : state === "output-error"
-        ? "✗"
+        ? "✗ "
         : state === "input-streaming"
           ? ""
-          : "…";
+          : "… ";
 
   const labelText =
-    state === "input-streaming" ? `${meta.label}…` : `${prefix} ${meta.label}${detail}`;
+    state === "input-streaming" ? `${meta.label}…` : `${prefix}${meta.label}${detail}`;
 
   return (
-    <Chip size="sm" tone={tone}>
+    <Badge variant={variant} className="max-w-full truncate font-normal">
       {labelText}
-    </Chip>
+    </Badge>
   );
 }
 
@@ -641,61 +649,54 @@ const AiAdminChatPage = () => {
 
   return (
     <div
-      className="ai-admin-page"
+      className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4 pt-6"
       data-ai-context={JSON.stringify({ section: "ai-admin-chat" })}
     >
-      {/* Page Header */}
-      <div className="ai-admin-page__header">
-        <h1 className="ai-admin-page__title">
-          {intl.formatMessage({
-            id: "ai_admin.page.title",
-            defaultMessage: "AI System Administrator",
-          })}
-        </h1>
-        <p className="ai-admin-page__warning">
-          {intl.formatMessage({
-            id: "ai_admin.page.warning",
-            defaultMessage:
-              "⚠️ Dangerous: This AI assistant can modify database records. Always review actions before confirming.",
-          })}
-        </p>
-        <p className="ai-admin-page__subtitle">
-          {intl.formatMessage({
-            id: "ai_admin.page.subtitle",
-            defaultMessage:
-              "Full read-write database access. All operations are immediate and irreversible. Proceed with caution.",
-          })}
-        </p>
-      </div>
+      <header className="mb-4 shrink-0 space-y-2 border-b border-border pb-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--module-ai)_14%,transparent)] text-module-ai">
+            <Layers className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="font-heading text-2xl font-bold tracking-tight">
+              {intl.formatMessage({
+                id: "ai_admin.page.title",
+                defaultMessage: "AI System Administrator",
+              })}
+            </h1>
+            <p className="mt-1 flex items-start gap-1.5 text-sm font-medium text-destructive">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              {intl.formatMessage({
+                id: "ai_admin.page.warning",
+                defaultMessage:
+                  "Dangerous: This AI assistant can modify database records. Always review actions before confirming.",
+              })}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {intl.formatMessage({
+                id: "ai_admin.page.subtitle",
+                defaultMessage:
+                  "Full read-write database access. All operations are immediate and irreversible. Proceed with caution.",
+              })}
+            </p>
+          </div>
+        </div>
+      </header>
 
-      {/* Chat Area */}
-      <div className="ai-admin-page__chat">
-        <div className="ai-admin-page__messages">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-border/80 py-0 shadow-sm">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
           {messages.length === 0 && (
-            <div className="ai-admin-page__empty">
-              <span className="ai-admin-page__empty-icon" aria-hidden="true">
-                <svg
-                  width="40"
-                  height="40"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12 text-center">
+              <span className="flex size-16 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
+                <Layers className="size-8" />
               </span>
-              <span className="ai-admin-page__empty-text">
+              <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
                 {intl.formatMessage({
                   id: "ai_admin.chat.empty",
                   defaultMessage:
                     "Ask the AI system administrator anything about your data. It can read, write, and analyze data across all tables.",
                 })}
-              </span>
+              </p>
             </div>
           )}
           {messages.map((message, messageIdx) => {
@@ -711,7 +712,7 @@ const AiAdminChatPage = () => {
             return (
               <div
                 key={message.id}
-                className={`ai-msg ${isUser ? "ai-msg--user" : "ai-msg--assistant"}`}
+                className={cn("ai-msg", isUser ? "ai-msg--user" : "ai-msg--assistant")}
               >
                 {(() => {
                   const elements: ReactNode[] = [];
@@ -730,14 +731,13 @@ const AiAdminChatPage = () => {
                     elements.push(
                       <div
                         key={`text-${segKey++}`}
-                        className={`ai-bubble ${isUser ? "ai-bubble--user" : "ai-bubble--assistant"}`}
-                      >
-                        {isUser ? (
-                          textToRender
-                        ) : (
-                          <MarkdownBubble text={textToRender} />
+                        className={cn(
+                          "ai-bubble",
+                          isUser ? "ai-bubble--user" : "ai-bubble--assistant",
                         )}
-                      </div>
+                      >
+                        {isUser ? textToRender : <MarkdownBubble text={textToRender} />}
+                      </div>,
                     );
                   };
 
@@ -769,7 +769,7 @@ const AiAdminChatPage = () => {
                         ? String(p.toolName)
                         : part.type.slice("tool-".length);
                     elements.push(
-                      <ToolChip key={`tool-${partIdx}`} toolName={toolName} part={p} />
+                      <ToolChip key={`tool-${partIdx}`} toolName={toolName} part={p} />,
                     );
                   });
 
@@ -784,56 +784,68 @@ const AiAdminChatPage = () => {
           {isLoading && (
             <div className="ai-loading">
               <div className="ai-loading__bubble">
-                <Spinner size="sm" />
+                <Loader2 className="size-4 animate-spin text-primary" />
               </div>
             </div>
           )}
           {error && (
-            <div className="ai-error">Something went wrong. Please try again.</div>
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              Something went wrong. Please try again.
+            </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="ai-admin-page__input">
-          <div className="ai-admin-page__input-row">
-            <div className="ai-admin-page__textarea">
-              <Textarea
-                placeholder={intl.formatMessage({
-                  id: "ai_admin.chat.placeholder",
-                  defaultMessage: "Ask the AI administrator to query or modify data...",
-                })}
-                value={input}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                  setInput(e.target.value)
-                }
-                onKeyDown={handleKeyDown}
-                disabled={isLoading}
-              />
-            </div>
+        <div className="shrink-0 border-t border-border bg-muted/40 p-3 sm:p-4">
+          <div className="flex items-end gap-2">
+            <Textarea
+              className="min-h-11 flex-1 resize-none bg-card"
+              placeholder={intl.formatMessage({
+                id: "ai_admin.chat.placeholder",
+                defaultMessage: "Ask the AI administrator to query or modify data...",
+              })}
+              value={input}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setInput(e.target.value)
+              }
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+              rows={1}
+            />
             <Button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
+              size="lg"
+              aria-label={intl.formatMessage({
+                id: "ai_admin.chat.send",
+                defaultMessage: "Send",
+              })}
             >
               {isLoading ? (
-                <Spinner size="sm" />
+                <Loader2 className="size-4 animate-spin" />
               ) : (
-                intl.formatMessage({
-                  id: "ai_admin.chat.send",
-                  defaultMessage: "Send",
-                })
+                <>
+                  <SendHorizontal className="size-4" />
+                  <span className="hidden sm:inline">
+                    {intl.formatMessage({
+                      id: "ai_admin.chat.send",
+                      defaultMessage: "Send",
+                    })}
+                  </span>
+                </>
               )}
             </Button>
           </div>
-          <div className="ai-admin-page__input-actions">
-            <Button variant="ghost" onClick={clearChat} size="sm">
+          <div className="mt-2 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={clearChat}>
+              <Trash2 className="size-3.5" />
               Clear Chat
             </Button>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
-  );
+  )
 };
 
 export default AiAdminChatPage;
