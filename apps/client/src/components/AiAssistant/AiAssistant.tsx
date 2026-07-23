@@ -1,6 +1,3 @@
-import "./AiAssistant.css";
-
-import { Chip } from '../../ui';
 import { Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -166,20 +163,18 @@ const resolveToolInput = (part: Record<string, unknown>): unknown => {
   return direct;
 };
 
-// Markdown component map using BEM CSS classes from AiAssistant.css
-// instead of Tailwind utility classes.
 const markdownComponents: Components = {
-  h1: ({ children }) => <h1>{children}</h1>,
-  h2: ({ children }) => <h2>{children}</h2>,
-  h3: ({ children }) => <h3>{children}</h3>,
-  p: ({ children }) => <p>{children}</p>,
-  ul: ({ children }) => <ul>{children}</ul>,
-  ol: ({ children }) => <ol>{children}</ol>,
+  h1: ({ children }) => <h1 className="mt-3 mb-1.5 text-[0.9375rem] font-bold">{children}</h1>,
+  h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-sm font-bold">{children}</h2>,
+  h3: ({ children }) => <h3 className="mt-2 mb-1 text-xs font-semibold">{children}</h3>,
+  p: ({ children }) => <p className="my-1.5 leading-relaxed">{children}</p>,
+  ul: ({ children }) => <ul className="my-1.5 list-disc space-y-0.5 pl-5">{children}</ul>,
+  ol: ({ children }) => <ol className="my-1.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
   li: ({ children }) => <li>{children}</li>,
-  strong: ({ children }) => <strong>{children}</strong>,
-  em: ({ children }) => <em>{children}</em>,
+  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+  em: ({ children }) => <em className="italic">{children}</em>,
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer">
+    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">
       {children}
     </a>
   ),
@@ -187,36 +182,41 @@ const markdownComponents: Components = {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="ai-markdown code--inline" {...rest}>
+        <code className="rounded bg-muted px-1 py-px font-mono text-[0.75rem]" {...rest}>
           {children}
         </code>
       );
     }
     return (
-      <code className={className} {...rest}>
+      <code className={cn('font-mono text-[0.75rem]', className)} {...rest}>
         {children}
       </code>
     );
   },
   pre: ({ children }) => (
-    <pre aria-label="Code block">
+    <pre
+      aria-label="Code block"
+      className="my-2 overflow-x-auto rounded-lg bg-muted p-2 font-mono text-[0.75rem] whitespace-pre"
+    >
       {children}
     </pre>
   ),
   blockquote: ({ children }) => (
-    <blockquote>
+    <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">
       {children}
     </blockquote>
   ),
-  hr: () => <hr />,
+  hr: () => <hr className="my-3 border-border" />,
   table: ({ children }) => (
-    <div className="ai-md-table-wrap">
-      <table>{children}</table>
+    <div className="my-2 overflow-x-auto">
+      <table className="min-w-full border-collapse text-[0.75rem]">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead>{children}</thead>,
-  th: ({ children }) => <th>{children}</th>,
-  td: ({ children }) => <td>{children}</td>,
+  thead: ({ children }) => <thead className="bg-muted/60">{children}</thead>,
+  th: ({ children }) => (
+    <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
+  ),
+  td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
 };
 
 // Whitelist safe URL protocols. Blocks javascript: / data: / vbscript: URIs.
@@ -237,7 +237,7 @@ function MarkdownBubble({ text }: { text: string }) {
     ),
     [text],
   );
-  return <div className="ai-markdown">{rendered}</div>;
+  return <div className="text-[0.8125rem] leading-relaxed text-foreground">{rendered}</div>;
 }
 
 // Metadata for rendering tool activity chips
@@ -259,25 +259,31 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
     detail = ` (${count} field${count !== 1 ? 's' : ''})`;
   }
 
-  const tone =
-    state === 'output-available' ? 'success' :
-      state === 'output-error' ? 'danger' :
-        state === 'input-streaming' ? 'warning' :
-          'neutral';
+  const variant =
+    state === 'output-available'
+      ? 'default'
+      : state === 'output-error'
+        ? 'destructive'
+        : state === 'input-streaming'
+          ? 'outline'
+          : 'secondary';
 
   const prefix =
-    state === 'output-available' ? '✓' :
-      state === 'output-error' ? '✗' :
-        state === 'input-streaming' ? '' : '…';
+    state === 'output-available'
+      ? '✓ '
+      : state === 'output-error'
+        ? '✗ '
+        : state === 'input-streaming'
+          ? ''
+          : '… ';
 
-  const labelText = state === 'input-streaming'
-    ? `${meta.label}…`
-    : `${prefix} ${meta.label}${detail}`;
+  const labelText =
+    state === 'input-streaming' ? `${meta.label}…` : `${prefix}${meta.label}${detail}`;
 
   return (
-    <Chip size="sm" tone={tone}>
+    <Badge variant={variant} className="max-w-full truncate font-normal">
       {labelText}
-    </Chip>
+    </Badge>
   );
 }
 
@@ -657,11 +663,11 @@ export const AiAssistant = () => {
   });
 
   return (
-    <div className="ai-anchor fixed right-6 bottom-6 z-1000 flex flex-col items-end gap-3">
+    <div className="fixed right-6 bottom-6 z-1000 flex flex-col items-end gap-3">
       {open && (
         <div
           className={cn(
-            'ai-panel flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl',
+            'flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl',
             'animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none',
             isExpanded ? 'w-170' : 'w-96',
           )}
@@ -721,7 +727,7 @@ export const AiAssistant = () => {
 
           <div
             className={cn(
-              'ai-messages min-h-0 flex-1 overflow-y-auto px-4 pt-4',
+              'min-h-0 flex-1 overflow-y-auto px-4 pt-4',
               isExpanded ? 'h-[65vh]' : 'h-[50vh]',
             )}
           >
@@ -747,7 +753,10 @@ export const AiAssistant = () => {
               return (
                 <div
                   key={message.id}
-                  className={`ai-msg ${isUser ? 'ai-msg--user' : 'ai-msg--assistant'}`}
+                  className={cn(
+                    'mb-3 flex flex-col gap-1',
+                    isUser ? 'items-end' : 'items-start',
+                  )}
                 >
                   {(() => {
                     const elements: ReactNode[] = [];
@@ -765,7 +774,15 @@ export const AiAssistant = () => {
                       isFirstTextSegment = false;
                       if (!textToRender.trim()) return;
                       elements.push(
-                        <div key={`text-${segKey++}`} className={`ai-bubble ${isUser ? 'ai-bubble--user' : 'ai-bubble--assistant'}`}>
+                        <div
+                          key={`text-${segKey++}`}
+                          className={cn(
+                            'max-w-[85%] min-w-0 rounded-xl px-3 py-2 text-[0.8125rem] leading-relaxed wrap-break-word',
+                            isUser
+                              ? 'whitespace-pre-wrap bg-primary text-primary-foreground shadow-sm'
+                              : 'bg-muted text-foreground',
+                          )}
+                        >
                           {isUser ? textToRender : <MarkdownBubble text={textToRender} />}
                         </div>,
                       );
@@ -815,7 +832,7 @@ export const AiAssistant = () => {
               </div>
             )}
             {error && (
-              <div className="ai-error mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <div className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
                 Something went wrong. Please try again.
               </div>
             )}

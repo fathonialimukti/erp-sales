@@ -1,5 +1,3 @@
-import "../../components/AiAssistant/AiAssistant.css";
-
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 import { useAtomValue, useSetAtom } from "jotai";
@@ -176,17 +174,17 @@ const resolveToolInput = (part: Record<string, unknown>): unknown => {
 };
 
 const markdownComponents: Components = {
-  h1: ({ children }) => <h1>{children}</h1>,
-  h2: ({ children }) => <h2>{children}</h2>,
-  h3: ({ children }) => <h3>{children}</h3>,
-  p: ({ children }) => <p>{children}</p>,
-  ul: ({ children }) => <ul>{children}</ul>,
-  ol: ({ children }) => <ol>{children}</ol>,
+  h1: ({ children }) => <h1 className="mt-3 mb-1.5 text-[0.9375rem] font-bold">{children}</h1>,
+  h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-sm font-bold">{children}</h2>,
+  h3: ({ children }) => <h3 className="mt-2 mb-1 text-xs font-semibold">{children}</h3>,
+  p: ({ children }) => <p className="my-1.5 leading-relaxed">{children}</p>,
+  ul: ({ children }) => <ul className="my-1.5 list-disc space-y-0.5 pl-5">{children}</ul>,
+  ol: ({ children }) => <ol className="my-1.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
   li: ({ children }) => <li>{children}</li>,
-  strong: ({ children }) => <strong>{children}</strong>,
-  em: ({ children }) => <em>{children}</em>,
+  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+  em: ({ children }) => <em className="italic">{children}</em>,
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer">
+    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">
       {children}
     </a>
   ),
@@ -194,28 +192,41 @@ const markdownComponents: Components = {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="ai-markdown code--inline" {...rest}>
+        <code className="rounded bg-muted px-1 py-px font-mono text-[0.75rem]" {...rest}>
           {children}
         </code>
       );
     }
     return (
-      <code className={className} {...rest}>
+      <code className={cn("font-mono text-[0.75rem]", className)} {...rest}>
         {children}
       </code>
     );
   },
-  pre: ({ children }) => <pre aria-label="Code block">{children}</pre>,
-  blockquote: ({ children }) => <blockquote>{children}</blockquote>,
-  hr: () => <hr />,
+  pre: ({ children }) => (
+    <pre
+      aria-label="Code block"
+      className="my-2 overflow-x-auto rounded-lg bg-muted p-2 font-mono text-[0.75rem] whitespace-pre"
+    >
+      {children}
+    </pre>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="my-3 border-border" />,
   table: ({ children }) => (
-    <div className="ai-md-table-wrap">
-      <table>{children}</table>
+    <div className="my-2 overflow-x-auto">
+      <table className="min-w-full border-collapse text-[0.75rem]">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead>{children}</thead>,
-  th: ({ children }) => <th>{children}</th>,
-  td: ({ children }) => <td>{children}</td>,
+  thead: ({ children }) => <thead className="bg-muted/60">{children}</thead>,
+  th: ({ children }) => (
+    <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
+  ),
+  td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
 };
 
 const sanitizeUrl = (url: string) => (/^(https?:|mailto:|#)/.test(url) ? url : "#");
@@ -233,7 +244,7 @@ function MarkdownBubble({ text }: { text: string }) {
     ),
     [text]
   );
-  return <div className="ai-markdown">{rendered}</div>;
+  return <div className="text-[0.8125rem] leading-relaxed text-foreground">{rendered}</div>;
 }
 
 const TOOL_META: Record<string, { label: string }> = {
@@ -712,7 +723,10 @@ const AiAdminChatPage = () => {
             return (
               <div
                 key={message.id}
-                className={cn("ai-msg", isUser ? "ai-msg--user" : "ai-msg--assistant")}
+                className={cn(
+                  "mb-3 flex flex-col gap-1",
+                  isUser ? "items-end" : "items-start",
+                )}
               >
                 {(() => {
                   const elements: ReactNode[] = [];
@@ -732,8 +746,10 @@ const AiAdminChatPage = () => {
                       <div
                         key={`text-${segKey++}`}
                         className={cn(
-                          "ai-bubble",
-                          isUser ? "ai-bubble--user" : "ai-bubble--assistant",
+                          "max-w-[85%] min-w-0 rounded-xl px-3 py-2 text-[0.8125rem] leading-relaxed wrap-break-word",
+                          isUser
+                            ? "whitespace-pre-wrap bg-primary text-primary-foreground shadow-sm"
+                            : "bg-muted text-foreground",
                         )}
                       >
                         {isUser ? textToRender : <MarkdownBubble text={textToRender} />}
@@ -782,8 +798,8 @@ const AiAdminChatPage = () => {
             );
           })}
           {isLoading && (
-            <div className="ai-loading">
-              <div className="ai-loading__bubble">
+            <div className="mb-3 flex justify-start">
+              <div className="rounded-xl bg-muted px-3 py-2">
                 <Loader2 className="size-4 animate-spin text-primary" />
               </div>
             </div>
