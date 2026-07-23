@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BookOpen, Pencil, Trash2 } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type KnowledgeBaseDetail = {
   id: string;
@@ -47,7 +52,12 @@ export const KnowledgeBaseDetailPage = () => {
       await trpcClient.knowledgeBase.delete.mutate({ id: entry.id });
       await queryClient.invalidateQueries({ queryKey: ["knowledgeBaseList"] });
       setDeleteModalOpen(false);
-      toast.success(intl.formatMessage({ id: "knowledgeBase.detail.delete_success", defaultMessage: "Knowledge entry deleted" }));
+      toast.success(
+        intl.formatMessage({
+          id: "knowledgeBase.detail.delete_success",
+          defaultMessage: "Knowledge entry deleted",
+        }),
+      );
       navigate("/knowledge-base");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
@@ -58,105 +68,142 @@ export const KnowledgeBaseDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="m-page">
-        <div className="m-state m-state--loading">
-          <Spinner size="lg" />
-          <span className="m-state__title">{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "knowledge-base-detail", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-48 w-full" />
+      </section>
     );
   }
 
   if (!entry) {
     return (
-      <div className="m-page">
-        <div className="m-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
-          <div className="m-card">
-            <div className="m-card__body">
-              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
-                {intl.formatMessage({ id: "knowledgeBase.detail.not_found", defaultMessage: "Knowledge entry not found" })}
-              </p>
-              <button type="button" className="m-btn m-btn--ghost" style={{ marginTop: 12 }} onClick={() => navigate("/knowledge-base")}>
-                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "knowledge-base-detail", notFound: true })}
+      >
+        <PageHeader
+          module="knowledge"
+          title={intl.formatMessage({
+            id: "knowledgeBase.detail.not_found",
+            defaultMessage: "Knowledge entry not found",
+          })}
+          onBack={() => navigate("/knowledge-base")}
+        />
+      </section>
     );
   }
 
   return (
-    <section className="m-page" data-ai-context={JSON.stringify({ section: "knowledge-base-detail", id: entry.id, name: entry.title, source: entry.source })}>
-      <header className="m-detail-hero">
-        <div className="m-detail-hero__top">
-          <ButtonGroup
-            size="md"
-            items={[{ key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <span aria-hidden="true">←</span>, to: "/knowledge-base" }]}
-          />
-          <ButtonGroup
-            size="md"
-            items={[
-              ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <span aria-hidden="true">✎</span>, to: `/knowledge-base/${entry.id}/edit` }] : []),
-              ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <span aria-hidden="true">🗑</span>, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
-            ]}
-          />
-        </div>
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "knowledge-base-detail",
+        id: entry.id,
+        name: entry.title,
+        source: entry.source,
+      })}
+    >
+      <PageHeader
+        module="knowledge"
+        eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+        title={entry.title}
+        description={entry.source}
+        onBack={() => navigate("/knowledge-base")}
+        actions={
+          <>
+            {canUpdate ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(`/knowledge-base/${entry.id}/edit`)}
+              >
+                <Pencil className="size-4" />
+                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+              </Button>
+            ) : null}
+            {canDelete ? (
+              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+                <Trash2 className="size-4" />
+                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
-        <div className="m-detail-hero__title-block">
-          <div className="m-detail-hero__title-row">
-            <div className="m-detail-hero__title-stack">
-              <span className="m-detail-hero__kicker">{intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}</span>
-              <h1 className="m-detail-hero__title">{entry.title}</h1>
-              <span className="m-detail-hero__sub">{entry.source}</span>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-knowledge)_14%,transparent)] text-[var(--module-knowledge)]">
+              <BookOpen className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({
+              id: "knowledgeBase.detail.summary",
+              defaultMessage: "Summary",
+            })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "knowledgeBase.detail.source_label",
+                  defaultMessage: "Source",
+                })}
+              </dt>
+              <dd>
+                <Badge variant="secondary">{entry.source}</Badge>
+              </dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "knowledgeBase.detail.updated_label",
+                  defaultMessage: "Updated",
+                })}
+              </dt>
+              <dd className="text-sm tabular-nums text-foreground">
+                {new Date(entry.updatedAt).toLocaleString()}
+              </dd>
+            </div>
+          </dl>
+          <div className="space-y-1">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              {intl.formatMessage({
+                id: "knowledgeBase.detail.content_label",
+                defaultMessage: "Content",
+              })}
+            </p>
+            <div className="whitespace-pre-wrap rounded-lg bg-muted/40 p-4 text-sm leading-relaxed text-foreground">
+              {entry.content}
             </div>
           </div>
-        </div>
-      </header>
+        </CardContent>
+      </Card>
 
-      <section className="m-card">
-        <div className="m-card__header">
-          <h2 className="m-card__title">{intl.formatMessage({ id: "knowledgeBase.detail.summary", defaultMessage: "Summary" })}</h2>
-        </div>
-        <div className="m-card__body">
-          <div className="m-section m-section--2">
-            <div className="m-field">
-              <span className="m-field__label">{intl.formatMessage({ id: "knowledgeBase.detail.source_label", defaultMessage: "Source" })}</span>
-              <span className="m-field__value">{entry.source}</span>
-            </div>
-            <div className="m-field">
-              <span className="m-field__label">{intl.formatMessage({ id: "knowledgeBase.detail.updated_label", defaultMessage: "Updated" })}</span>
-              <span className="m-field__value">{new Date(entry.updatedAt).toLocaleString()}</span>
-            </div>
-          </div>
-          <div className="m-field" style={{ marginTop: 16 }}>
-            <span className="m-field__label">{intl.formatMessage({ id: "knowledgeBase.detail.content_label", defaultMessage: "Content" })}</span>
-            <div className="m-field__value" style={{ whiteSpace: "pre-wrap" }}>{entry.content}</div>
-          </div>
-        </div>
-      </section>
-
-      {deleteModalOpen && createPortal(
-        <div className="m-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
-          <div className="m-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="m-modal__header">
-              <h3>{intl.formatMessage({ id: "knowledgeBase.detail.delete_title", defaultMessage: "Delete knowledge entry" })}</h3>
-              <button className="m-btn m-btn--ghost m-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close">×</button>
-            </div>
-            <div className="m-modal__body">
-              <h3 className="m-modal__title">{intl.formatMessage({ id: "knowledgeBase.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}</h3>
-              <p className="m-modal__msg">
-                {intl.formatMessage({ id: "knowledgeBase.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: entry.title })}
-              </p>
-            </div>
-            <div className="m-modal__footer">
-              <button className="m-btn m-btn--ghost" onClick={() => setDeleteModalOpen(false)}>{intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}</button>
-              <button className="m-btn m-btn--danger" onClick={handleDelete} disabled={isDeleting}>{intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}</button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <ConfirmDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title={intl.formatMessage({
+          id: "knowledgeBase.detail.delete_title",
+          defaultMessage: "Delete knowledge entry",
+        })}
+        description={intl.formatMessage(
+          {
+            id: "knowledgeBase.index.delete_confirm_body",
+            defaultMessage: 'Delete "{name}"? This action cannot be undone.',
+          },
+          { name: entry.title },
+        )}
+        confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={handleDelete}
+      />
     </section>
   );
 };
