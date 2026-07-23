@@ -1,51 +1,32 @@
-import { atom, useAtom, useSetAtom } from "jotai";
-import { useCallback } from "react";
-import { ToastProvider, type Toast } from "./Toast";
-
-const toastsAtom = atom<Toast[]>([]);
-let nextId = 1;
+import { toast as sonnerToast } from "sonner";
 
 interface ShowToastOptions {
   message: string;
-  tone?: Toast["tone"];
+  tone?: "success" | "error" | "info" | "warning";
   durationMs?: number;
 }
 
-const useToastStore = () => {
-  const [toasts, setToasts] = useAtom(toastsAtom);
-
-  const dismiss = useCallback(
-    (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id)),
-    [setToasts],
-  );
-
-  const show = useCallback(
-    ({ message, tone = "info", durationMs = 3500 }: ShowToastOptions) => {
-      const id = `t${nextId++}`;
-      setToasts((prev) => [...prev, { id, message, tone }]);
-      if (durationMs > 0) {
-        window.setTimeout(() => dismiss(id), durationMs);
-      }
-    },
-    [setToasts, dismiss],
-  );
-
-  return { toasts, dismiss, show };
+// Legacy Toast type kept for Toast.tsx re-export compatibility
+export type Toast = {
+  id: string;
+  message: string;
+  tone: NonNullable<ShowToastOptions["tone"]>;
 };
 
-const ToastContainer = () => {
-  const { toasts, dismiss } = useToastStore();
-  return <ToastProvider toasts={toasts} onDismiss={dismiss} />;
+const show = ({ message, tone = "info", durationMs = 3500 }: ShowToastOptions) => {
+  const opts = { duration: durationMs };
+  if (tone === "success") sonnerToast.success(message, opts);
+  else if (tone === "error") sonnerToast.error(message, opts);
+  else if (tone === "warning") sonnerToast.warning(message, opts);
+  else sonnerToast.info(message, opts);
 };
 
-export const useToast = () => {
-  const { show } = useToastStore();
-  return {
-    success: (message: string) => show({ message, tone: "success" }),
-    error: (message: string) => show({ message, tone: "error" }),
-    info: (message: string) => show({ message, tone: "info" }),
-    warning: (message: string) => show({ message, tone: "warning" }),
-  };
-};
+export const useToast = () => ({
+  success: (message: string) => show({ message, tone: "success" }),
+  error: (message: string) => show({ message, tone: "error" }),
+  info: (message: string) => show({ message, tone: "info" }),
+  warning: (message: string) => show({ message, tone: "warning" }),
+});
 
-export { ToastContainer };
+// ponytail: providers still mount ToastContainer; sonner Toaster already present
+export const ToastContainer = () => null;

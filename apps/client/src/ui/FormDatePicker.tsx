@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { format, isValid, parse } from "date-fns";
 import { DayPicker } from "react-day-picker";
-import { Icon } from "./";
-import "./FormDatePicker.css";
+import { Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface FormDatePickerProps {
   label?: string;
@@ -86,26 +86,28 @@ export const FormDatePicker = ({
     if (d) onChange(toISODate(d));
   };
 
-  const triggerClasses = [
-    "dp-trigger",
-    isInvalid ? "dp-trigger--error" : "",
-    isDisabled ? "dp-trigger--disabled" : "",
-  ].filter(Boolean).join(" ");
-
   return (
-    <div className="dp-wrapper">
-      {label && (
-        <label htmlFor={autoId} className="dp-label">
+    <div className="flex w-full flex-col gap-1.5">
+      {label ? (
+        <label htmlFor={autoId} className="text-sm font-medium">
           {label}
-          {isRequired && <span className="dp-label__required">*</span>}
+          {isRequired ? <span className="text-destructive">*</span> : null}
         </label>
-      )}
+      ) : null}
       <details
         ref={detailsRef}
-        className="dp-details"
+        className="relative"
         onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
       >
-        <summary className={triggerClasses}>
+        <summary
+          className={cn(
+            "flex h-9 list-none cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs",
+            "focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+            isInvalid && "border-destructive ring-destructive/20",
+            isDisabled && "pointer-events-none opacity-50",
+            "[&::-webkit-details-marker]:hidden",
+          )}
+        >
           <input
             id={autoId}
             type="text"
@@ -115,29 +117,25 @@ export const FormDatePicker = ({
             disabled={isDisabled}
             onChange={handleTextChange}
             onClick={(e) => e.stopPropagation()}
-            className="dp-trigger__input"
+            className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
           />
-          <Icon icon="solar:calendar-mark-linear" className="dp-trigger__icon" />
+          <Calendar className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         </summary>
-        <div className="dp-popover">
+        <div className="absolute z-50 mt-1 rounded-md border bg-popover p-2 text-popover-foreground shadow-md">
           <DayPicker
             mode="single"
             selected={selected}
             onSelect={handleSelect}
             showOutsideDays
-            classNames={{
-              caption: "rdp-caption",
-              nav: "rdp-nav",
-              head_cell: "rdp-head_cell",
-              cell: "rdp-cell",
-              day: "rdp-day",
-              day_selected: "rdp-day_selected",
-              day_today: "rdp-day_today",
-            }}
+            className="rdp-root"
           />
         </div>
       </details>
-      {isInvalid && errorMessage && <p className="dp-error">{errorMessage}</p>}
+      {isInvalid && errorMessage ? (
+        <p className="text-xs text-destructive" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </div>
   );
 };

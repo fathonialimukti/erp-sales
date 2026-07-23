@@ -1,44 +1,61 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import "./Card.css";
+import {
+  Card as ShadCard,
+  CardHeader as ShadCardHeader,
+  CardTitle as ShadCardTitle,
+  CardDescription as ShadCardDescription,
+  CardContent as ShadCardContent,
+  CardFooter as ShadCardFooter,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   variant?: "default" | "elevated" | "outline" | "secondary";
 }
 
-const VARIANT_CLASS: Record<string, string> = {
-  default: "",
-  elevated: "card--elevated",
-  outline: "card--outline",
-  secondary: "card--secondary",
-};
-
 export const Card = ({ children, className, variant = "default", ...rest }: CardProps) => (
-  <div className={`card ${VARIANT_CLASS[variant]} ${className ?? ""}`} {...rest}>
+  <ShadCard
+    className={cn(
+      variant === "elevated" && "shadow-md",
+      variant === "outline" && "shadow-none",
+      variant === "secondary" && "bg-secondary/40 shadow-none",
+      className,
+    )}
+    {...rest}
+  >
     {children}
-  </div>
+  </ShadCard>
 );
 
-export const CardHeader = ({ children, className, ...rest }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={`card__header ${className ?? ""}`} {...rest}>{children}</div>
+export const CardHeader = ({ className, ...rest }: HTMLAttributes<HTMLDivElement>) => (
+  <ShadCardHeader className={className} {...rest} />
 );
 
-interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> { children: ReactNode; }
+interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
+  children: ReactNode;
+}
 export const CardTitle = ({ children, className, ...rest }: CardTitleProps) => (
-  <h3 className={`card__title ${className ?? ""}`} {...rest}>{children}</h3>
+  <ShadCardTitle className={className} {...rest}>
+    {children}
+  </ShadCardTitle>
 );
 
-interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> { children: ReactNode; }
+interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {
+  children: ReactNode;
+}
 export const CardDescription = ({ children, className, ...rest }: CardDescriptionProps) => (
-  <p className={`card__description ${className ?? ""}`} {...rest}>{children}</p>
+  <ShadCardDescription className={className} {...rest}>
+    {children}
+  </ShadCardDescription>
 );
 
-export const CardBody = ({ children, className, ...rest }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={`card__body ${className ?? ""}`} {...rest}>{children}</div>
+export const CardBody = ({ className, ...rest }: HTMLAttributes<HTMLDivElement>) => (
+  <ShadCardContent className={className} {...rest} />
 );
 
 export const CardContent = CardBody;
 
-export const CardFooter = ({ children, className, ...rest }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={`card__footer ${className ?? ""}`} {...rest}>{children}</div>
+export const CardFooter = ({ className, ...rest }: HTMLAttributes<HTMLDivElement>) => (
+  <ShadCardFooter className={className} {...rest} />
 );

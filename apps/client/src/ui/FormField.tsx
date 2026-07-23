@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Label } from "./Label";
 import { FieldError } from "./FieldError";
-import "./FormField.css";
+import { cn } from "@/lib/utils";
 
 interface FormFieldProps {
   children: ReactNode;
@@ -21,10 +21,12 @@ export const FormField = ({
   isRequired,
   className,
 }: FormFieldProps) => (
-  <div className={`ff ${className ?? ""}`}>
-    {label && <Label required={isRequired}>{label}</Label>}
+  <div className={cn("flex flex-col gap-1.5", className)}>
+    {label ? <Label required={isRequired}>{label}</Label> : null}
     {children}
-    {description && !error && <p className="ff__desc">{description}</p>}
-    {error && <FieldError>{error}</FieldError>}
+    {description && !error ? (
+      <p className="text-xs text-muted-foreground">{description}</p>
+    ) : null}
+    {error ? <FieldError>{error}</FieldError> : null}
   </div>
 );

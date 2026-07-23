@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import "./Skeleton.css";
+import { Skeleton as ShadSkeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface SkeletonProps {
   className?: string;
@@ -7,5 +8,5 @@ interface SkeletonProps {
 }
 
 export const Skeleton = ({ className, style }: SkeletonProps) => (
-  <span aria-hidden className={`skel ${className ?? ""}`} style={style} />
+  <ShadSkeleton aria-hidden className={cn("block h-4 w-full", className)} style={style} />
 );

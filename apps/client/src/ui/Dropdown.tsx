@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import "./Dropdown.css";
+import { cn } from "@/lib/utils";
 
 interface DropdownProps {
   trigger: ReactNode;
@@ -10,15 +10,21 @@ interface DropdownProps {
   className?: string;
 }
 
-export const Dropdown = ({ trigger, children, align = "end", side = "bottom", className }: DropdownProps) => {
+export const Dropdown = ({
+  trigger,
+  children,
+  align = "end",
+  side = "bottom",
+  className,
+}: DropdownProps) => {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const panelId = useId();
-
-  // Position the panel relative to the trigger.
-  const [position, setPosition] = useState<{ top: number; left: number; minWidth: number } | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number; minWidth: number } | null>(
+    null,
+  );
 
   const recomputePosition = () => {
     const t = triggerRef.current;
@@ -29,12 +35,10 @@ export const Dropdown = ({ trigger, children, align = "end", side = "bottom", cl
       align === "end"
         ? Math.max(8, Math.min(window.innerWidth - minWidth - 8, r.right - minWidth))
         : Math.max(8, Math.min(window.innerWidth - minWidth - 8, r.left));
-    const top =
-      side === "bottom" ? r.bottom + 6 : Math.max(8, r.top - 6);
+    const top = side === "bottom" ? r.bottom + 6 : Math.max(8, r.top - 6);
     setPosition({ top, left, minWidth });
   };
 
-  // Close on outside click, Escape, scroll, or resize.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -64,10 +68,10 @@ export const Dropdown = ({ trigger, children, align = "end", side = "bottom", cl
     };
   }, [open]);
 
-  // Reposition when opened.
   useEffect(() => {
     if (!open) return;
     recomputePosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const onTriggerClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
@@ -89,14 +93,10 @@ export const Dropdown = ({ trigger, children, align = "end", side = "bottom", cl
 
   return (
     <>
-      <div
-        ref={rootRef}
-        className={`dd ${className ?? ""}`}
-        style={{ display: "inline-flex" }}
-      >
+      <div ref={rootRef} className={cn("ui-dd inline-flex", className)}>
         <div
           ref={triggerRef}
-          className="dd__trigger"
+          className="inline-flex cursor-pointer"
           role="button"
           tabIndex={0}
           aria-haspopup="menu"
@@ -109,31 +109,28 @@ export const Dropdown = ({ trigger, children, align = "end", side = "bottom", cl
         </div>
       </div>
 
-      {open && position && createPortal(
-        <div
-          ref={panelRef}
-          id={panelId}
-          role="menu"
-          aria-label="Menu"
-          className={[
-            "dd__panel",
-            "dd__panel--floating",
-            side === "bottom" ? "dd__panel--bottom" : "dd__panel--top",
-            align === "end" ? "dd__panel--end" : "dd__panel--start",
-          ].join(" ")}
-          style={{
-            position: "fixed",
-            top: position.top,
-            left: position.left,
-            minWidth: position.minWidth,
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {children}
-        </div>,
-        document.body,
-      )}
+      {open && position
+        ? createPortal(
+            <div
+              ref={panelRef}
+              id={panelId}
+              role="menu"
+              aria-label="Menu"
+              className="z-50 min-w-[11rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+              style={{
+                position: "fixed",
+                top: position.top,
+                left: position.left,
+                minWidth: position.minWidth,
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {children}
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 };
@@ -153,31 +150,35 @@ export const DropdownItem = ({
   ...rest
 }: DropdownItemProps) => {
   const onClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    // 1) Stop the click from bubbling to the document outside-click handler
     e.stopPropagation();
-    // 2) Run the user's onClick handler (the actual menu action)
     userOnClick?.(e);
-    // 3) Programmatically close the dropdown by clicking the trigger element.
-    //    The trigger's onClick handler toggles `open`, which closes it.
-    const root = e.currentTarget.closest(".dd");
+    const root = e.currentTarget.closest(".ui-dd");
     const trigger = root?.querySelector<HTMLElement>('[aria-haspopup="menu"]');
     if (trigger && trigger.getAttribute("aria-expanded") === "true") {
       trigger.click();
     }
   };
+
   return (
     <button
       type="button"
       role="menuitem"
       tabIndex={-1}
-      className={`dd__item ${tone === "danger" ? "dd__item--danger" : ""} ${className ?? ""}`}
+      className={cn(
+        "relative flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none",
+        "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+        tone === "danger" && "text-destructive focus:text-destructive",
+        className,
+      )}
       onClick={onClick}
       {...rest}
     >
-      {leftIcon}
-      <span className="dd__item-label">{children}</span>
+      {leftIcon ? <span className="inline-flex shrink-0 [&_svg]:size-4">{leftIcon}</span> : null}
+      <span className="truncate">{children}</span>
     </button>
   );
 };
 
-export const DropdownSeparator = () => <div className="dd__separator" role="separator" />;
+export const DropdownSeparator = () => (
+  <div className="-mx-1 my-1 h-px bg-border" role="separator" />
+);

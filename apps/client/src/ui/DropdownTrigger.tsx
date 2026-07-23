@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface DropdownTriggerProps {
   children: ReactNode;
@@ -6,5 +7,5 @@ interface DropdownTriggerProps {
 }
 
 export const DropdownTrigger = ({ children, className }: DropdownTriggerProps) => (
-  <span className={`dd__trigger ${className ?? ""}`}>{children}</span>
+  <span className={cn("inline-flex", className)}>{children}</span>
 );

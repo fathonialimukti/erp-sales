@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import "./FieldError.css";
+import { cn } from "@/lib/utils";
 
 interface FieldErrorProps extends HTMLAttributes<HTMLParagraphElement> {
   children: ReactNode;
@@ -7,7 +7,7 @@ interface FieldErrorProps extends HTMLAttributes<HTMLParagraphElement> {
 
 export const FieldError = ({ children, className, ...rest }: FieldErrorProps) =>
   children ? (
-    <p className={`ferr ${className ?? ""}`} role="alert" {...rest}>
+    <p className={cn("text-xs text-destructive", className)} role="alert" {...rest}>
       {children}
     </p>
   ) : null;

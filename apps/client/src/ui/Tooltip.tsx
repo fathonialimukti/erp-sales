@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import "./Tooltip.css";
+import {
+  Tooltip as ShadTooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TooltipProps {
   content: ReactNode;
@@ -8,10 +12,10 @@ interface TooltipProps {
 }
 
 export const Tooltip = ({ content, children, className }: TooltipProps) => (
-  <span className={`tip ${className ?? ""}`}>
-    {children}
-    <span role="tooltip" className="tip__content">
-      {content}
-    </span>
-  </span>
+  <ShadTooltip>
+    <TooltipTrigger asChild>
+      <span className={className}>{children}</span>
+    </TooltipTrigger>
+    <TooltipContent>{content}</TooltipContent>
+  </ShadTooltip>
 );

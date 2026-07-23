@@ -1,4 +1,9 @@
-import "./Avatar.css";
+import {
+  Avatar as ShadAvatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface AvatarProps {
   name?: string;
@@ -7,19 +12,19 @@ interface AvatarProps {
   className?: string;
 }
 
-const SIZE_CLASS: Record<string, string> = { sm: "av--sm", md: "av--md", lg: "av--lg" };
+const SIZE_MAP = { sm: "sm", md: "default", lg: "lg" } as const;
 
 const initialsOf = (name: string) =>
-  name.split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("") || "?";
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("") || "?";
 
-export const Avatar = ({ name = "", src, size = "md", className }: AvatarProps) => {
-  const sizeClass = SIZE_CLASS[size];
-  if (src) {
-    return <img src={src} alt={name} className={`av av--image ${sizeClass} ${className ?? ""}`} />;
-  }
-  return (
-    <span aria-label={name || "avatar"} className={`av av--initials ${sizeClass} ${className ?? ""}`}>
-      {initialsOf(name)}
-    </span>
-  );
-};
+export const Avatar = ({ name = "", src, size = "md", className }: AvatarProps) => (
+  <ShadAvatar size={SIZE_MAP[size]} className={cn(className)}>
+    {src ? <AvatarImage src={src} alt={name} /> : null}
+    <AvatarFallback>{initialsOf(name)}</AvatarFallback>
+  </ShadAvatar>
+);

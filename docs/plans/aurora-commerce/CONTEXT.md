@@ -86,8 +86,8 @@ Design is FROZEN. Do NOT re-open palette/stack debates or re-brainstorm.
 | Nav data (keep) | `apps/client/src/constants/nav-menu.ts` |
 | Custom nav SVGs | `apps/client/src/assets/icons/` |
 | Locales | `apps/client/src/locales/en.json`, `id.json` |
-| Old kit (purge later) | `apps/client/src/ui/*`, `Sidebar.css`, `Topbar.css` |
-| Old styles | `apps/client/src/styles/*` |
+| Old kit (compat adapters) | `apps/client/src/ui/*` — thin shadcn/Tailwind wrappers; prefer `@/components/ui` for new code |
+| Old styles (mid-migration) | `apps/client/src/styles/*` still imported by `index.css` for page-system/module-page/reports until page rewrites |
 
 ---
 

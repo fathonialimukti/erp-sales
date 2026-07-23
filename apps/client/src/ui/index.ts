@@ -1,7 +1,5 @@
-// Single source of truth for all UI primitive exports. Pages and
-// components import from "../../ui" (or "../ui") — never from the
-// individual files — so we can refactor or split a primitive
-// without touching every call site.
+// Aurora adapters — prefer @/components/ui + domain components for new code.
+// This barrel preserves the legacy public API so pages keep compiling mid-migration.
 
 export { Avatar } from "./Avatar";
 export { Button } from "./Button";

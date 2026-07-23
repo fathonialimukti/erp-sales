@@ -1,6 +1,6 @@
-import { Icon } from "./";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./Button";
-import "./Pagination.css";
+import { cn } from "@/lib/utils";
 
 interface PaginationProps {
   page: number;
@@ -9,23 +9,28 @@ interface PaginationProps {
   className?: string;
 }
 
-export const Pagination = ({ page, totalPages = 1, onChange, className }: PaginationProps) => {
+export const Pagination = ({
+  page,
+  totalPages = 1,
+  onChange,
+  className,
+}: PaginationProps) => {
   if (totalPages <= 1) return null;
   const canPrev = page > 1;
   const canNext = page < totalPages;
 
   return (
-    <nav aria-label="Pagination" className={`pag ${className ?? ""}`}>
+    <nav aria-label="Pagination" className={cn("flex items-center justify-center gap-3", className)}>
       <Button
         variant="outline"
         size="sm"
         onClick={() => onChange(page - 1)}
         disabled={!canPrev}
-        leftIcon={<Icon icon="solar:alt-arrow-left-linear" />}
+        leftIcon={<ChevronLeft className="size-4" />}
       >
         Prev
       </Button>
-      <span className="pag__info">
+      <span className="text-sm text-muted-foreground">
         Page {page} of {totalPages}
       </span>
       <Button
@@ -33,7 +38,7 @@ export const Pagination = ({ page, totalPages = 1, onChange, className }: Pagina
         size="sm"
         onClick={() => onChange(page + 1)}
         disabled={!canNext}
-        rightIcon={<Icon icon="solar:alt-arrow-right-linear" />}
+        rightIcon={<ChevronRight className="size-4" />}
       >
         Next
       </Button>

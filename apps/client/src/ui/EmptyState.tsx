@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Icon } from "./";
-import "./EmptyState.css";
+import { Inbox } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   icon?: ReactNode;
@@ -10,6 +10,7 @@ interface EmptyStateProps {
   className?: string;
 }
 
+// ponytail: keep ui EmptyState API (icon prop); domain EmptyState uses module accent
 export const EmptyState = ({
   icon,
   title,
@@ -17,13 +18,18 @@ export const EmptyState = ({
   action,
   className,
 }: EmptyStateProps) => (
-  <div className={`empty ${className ?? ""}`}>
-    <div className="empty__icon-wrapper">
-      {icon ?? <Icon icon="solar:inbox-linear" />}
+  <div
+    className={cn(
+      "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-card px-6 py-10 text-center",
+      className,
+    )}
+  >
+    <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      {icon ?? <Inbox className="size-5" aria-hidden />}
     </div>
-    <div className="empty__text">
-      <p className="empty__title">{title}</p>
-      {description && <p className="empty__desc">{description}</p>}
+    <div className="space-y-1">
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
     </div>
     {action}
   </div>

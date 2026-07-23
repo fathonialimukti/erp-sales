@@ -1,5 +1,6 @@
 import type { LabelHTMLAttributes, ReactNode } from "react";
-import "./Label.css";
+import { Label as ShadLabel } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   children: ReactNode;
@@ -7,8 +8,8 @@ interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
 }
 
 export const Label = ({ children, required, className, ...rest }: LabelProps) => (
-  <label className={`lbl ${className ?? ""}`} {...rest}>
+  <ShadLabel className={cn(className)} {...rest}>
     {children}
-    {required && <span className="lbl__required">*</span>}
-  </label>
+    {required ? <span className="text-destructive">*</span> : null}
+  </ShadLabel>
 );

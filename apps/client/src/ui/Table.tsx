@@ -1,48 +1,60 @@
-import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
-import "./Table.css";
+import type {
+  HTMLAttributes,
+  ReactNode,
+  TdHTMLAttributes,
+  ThHTMLAttributes,
+} from "react";
+import {
+  Table as ShadTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export type TableDensity = "comfortable" | "crm" | "compact";
 
 interface TableProps extends HTMLAttributes<HTMLTableElement> {
-  /** Row density. Opt in per page — CRM indexes use `"crm"`, line items `"compact"`. */
   density?: TableDensity;
 }
 
-export const Table = ({ className, density, ...rest }: TableProps) => (
-  <div className="tbl-wrapper">
-    <table
-      className={["tbl", density ? `tbl--${density}` : null, className].filter(Boolean).join(" ")}
-      {...rest}
-    />
-  </div>
+const DENSITY_CLASS: Record<TableDensity, string> = {
+  comfortable: "[&_th]:h-11 [&_td]:py-3",
+  crm: "[&_th]:h-9 [&_td]:py-2 text-[13px]",
+  compact: "[&_th]:h-8 [&_td]:py-1.5 text-xs",
+};
+
+export const Table = ({ className, density = "crm", ...rest }: TableProps) => (
+  <ShadTable className={cn(DENSITY_CLASS[density], className)} {...rest} />
 );
 
 export const THead = ({ className, ...rest }: HTMLAttributes<HTMLTableSectionElement>) => (
-  <thead className={`tbl__head ${className ?? ""}`} {...rest} />
+  <TableHeader className={cn("sticky top-0 z-10 bg-card", className)} {...rest} />
 );
 
 interface TBodyProps extends HTMLAttributes<HTMLTableSectionElement> {
-  /** HeroUI-style empty-state slot rendered when there are no children. */
   emptyContent?: ReactNode;
 }
 
 export const TBody = ({ className, emptyContent, children, ...rest }: TBodyProps) => {
   const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
   return (
-    <tbody className={`tbl__body ${className ?? ""}`} {...rest}>
+    <TableBody className={className} {...rest}>
       {hasChildren ? children : emptyContent}
-    </tbody>
+    </TableBody>
   );
 };
 
 export const TR = ({ className, ...rest }: HTMLAttributes<HTMLTableRowElement>) => (
-  <tr className={`tbl__body-row ${className ?? ""}`} {...rest} />
+  <TableRow className={className} {...rest} />
 );
 
 export const TH = ({ className, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) => (
-  <th className={`tbl__head-cell ${className ?? ""}`} {...rest} />
+  <TableHead className={cn("bg-muted/40 font-semibold", className)} {...rest} />
 );
 
 export const TD = ({ className, ...rest }: TdHTMLAttributes<HTMLTableCellElement>) => (
-  <td className={`tbl__cell ${className ?? ""}`} {...rest} />
+  <TableCell className={className} {...rest} />
 );

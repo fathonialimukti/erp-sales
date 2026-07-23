@@ -1,9 +1,9 @@
 import type { ChangeEvent, TextareaHTMLAttributes } from "react";
 import { forwardRef } from "react";
-import "./Textarea.css";
+import { Textarea as ShadTextarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
-interface TextareaProps
-  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange"> {
+interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange"> {
   onValueChange?: (value: string) => void;
   onChange?: (event: ChangeEvent<HTMLTextAreaElement>) => void;
 }
@@ -16,11 +16,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     };
 
     return (
-      <textarea
+      <ShadTextarea
         ref={ref}
         id={id}
         rows={rows}
-        className={`txa ${className ?? ""}`}
+        className={cn(className)}
         onChange={handleChange}
         {...rest}
       />
