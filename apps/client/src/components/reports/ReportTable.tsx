@@ -1,10 +1,20 @@
-import type { ReactNode } from 'react';
-import { Table, THead, TBody, TR, TH, TD, EmptyState } from '../../ui';
+import type { ReactNode } from "react";
+
+import { EmptyState } from "@/components/EmptyState";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export interface ReportTableColumn {
   key: string;
   header: string;
-  align?: 'left' | 'right' | 'center';
+  align?: "left" | "right" | "center";
   render?: (row: Record<string, unknown>) => ReactNode;
 }
 
@@ -14,31 +24,58 @@ interface ReportTableProps {
   emptyMessage?: string;
 }
 
-export const ReportTable = ({ columns, rows, emptyMessage }: ReportTableProps) => {
+const alignClass = {
+  left: "text-left",
+  right: "text-right",
+  center: "text-center",
+} as const;
+
+export const ReportTable = ({
+  columns,
+  rows,
+  emptyMessage,
+}: ReportTableProps) => {
   if (rows.length === 0) {
-    return <EmptyState title={emptyMessage ?? 'No data'} />;
+    return <EmptyState module="report" title={emptyMessage ?? "No data"} />;
   }
+
   return (
-    <div className="report-table-wrap">
-      <Table density="crm">
-        <THead>
-          <TR>
+    <div className="overflow-x-auto rounded-xl border border-border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
             {columns.map((c) => (
-              <TH key={c.key} style={{ textAlign: c.align ?? 'left' }}>{c.header}</TH>
+              <TableHead
+                key={c.key}
+                className={cn(
+                  "h-10 bg-muted/40 text-xs font-semibold tracking-wide text-muted-foreground uppercase",
+                  alignClass[c.align ?? "left"],
+                  (c.align ?? "left") === "right" && "tabular-nums",
+                )}
+              >
+                {c.header}
+              </TableHead>
             ))}
-          </TR>
-        </THead>
-        <TBody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((row, i) => (
-            <TR key={i}>
+            <TableRow key={i}>
               {columns.map((c) => (
-                <TD key={c.key} style={{ textAlign: c.align ?? 'left' }}>
+                <TableCell
+                  key={c.key}
+                  className={cn(
+                    "text-sm text-foreground",
+                    alignClass[c.align ?? "left"],
+                    (c.align ?? "left") === "right" && "tabular-nums",
+                  )}
+                >
                   {c.render ? c.render(row) : (row[c.key] as ReactNode)}
-                </TD>
+                </TableCell>
               ))}
-            </TR>
+            </TableRow>
           ))}
-        </TBody>
+        </TableBody>
       </Table>
     </div>
   );

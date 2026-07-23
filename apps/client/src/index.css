@@ -1,12 +1,10 @@
 /* ============================================================
  * Global styles — Tailwind v4 + Aurora Commerce tokens
  * tokens.css: legacy --color-* scales still used by widgets/landing
- * reports.css: report-* classes still used by reports module
  * ============================================================ */
 
 @import "tailwindcss";
 @import "./styles/tokens.css";
-@import "./styles/reports.css";
 @import "react-day-picker/style.css";
 @import "tw-animate-css";
 
@@ -253,4 +251,18 @@ body {
 .rdp-day_selected:hover {
   background-color: var(--color-accent-500);
   color: white;
+}
+
+/* Report print helpers (used by useReportExport.printReport) */
+@media print {
+  body.printing-report .sidebar,
+  body.printing-report .topbar,
+  body.printing-report .no-print {
+    display: none !important;
+  }
+
+  body.printing-report .print-area {
+    width: 100%;
+    padding: 0;
+  }
 }

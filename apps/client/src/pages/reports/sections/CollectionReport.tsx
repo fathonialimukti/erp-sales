@@ -1,6 +1,7 @@
-import { useRef } from 'react';
-import { useIntl } from 'react-intl';
-import { useQuery } from '@tanstack/react-query';
+import { useRef } from "react";
+import { useIntl } from "react-intl";
+import { useQuery } from "@tanstack/react-query";
+import { Download, Printer } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -9,18 +10,52 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from 'recharts';
-import { trpcClient } from '../../../lib/trpc';
-import { Card, CardBody, CardHeader, CardTitle, Skeleton, Button } from '../../../ui';
-import { icons } from '../../../assets/icons';
-import { ReportKpiCard } from '../../../components/reports/ReportKpiCard';
-import { ReportTable, type ReportTableColumn } from '../../../components/reports/ReportTable';
-import { exportExcel, printReport, type ExportColumn } from '../../../components/reports/useReportExport';
-import type { ReportFilterValue } from '../../../components/reports/ReportFilters';
+} from "recharts";
+
+import { ReportKpiCard } from "../../../components/reports/ReportKpiCard";
+import {
+  ReportTable,
+  type ReportTableColumn,
+} from "../../../components/reports/ReportTable";
+import {
+  exportExcel,
+  printReport,
+  type ExportColumn,
+} from "../../../components/reports/useReportExport";
+import type { ReportFilterValue } from "../../../components/reports/ReportFilters";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { trpcClient } from "../../../lib/trpc";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
-const formatNumber = (value: number) => new Intl.NumberFormat('id-ID').format(value);
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const chartColors = {
+  primary: "var(--chart-4)",
+  grid: "var(--chart-grid)",
+  axis: "var(--chart-axis)",
+  tooltipBg: "var(--chart-tooltip-bg)",
+  border: "var(--border)",
+} as const;
+
+const chartTooltipStyle = {
+  background: chartColors.tooltipBg,
+  border: `1px solid ${chartColors.border}`,
+  borderRadius: 12,
+  fontSize: 12,
+  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+  color: "var(--foreground)",
+} as const;
 
 interface CollectionReportProps {
   filters: ReportFilterValue;
@@ -31,7 +66,7 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
   const printRef = useRef<HTMLDivElement>(null);
 
   const query = useQuery({
-    queryKey: ['reporting.collection', filters],
+    queryKey: ["reporting.collection", filters],
     queryFn: () => trpcClient.reporting.collection.query(filters),
     staleTime: 30_000,
   });
@@ -41,78 +76,170 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
   const byCustomer = data?.byCustomer ?? [];
 
   const tableColumns: ReportTableColumn[] = [
-    { key: 'name', header: intl.formatMessage({ id: 'report.table.customer', defaultMessage: 'Customer' }) },
-    { key: 'outstanding', header: intl.formatMessage({ id: 'report.table.outstanding_col', defaultMessage: 'Outstanding' }), align: 'right', render: (r) => formatCurrency(Number(r.outstanding)) },
-    { key: 'collected', header: intl.formatMessage({ id: 'report.table.collected_col', defaultMessage: 'Collected' }), align: 'right', render: (r) => formatCurrency(Number(r.collected)) },
+    {
+      key: "name",
+      header: intl.formatMessage({
+        id: "report.table.customer",
+        defaultMessage: "Customer",
+      }),
+    },
+    {
+      key: "outstanding",
+      header: intl.formatMessage({
+        id: "report.table.outstanding_col",
+        defaultMessage: "Outstanding",
+      }),
+      align: "right",
+      render: (r) => formatCurrency(Number(r.outstanding)),
+    },
+    {
+      key: "collected",
+      header: intl.formatMessage({
+        id: "report.table.collected_col",
+        defaultMessage: "Collected",
+      }),
+      align: "right",
+      render: (r) => formatCurrency(Number(r.collected)),
+    },
   ];
 
   const exportColumns: ExportColumn[] = [
-    { key: 'name', header: intl.formatMessage({ id: 'report.table.customer', defaultMessage: 'Customer' }) },
-    { key: 'outstanding', header: 'Outstanding', format: (v) => Number(v) },
-    { key: 'collected', header: 'Collected', format: (v) => Number(v) },
+    {
+      key: "name",
+      header: intl.formatMessage({
+        id: "report.table.customer",
+        defaultMessage: "Customer",
+      }),
+    },
+    { key: "outstanding", header: "Outstanding", format: (v) => Number(v) },
+    { key: "collected", header: "Collected", format: (v) => Number(v) },
   ];
 
-  const onExport = () => exportExcel(byCustomer as Record<string, unknown>[], exportColumns, 'collections.xlsx');
+  const onExport = () =>
+    exportExcel(
+      byCustomer as Record<string, unknown>[],
+      exportColumns,
+      "collections.xlsx",
+    );
   const onPrint = () => printReport(printRef as React.RefObject<HTMLElement>);
 
   return (
-    <div className="report-section" ref={printRef}>
-      <div className="report-section__actions no-print">
-        <Button variant="outline" size="sm" leftIcon={<img src={icons.actionEdit} alt="" width={16} height={16} />} onClick={onExport}>
-          {intl.formatMessage({ id: 'report.export.excel', defaultMessage: 'Export Excel' })}
+    <div className="flex flex-col gap-5 print-area" ref={printRef}>
+      <div className="no-print flex justify-end gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={onExport}>
+          <Download className="size-4" aria-hidden />
+          {intl.formatMessage({
+            id: "report.export.excel",
+            defaultMessage: "Export Excel",
+          })}
         </Button>
-        <Button variant="outline" size="sm" leftIcon={<img src={icons.actionEye} alt="" width={16} height={16} />} onClick={onPrint}>
-          {intl.formatMessage({ id: 'report.export.print', defaultMessage: 'Print / PDF' })}
+        <Button type="button" variant="outline" size="sm" onClick={onPrint}>
+          <Printer className="size-4" aria-hidden />
+          {intl.formatMessage({
+            id: "report.export.print",
+            defaultMessage: "Print / PDF",
+          })}
         </Button>
       </div>
 
       {query.isLoading ? (
-        <Skeleton style={{ height: 320 }} />
+        <Skeleton className="h-80 w-full rounded-xl" />
       ) : (
         <>
-          <div className="report-kpi-grid">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <ReportKpiCard
-              label={intl.formatMessage({ id: 'report.kpi.outstanding', defaultMessage: 'Outstanding AR' })}
+              label={intl.formatMessage({
+                id: "report.kpi.outstanding",
+                defaultMessage: "Outstanding AR",
+              })}
               value={formatCurrency(data?.outstandingTotal ?? 0)}
             />
             <ReportKpiCard
-              label={intl.formatMessage({ id: 'report.kpi.collected', defaultMessage: 'Collected' })}
+              label={intl.formatMessage({
+                id: "report.kpi.collected",
+                defaultMessage: "Collected",
+              })}
               value={formatCurrency(data?.collectedTotal ?? 0)}
             />
             <ReportKpiCard
-              label={intl.formatMessage({ id: 'report.kpi.collection_rate', defaultMessage: 'Collection rate' })}
+              label={intl.formatMessage({
+                id: "report.kpi.collection_rate",
+                defaultMessage: "Collection rate",
+              })}
               value={`${data?.collectionRatePercent ?? 0}%`}
             />
             <ReportKpiCard
-              label={intl.formatMessage({ id: 'report.kpi.revenue', defaultMessage: 'Revenue (approved)' })}
+              label={intl.formatMessage({
+                id: "report.kpi.revenue",
+                defaultMessage: "Revenue (approved)",
+              })}
               value={formatCurrency(data?.totalBilled ?? 0)}
             />
           </div>
 
-          <Card variant="default" className="report-chart-card">
+          <Card className="break-inside-avoid shadow-sm">
             <CardHeader>
-              <CardTitle>{intl.formatMessage({ id: 'report.chart.aging', defaultMessage: 'AR aging' })}</CardTitle>
+              <CardTitle className="font-heading text-base">
+                {intl.formatMessage({
+                  id: "report.chart.aging",
+                  defaultMessage: "AR aging",
+                })}
+              </CardTitle>
             </CardHeader>
-            <CardBody>
+            <CardContent>
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={aging} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v: number) => formatCurrency(v)} tick={{ fontSize: 11 }} width={80} />
-                  <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-                  <Bar dataKey="amount" fill="#FF9F0A" radius={[4, 4, 0, 0]} />
+                <BarChart
+                  data={aging}
+                  margin={{ top: 8, right: 16, left: 8, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={chartColors.grid}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 11, fill: chartColors.axis }}
+                    stroke={chartColors.grid}
+                  />
+                  <YAxis
+                    tickFormatter={(v: number) => formatCurrency(v)}
+                    tick={{ fontSize: 11, fill: chartColors.axis }}
+                    width={80}
+                    stroke={chartColors.grid}
+                  />
+                  <Tooltip
+                    contentStyle={chartTooltipStyle}
+                    formatter={(v) => formatCurrency(Number(v))}
+                  />
+                  <Bar
+                    dataKey="amount"
+                    fill={chartColors.primary}
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
-            </CardBody>
+            </CardContent>
           </Card>
 
-          <Card variant="default">
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>{intl.formatMessage({ id: 'report.table.customer', defaultMessage: 'Customer' })}</CardTitle>
+              <CardTitle className="font-heading text-base">
+                {intl.formatMessage({
+                  id: "report.table.customer",
+                  defaultMessage: "Customer",
+                })}
+              </CardTitle>
             </CardHeader>
-            <CardBody>
-              <ReportTable columns={tableColumns} rows={byCustomer as Record<string, unknown>[]} emptyMessage={intl.formatMessage({ id: 'report.empty', defaultMessage: 'No data for the selected filters.' })} />
-            </CardBody>
+            <CardContent>
+              <ReportTable
+                columns={tableColumns}
+                rows={byCustomer as Record<string, unknown>[]}
+                emptyMessage={intl.formatMessage({
+                  id: "report.empty",
+                  defaultMessage: "No data for the selected filters.",
+                })}
+              />
+            </CardContent>
           </Card>
         </>
       )}
