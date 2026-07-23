@@ -10,21 +10,24 @@
 **Generated:** 2026-07-23  
 **Status:** Approved  
 **Category:** SaaS Sales CRM (portfolio-grade)  
-**Design dials:** Variance 7/10 | Motion 6/10 | Density 7/10  
+**Design dials:** Variance 8/10 | Motion 6/10 | Density 7/10  
 **Spec:** `docs/superpowers/specs/2026-07-23-aurora-commerce-rebuild-design.md`  
 **Context:** `docs/plans/aurora-commerce/CONTEXT.md`  
 **Stack:** Tailwind CSS v4 + shadcn/ui (new-york base, Aurora-themed)  
-**Icons:** Lucide (chrome) + custom colorful module tiles  
+**Icons:** **Lucide = basic/chrome only**; **nav = custom colorful SVGs only**  
+**Shell:** Full visual redesign of sidebar + topbar; **reuse existing logic** (permissions, sections, atoms, popovers)  
 **Supersedes:** `design-system/erp-sales-crm/` plain-CSS redesign (abandoned for this track)
 
 ---
 
 ## North star
 
-> **Calm chrome. Colorful meaning. Portfolio-grade polish.**
+> **Colorful modules. Solid work surfaces. Portfolio-grade polish.**
 
-Signature element: **aurora mesh shell + color-owned modules**.  
-Chrome stays calm indigo/glass. Color lives in module tiles, status chips, KPIs, pipeline stages, and empty states — not rainbow chrome.
+Signature element: **aurora mesh canvas + color-owned custom nav tiles**.  
+App chrome is redesigned end-to-end (not a skin on the old iOS sidebar).  
+**Structure & logic stay** (routes, nav data, permissions, atoms, user menu behavior).  
+**Visual design is dropped and rebuilt** with Tailwind + shadcn best practices.
 
 ---
 
@@ -33,15 +36,17 @@ Chrome stays calm indigo/glass. Color lives in module tiles, status chips, KPIs,
 | ID | Principle | Rule |
 |----|-----------|------|
 | **P1** | Color carries meaning | Indigo = brand/CTA; mint = deal/success only; module accents = domain identity; red/amber = danger/warning only |
-| **P2** | Glass for shell, solid for work | Sidebar/topbar/drawers = frosted glass; tables/forms = solid white cards |
-| **P3** | One signature, quiet surroundings | Aurora mesh + module color is the memorable thing; cut non-serving flourishes |
+| **P2** | Colorful nav, solid work | Custom SVG module tiles carry color; tables/forms stay solid white cards |
+| **P3** | One signature, quiet data | Aurora mesh + module tiles are memorable; tables stay calm (TP rules) |
 | **P4** | Density with breath | CRM density 7/10: compact tables, generous page margins |
-| **P5** | Progressive color intensity | Shell low → module entry high → status medium-high → body neutral |
+| **P5** | Progressive color intensity | Nav tiles high → page eyebrow medium → status chips medium → table body neutral |
 | **P6** | Motion is feedback | 150–250ms hover; 200–400ms enter/exit; honor `prefers-reduced-motion` |
 | **P7** | Accessibility is brand | Text ≥4.5:1; visible focus; never color-only status; targets ≥40–44px |
 | **P8** | Tokens over one-offs | No raw hex in components except token definitions |
 | **P9** | Portfolio honesty | Landing/login expressive; app interior prioritizes scan speed |
-| **P10** | Rebuild cleanly | One kit only; delete old plain-CSS kit after cutover |
+| **P10** | Rebuild visuals, keep logic | Drop old CSS shell design; preserve nav/auth/permission/query logic |
+| **P11** | Icon dual-family | Lucide for basic chrome only; custom SVG for every nav module |
+| **P12** | Single user avatar surface | Avatar menu appears in **one** shell slot at a time (never sidebar + topbar together) |
 
 ---
 
@@ -199,15 +204,29 @@ Prefer cool indigo borders over heavy shadows.
 
 ---
 
-## Iconography
+## Iconography (hard rules)
 
-| Family | Use |
-|--------|-----|
-| Lucide | Chrome actions, form, table actions |
-| Custom module tiles | Domain identity (gradient plate + glyph) |
+### Dual-family policy
 
-Sizes: 16 / 20 / 24. Stroke 1.5–2px. **No emoji as UI icons.**  
-Module tiles: baked gradients; do not invert with CSS filters.
+| Family | Allowed uses | Forbidden uses |
+|--------|--------------|----------------|
+| **Lucide** (`lucide-react`) | Basic chrome only: search, bell, chevron, plus, edit, trash, filter, close, settings, logout, theme, locale, table row actions, form field adornments | **Nav module icons**, brand marks, empty-state heroes |
+| **Custom SVG** | **All sidebar/nav module icons**, brand logo, optional KPI plates, empty-state illustrations | Do not replace Lucide for generic actions |
+
+### Custom nav SVG requirements
+
+- One SVG (or SVG component) per module: Dashboard, Reports, Region, Area, Customer, Outlet, SKU Category, SKU, Sales Order, Email CRM, Visit, Planning/Program, Event, Users, Access, Activity, Notifications, Knowledge, AI, etc.
+- **Color baked into the asset** (gradient plate + glyph) using module accent tokens
+- Size plate: **32×32** expanded / **28×28** collapsed; glyph optically centered
+- Stable in light mode; **no CSS `filter: invert`** hacks
+- Registry: `apps/client/src/assets/icons/` + `icons.ts` (or React SVG components under `assets/icons/nav/`)
+- `NAV_MENU` continues to reference icon assets — **logic unchanged**, assets remade
+
+### Lucide sizing
+
+- 16 / 18 / 20 for controls; stroke ~1.75–2
+- Always pair icon-only buttons with `aria-label`
+- **No emoji as UI icons**
 
 ---
 
@@ -262,9 +281,11 @@ Scroll Area, Toast/Sonner, Form helpers, Calendar / Date picker.
 
 | Component | Responsibility |
 |-----------|----------------|
-| `AppShell` | Aurora mesh + glass sidebar/topbar |
-| `Sidebar` / `NavModuleTile` | Colorful module nav |
-| `Topbar` | Search, notifications, AI, user |
+| `AppShell` | Aurora mesh canvas + layout grid; hosts single `UserMenuPopover` |
+| `Sidebar` | **Visual rebuild**; reuses NAV_MENU, permissions, sections, collapse atom |
+| `NavModuleTile` | Custom SVG plate + label; active/hover module wash |
+| `Topbar` | **Visual rebuild**; page meta, tools; avatar only per P12 |
+| `UserAvatarMenu` | Single shared avatar trigger (`sidebar` \| `topbar` variants) |
 | `PageHeader` | Title, module eyebrow, actions |
 | `FilterBar` | Search + filters + count |
 | `DataTable` | Densities, sticky header, row actions |
@@ -274,6 +295,15 @@ Scroll Area, Toast/Sonner, Form helpers, Calendar / Date picker.
 | `EmptyState` | Module-tinted empty + CTA |
 | `ConfirmDialog` | Draft / propose / delete |
 | `EntityMeta` | ID, timestamps, approval strip |
+
+**Shell logic to preserve (do not rewrite business behavior):**
+- `flattenLeaves` + permission filter + section buckets in Sidebar
+- Path active matching (`isPathActive`)
+- `sidebarOpenAtom`, `searchOpenAtom`, `notificationsOpenAtom`, `userMenuOpenAtom`
+- `UserMenuPopover` fixed positioning via `user-menu-anchor` CustomEvent
+- Topbar `findPageMeta`, unread notification query + push toast side effect
+- Locale / theme atoms
+- `PrivateLayout` hosts: NotificationDrawer, AiAssistant, SearchPalette, UserMenuPopover
 
 ### Button hierarchy
 
@@ -438,17 +468,100 @@ Expressive aurora mesh; portfolio-first; still on-token
 
 ---
 
-## Shell layout
+## Shell layout (visual rebuild — logic preserved)
+
+> **Drop** the old iOS plain-CSS sidebar/topbar look entirely.  
+> **Keep** structure/logic: `NAV_MENU`, permission filtering, section grouping,  
+> `sidebarOpenAtom`, search palette, notifications drawer, AI assistant host,  
+> `UserMenuPopover` anchor pattern, unread query, locale/theme atoms, path active matching.
+
+### Wireframe
 
 ```
-┌─ aurora mesh background ─────────────────────────┐
-│ ┌ glass sidebar ┐ ┌ glass topbar ──────────────┐ │
-│ │ logo          │ │ search · notif · AI · user │ │
-│ │ module tiles  │ ├────────────────────────────┤ │
-│ │ nav groups    │ │ main (solid cards)         │ │
-│ └───────────────┘ └────────────────────────────┘ │
-└──────────────────────────────────────────────────┘
+┌─ aurora mesh canvas ──────────────────────────────────────────┐
+│ ┌ colorful sidebar ──┐ ┌ command topbar ────────────────────┐ │
+│ │ brand              │ │ menu · page title · search · tools │ │
+│ │ search (⌘K)        │ │        (avatar only if collapsed)  │ │
+│ │ ─────────────────  │ ├────────────────────────────────────┤ │
+│ │ section labels     │ │                                    │ │
+│ │ [tile] Nav item    │ │  main content (solid bento cards)  │ │
+│ │ [tile] Nav item ●  │ │                                    │ │
+│ │ …                  │ │                                    │ │
+│ │ ─────────────────  │ │                                    │ │
+│ │ user avatar*       │ │                                    │ │
+│ └────────────────────┘ └────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────────────┘
+* avatar in sidebar footer when expanded; otherwise in topbar only
 ```
+
+### Sidebar visual (new)
+
+| Element | Design |
+|---------|--------|
+| Surface | Solid white / soft indigo wash card, `rounded-2xl`, floating in mesh (not full-bleed gray strip) |
+| Brand | Logo + “Aurora / Sales OS” wordmark |
+| Search | Pill trigger with Lucide `Search` + ⌘K; opens existing search palette |
+| Sections | Uppercase micro labels (`Favorites`, `Master Data`, …) — **same section logic as today** |
+| Nav row | Custom SVG tile (module color) + label; active = soft module tint + 3px accent bar + medium weight |
+| Collapsed | Tiles centered; tooltip on hover (keep existing tooltip behavior) |
+| Footer | **User block when expanded** (see Avatar rule) |
+| Width | ~272px expanded / ~80px collapsed |
+
+### Topbar visual (new)
+
+| Element | Design |
+|---------|--------|
+| Surface | Floating glass/solid bar, `rounded-2xl`, height 56–64px |
+| Left | Sidebar toggle (Lucide) + page kicker/title (from existing `findPageMeta` logic) |
+| Center/Right | Optional global search chip; notifications (Lucide bell + badge); locale; theme |
+| Avatar | **Only when sidebar collapsed or viewport &lt; lg** |
+| No duplicate | Never render user avatar in topbar while sidebar footer avatar is visible |
+
+### Avatar / user menu — single surface rule (P12)
+
+**Problem:** Today both Sidebar and Topbar mount `UserMenuTrigger` → duplicate avatars and competing anchors.
+
+**Solution (normative):**
+
+| Breakpoint / state | Avatar location | Hidden |
+|--------------------|-----------------|--------|
+| Desktop + sidebar **expanded** | **Sidebar footer** only (avatar + name + chevron) | Topbar avatar |
+| Desktop + sidebar **collapsed** | **Topbar** only | Sidebar footer user block |
+| Mobile / sheet sidebar | **Topbar** only | Sidebar footer (sheet may show name text without second menu trigger if needed) |
+
+**Implementation contract:**
+
+1. Extract shared **`UserAvatarMenu`** domain component (uses existing `UserMenuTrigger` + `userMenuOpenAtom` + `user-menu-anchor` event + `UserMenuPopover`).
+2. Shell owns placement:
+   ```tsx
+   const showAvatarInSidebar = sidebarOpen && isLgUp;
+   // Sidebar footer: {showAvatarInSidebar && <UserAvatarMenu variant="sidebar" />}
+   // Topbar end:    {!showAvatarInSidebar && <UserAvatarMenu variant="topbar" />}
+   ```
+3. **One** `UserMenuPopover` host remains in `PrivateLayout` (logic kept).
+4. Both variants share the same open/close/logout/profile actions — only layout chrome differs (`variant="sidebar"` shows name+email; `variant="topbar"` is icon-only avatar).
+5. Do not invent a second popover system.
+
+### Colorful nav row states
+
+| State | Treatment |
+|-------|-----------|
+| Default | Custom tile full color @ 100%; label `foreground` |
+| Hover | Row bg `secondary` / soft module wash 8% |
+| Active | Module wash 12–16% + **3px module accent bar** + label semibold |
+| Focus | Indigo ring on row |
+
+Module color on the **tile** is always on; row wash uses the **same module token** at low alpha — this is the colorful signature without rainbow chrome.
+
+### React + Tailwind shell best practices
+
+- Prefer composition: `AppShell` → `Sidebar` / `Topbar` / `main` — no god CSS files
+- Tailwind utility classes + `cn()`; no new colocated `Sidebar.css` / `Topbar.css` after rebuild
+- Keep hooks/atoms/query logic at top of components; JSX is presentational
+- `memo` only if measured; don’t premature-optimize nav maps
+- Accessible: `aria-current="page"`, sidebar `aria-label`, icon buttons labeled
+- Collapsed tooltips: portal/fixed (keep current approach) so overflow doesn’t clip
+- Mobile: sidebar becomes `Sheet` (shadcn); topbar always has menu toggle + avatar |
 
 ---
 
@@ -468,7 +581,12 @@ Expressive aurora mesh; portfolio-first; still on-token
 |-----|-----|
 | Default zinc-only shadcn theme | Kills portfolio distinctiveness |
 | Mint as global primary CTA | Confuses brand with success |
-| Rainbow sidebar backgrounds | Breaks P1 |
+| Lucide icons for nav modules | Nav must be custom colorful SVGs (P11) |
+| Custom SVG for every trash/edit/search | Lucide owns basic chrome |
+| Avatar in sidebar **and** topbar at once | Breaks P12; confusing dual menus |
+| Second user-menu popover implementation | Reuse `UserMenuPopover` + anchor event |
+| Rewriting nav permission/section logic “for fun” | Visual rebuild only; logic stays |
+| Keeping old `Sidebar.css` / `Topbar.css` after cutover | One design system |
 | Emoji icons | Unprofessional |
 | Placeholder-only form labels | A11y fail |
 | Hover-only critical actions | Keyboard/touch fail |
@@ -481,7 +599,12 @@ Expressive aurora mesh; portfolio-first; still on-token
 ## Quality bar (definition of done)
 
 - [ ] Aurora identity obvious in ≤3s on dashboard  
-- [ ] Module color on nav + page accent  
+- [ ] **Custom SVG** on every nav module (no Lucide in nav rows)  
+- [ ] Lucide only for basic chrome actions  
+- [ ] **Exactly one** user avatar trigger visible at a time (P12)  
+- [ ] Sidebar/topbar fully new visuals; old ios-sb CSS gone  
+- [ ] Nav permissions/sections/search/notifications still work  
+- [ ] Module color on nav tiles + page accent  
 - [ ] CRM tables use DataTable + density rules  
 - [ ] No orphaned old CSS kit on production path  
 - [ ] WCAG AA text/controls  
@@ -489,7 +612,7 @@ Expressive aurora mesh; portfolio-first; still on-token
 - [ ] `prefers-reduced-motion` respected  
 - [ ] Responsive 375 / 768 / 1280  
 - [ ] `bun run check-types` passes  
-- [ ] Portfolio screenshots: Login, Dashboard, Pipeline, Customer index  
+- [ ] Portfolio screenshots: Login, Dashboard (shell visible), Pipeline, Customer index  
 
 ---
 
@@ -500,11 +623,15 @@ Expressive aurora mesh; portfolio-first; still on-token
 | Theme / tokens | `apps/client/src/index.css` (Tailwind v4 `@theme`) |
 | shadcn ui | `apps/client/src/components/ui/*` |
 | Domain UI | `apps/client/src/components/*` |
+| Shell (rebuild visuals) | `layouts/PrivateLayout.tsx`, `components/Sidebar.tsx`, `Topbar.tsx`, `UserMenuPopover.tsx` |
+| Nav data (keep) | `constants/nav-menu.ts` |
+| Custom nav SVGs | `assets/icons/` (+ optional `assets/icons/nav/`) |
+| Lucide | `lucide-react` for chrome only |
 | This master | `design-system/aurora-commerce/MASTER.md` |
 | Page overrides | `design-system/aurora-commerce/pages/*.md` |
 | Spec | `docs/superpowers/specs/2026-07-23-aurora-commerce-rebuild-design.md` |
 | Context pack | `docs/plans/aurora-commerce/CONTEXT.md` |
-| Old kit (delete after cutover) | `apps/client/src/ui/**`, obsolete colocated `*.css` |
+| Old kit (delete after cutover) | `apps/client/src/ui/**`, `Sidebar.css`, `Topbar.css`, obsolete colocated `*.css` |
 
 ---
 

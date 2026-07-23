@@ -3,7 +3,7 @@
 **Feature:** aurora-commerce client UI rebuild  
 **Spec:** `docs/superpowers/specs/2026-07-23-aurora-commerce-rebuild-design.md`  
 **Design system:** `design-system/aurora-commerce/MASTER.md`  
-**Status:** Design approved 2026-07-23 — awaiting user review of written spec, then implementation plan  
+**Status:** Design approved + tweaked 2026-07-23 (icons, shell, avatar) — ready for implementation plan after user LGTM  
 **Scope:** `apps/client` presentation layer only (no backend)
 
 ---
@@ -13,25 +13,35 @@
 ```
 ## FROZEN CONTRACT — do not reinterpret, do not re-read conventions
 Resource: aurora-commerce-rebuild (full client UI)
-Direction: Aurora Commerce — calm indigo chrome + colorful module meaning
+Direction: Aurora Commerce — colorful custom nav + solid work surfaces
 Stack: Tailwind CSS v4 + shadcn/ui (new-york, Aurora-themed) — NOT plain CSS kit
 Primary: #4F46E5 (--primary) Aurora Indigo
 Success/deal only: #10B981 (--success) Mint — never default CTA
 Canvas: #F4F7FF | Card: #FFFFFF | Border: #E0E7FF
-Signature: aurora mesh shell + color-owned module tiles
+Signature: aurora mesh canvas + color-owned CUSTOM nav SVG tiles
 Typography: Plus Jakarta Sans (headings) + Inter (body) + JetBrains Mono (IDs)
-Tables: DataTable domain component; default density "crm"; TP1–TP12 mandatory
+Icons P11: Lucide = basic chrome ONLY (search, bell, edit, trash, chevron, …)
+Icons P11: Nav modules = CUSTOM colorful SVGs ONLY (never Lucide in nav rows)
+Shell: FULL visual redesign of Sidebar + Topbar — drop ios-sb / old CSS
+Shell logic KEEP: NAV_MENU, permissions, sections, path active, atoms,
+  search palette, notif drawer, AI host, UserMenuPopover + user-menu-anchor
+Avatar P12: exactly ONE UserAvatarMenu visible
+  - sidebar expanded + lg: avatar in sidebar footer only
+  - sidebar collapsed OR mobile: avatar in topbar only
+  - single UserMenuPopover host in PrivateLayout
+Tables: DataTable; default density "crm"; TP1–TP12 mandatory
 Tables: sticky header, StatusChip, money right+tabular-nums, selected = primary soft + 3px indigo bar
 FilterBar part of table system; ≤8 default columns; row click → detail
-Icons: Lucide chrome + custom colorful module tiles; no emoji
 Charts: Recharts + --chart-1..5 / positive / negative
-Pipeline: Sales Order Table|Pipeline toggle (existing v1 behavior, restyle)
+Pipeline: Sales Order Table|Pipeline toggle (restyle existing v1)
 i18n: react-intl; both en.json + id.json
 Data: vanilla tRPC + TanStack Query (unchanged)
 Forms: @tanstack/react-form + shadcn fields
-Old kit: abandon apps/client/src/ui/** after cutover; delete obsolete CSS
+React/Tailwind: composition, cn(), token-driven, no new shell CSS files
+Old kit: abandon apps/client/src/ui/** + Sidebar.css + Topbar.css after cutover
 Backend: untouched
-MCP available: shadcn, context7, playwright, chrome-devtools
+MCP: shadcn, context7, playwright, chrome-devtools
+Skills: frontend-design, ui-ux-pro-max (override monochrome with Aurora)
 Design system: design-system/aurora-commerce/MASTER.md
 Spec: docs/superpowers/specs/2026-07-23-aurora-commerce-rebuild-design.md
 Context pack: docs/plans/aurora-commerce/CONTEXT.md
@@ -68,20 +78,34 @@ Design is FROZEN. Do NOT re-open palette/stack debates or re-brainstorm.
 | Domain components | `apps/client/src/components/*` |
 | Utils `cn()` | `apps/client/src/lib/utils.ts` |
 | Routes | `apps/client/src/routes.tsx` |
-| Shell | `apps/client/src/layouts/PrivateLayout.tsx` |
-| Nav | `apps/client/src/constants/nav-menu.ts` |
-| Icons | `apps/client/src/assets/icons.ts` + `assets/icons/` |
+| Shell layout | `apps/client/src/layouts/PrivateLayout.tsx` |
+| Sidebar (rebuild visual) | `apps/client/src/components/Sidebar.tsx` |
+| Topbar (rebuild visual) | `apps/client/src/components/Topbar.tsx` |
+| User menu (keep logic) | `apps/client/src/components/UserMenuPopover.tsx` |
+| Nav data (keep) | `apps/client/src/constants/nav-menu.ts` |
+| Custom nav SVGs | `apps/client/src/assets/icons/` |
 | Locales | `apps/client/src/locales/en.json`, `id.json` |
-| Old kit (purge later) | `apps/client/src/ui/*` |
+| Old kit (purge later) | `apps/client/src/ui/*`, `Sidebar.css`, `Topbar.css` |
 | Old styles | `apps/client/src/styles/*` |
+
+---
+
+## Avatar placement (implement exactly)
+
+```tsx
+const showAvatarInSidebar = sidebarOpen && isLgUp;
+// Sidebar footer: {showAvatarInSidebar && <UserAvatarMenu variant="sidebar" />}
+// Topbar end:    {!showAvatarInSidebar && <UserAvatarMenu variant="topbar" />}
+// PrivateLayout: single <UserMenuPopover /> host
+```
 
 ---
 
 ## Phase checklist
 
 - [ ] Phase 1 — Foundation (Tailwind v4, shadcn init, Aurora tokens, fonts)
-- [ ] Phase 2 — UI kit (primitives + DataTable, StatusChip, FilterBar, PageHeader, …)
-- [ ] Phase 3 — Shell (AppShell, Sidebar, Topbar, drawers)
+- [ ] Phase 2 — UI kit (primitives + DataTable, StatusChip, FilterBar, PageHeader, UserAvatarMenu, …)
+- [ ] Phase 3 — Shell visual rebuild + custom nav SVGs + P12 avatar (logic reused)
 - [ ] Phase 4 — Showcase (Login, Landing, Dashboard, Customer, Sales Order + pipeline)
 - [ ] Phase 5 — Remaining modules template sweep
 - [ ] Phase 6 — Purge old CSS kit, update instructions, a11y + check-types + screenshots
@@ -96,23 +120,28 @@ Design is FROZEN. Do NOT re-open palette/stack debates or re-brainstorm.
 | **context7** | Tailwind v4 + library docs |
 | **playwright / chrome-devtools** | Visual QA |
 | **frontend-design** | Keep Aurora distinctive (avoid default zinc) |
-| **ui-ux-pro-max** | Density/a11y; override monochrome defaults with Aurora tokens |
+| **ui-ux-pro-max** | Density/a11y/motion; **override** monochrome defaults with Aurora tokens |
 
 ---
 
 ## Principles quick ref
 
-- P1–P10: Master design principles  
-- TP1–TP12: Table principles (default density `crm`)  
-- Mint never global CTA  
-- Glass shell / solid tables  
-- One kit only after cutover  
+- P1–P12: Master design principles (incl. icon dual-family + single avatar)
+- TP1–TP12: Table principles (default density `crm`)
+- Mint never global CTA
+- Colorful custom nav / solid tables
+- Rebuild design, reuse logic
+- One kit only after cutover
 
 ---
 
 ## Notes from design session
 
-- User chose direction **A — Aurora Commerce** for portfolio rebuild  
-- Full UI kit rebuild authorized; CSS files may be deleted after replacement  
-- Table principles explicitly approved  
-- shadcn MCP installed in `.vscode/mcp.json` for implementation  
+- User chose direction **A — Aurora Commerce** for portfolio rebuild
+- Full UI kit rebuild authorized; CSS files may be deleted after replacement
+- Table principles explicitly approved
+- **Tweak:** Lucide only for basic icons; nav must use custom created SVGs
+- **Tweak:** Change app design not structure; drop sidebar/topbar visual design; keep logic
+- **Tweak:** Resolve dual avatar (sidebar + topbar) via P12 single surface
+- **Tweak:** Make it colorful; use ui-ux-pro-max; React + Tailwind best practices
+- shadcn MCP installed in `.vscode/mcp.json` for implementation
