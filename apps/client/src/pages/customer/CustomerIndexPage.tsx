@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { Chip } from "../../ui/Chip";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
@@ -18,7 +19,21 @@ import { RowActions } from "../../components/RowActions";
 import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
 import { CustomerIcon } from "./CustomerIcons";
 
-type CustomerRow = { id: string; code: string | null; name: string; _count: { outlets: number } };
+type CustomerRow = {
+  id: string;
+  code: string | null;
+  name: string;
+  status: string;
+  _count: { outlets: number };
+};
+
+const customerStatusTone = (status: string): "success" | "neutral" | "danger" | "warning" => {
+  const s = status.toUpperCase();
+  if (s === "ACTIVE") return "success";
+  if (s === "INACTIVE") return "neutral";
+  if (s === "BLOCKED" || s === "SUSPENDED") return "danger";
+  return "warning";
+};
 
 export const CustomerIndexPage = () => {
   const intl = useIntl();
@@ -51,7 +66,17 @@ export const CustomerIndexPage = () => {
   const totalPages = data?.meta?.totalPages ?? 1;
   const totalRows = data?.meta?.total ?? 0;
 
-  const columns = useMemo<ColumnDef<CustomerRow>[]>(() => [
+  const columns = useMemo<ColumnDef<CustomerRow>[]>(() => {
+    const statusLabel = (status: string) => {
+      const s = status.toUpperCase();
+      if (s === "ACTIVE") return intl.formatMessage({ id: "customer.index.status_active", defaultMessage: "Active" });
+      if (s === "INACTIVE") return intl.formatMessage({ id: "customer.index.status_inactive", defaultMessage: "Inactive" });
+      if (s === "BLOCKED") return intl.formatMessage({ id: "customer.index.status_blocked", defaultMessage: "Blocked" });
+      if (s === "SUSPENDED") return intl.formatMessage({ id: "customer.index.status_suspended", defaultMessage: "Suspended" });
+      return status;
+    };
+
+    return [
     {
       id: "code", header: intl.formatMessage({ id: "customer.index.header_code", defaultMessage: "Code" }),
       cell: ({ row }) => (
@@ -65,6 +90,15 @@ export const CustomerIndexPage = () => {
     {
       id: "name", header: intl.formatMessage({ id: "customer.index.header_name", defaultMessage: "Name" }),
       cell: ({ row }) => <span className="m-cell m-cell--single"><span className="m-cell__primary">{row.original.name}</span></span>,
+    },
+    {
+      id: "status",
+      header: intl.formatMessage({ id: "customer.index.header_status", defaultMessage: "Status" }),
+      cell: ({ row }) => (
+        <Chip tone={customerStatusTone(row.original.status)} size="sm">
+          {statusLabel(row.original.status)}
+        </Chip>
+      ),
     },
     {
       id: "outlets", header: intl.formatMessage({ id: "customer.index.header_outlets", defaultMessage: "Outlets" }),
@@ -83,7 +117,8 @@ export const CustomerIndexPage = () => {
         />
       ),
     },
-  ], [intl, navigate, canUpdate, canDelete]);
+  ];
+  }, [intl, navigate, canUpdate, canDelete]);
 
   const table = useReactTable({
     data: rows, columns, pageCount: totalPages,
@@ -124,12 +159,13 @@ export const CustomerIndexPage = () => {
           clearIcon={<CustomerIcon name="close" size={12} />}
           clearLabel={intl.formatMessage({ id: "common.action.clear", defaultMessage: "Clear" })}
         />
-        <span className="m-count">
+        <span className="m-count m-toolbar__count">
           {intl.formatMessage({ id: "customer.index.count_label", defaultMessage: "{count, plural, one {# customer} other {# customers}}" }, { count: totalRows })}
         </span>
       </div>
 
       <ModuleTable
+        density="crm"
         table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
         pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
         onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}
@@ -137,7 +173,7 @@ export const CustomerIndexPage = () => {
         paginationLabel={intl.formatMessage({ id: "common.pagination_info", defaultMessage: "Page {page} of {total}" }, { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) })}
         emptyState={
           <ModuleEmpty
-                        title={search ? intl.formatMessage({ id: "customer.index.empty_search", defaultMessage: "No customers found" }) : intl.formatMessage({ id: "customer.index.empty_title", defaultMessage: "No customers yet" })}
+            title={search ? intl.formatMessage({ id: "customer.index.empty_search", defaultMessage: "No customers found" }) : intl.formatMessage({ id: "customer.index.empty_title", defaultMessage: "No customers yet" })}
             description={search ? intl.formatMessage({ id: "customer.index.empty_search_sub", defaultMessage: "Try adjusting your search terms." }) : intl.formatMessage({ id: "customer.index.empty_desc", defaultMessage: "Create your first customer to get started." })}
             cta={canCreate && !search ? { label: intl.formatMessage({ id: "customer.index.create_button", defaultMessage: "New customer" }), icon: <CustomerIcon name="plus" size={16} />, onClick: () => navigate("/customer/create") } : undefined}
           />

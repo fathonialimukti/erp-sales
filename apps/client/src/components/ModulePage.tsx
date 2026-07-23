@@ -114,12 +114,14 @@ export const ModuleSearch = ({ value, onChange, placeholder, searchIcon, clearIc
  * ModuleTable — card with table, loading, empty, and pagination.
  *
  * Renders a TanStack Table instance.
+ * CRM indexes pass density="crm" (default) → .tbl--crm.
  * ============================================================ */
 
 import type { Table as TanStackTable } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
 import { Pagination } from "../ui/Pagination";
-import { Spinner } from "../ui/Spinner";
+import { Skeleton } from "../ui/Skeleton";
+import type { TableDensity } from "../ui/Table";
 
 interface ModuleTableProps<T> {
   table: TanStackTable<T>;
@@ -132,18 +134,52 @@ interface ModuleTableProps<T> {
   pageSize: number;
   emptyState: ReactNode;
   paginationLabel: string;
+  /** Row density. CRM indexes use `"crm"` (default). */
+  density?: TableDensity;
 }
 
 export function ModuleTable<T>({
-  table, totalPages, isLoading, onRowClick, pageIndex, onPageChange, pageSize, emptyState, paginationLabel,
+  table,
+  totalPages,
+  isLoading,
+  onRowClick,
+  pageIndex,
+  onPageChange,
+  pageSize,
+  emptyState,
+  paginationLabel,
+  density = "crm",
 }: ModuleTableProps<T>) {
   const rows = table.getRowModel().rows;
+  const colCount = Math.max(table.getAllColumns().length, 1);
+  const tableClass = `m-table tbl tbl--${density}`;
 
   if (isLoading) {
+    const skeletonRows = Math.min(Math.max(pageSize, 5), 10);
     return (
-      <div className="m-state m-state--loading">
-        <Spinner size="lg" />
-        <span className="m-state__title">Loading…</span>
+      <div className="m-table-card" aria-busy="true" aria-live="polite">
+        <table className={tableClass}>
+          <thead>
+            <tr>
+              {Array.from({ length: colCount }, (_, i) => (
+                <th key={i}>
+                  <Skeleton style={{ height: 10, width: i === colCount - 1 ? 40 : 72 }} />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: skeletonRows }, (_, r) => (
+              <tr key={r} className="m-row">
+                {Array.from({ length: colCount }, (_, c) => (
+                  <td key={c}>
+                    <Skeleton style={{ height: 14, width: c === 0 ? "40%" : c === colCount - 1 ? 28 : "70%" }} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   }
@@ -154,7 +190,7 @@ export function ModuleTable<T>({
 
   return (
     <div className="m-table-card">
-      <table className="m-table">
+      <table className={tableClass}>
         <thead>
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
