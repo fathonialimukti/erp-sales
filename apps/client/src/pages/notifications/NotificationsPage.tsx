@@ -1,11 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useIntl } from "react-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bell, CheckCheck, Info } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { useToast } from "../../ui/useToast";
-import { Pagination } from "../../ui/Pagination";
-import { ModulePage, ModuleHero, ModuleEmpty } from "../../components/ModulePage";
+import { PageHeader } from "../../components/PageHeader";
+import { EmptyState } from "../../components/EmptyState";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Pagination } from "../../ui/Pagination";
+import { cn } from "@/lib/utils";
 
 type Notification = {
   id: string;
@@ -19,23 +28,28 @@ type Notification = {
 
 const formatDate = (iso: string) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 };
 
-const TYPE_COLOR: Record<string, string> = {
-  INFO: "var(--ios-state-info, #2563EB)",
-  WARNING: "var(--ios-state-warning, #D97706)",
-  SUCCESS: "var(--ios-state-success, #047857)",
-  ERROR: "var(--ios-state-danger, #DC2626)",
-  APPROVAL: "var(--ios-state-success, #047857)",
-};
-
-const TYPE_BG: Record<string, string> = {
-  INFO: "var(--ios-state-info-bg, rgba(59, 130, 246, 0.10))",
-  WARNING: "var(--ios-state-warning-bg, rgba(245, 158, 11, 0.10))",
-  SUCCESS: "var(--ios-state-success-bg, rgba(16, 185, 129, 0.10))",
-  ERROR: "var(--ios-state-danger-bg, rgba(239, 68, 68, 0.10))",
-  APPROVAL: "var(--ios-state-success-bg, rgba(16, 185, 129, 0.10))",
+const typeTone = (type: string) => {
+  switch (type) {
+    case "WARNING":
+      return "bg-amber-500/10 text-amber-600";
+    case "SUCCESS":
+    case "APPROVAL":
+      return "bg-emerald-500/10 text-emerald-600";
+    case "ERROR":
+      return "bg-destructive/10 text-destructive";
+    default:
+      return "bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]";
+  }
 };
 
 const NotificationsPage = () => {
@@ -53,12 +67,20 @@ const NotificationsPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["notifications", page, unreadOnly],
     queryFn: () => {
-      const p = trpcClient.notification.list.query({ page, limit: 20, unreadOnly: unreadOnly || undefined }) as Promise<unknown>;
+      // ponytail: API shape differs slightly from local Notification type
+      const p = trpcClient.notification.list.query({
+        page,
+        limit: 20,
+        unreadOnly: unreadOnly || undefined,
+      }) as Promise<unknown>;
       return p as Promise<{ data: Notification[]; meta: { totalPages: number; total: number } }>;
     },
   });
 
-  const rows = useMemo(() => ((data ?? {}) as { data?: Notification[] }).data ?? [] as Notification[], [data]);
+  const rows = useMemo(
+    () => ((data ?? {}) as { data?: Notification[] }).data ?? ([] as Notification[]),
+    [data],
+  );
   const totalPages = ((data ?? {}) as { meta?: { totalPages?: number } }).meta?.totalPages ?? 1;
   const totalRows = ((data ?? {}) as { meta?: { total?: number } }).meta?.total ?? 0;
   const unreadCount = useMemo(() => rows.filter((n) => !n.isRead).length, [rows]);
@@ -76,95 +98,154 @@ const NotificationsPage = () => {
     try {
       await trpcClient.notification.markAllAsRead.mutate();
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success(intl.formatMessage({ id: "notifications.mark_all_read", defaultMessage: "All notifications marked as read" }));
+      toast.success(
+        intl.formatMessage({
+          id: "notifications.mark_all_read",
+          defaultMessage: "All notifications marked as read",
+        }),
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to mark all as read");
     }
   };
 
   return (
-    <ModulePage accent="#F472B6" accentEnd="#9D174D" aiContext={{ section: "notifications-page", unreadCount, totalRows, unreadOnly }}>
-      <ModuleHero
-        kicker={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "notifications-page",
+        unreadCount,
+        totalRows,
+        unreadOnly,
+      })}
+    >
+      <PageHeader
+        module="user"
+        eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
         title={intl.formatMessage({ id: "notifications.title", defaultMessage: "Notifications" })}
-        subtitle={intl.formatMessage({ id: "notifications.description", defaultMessage: "System alerts and updates." })}
-        stats={[
-          { value: totalRows, label: intl.formatMessage({ id: "notifications.hero.total", defaultMessage: "Total" }) },
-          { value: unreadCount, color: "info" as const, label: intl.formatMessage({ id: "notifications.hero.unread", defaultMessage: "Unread" }) },
-        ]}
+        description={intl.formatMessage({
+          id: "notifications.description",
+          defaultMessage: "System alerts and updates.",
+        })}
+        actions={
+          unreadCount > 0 ? (
+            <Button type="button" variant="outline" onClick={handleMarkAllAsRead}>
+              <CheckCheck className="size-4" />
+              {intl.formatMessage({
+                id: "notifications.mark_all_read",
+                defaultMessage: "Mark all as read",
+              })}
+            </Button>
+          ) : undefined
+        }
       />
 
-      <div className="m-toolbar">
-        <label className="m-toggle">
-          <input
-            type="checkbox"
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="unread-only"
             checked={unreadOnly}
-            onChange={(e) => { setUnreadOnly(e.target.checked); setPage(1); }}
+            onCheckedChange={(checked) => {
+              setUnreadOnly(checked);
+              setPage(1);
+            }}
           />
-          <span className="m-toggle__track" />
-          {intl.formatMessage({ id: "notifications.unread_only", defaultMessage: "Unread only" })}
-        </label>
-        {unreadCount > 0 ? (
-          <button type="button" className="m-btn m-btn--ghost m-btn--sm" onClick={handleMarkAllAsRead}>
-            {intl.formatMessage({ id: "notifications.mark_all_read", defaultMessage: "Mark all as read" })}
-          </button>
-        ) : null}
-        <span className="m-count">
-          {intl.formatMessage({ id: "notifications.count_label", defaultMessage: "{count, plural, one {# notification} other {# notifications}}" }, { count: totalRows })}
-        </span>
+          <Label htmlFor="unread-only" className="cursor-pointer text-sm">
+            {intl.formatMessage({
+              id: "notifications.unread_only",
+              defaultMessage: "Unread only",
+            })}
+          </Label>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {intl.formatMessage(
+            {
+              id: "notifications.count_label",
+              defaultMessage: "{count, plural, one {# notification} other {# notifications}}",
+            },
+            { count: totalRows },
+          )}
+        </p>
       </div>
 
       {isLoading ? (
-        <div className="m-state m-state--loading">
-          <span className="spin spin--md" />
-          <span className="m-state__title">{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
         </div>
       ) : rows.length === 0 ? (
-        <ModuleEmpty
-          title={intl.formatMessage({ id: "notifications.empty_title", defaultMessage: "No notifications" })}
-          description={intl.formatMessage({ id: "notifications.empty_state", defaultMessage: "You are all caught up." })}
+        <EmptyState
+          module="user"
+          title={intl.formatMessage({
+            id: "notifications.empty_title",
+            defaultMessage: "No notifications",
+          })}
+          description={intl.formatMessage({
+            id: "notifications.empty_state",
+            defaultMessage: "You are all caught up.",
+          })}
         />
       ) : (
-        <div className="m-table-card">
-          <div className="m-items-table m-items-table--compact">
-            <div className="m-items-table__body">
-              {rows.map((n) => (
-                <div
-                  key={n.id}
-                  className="m-items-table__row"
-                  style={{ cursor: "pointer", background: n.isRead ? "transparent" : "var(--ios-row-active-bg, rgba(124, 58, 237, 0.04))" }}
-                  onClick={() => !n.isRead && handleMarkAsRead(n.id)}
+        <Card className="shadow-sm">
+          <CardContent className="divide-y p-0">
+            {rows.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => !n.isRead && handleMarkAsRead(n.id)}
+                className={cn(
+                  "flex w-full cursor-pointer items-start gap-3 px-4 py-4 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  !n.isRead && "bg-[color-mix(in_srgb,var(--module-user)_6%,transparent)]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg",
+                    typeTone(n.type),
+                  )}
+                  aria-hidden
                 >
-                  <div className="m-items-table__td m-items-table__td--product">
-                    <span className="m-items-table__icon" style={{ background: TYPE_BG[n.type] ?? TYPE_BG.INFO, color: TYPE_COLOR[n.type] ?? TYPE_COLOR.INFO }} aria-hidden="true">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 16v-4 M12 8h.01" />
-                      </svg>
+                  {n.type === "APPROVAL" ? (
+                    <Bell className="size-4" />
+                  ) : (
+                    <Info className="size-4" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-start justify-between gap-3">
+                    <span
+                      className={cn(
+                        "text-sm text-foreground",
+                        !n.isRead ? "font-semibold" : "font-medium",
+                      )}
+                    >
+                      {n.title}
                     </span>
-                    <div className="m-items-table__product">
-                      <span className="m-items-table__product-name">{n.title}</span>
-                      <span className="m-items-table__product-code">{n.body}</span>
-                    </div>
-                  </div>
-                  <div className="m-items-table__td m-items-table__td--num m-items-table__td--muted">
-                    {formatDate(n.createdAt)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {totalPages > 1 ? (
-            <div className="m-pagination">
-              <span className="m-pagination__info">
-                {intl.formatMessage({ id: "common.pagination_info", defaultMessage: "Page {page} of {total}" }, { page, total: totalPages })}
-              </span>
-              <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-            </div>
-          ) : null}
-        </div>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {formatDate(n.createdAt)}
+                    </span>
+                  </span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{n.body}</span>
+                </span>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
       )}
-    </ModulePage>
+
+      {totalPages > 1 ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {intl.formatMessage(
+              { id: "common.pagination_info", defaultMessage: "Page {page} of {total}" },
+              { page, total: totalPages },
+            )}
+          </p>
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+        </div>
+      ) : null}
+    </section>
   );
 };
 
