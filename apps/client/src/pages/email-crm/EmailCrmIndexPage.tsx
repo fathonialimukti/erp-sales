@@ -3,21 +3,27 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  type ColumnDef,
-  type PaginationState,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
+import { Eye, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { Chip } from "../../ui/Chip";
-import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
-import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
-import { RowActions } from "../../components/RowActions";
-import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
-import { EmailCrmIcon } from "./EmailCrmIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { FilterBar } from "../../components/FilterBar";
+import { DataTable } from "../../components/DataTable";
+import { EmptyState } from "../../components/EmptyState";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { StatusChip } from "../../components/StatusChip";
+import { Button } from "@/components/ui/button";
+import { Pagination } from "../../ui/Pagination";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type EmailCrmRow = {
   id: string;
@@ -28,20 +34,6 @@ type EmailCrmRow = {
   lastMessageAt: string | Date | null;
   customer: { id: string; name: string; code: string | null } | null;
   _count: { messages: number; salesOrders: number };
-};
-
-const STATUS_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  OPEN: "info",
-  PENDING: "warning",
-  RESOLVED: "success",
-  SPAM: "neutral",
-};
-
-const PRIORITY_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  LOW: "neutral",
-  NORMAL: "info",
-  HIGH: "warning",
-  URGENT: "danger",
 };
 
 const formatDateTime = (value: string | Date | null) => {
@@ -80,7 +72,7 @@ export const EmailCrmIndexPage = () => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["emailCrmList", pagination.pageIndex, pagination.pageSize, search],
     queryFn: () =>
       trpcClient.emailCrm.list.query({
@@ -98,134 +90,163 @@ export const EmailCrmIndexPage = () => {
     () => {
       const statusLabel = (status: string) => {
         const s = status.toUpperCase();
-        if (s === "OPEN") return intl.formatMessage({ id: "emailCrm.index.status_open", defaultMessage: "Open" });
-        if (s === "PENDING") return intl.formatMessage({ id: "emailCrm.index.status_pending", defaultMessage: "Pending" });
-        if (s === "RESOLVED") return intl.formatMessage({ id: "emailCrm.index.status_resolved", defaultMessage: "Resolved" });
-        if (s === "SPAM") return intl.formatMessage({ id: "emailCrm.index.status_spam", defaultMessage: "Spam" });
+        if (s === "OPEN")
+          return intl.formatMessage({ id: "emailCrm.index.status_open", defaultMessage: "Open" });
+        if (s === "PENDING")
+          return intl.formatMessage({
+            id: "emailCrm.index.status_pending",
+            defaultMessage: "Pending",
+          });
+        if (s === "RESOLVED")
+          return intl.formatMessage({
+            id: "emailCrm.index.status_resolved",
+            defaultMessage: "Resolved",
+          });
+        if (s === "SPAM")
+          return intl.formatMessage({ id: "emailCrm.index.status_spam", defaultMessage: "Spam" });
         return status;
       };
       const priorityLabel = (priority: string) => {
         const p = priority.toUpperCase();
-        if (p === "LOW") return intl.formatMessage({ id: "emailCrm.index.priority_low", defaultMessage: "Low" });
-        if (p === "NORMAL") return intl.formatMessage({ id: "emailCrm.index.priority_normal", defaultMessage: "Normal" });
-        if (p === "HIGH") return intl.formatMessage({ id: "emailCrm.index.priority_high", defaultMessage: "High" });
-        if (p === "URGENT") return intl.formatMessage({ id: "emailCrm.index.priority_urgent", defaultMessage: "Urgent" });
+        if (p === "LOW")
+          return intl.formatMessage({ id: "emailCrm.index.priority_low", defaultMessage: "Low" });
+        if (p === "NORMAL")
+          return intl.formatMessage({
+            id: "emailCrm.index.priority_normal",
+            defaultMessage: "Normal",
+          });
+        if (p === "HIGH")
+          return intl.formatMessage({ id: "emailCrm.index.priority_high", defaultMessage: "High" });
+        if (p === "URGENT")
+          return intl.formatMessage({
+            id: "emailCrm.index.priority_urgent",
+            defaultMessage: "Urgent",
+          });
         return priority;
       };
 
       return [
-      {
-        id: "email",
-        header: intl.formatMessage({ id: "emailCrm.index.col_email", defaultMessage: "Email" }),
-        cell: ({ row }) => (
-          <span className="m-doc">
-            <span className="m-doc__text">
-              <span className="m-doc__code">{row.original.email}</span>
+        {
+          id: "email",
+          header: intl.formatMessage({ id: "emailCrm.index.col_email", defaultMessage: "Email" }),
+          cell: ({ row }) => (
+            <span className="font-mono text-xs text-muted-foreground">{row.original.email}</span>
+          ),
+        },
+        {
+          id: "subject",
+          header: intl.formatMessage({
+            id: "emailCrm.index.col_subject",
+            defaultMessage: "Subject",
+          }),
+          cell: ({ row }) => (
+            <span className="font-medium text-foreground">{row.original.subject ?? "—"}</span>
+          ),
+        },
+        {
+          id: "status",
+          header: intl.formatMessage({
+            id: "emailCrm.index.col_status",
+            defaultMessage: "Status",
+          }),
+          cell: ({ row }) => (
+            <StatusChip status={row.original.status} label={statusLabel(row.original.status)} />
+          ),
+        },
+        {
+          id: "priority",
+          header: intl.formatMessage({
+            id: "emailCrm.index.col_priority",
+            defaultMessage: "Priority",
+          }),
+          cell: ({ row }) => (
+            <StatusChip
+              status={row.original.priority}
+              label={priorityLabel(row.original.priority)}
+            />
+          ),
+        },
+        {
+          id: "customer",
+          header: intl.formatMessage({
+            id: "emailCrm.index.col_customer",
+            defaultMessage: "Customer",
+          }),
+          cell: ({ row }) => (
+            <span className="text-muted-foreground">{row.original.customer?.name ?? "—"}</span>
+          ),
+        },
+        {
+          id: "lastMessageAt",
+          header: intl.formatMessage({
+            id: "emailCrm.index.col_last_message",
+            defaultMessage: "Last message",
+          }),
+          cell: ({ row }) => (
+            <span className="text-xs text-muted-foreground">
+              {formatDateTime(row.original.lastMessageAt)}
             </span>
-          </span>
-        ),
-      },
-      {
-        id: "subject",
-        header: intl.formatMessage({ id: "emailCrm.index.col_subject", defaultMessage: "Subject" }),
-        cell: ({ row }) => (
-          <span className="m-cell m-cell--single">
-            <span className="m-cell__primary">{row.original.subject ?? "—"}</span>
-          </span>
-        ),
-      },
-      {
-        id: "status",
-        header: intl.formatMessage({ id: "emailCrm.index.col_status", defaultMessage: "Status" }),
-        cell: ({ row }) => (
-          <Chip tone={STATUS_TONE[row.original.status] ?? "neutral"} size="sm">
-            {statusLabel(row.original.status)}
-          </Chip>
-        ),
-      },
-      {
-        id: "priority",
-        header: intl.formatMessage({ id: "emailCrm.index.col_priority", defaultMessage: "Priority" }),
-        cell: ({ row }) => (
-          <Chip tone={PRIORITY_TONE[row.original.priority] ?? "neutral"} size="sm">
-            {priorityLabel(row.original.priority)}
-          </Chip>
-        ),
-      },
-      {
-        id: "customer",
-        header: intl.formatMessage({ id: "emailCrm.index.col_customer", defaultMessage: "Customer" }),
-        cell: ({ row }) => (
-          <span className="m-cell m-cell--single">
-            <span className="m-cell__primary">{row.original.customer?.name ?? "—"}</span>
-          </span>
-        ),
-      },
-      {
-        id: "lastMessageAt",
-        header: intl.formatMessage({ id: "emailCrm.index.col_last_message", defaultMessage: "Last message" }),
-        cell: ({ row }) => (
-          <span className="m-cell m-cell--single">
-            <span className="m-cell__primary">{formatDateTime(row.original.lastMessageAt)}</span>
-          </span>
-        ),
-      },
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => (
-          <RowActions
-            ariaLabel={intl.formatMessage({ id: "common.action.actions", defaultMessage: "Actions" })}
-            items={[
-              {
-                key: "view",
-                label: intl.formatMessage({ id: "common.action.view", defaultMessage: "View" }),
-                icon: <EmailCrmIcon name="eye" size={16} />,
-                onClick: () => navigate(`/email-crm/${row.original.id}`),
-              },
-              ...(canUpdate
-                ? [
-                    {
-                      key: "edit",
-                      label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }),
-                      icon: <EmailCrmIcon name="edit" size={16} />,
-                      onClick: () => navigate(`/email-crm/${row.original.id}/edit`),
-                    },
-                  ]
-                : []),
-              ...(canDelete
-                ? [
-                    {
-                      key: "delete",
-                      label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }),
-                      icon: <EmailCrmIcon name="delete" size={16} />,
-                      tone: "danger" as const,
-                      separator: true,
-                      onClick: () => {
-                        setItemToDelete(row.original);
-                        setDeleteModalOpen(true);
-                      },
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        ),
-      },
-    ];
+          ),
+        },
+        {
+          id: "actions",
+          header: "",
+          cell: ({ row }) => (
+            <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={intl.formatMessage({
+                      id: "common.action.actions",
+                      defaultMessage: "Actions",
+                    })}
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate(`/email-crm/${row.original.id}`)}>
+                    <Eye className="size-4" />
+                    {intl.formatMessage({ id: "common.action.view", defaultMessage: "View" })}
+                  </DropdownMenuItem>
+                  {canUpdate ? (
+                    <DropdownMenuItem
+                      onClick={() => navigate(`/email-crm/${row.original.id}/edit`)}
+                    >
+                      <Pencil className="size-4" />
+                      {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {canDelete ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => {
+                          setItemToDelete(row.original);
+                          setDeleteModalOpen(true);
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                        {intl.formatMessage({
+                          id: "common.action.delete",
+                          defaultMessage: "Delete",
+                        })}
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ),
+        },
+      ];
     },
     [intl, navigate, canUpdate, canDelete],
   );
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    pageCount: totalPages,
-    state: { pagination },
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-  });
 
   const handleDelete = async () => {
     if (!itemToDelete || isDeleting) return;
@@ -236,7 +257,10 @@ export const EmailCrmIndexPage = () => {
       setDeleteModalOpen(false);
       setItemToDelete(null);
       toast.success(
-        intl.formatMessage({ id: "emailCrm.index.delete_success", defaultMessage: "Conversation deleted" }),
+        intl.formatMessage({
+          id: "emailCrm.index.delete_success",
+          defaultMessage: "Conversation deleted",
+        }),
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
@@ -246,83 +270,73 @@ export const EmailCrmIndexPage = () => {
   };
 
   return (
-    <ModulePage
-      accent="#0A84FF"
-      accentEnd="#5E5CE6"
-      aiContext={{
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
         section: "email-crm-index",
         itemCount: totalRows,
         page: pagination.pageIndex + 1,
         search,
-      }}
+      })}
     >
-      <ModuleHero
-        kicker={intl.formatMessage({ id: "nav.sales", defaultMessage: "Sales" })}
+      <PageHeader
+        module="email"
+        eyebrow={intl.formatMessage({ id: "nav.sales", defaultMessage: "Sales" })}
         title={intl.formatMessage({ id: "emailCrm.index.title", defaultMessage: "Email CRM" })}
-        subtitle={intl.formatMessage({
+        description={intl.formatMessage({
           id: "emailCrm.index.subtitle",
           defaultMessage: "Manage inbound email conversations and replies.",
         })}
-        cta={
-          canCreate
-            ? {
-                label: intl.formatMessage({ id: "emailCrm.index.create_button", defaultMessage: "New conversation" }),
-                icon: <EmailCrmIcon name="plus" size={18} />,
-                onClick: () => navigate("/email-crm/create"),
-              }
-            : undefined
+        actions={
+          canCreate ? (
+            <Button type="button" onClick={() => navigate("/email-crm/create")}>
+              <Plus className="size-4" />
+              {intl.formatMessage({
+                id: "emailCrm.index.create_button",
+                defaultMessage: "New conversation",
+              })}
+            </Button>
+          ) : undefined
         }
-        stats={[
-          {
-            value: totalRows,
-            label: intl.formatMessage({ id: "emailCrm.hero.total", defaultMessage: "Total" }),
-          },
-        ]}
       />
 
-      <div className="m-toolbar">
-        <ModuleSearch
-          value={searchInput}
-          onChange={setSearchInput}
-          placeholder={intl.formatMessage({
-            id: "emailCrm.index.search",
-            defaultMessage: "Search conversations…",
-          })}
-          searchIcon={<EmailCrmIcon name="search" size={16} />}
-          clearIcon={<EmailCrmIcon name="close" size={12} />}
-          clearLabel={intl.formatMessage({ id: "common.action.clear", defaultMessage: "Clear" })}
-        />
-        <span className="m-count">
-          {intl.formatMessage(
-            {
-              id: "emailCrm.index.count_label",
-              defaultMessage: "{count, plural, one {# conversation} other {# conversations}}",
-            },
-            { count: totalRows },
-          )}
-        </span>
-      </div>
-
-      <ModuleTable
+      <DataTable
         density="crm"
-        table={table}
-        totalRows={totalRows}
-        totalPages={totalPages}
+        columns={columns}
+        data={rows}
         isLoading={isLoading}
-        pageIndex={pagination.pageIndex}
-        pageSize={pagination.pageSize}
-        onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}
+        isError={isError}
         onRowClick={(row) => navigate(`/email-crm/${row.id}`)}
-        paginationLabel={intl.formatMessage(
-          { id: "common.pagination_info", defaultMessage: "Page {page} of {total}" },
-          { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) },
-        )}
-        emptyState={
-          <ModuleEmpty
+        toolbar={
+          <FilterBar
+            search={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder={intl.formatMessage({
+              id: "emailCrm.index.search",
+              defaultMessage: "Search conversations…",
+            })}
+            countLabel={intl.formatMessage(
+              {
+                id: "emailCrm.index.count_label",
+                defaultMessage: "{count, plural, one {# conversation} other {# conversations}}",
+              },
+              { count: totalRows },
+            )}
+          />
+        }
+        empty={
+          <EmptyState
+            module="email"
             title={
               search
-                ? intl.formatMessage({ id: "emailCrm.index.empty_search", defaultMessage: "No conversations found" })
-                : intl.formatMessage({ id: "emailCrm.index.empty", defaultMessage: "No conversations yet" })
+                ? intl.formatMessage({
+                    id: "emailCrm.index.empty_search",
+                    defaultMessage: "No conversations found",
+                  })
+                : intl.formatMessage({
+                    id: "emailCrm.index.empty",
+                    defaultMessage: "No conversations yet",
+                  })
             }
             description={
               search
@@ -335,53 +349,57 @@ export const EmailCrmIndexPage = () => {
                     defaultMessage: "Create a conversation or wait for inbound email.",
                   })
             }
-            cta={
-              canCreate && !search
-                ? {
-                    label: intl.formatMessage({
-                      id: "emailCrm.index.create_button",
-                      defaultMessage: "New conversation",
-                    }),
-                    icon: <EmailCrmIcon name="plus" size={16} />,
-                    onClick: () => navigate("/email-crm/create"),
-                  }
-                : undefined
+            action={
+              canCreate && !search ? (
+                <Button type="button" onClick={() => navigate("/email-crm/create")}>
+                  <Plus className="size-4" />
+                  {intl.formatMessage({
+                    id: "emailCrm.index.create_button",
+                    defaultMessage: "New conversation",
+                  })}
+                </Button>
+              ) : undefined
             }
           />
         }
+        footer={
+          totalPages > 1 ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {intl.formatMessage(
+                  { id: "common.pagination_info", defaultMessage: "Page {page} of {total}" },
+                  { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) },
+                )}
+              </p>
+              <Pagination
+                page={pagination.pageIndex + 1}
+                totalPages={totalPages}
+                onChange={(p) => setPagination({ pageIndex: p - 1, pageSize: pagination.pageSize })}
+              />
+            </div>
+          ) : null
+        }
       />
 
-      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} size="sm">
-        <ModalHeader>
-          {intl.formatMessage({ id: "emailCrm.common.delete", defaultMessage: "Delete conversation" })}
-        </ModalHeader>
-        <ModalBody>
-          {intl.formatMessage(
-            {
-              id: "emailCrm.common.delete_confirm",
-              defaultMessage: 'Delete conversation with "{email}"? This action cannot be undone.',
-            },
-            { email: itemToDelete?.email ?? "" },
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setDeleteModalOpen(false)}
-            disabled={isDeleting}
-          >
-            {intl.formatMessage({ id: "emailCrm.common.cancel", defaultMessage: "Cancel" })}
-          </button>
-          <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={isDeleting}>
-            {isDeleting ? (
-              <Spinner size="sm" />
-            ) : (
-              intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })
-            )}
-          </button>
-        </ModalFooter>
-      </Modal>
-    </ModulePage>
+      <ConfirmDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title={intl.formatMessage({
+          id: "emailCrm.common.delete",
+          defaultMessage: "Delete conversation",
+        })}
+        description={intl.formatMessage(
+          {
+            id: "emailCrm.common.delete_confirm",
+            defaultMessage: 'Delete conversation with "{email}"? This action cannot be undone.',
+          },
+          { email: itemToDelete?.email ?? "" },
+        )}
+        confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={handleDelete}
+      />
+    </section>
   );
 };

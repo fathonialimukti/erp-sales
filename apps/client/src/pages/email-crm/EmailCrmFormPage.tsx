@@ -1,16 +1,28 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { Loader2, Save } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { Spinner } from "../../ui/Spinner";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { ModulePage } from "../../components/ModulePage";
-import { EmailCrmIcon } from "./EmailCrmIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FormValues {
   email: string;
@@ -64,6 +76,9 @@ const parseTags = (raw: string) =>
     .map((t) => t.trim())
     .filter(Boolean);
 
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
+
 interface InnerFormProps {
   initialValues: FormValues;
   isEdit: boolean;
@@ -86,7 +101,11 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
     staleTime: 5 * 60 * 1000,
   });
 
-  const customers = (customerList?.data ?? []) as { id: string; name: string; code: string | null }[];
+  const customers = (customerList?.data ?? []) as {
+    id: string;
+    name: string;
+    code: string | null;
+  }[];
 
   // ponytail: mount only after detail is ready so defaultValues are correct on first render
   const form = useForm({
@@ -109,7 +128,10 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["emailCrmList"] });
       setResultMessage(
-        intl.formatMessage({ id: "emailCrm.form.success.created", defaultMessage: "Conversation created" }),
+        intl.formatMessage({
+          id: "emailCrm.form.success.created",
+          defaultMessage: "Conversation created",
+        }),
       );
       setModalStage("success");
       setTimeout(() => navigate(`/email-crm/${created.id}`), 1200);
@@ -135,7 +157,10 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
       queryClient.invalidateQueries({ queryKey: ["emailCrmList"] });
       queryClient.invalidateQueries({ queryKey: ["emailCrmDetail", conversationId] });
       setResultMessage(
-        intl.formatMessage({ id: "emailCrm.form.success.updated", defaultMessage: "Conversation updated" }),
+        intl.formatMessage({
+          id: "emailCrm.form.success.updated",
+          defaultMessage: "Conversation updated",
+        }),
       );
       setModalStage("success");
       setTimeout(() => navigate(`/email-crm/${conversationId}`), 1200);
@@ -162,342 +187,310 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
         e.preventDefault();
         if (modalStage === "idle") form.handleSubmit();
       }
-      if (e.key === "Escape" && modalStage !== "idle") setModalStage("idle");
+      if (e.key === "Escape" && modalStage !== "idle" && modalStage !== "loading") {
+        setModalStage("idle");
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [form, modalStage]);
 
   return (
-    <ModulePage
-      accent="#0A84FF"
-      accentEnd="#5E5CE6"
-      aiContext={{ section: "email-crm-form", isEdit, id: conversationId ?? null }}
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "email-crm-form",
+        isEdit,
+        id: conversationId ?? null,
+      })}
     >
       <form
-        className="m-page"
+        className="flex flex-col gap-6"
         onSubmit={(e) => {
           e.preventDefault();
           form.handleSubmit();
         }}
-        style={{ gap: "1.25rem" }}
       >
-        <div className="so-form__header">
-          <div>
-            <h1 className="so-form__title">
-              {isEdit
-                ? intl.formatMessage({ id: "emailCrm.form.title_edit", defaultMessage: "Edit conversation" })
-                : intl.formatMessage({ id: "emailCrm.form.title_create", defaultMessage: "New conversation" })}
-            </h1>
-            <p className="so-form__subtitle">
-              {isEdit
-                ? intl.formatMessage({
-                    id: "emailCrm.form.subtitle_edit",
-                    defaultMessage: "Update conversation metadata",
-                  })
-                : intl.formatMessage({
-                    id: "emailCrm.form.subtitle_create",
-                    defaultMessage: "Create a conversation thread",
-                  })}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="so-form__back"
-            onClick={() =>
-              navigate(isEdit && conversationId ? `/email-crm/${conversationId}` : "/email-crm")
-            }
-          >
-            <EmailCrmIcon name="back" size={14} />
-            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-          </button>
-        </div>
+        <PageHeader
+          module="email"
+          title={
+            isEdit
+              ? intl.formatMessage({
+                  id: "emailCrm.form.title_edit",
+                  defaultMessage: "Edit conversation",
+                })
+              : intl.formatMessage({
+                  id: "emailCrm.form.title_create",
+                  defaultMessage: "New conversation",
+                })
+          }
+          description={
+            isEdit
+              ? intl.formatMessage({
+                  id: "emailCrm.form.subtitle_edit",
+                  defaultMessage: "Update conversation metadata",
+                })
+              : intl.formatMessage({
+                  id: "emailCrm.form.subtitle_create",
+                  defaultMessage: "Create a conversation thread",
+                })
+          }
+          onBack={() =>
+            navigate(isEdit && conversationId ? `/email-crm/${conversationId}` : "/email-crm")
+          }
+          actions={
+            <Button
+              type="submit"
+              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {intl.formatMessage({ id: "emailCrm.common.save", defaultMessage: "Save" })}
+            </Button>
+          }
+        />
 
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon">
-                <EmailCrmIcon name="inbox" size={14} />
-              </span>
-              {intl.formatMessage({ id: "emailCrm.form.section_basic", defaultMessage: "Conversation" })}
-            </h2>
-          </div>
-          <div className="so-card__body">
-            <div className="so-section">
-              <form.Field
-                name="email"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value?.trim()) return "Required";
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return "Invalid email";
-                    return undefined;
-                  },
-                }}
-              >
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "emailCrm.form.email", defaultMessage: "Email" })} *
-                    </label>
-                    <input
-                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
-                      type="email"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({
-                        id: "emailCrm.form.email_placeholder",
-                        defaultMessage: "buyer@example.com",
-                      })}
-                    />
-                    {f.state.meta.errors.length > 0 && (
-                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="subject">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "emailCrm.form.subject", defaultMessage: "Subject" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({
-                        id: "emailCrm.form.subject_placeholder",
-                        defaultMessage: "Optional subject",
-                      })}
-                    />
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="status">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "emailCrm.form.status", defaultMessage: "Status" })}
-                    </label>
-                    <select
-                      className="so-field__input"
-                      value={f.state.value}
-                      onChange={(e) => f.handleChange(e.target.value as FormValues["status"])}
-                    >
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="priority">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "emailCrm.form.priority", defaultMessage: "Priority" })}
-                    </label>
-                    <select
-                      className="so-field__input"
-                      value={f.state.value}
-                      onChange={(e) => f.handleChange(e.target.value as FormValues["priority"])}
-                    >
-                      {PRIORITY_OPTIONS.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="customerId">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "emailCrm.form.customer", defaultMessage: "Customer" })}
-                    </label>
-                    <select
-                      className="so-field__input"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    >
-                      <option value="">
-                        {intl.formatMessage({
-                          id: "emailCrm.form.select_customer",
-                          defaultMessage: "No customer linked",
-                        })}
-                      </option>
-                      {customers.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                          {c.code ? ` (${c.code})` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field name="tags">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder={intl.formatMessage({
-                        id: "emailCrm.form.tags_placeholder",
-                        defaultMessage: "Comma-separated tags",
-                      })}
-                    />
-                  </div>
-                )}
-              </form.Field>
-            </div>
-          </div>
-        </section>
-
-        <div className="so-actions">
-          <ButtonGroup
-            items={[
-              {
-                key: "save",
-                label: intl.formatMessage({ id: "emailCrm.common.save", defaultMessage: "Save" }),
-                icon: <EmailCrmIcon name="check" size={14} />,
-                onClick: () => {
-                  form.handleSubmit();
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "emailCrm.form.section_basic",
+                defaultMessage: "Conversation",
+              })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-2">
+            <form.Field
+              name="email"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value?.trim()) return "Required";
+                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return "Invalid email";
+                  return undefined;
                 },
-                disabled: !canSave || createMutation.isPending || updateMutation.isPending,
-                isLoading: createMutation.isPending || updateMutation.isPending,
-                variant: "primary",
-              },
-            ]}
-          />
-        </div>
+              }}
+            >
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email-crm-email">
+                    {intl.formatMessage({ id: "emailCrm.form.email", defaultMessage: "Email" })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="email-crm-email"
+                    type="email"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    aria-invalid={f.state.meta.errors.length > 0}
+                    placeholder={intl.formatMessage({
+                      id: "emailCrm.form.email_placeholder",
+                      defaultMessage: "buyer@example.com",
+                    })}
+                  />
+                  {f.state.meta.errors.length > 0 ? (
+                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                  ) : null}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="subject">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email-crm-subject">
+                    {intl.formatMessage({ id: "emailCrm.form.subject", defaultMessage: "Subject" })}
+                  </Label>
+                  <Input
+                    id="email-crm-subject"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    placeholder={intl.formatMessage({
+                      id: "emailCrm.form.subject_placeholder",
+                      defaultMessage: "Optional subject",
+                    })}
+                  />
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="status">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email-crm-status">
+                    {intl.formatMessage({ id: "emailCrm.form.status", defaultMessage: "Status" })}
+                  </Label>
+                  <select
+                    id="email-crm-status"
+                    className={selectClass}
+                    value={f.state.value}
+                    onChange={(e) => f.handleChange(e.target.value as FormValues["status"])}
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="priority">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email-crm-priority">
+                    {intl.formatMessage({
+                      id: "emailCrm.form.priority",
+                      defaultMessage: "Priority",
+                    })}
+                  </Label>
+                  <select
+                    id="email-crm-priority"
+                    className={selectClass}
+                    value={f.state.value}
+                    onChange={(e) => f.handleChange(e.target.value as FormValues["priority"])}
+                  >
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="customerId">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email-crm-customer">
+                    {intl.formatMessage({
+                      id: "emailCrm.form.customer",
+                      defaultMessage: "Customer",
+                    })}
+                  </Label>
+                  <select
+                    id="email-crm-customer"
+                    className={selectClass}
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  >
+                    <option value="">
+                      {intl.formatMessage({
+                        id: "emailCrm.form.select_customer",
+                        defaultMessage: "No customer linked",
+                      })}
+                    </option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                        {c.code ? ` (${c.code})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field name="tags">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email-crm-tags">
+                    {intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" })}
+                  </Label>
+                  <Input
+                    id="email-crm-tags"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    placeholder={intl.formatMessage({
+                      id: "emailCrm.form.tags_placeholder",
+                      defaultMessage: "Comma-separated tags",
+                    })}
+                  />
+                </div>
+              )}
+            </form.Field>
+          </CardContent>
+        </Card>
       </form>
 
-      {modalStage !== "idle" &&
-        createPortal(
-          <div
-            className="so-modal__backdrop"
-            onClick={() => modalStage !== "loading" && modalStage !== "confirm" && setModalStage("idle")}
-          >
-            <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-              {modalStage === "confirm" && (
-                <>
-                  <div className="so-modal__header">
-                    <h3>
-                      {intl.formatMessage({
-                        id: "emailCrm.form.modal.confirm_title",
-                        defaultMessage: "Confirm save",
-                      })}
-                    </h3>
-                    <button
-                      className="so-btn so-btn--ghost so-btn--sm"
-                      onClick={() => setModalStage("idle")}
-                      aria-label="Close"
-                    >
-                      <EmailCrmIcon name="close" size={14} />
-                    </button>
-                  </div>
-                  <div className="so-modal__body">
-                    <div className="so-modal__icon so-modal__icon--success">
-                      <EmailCrmIcon name="check" size={28} />
-                    </div>
-                    <h3 className="so-modal__title">
-                      {intl.formatMessage({
-                        id: "emailCrm.form.modal.confirm_body",
-                        defaultMessage: "Save changes to this conversation?",
-                      })}
-                    </h3>
-                  </div>
-                  <div className="so-modal__footer">
-                    <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
-                      {intl.formatMessage({ id: "emailCrm.common.cancel", defaultMessage: "Cancel" })}
-                    </button>
-                    <button className="so-btn so-btn--primary" onClick={runSave}>
-                      {intl.formatMessage({ id: "common.action.confirm", defaultMessage: "Confirm" })}
-                    </button>
-                  </div>
-                </>
-              )}
+      <ConfirmDialog
+        open={modalStage === "confirm"}
+        onOpenChange={(open) => {
+          if (!open) setModalStage("idle");
+        }}
+        title={intl.formatMessage({
+          id: "emailCrm.form.modal.confirm_title",
+          defaultMessage: "Confirm save",
+        })}
+        description={intl.formatMessage({
+          id: "emailCrm.form.modal.confirm_body",
+          defaultMessage: "Save changes to this conversation?",
+        })}
+        confirmLabel={intl.formatMessage({
+          id: "common.action.confirm",
+          defaultMessage: "Confirm",
+        })}
+        onConfirm={runSave}
+      />
 
-              {modalStage === "loading" && (
-                <div className="so-modal__body">
-                  <div
-                    className="so-modal__icon so-modal__icon--success"
-                    style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}
-                  >
-                    <span className="so-spinner so-spinner--lg" />
-                  </div>
-                  <p className="so-modal__msg">
-                    {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
-                  </p>
-                </div>
-              )}
-
-              {modalStage === "success" && (
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <EmailCrmIcon name="check" size={28} />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage({ id: "emailCrm.form.modal.success", defaultMessage: "Success!" })}
-                  </h3>
-                  <p className="so-modal__msg">{resultMessage}</p>
-                </div>
-              )}
-
-              {modalStage === "error" && (
-                <>
-                  <div className="so-modal__header">
-                    <h3>
-                      {intl.formatMessage({ id: "emailCrm.form.modal.error_title", defaultMessage: "Error" })}
-                    </h3>
-                    <button
-                      className="so-btn so-btn--ghost so-btn--sm"
-                      onClick={() => setModalStage("idle")}
-                      aria-label="Close"
-                    >
-                      <EmailCrmIcon name="close" size={14} />
-                    </button>
-                  </div>
-                  <div className="so-modal__body">
-                    <div className="so-modal__icon so-modal__icon--error">
-                      <EmailCrmIcon name="close" size={28} />
-                    </div>
-                    <p className="so-modal__msg">{resultMessage}</p>
-                  </div>
-                  <div className="so-modal__footer">
-                    <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
-                      {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
-                    </button>
-                  </div>
-                </>
-              )}
+      <Dialog
+        open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
+        onOpenChange={(open) => {
+          if (!open && modalStage !== "loading") setModalStage("idle");
+        }}
+      >
+        <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
+          {modalStage === "loading" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <DialogDescription>
+                {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
+              </DialogDescription>
             </div>
-          </div>,
-          document.body,
-        )}
-    </ModulePage>
+          ) : null}
+          {modalStage === "success" ? (
+            <DialogHeader>
+              <DialogTitle>
+                {intl.formatMessage({
+                  id: "emailCrm.form.modal.success",
+                  defaultMessage: "Success!",
+                })}
+              </DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+          ) : null}
+          {modalStage === "error" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {intl.formatMessage({
+                    id: "emailCrm.form.modal.error_title",
+                    defaultMessage: "Error",
+                  })}
+                </DialogTitle>
+                <DialogDescription>{resultMessage}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setModalStage("idle")}>
+                  {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 };
 
 export const EmailCrmFormPage = () => {
   const { id } = useParams<{ id: string }>();
   const intl = useIntl();
+  const navigate = useNavigate();
   const isEdit = Boolean(id);
 
   const { data, isLoading } = useQuery({
@@ -508,26 +501,31 @@ export const EmailCrmFormPage = () => {
 
   if (isEdit && isLoading) {
     return (
-      <ModulePage accent="#0A84FF" accentEnd="#5E5CE6" aiContext={{ section: "email-crm-form", loading: true }}>
-        <div className="m-loading">
-          <Spinner size="lg" />
-        </div>
-      </ModulePage>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "email-crm-form", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-48 w-full" />
+      </section>
     );
   }
 
   if (isEdit && !data) {
     return (
-      <ModulePage accent="#0A84FF" accentEnd="#5E5CE6" aiContext={{ section: "email-crm-form", notFound: true }}>
-        <div className="m-page">
-          <p>
-            {intl.formatMessage({
-              id: "emailCrm.form.not_found",
-              defaultMessage: "Conversation not found.",
-            })}
-          </p>
-        </div>
-      </ModulePage>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "email-crm-form", notFound: true })}
+      >
+        <PageHeader
+          module="email"
+          title={intl.formatMessage({
+            id: "emailCrm.form.not_found",
+            defaultMessage: "Conversation not found.",
+          })}
+          onBack={() => navigate("/email-crm")}
+        />
+      </section>
     );
   }
 

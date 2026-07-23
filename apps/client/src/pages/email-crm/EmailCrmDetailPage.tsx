@@ -1,39 +1,41 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Bot,
+  ChevronRight,
+  Inbox,
+  Loader2,
+  MessageSquare,
+  Pencil,
+  ShoppingCart,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { Chip } from "../../ui/Chip";
-import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
-import { EmailCrmIcon } from "./EmailCrmIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { StatusChip } from "../../components/StatusChip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 type AgentStatus = "IDLE" | "RUNNING" | "SENT" | "FAILED" | string;
-
-const STATUS_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  OPEN: "info",
-  PENDING: "warning",
-  RESOLVED: "success",
-  SPAM: "neutral",
-};
-
-const PRIORITY_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  LOW: "neutral",
-  NORMAL: "info",
-  HIGH: "warning",
-  URGENT: "danger",
-};
-
-const AGENT_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  IDLE: "neutral",
-  RUNNING: "warning",
-  SENT: "success",
-  FAILED: "danger",
-};
 
 type EmailMessage = {
   id: string;
@@ -102,19 +104,6 @@ const sanitizeOutboundHtml = (html: string): string | null => {
   return cleaned.length > 0 ? cleaned : null;
 };
 
-const agentStatusTint = (status: AgentStatus | null | undefined) => {
-  switch (status) {
-    case "RUNNING":
-      return { tint: "warning" as const, className: "so-status--warning" };
-    case "SENT":
-      return { tint: "success" as const, className: "so-status--success" };
-    case "FAILED":
-      return { tint: "danger" as const, className: "so-status--danger" };
-    default:
-      return { tint: "neutral" as const, className: "so-status--neutral" };
-  }
-};
-
 export const EmailCrmDetailPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -174,7 +163,10 @@ export const EmailCrmDetailPage = () => {
     onSuccess: (result) => {
       setComposeBody(result.draft ?? "");
       toast.success(
-        intl.formatMessage({ id: "emailCrm.detail.suggest_ready", defaultMessage: "Suggestion ready" }),
+        intl.formatMessage({
+          id: "emailCrm.detail.suggest_ready",
+          defaultMessage: "Suggestion ready",
+        }),
       );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to suggest reply"),
@@ -188,7 +180,10 @@ export const EmailCrmDetailPage = () => {
     onSuccess: async () => {
       await invalidateDetail();
       toast.success(
-        intl.formatMessage({ id: "emailCrm.detail.agent_running", defaultMessage: "Agent is running…" }),
+        intl.formatMessage({
+          id: "emailCrm.detail.agent_running",
+          defaultMessage: "Agent is running…",
+        }),
       );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to retry agent"),
@@ -202,7 +197,10 @@ export const EmailCrmDetailPage = () => {
       await queryClient.invalidateQueries({ queryKey: ["emailCrmList"] });
       setDeleteModalOpen(false);
       toast.success(
-        intl.formatMessage({ id: "emailCrm.detail.delete_success", defaultMessage: "Conversation deleted" }),
+        intl.formatMessage({
+          id: "emailCrm.detail.delete_success",
+          defaultMessage: "Conversation deleted",
+        }),
       );
       navigate("/email-crm");
     } catch (e) {
@@ -212,51 +210,98 @@ export const EmailCrmDetailPage = () => {
     }
   };
 
+  const statusLabel = (status: string) => {
+    const s = status.toUpperCase();
+    if (s === "OPEN")
+      return intl.formatMessage({ id: "emailCrm.index.status_open", defaultMessage: "Open" });
+    if (s === "PENDING")
+      return intl.formatMessage({
+        id: "emailCrm.index.status_pending",
+        defaultMessage: "Pending",
+      });
+    if (s === "RESOLVED")
+      return intl.formatMessage({
+        id: "emailCrm.index.status_resolved",
+        defaultMessage: "Resolved",
+      });
+    if (s === "SPAM")
+      return intl.formatMessage({ id: "emailCrm.index.status_spam", defaultMessage: "Spam" });
+    return status;
+  };
+
+  const priorityLabel = (priority: string) => {
+    const p = priority.toUpperCase();
+    if (p === "LOW")
+      return intl.formatMessage({ id: "emailCrm.index.priority_low", defaultMessage: "Low" });
+    if (p === "NORMAL")
+      return intl.formatMessage({
+        id: "emailCrm.index.priority_normal",
+        defaultMessage: "Normal",
+      });
+    if (p === "HIGH")
+      return intl.formatMessage({ id: "emailCrm.index.priority_high", defaultMessage: "High" });
+    if (p === "URGENT")
+      return intl.formatMessage({
+        id: "emailCrm.index.priority_urgent",
+        defaultMessage: "Urgent",
+      });
+    return priority;
+  };
+
   if (isLoading) {
     return (
-      <div className="so-page">
-        <div className="so-loading">
-          <Spinner size="lg" />
-          <span>{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "email-crm-detail", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </section>
     );
   }
 
   if (!conversation) {
     return (
-      <div className="so-page">
-        <div className="so-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
-          <div className="so-card">
-            <div className="so-card__body">
-              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
-                {intl.formatMessage({ id: "emailCrm.detail.not_found", defaultMessage: "Conversation not found" })}
-              </p>
-              <button
-                type="button"
-                className="so-btn so-btn--ghost"
-                style={{ marginTop: 12 }}
-                onClick={() => navigate("/email-crm")}
-              >
-                <EmailCrmIcon name="back" size={14} />
-                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "email-crm-detail", notFound: true })}
+      >
+        <PageHeader
+          module="email"
+          title={intl.formatMessage({
+            id: "emailCrm.detail.not_found",
+            defaultMessage: "Conversation not found",
+          })}
+          onBack={() => navigate("/email-crm")}
+        />
+      </section>
     );
   }
 
   const agentStatus = conversation.agentStatus ?? "IDLE";
-  const agentTint = agentStatusTint(agentStatus);
   const agentRunning = agentStatus === "RUNNING";
   const busy =
-    sendReplyMutation.isPending || suggestMutation.isPending || retryAgentMutation.isPending || agentRunning;
+    sendReplyMutation.isPending ||
+    suggestMutation.isPending ||
+    retryAgentMutation.isPending ||
+    agentRunning;
+
+  const agentLabel = agentRunning
+    ? intl.formatMessage({
+        id: "emailCrm.detail.agent_running",
+        defaultMessage: "Agent is running…",
+      })
+    : agentStatus === "FAILED"
+      ? intl.formatMessage({
+          id: "emailCrm.detail.agent_failed",
+          defaultMessage: "Agent failed",
+        })
+      : agentStatus;
 
   return (
     <section
-      className="so-page"
+      className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
         section: "email-crm-detail",
         id: conversation.id,
@@ -268,164 +313,102 @@ export const EmailCrmDetailPage = () => {
         orderCount: conversation.salesOrders?.length ?? 0,
       })}
     >
-      <header className="so-detail-hero">
-        <div className="so-detail-hero__top">
-          <ButtonGroup
-            size="md"
-            items={[
-              {
-                key: "back",
-                label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }),
-                icon: <EmailCrmIcon name="back" size={14} />,
-                to: "/email-crm",
-              },
-            ]}
-          />
-          <ButtonGroup
-            size="md"
-            items={[
-              ...(canUpdate && agentStatus === "FAILED"
-                ? [
-                    {
-                      key: "retry-agent",
-                      label: intl.formatMessage({
-                        id: "emailCrm.detail.retry_agent",
-                        defaultMessage: "Retry agent",
-                      }),
-                      icon: <EmailCrmIcon name="sparkle" size={14} />,
-                      onClick: () => retryAgentMutation.mutate(),
-                      disabled: retryAgentMutation.isPending,
-                      isLoading: retryAgentMutation.isPending,
-                      variant: "primary" as const,
-                    },
-                  ]
-                : []),
-              ...(canUpdate
-                ? [
-                    {
-                      key: "edit",
-                      label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }),
-                      icon: <EmailCrmIcon name="edit" size={14} />,
-                      to: `/email-crm/${conversation.id}/edit`,
-                    },
-                  ]
-                : []),
-              ...(canDelete
-                ? [
-                    {
-                      key: "delete",
-                      label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }),
-                      icon: <EmailCrmIcon name="delete" size={14} />,
-                      onClick: () => setDeleteModalOpen(true),
-                      variant: "danger" as const,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </div>
+      <PageHeader
+        module="email"
+        eyebrow={intl.formatMessage({
+          id: "emailCrm.detail.title",
+          defaultMessage: "Email conversation",
+        })}
+        title={conversation.subject ?? conversation.email}
+        description={conversation.email}
+        onBack={() => navigate("/email-crm")}
+        actions={
+          <>
+            {canUpdate && agentStatus === "FAILED" ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => retryAgentMutation.mutate()}
+                disabled={retryAgentMutation.isPending}
+              >
+                {retryAgentMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                {intl.formatMessage({
+                  id: "emailCrm.detail.retry_agent",
+                  defaultMessage: "Retry agent",
+                })}
+              </Button>
+            ) : null}
+            {canUpdate ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(`/email-crm/${conversation.id}/edit`)}
+              >
+                <Pencil className="size-4" />
+                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+              </Button>
+            ) : null}
+            {canDelete ? (
+              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+                <Trash2 className="size-4" />
+                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
-        <div className="so-detail-hero__title-block">
-          <div className="so-detail-hero__title-row">
-            <div className="so-detail-hero__title-stack">
-              <span className="so-detail-hero__kicker">
-                {intl.formatMessage({ id: "emailCrm.detail.title", defaultMessage: "Email conversation" })}
-              </span>
-              <h1 className="so-detail-hero__title">{conversation.subject ?? conversation.email}</h1>
-              <span className="so-detail-hero__sub">{conversation.email}</span>
-              <span className={`so-status ${agentTint.className}`} data-tint={agentTint.tint}>
-                {agentRunning ? <Spinner size="sm" /> : <span className="so-status__dot" aria-hidden="true" />}
-                <span>
-                  {intl.formatMessage({ id: "emailCrm.detail.agent_status", defaultMessage: "Agent" })}:{" "}
-                  {agentRunning
-                    ? intl.formatMessage({
-                        id: "emailCrm.detail.agent_running",
-                        defaultMessage: "Agent is running…",
-                      })
-                    : agentStatus === "FAILED"
-                      ? intl.formatMessage({
-                          id: "emailCrm.detail.agent_failed",
-                          defaultMessage: "Agent failed",
-                        })
-                      : agentStatus}
-                </span>
-              </span>
-              {agentStatus === "FAILED" && conversation.agentError ? (
-                <p style={{ margin: "6px 0 0", color: "var(--ios-state-danger, #DC2626)", fontSize: 13 }}>
-                  {conversation.agentError}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </header>
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusChip status={conversation.status} label={statusLabel(conversation.status)} />
+        <StatusChip status={conversation.priority} label={priorityLabel(conversation.priority)} />
+        <StatusChip
+          status={agentStatus}
+          label={`${intl.formatMessage({
+            id: "emailCrm.detail.agent_status",
+            defaultMessage: "Agent",
+          })}: ${agentLabel}`}
+        />
+      </div>
+      {agentStatus === "FAILED" && conversation.agentError ? (
+        <p className="text-sm text-destructive">{conversation.agentError}</p>
+      ) : null}
 
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon">
-              <EmailCrmIcon name="inbox" size={14} />
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-email)_14%,transparent)] text-[var(--module-email)]">
+              <Inbox className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "emailCrm.detail.summary", defaultMessage: "Summary" })}
-          </h2>
-        </div>
-        <div className="so-card__body">
-          <div className="so-section so-section--2">
-            <div className="so-field">
-              <span className="so-field__label">
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.form.email", defaultMessage: "Email" })}
-              </span>
-              <span className="so-field__value">{conversation.email}</span>
+              </dt>
+              <dd className="font-mono text-sm text-foreground">{conversation.email}</dd>
             </div>
-            <div className="so-field">
-              <span className="so-field__label">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.form.subject", defaultMessage: "Subject" })}
-              </span>
-              <span className="so-field__value">{conversation.subject ?? "—"}</span>
+              </dt>
+              <dd className="text-sm text-foreground">{conversation.subject ?? "—"}</dd>
             </div>
-            <div className="so-field">
-              <span className="so-field__label">
-                {intl.formatMessage({ id: "emailCrm.form.status", defaultMessage: "Status" })}
-              </span>
-              <span className="so-field__value">
-                <Chip tone={STATUS_TONE[conversation.status] ?? "neutral"} size="sm">
-                  {(() => {
-                    const s = conversation.status.toUpperCase();
-                    if (s === "OPEN") return intl.formatMessage({ id: "emailCrm.index.status_open", defaultMessage: "Open" });
-                    if (s === "PENDING") return intl.formatMessage({ id: "emailCrm.index.status_pending", defaultMessage: "Pending" });
-                    if (s === "RESOLVED") return intl.formatMessage({ id: "emailCrm.index.status_resolved", defaultMessage: "Resolved" });
-                    if (s === "SPAM") return intl.formatMessage({ id: "emailCrm.index.status_spam", defaultMessage: "Spam" });
-                    return conversation.status;
-                  })()}
-                </Chip>
-              </span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">
-                {intl.formatMessage({ id: "emailCrm.form.priority", defaultMessage: "Priority" })}
-              </span>
-              <span className="so-field__value">
-                <Chip tone={PRIORITY_TONE[conversation.priority] ?? "neutral"} size="sm">
-                  {(() => {
-                    const p = conversation.priority.toUpperCase();
-                    if (p === "LOW") return intl.formatMessage({ id: "emailCrm.index.priority_low", defaultMessage: "Low" });
-                    if (p === "NORMAL") return intl.formatMessage({ id: "emailCrm.index.priority_normal", defaultMessage: "Normal" });
-                    if (p === "HIGH") return intl.formatMessage({ id: "emailCrm.index.priority_high", defaultMessage: "High" });
-                    if (p === "URGENT") return intl.formatMessage({ id: "emailCrm.index.priority_urgent", defaultMessage: "Urgent" });
-                    return conversation.priority;
-                  })()}
-                </Chip>
-              </span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.form.customer", defaultMessage: "Customer" })}
-              </span>
-              <span className="so-field__value">
+              </dt>
+              <dd className="text-sm text-foreground">
                 {conversation.customer ? (
                   <button
                     type="button"
-                    className="so-btn so-btn--ghost so-btn--sm"
+                    className="cursor-pointer text-primary underline-offset-2 hover:underline"
                     onClick={() => navigate(`/customer/${conversation.customer!.id}`)}
                   >
                     {conversation.customer.name}
@@ -434,58 +417,67 @@ export const EmailCrmDetailPage = () => {
                 ) : (
                   "—"
                 )}
-              </span>
+              </dd>
             </div>
-            <div className="so-field">
-              <span className="so-field__label">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" })}
-              </span>
-              <span className="so-field__value">{tagsToLabel(conversation.tags)}</span>
+              </dt>
+              <dd className="text-sm text-foreground">{tagsToLabel(conversation.tags)}</dd>
             </div>
-            <div className="so-field">
-              <span className="so-field__label">
-                {intl.formatMessage({ id: "emailCrm.index.col_last_message", defaultMessage: "Last message" })}
-              </span>
-              <span className="so-field__value">{formatDateTime(conversation.lastMessageAt)}</span>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "emailCrm.index.col_last_message",
+                  defaultMessage: "Last message",
+                })}
+              </dt>
+              <dd className="text-sm text-muted-foreground">
+                {formatDateTime(conversation.lastMessageAt)}
+              </dd>
             </div>
-            <div className="so-field">
-              <span className="so-field__label">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.detail.agent_status", defaultMessage: "Agent" })}
-              </span>
-              <span className="so-field__value">
-                <Chip tone={AGENT_TONE[agentStatus] ?? "neutral"} size="sm">
-                  {agentRunning
-                    ? intl.formatMessage({ id: "emailCrm.detail.agent_running", defaultMessage: "Agent is running…" })
-                    : agentStatus === "FAILED"
-                      ? intl.formatMessage({ id: "emailCrm.detail.agent_failed", defaultMessage: "Agent failed" })
-                      : agentStatus}
-                </Chip>
-              </span>
+              </dt>
+              <dd className="flex items-center gap-2 text-sm text-foreground">
+                {agentRunning ? (
+                  <Loader2 className="size-3.5 animate-spin text-primary" aria-hidden />
+                ) : (
+                  <Bot className="size-3.5 text-muted-foreground" aria-hidden />
+                )}
+                {agentLabel}
+              </dd>
             </div>
-          </div>
-        </div>
-      </section>
+          </dl>
+        </CardContent>
+      </Card>
 
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon">
-              <EmailCrmIcon name="clock" size={14} />
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-email)_14%,transparent)] text-[var(--module-email)]">
+              <MessageSquare className="size-4" aria-hidden />
             </span>
-            {intl.formatMessage({ id: "emailCrm.detail.messages_title", defaultMessage: "Messages" })}
-          </h2>
-          <p className="so-card__hint">{conversation.messages?.length ?? 0}</p>
-        </div>
-        <div className="so-card__body">
+            {intl.formatMessage({
+              id: "emailCrm.detail.messages_title",
+              defaultMessage: "Messages",
+            })}
+          </CardTitle>
+          <CardDescription>{conversation.messages?.length ?? 0}</CardDescription>
+        </CardHeader>
+        <CardContent>
           {(conversation.messages?.length ?? 0) === 0 ? (
-            <p style={{ margin: 0, color: "var(--ios-label-2)" }}>
-              {intl.formatMessage({ id: "emailCrm.detail.no_messages", defaultMessage: "No messages yet" })}
+            <p className="text-sm text-muted-foreground">
+              {intl.formatMessage({
+                id: "emailCrm.detail.no_messages",
+                defaultMessage: "No messages yet",
+              })}
             </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="flex flex-col gap-3">
               {conversation.messages.map((msg) => {
                 const inbound = msg.direction === "INBOUND";
-                // INBOUND: always plain body (never HTML). OUTBOUND: strict sanitize or fall back to body.
                 const outboundHtml =
                   !inbound && msg.htmlBody?.trim()
                     ? sanitizeOutboundHtml(msg.htmlBody)
@@ -493,247 +485,206 @@ export const EmailCrmDetailPage = () => {
                 return (
                   <div
                     key={msg.id}
-                    style={{
-                      alignSelf: inbound ? "flex-start" : "flex-end",
-                      maxWidth: "85%",
-                      border: "1px solid var(--ios-separator, #E5E5EA)",
-                      borderRadius: 12,
-                      padding: "10px 12px",
-                      background: inbound ? "var(--ios-bg-secondary, #F2F2F7)" : "var(--ios-fill-blue, #E8F1FF)",
-                    }}
+                    className={cn(
+                      "max-w-[85%] rounded-xl border px-3 py-2.5",
+                      inbound
+                        ? "self-start bg-muted/50"
+                        : "self-end border-[color-mix(in_srgb,var(--module-email)_30%,transparent)] bg-[color-mix(in_srgb,var(--module-email)_8%,transparent)]",
+                    )}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
-                      <span className="m-badge">
+                    <div className="mb-1.5 flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                         {msg.direction}
                         {msg.sendStatus ? ` · ${msg.sendStatus}` : ""}
                       </span>
-                      <span style={{ fontSize: 12, color: "var(--ios-label-2)" }}>
+                      <span className="text-xs text-muted-foreground">
                         {formatDateTime(msg.sentAt ?? msg.createdAt)}
                       </span>
                     </div>
                     {outboundHtml ? (
                       <div
+                        className="prose prose-sm max-w-none break-words dark:prose-invert"
                         dangerouslySetInnerHTML={{ __html: outboundHtml }}
-                        style={{ margin: 0, wordBreak: "break-word" }}
                       />
                     ) : (
-                      <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{msg.body}</p>
+                      <p className="m-0 whitespace-pre-wrap text-sm text-foreground">{msg.body}</p>
                     )}
                   </div>
                 );
               })}
             </div>
           )}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      {canUpdate && (
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon">
-                <EmailCrmIcon name="sparkle" size={14} />
+      {canUpdate ? (
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-heading text-base">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-ai)_14%,transparent)] text-[var(--module-ai)]">
+                <Sparkles className="size-4" aria-hidden />
               </span>
-              {intl.formatMessage({ id: "emailCrm.detail.compose_title", defaultMessage: "Compose reply" })}
-            </h2>
-          </div>
-          <div className="so-card__body">
-            <div className="so-section">
-              <div className="so-field">
-                <label className="so-field__label" htmlFor="email-crm-ai-instruction">
-                  {intl.formatMessage({
-                    id: "emailCrm.detail.ai_instruction",
-                    defaultMessage: "AI instruction (optional)",
-                  })}
-                </label>
-                <input
-                  id="email-crm-ai-instruction"
-                  className="so-field__input"
-                  type="text"
-                  value={aiInstruction}
-                  onChange={(e) => setAiInstruction(e.target.value)}
-                  placeholder={intl.formatMessage({
-                    id: "emailCrm.detail.ai_instruction_placeholder",
-                    defaultMessage: "e.g. polite, confirm stock, ask for outlet",
-                  })}
-                  disabled={busy}
-                />
-              </div>
-              <div className="so-field">
-                <label className="so-field__label" htmlFor="email-crm-compose">
-                  {intl.formatMessage({ id: "emailCrm.detail.compose_label", defaultMessage: "Reply body" })}
-                </label>
-                <textarea
-                  id="email-crm-compose"
-                  className="so-field__input"
-                  rows={6}
-                  value={composeBody}
-                  onChange={(e) => setComposeBody(e.target.value)}
-                  placeholder={intl.formatMessage({
-                    id: "emailCrm.detail.compose_placeholder",
-                    defaultMessage: "Write a reply…",
-                  })}
-                  disabled={busy}
-                />
-              </div>
-            </div>
-            <div className="so-actions" style={{ marginTop: 12 }}>
-              <ButtonGroup
-                items={[
-                  {
-                    key: "suggest",
-                    label: intl.formatMessage({
-                      id: "emailCrm.detail.suggest_reply",
-                      defaultMessage: "AI Suggest",
-                    }),
-                    icon: <EmailCrmIcon name="sparkle" size={14} />,
-                    onClick: () => suggestMutation.mutate(),
-                    disabled: busy,
-                    isLoading: suggestMutation.isPending,
-                    variant: "default",
-                  },
-                  {
-                    key: "send",
-                    label: intl.formatMessage({ id: "emailCrm.detail.send_reply", defaultMessage: "Send" }),
-                    icon: <EmailCrmIcon name="check" size={14} />,
-                    onClick: () => {
-                      const body = composeBody.trim();
-                      if (!body) {
-                        toast.error(
-                          intl.formatMessage({
-                            id: "emailCrm.detail.reply_required",
-                            defaultMessage: "Reply body is required",
-                          }),
-                        );
-                        return;
-                      }
-                      sendReplyMutation.mutate(body);
-                    },
-                    disabled: busy || !composeBody.trim(),
-                    isLoading: sendReplyMutation.isPending,
-                    variant: "primary",
-                  },
-                ]}
+              {intl.formatMessage({
+                id: "emailCrm.detail.compose_title",
+                defaultMessage: "Compose reply",
+              })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email-crm-ai-instruction">
+                {intl.formatMessage({
+                  id: "emailCrm.detail.ai_instruction",
+                  defaultMessage: "AI instruction (optional)",
+                })}
+              </Label>
+              <Input
+                id="email-crm-ai-instruction"
+                value={aiInstruction}
+                onChange={(e) => setAiInstruction(e.target.value)}
+                placeholder={intl.formatMessage({
+                  id: "emailCrm.detail.ai_instruction_placeholder",
+                  defaultMessage: "e.g. polite, confirm stock, ask for outlet",
+                })}
+                disabled={busy}
               />
             </div>
-          </div>
-        </section>
-      )}
-
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon">
-              <EmailCrmIcon name="user" size={14} />
-            </span>
-            {intl.formatMessage({ id: "emailCrm.detail.linked_orders", defaultMessage: "Linked sales orders" })}
-          </h2>
-          <p className="so-card__hint">{conversation.salesOrders?.length ?? 0}</p>
-        </div>
-        <div className="so-card__body" style={{ padding: 0 }}>
-          {(conversation.salesOrders?.length ?? 0) === 0 ? (
-            <div className="so-card__body" style={{ textAlign: "center", padding: "2rem" }}>
-              <p style={{ margin: 0, color: "var(--ios-label-2)" }}>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email-crm-compose">
                 {intl.formatMessage({
-                  id: "emailCrm.detail.no_orders",
-                  defaultMessage: "No linked sales orders",
+                  id: "emailCrm.detail.compose_label",
+                  defaultMessage: "Reply body",
                 })}
-              </p>
+              </Label>
+              <Textarea
+                id="email-crm-compose"
+                rows={6}
+                value={composeBody}
+                onChange={(e) => setComposeBody(e.target.value)}
+                placeholder={intl.formatMessage({
+                  id: "emailCrm.detail.compose_placeholder",
+                  defaultMessage: "Write a reply…",
+                })}
+                disabled={busy}
+              />
             </div>
-          ) : (
-            <div className="so-items-table so-items-table--compact">
-              <div className="so-items-table__body">
-                {conversation.salesOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="so-items-table__row"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => navigate(`/sales-order/${order.id}`)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        navigate(`/sales-order/${order.id}`);
-                      }
-                    }}
-                  >
-                    <div className="so-items-table__td so-items-table__td--product">
-                      <span className="so-items-table__icon" data-tint="blue" aria-hidden="true">
-                        <EmailCrmIcon name="inbox" size={16} />
-                      </span>
-                      <div className="so-items-table__product">
-                        <span className="so-items-table__product-name">
-                          {order.documentNumber ?? order.id}
-                        </span>
-                        <span className="so-items-table__product-code">
-                          {intl.formatMessage({
-                            id: "emailCrm.detail.open_order",
-                            defaultMessage: "Open order",
-                          })}{" "}
-                          · {order.approvalStatus} · {formatDateTime(order.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
-                      <EmailCrmIcon name="chevron-right" size={16} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => suggestMutation.mutate()}
+                disabled={busy}
+              >
+                {suggestMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                {intl.formatMessage({
+                  id: "emailCrm.detail.suggest_reply",
+                  defaultMessage: "AI Suggest",
+                })}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  const body = composeBody.trim();
+                  if (!body) {
+                    toast.error(
+                      intl.formatMessage({
+                        id: "emailCrm.detail.reply_required",
+                        defaultMessage: "Reply body is required",
+                      }),
+                    );
+                    return;
+                  }
+                  sendReplyMutation.mutate(body);
+                }}
+                disabled={busy || !composeBody.trim()}
+              >
+                {sendReplyMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : null}
+                {intl.formatMessage({ id: "emailCrm.detail.send_reply", defaultMessage: "Send" })}
+              </Button>
             </div>
-          )}
-        </div>
-      </section>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      {deleteModalOpen &&
-        createPortal(
-          <div className="so-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
-            <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="so-modal__header">
-                <h3>
-                  <EmailCrmIcon name="delete" size={16} />{" "}
-                  {intl.formatMessage({ id: "emailCrm.common.delete", defaultMessage: "Delete conversation" })}
-                </h3>
-                <button
-                  className="so-btn so-btn--ghost so-btn--sm"
-                  onClick={() => setDeleteModalOpen(false)}
-                  aria-label="Close"
-                >
-                  <EmailCrmIcon name="close" size={14} />
-                </button>
-              </div>
-              <div className="so-modal__body">
-                <div className="so-modal__icon so-modal__icon--error">
-                  <EmailCrmIcon name="delete" size={28} />
-                </div>
-                <h3 className="so-modal__title">
-                  {intl.formatMessage({ id: "emailCrm.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}
-                </h3>
-                <p className="so-modal__msg">
-                  {intl.formatMessage(
-                    {
-                      id: "emailCrm.common.delete_confirm",
-                      defaultMessage: 'Delete conversation with "{email}"? This action cannot be undone.',
-                    },
-                    { email: conversation.email },
-                  )}
-                </p>
-              </div>
-              <div className="so-modal__footer">
-                <button className="so-btn so-btn--ghost" onClick={() => setDeleteModalOpen(false)}>
-                  {intl.formatMessage({ id: "emailCrm.common.cancel", defaultMessage: "Cancel" })}
-                </button>
-                <button className="so-btn so-btn--danger" onClick={handleDelete} disabled={isDeleting}>
-                  {isDeleting && <span className="so-spinner" />}
-                  <EmailCrmIcon name="delete" size={14} />
-                  {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body,
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+              <ShoppingCart className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({
+              id: "emailCrm.detail.linked_orders",
+              defaultMessage: "Linked sales orders",
+            })}
+          </CardTitle>
+          <CardDescription>{conversation.salesOrders?.length ?? 0}</CardDescription>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          {(conversation.salesOrders?.length ?? 0) === 0 ? (
+            <p className="px-6 pb-6 text-sm text-muted-foreground">
+              {intl.formatMessage({
+                id: "emailCrm.detail.no_orders",
+                defaultMessage: "No linked sales orders",
+              })}
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {conversation.salesOrders.map((order) => (
+                <li key={order.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/sales-order/${order.id}`)}
+                    className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+                      <ShoppingCart className="size-4" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-foreground">
+                        {order.documentNumber ?? order.id}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {intl.formatMessage({
+                          id: "emailCrm.detail.open_order",
+                          defaultMessage: "Open order",
+                        })}{" "}
+                        · {order.approvalStatus} · {formatDateTime(order.createdAt)}
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <ConfirmDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title={intl.formatMessage({
+          id: "emailCrm.common.delete",
+          defaultMessage: "Delete conversation",
+        })}
+        description={intl.formatMessage(
+          {
+            id: "emailCrm.common.delete_confirm",
+            defaultMessage: 'Delete conversation with "{email}"? This action cannot be undone.',
+          },
+          { email: conversation.email },
         )}
+        confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={handleDelete}
+      />
     </section>
   );
 };
