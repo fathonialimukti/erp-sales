@@ -40,6 +40,7 @@
     "date-fns": "^4.1.0",
     "jotai": "^2.20.0",
     "lucide-react": "^1.25.0",
+    "motion": "^12.42.2",
     "r3f-managed-glb": "^1.1.19",
     "radix-ui": "^1.6.5",
     "react": "^19.2.8",
