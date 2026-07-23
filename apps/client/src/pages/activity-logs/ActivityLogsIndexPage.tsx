@@ -2,15 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  type ColumnDef,
-  type PaginationState,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
+import { Eye, MoreHorizontal } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
-import { ModulePage, ModuleHero, ModuleSearch, ModuleTable, ModuleEmpty } from "../../components/ModulePage";
-import { ActivityLogIcon } from "./ActivityLogIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { FilterBar } from "../../components/FilterBar";
+import { DataTable } from "../../components/DataTable";
+import { EmptyState } from "../../components/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Pagination } from "../../ui/Pagination";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type ActivityLogRow = {
   id: string;
@@ -21,6 +29,7 @@ type ActivityLogRow = {
   userId: string;
   user: { id: string; name: string | null; email: string };
   detail: string | null;
+  message?: string | null;
 };
 
 export const ActivityLogsIndexPage = () => {
@@ -39,103 +48,182 @@ export const ActivityLogsIndexPage = () => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading } = useQuery<{
-    data: ActivityLogRow[];
-    pagination: { totalPages: number; total: number };
-  }>({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["activityLogList", pagination.pageIndex, pagination.pageSize, search],
-    queryFn: async () => {
-      const result = await trpcClient.activityLog.list.query({
+    queryFn: () =>
+      trpcClient.activityLog.list.query({
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         search: search || undefined,
-      });
-      return result as any;
-    },
+      }),
   });
 
-  const rows = (data?.data ?? []) as ActivityLogRow[];
-  const totalPages = data?.pagination?.totalPages ?? 1;
-  const totalRows = data?.pagination?.total ?? 0;
+  // API returns { data, pagination: { total, totalPages, ... } }
+  const payload = data as
+    | { data?: ActivityLogRow[]; pagination?: { totalPages?: number; total?: number } }
+    | undefined;
+  const rows = (payload?.data ?? []) as ActivityLogRow[];
+  const totalPages = payload?.pagination?.totalPages ?? 1;
+  const totalRows = payload?.pagination?.total ?? 0;
 
-  const columns = useMemo<ColumnDef<ActivityLogRow>[]>(() => [
-    {
-      id: "createdAt", header: intl.formatMessage({ id: "activity_log.index.header_timestamp", defaultMessage: "Timestamp" }),
-      cell: ({ row }) => (
-        <span className="m-doc">
-          <span className="m-doc__text">
-            <span className="m-doc__code">{new Date(row.original.createdAt).toLocaleString("id-ID")}</span>
+  const columns = useMemo<ColumnDef<ActivityLogRow>[]>(
+    () => [
+      {
+        id: "createdAt",
+        header: intl.formatMessage({
+          id: "activity_log.index.header_timestamp",
+          defaultMessage: "Timestamp",
+        }),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-muted-foreground">
+            {new Date(row.original.createdAt).toLocaleString("id-ID")}
           </span>
-        </span>
-      ),
-    },
-    {
-      id: "action", header: intl.formatMessage({ id: "activity_log.index.header_action", defaultMessage: "Action" }),
-      cell: ({ row }) => <span className="m-badge">{row.original.action}</span>,
-    },
-    {
-      id: "user", header: intl.formatMessage({ id: "activity_log.index.header_user", defaultMessage: "User" }),
-      cell: ({ row }) => (
-        <span className="m-cell">
-          <span className="m-cell__primary">{row.original.user.name ?? "Unknown"}</span>
-          <span className="m-cell__secondary">{row.original.user.email}</span>
-        </span>
-      ),
-    },
-    {
-      id: "resource", header: intl.formatMessage({ id: "activity_log.index.header_resource", defaultMessage: "Resource" }),
-      cell: ({ row }) => (
-        <span className="m-cell">
-          <span className="m-cell__primary">{row.original.resource}</span>
-        </span>
-      ),
-    },
-  ], [intl]);
-
-  const table = useReactTable({
-    data: rows, columns, pageCount: totalPages,
-    state: { pagination },
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-  });
+        ),
+      },
+      {
+        id: "action",
+        header: intl.formatMessage({
+          id: "activity_log.index.header_action",
+          defaultMessage: "Action",
+        }),
+        cell: ({ row }) => <Badge variant="secondary">{row.original.action}</Badge>,
+      },
+      {
+        id: "user",
+        header: intl.formatMessage({
+          id: "activity_log.index.header_user",
+          defaultMessage: "User",
+        }),
+        cell: ({ row }) => (
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {row.original.user.name ?? "Unknown"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{row.original.user.email}</p>
+          </div>
+        ),
+      },
+      {
+        id: "resource",
+        header: intl.formatMessage({
+          id: "activity_log.index.header_resource",
+          defaultMessage: "Resource",
+        }),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{row.original.resource}</span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={intl.formatMessage({
+                    id: "common.action.actions",
+                    defaultMessage: "Actions",
+                  })}
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate(`/activity-logs/${row.original.id}`)}>
+                  <Eye className="size-4" />
+                  {intl.formatMessage({ id: "common.action.view", defaultMessage: "View" })}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    [intl, navigate],
+  );
 
   return (
-    <ModulePage accent="#A78BFA" accentEnd="#6D28D9" aiContext={{ section: "activity-logs-index", itemCount: totalRows, page: pagination.pageIndex + 1, search }}>
-      <ModuleHero
-        kicker={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
-        title={intl.formatMessage({ id: "activity_log.index.title", defaultMessage: "Activity Logs" })}
-        subtitle={intl.formatMessage({ id: "activity_log.index.subtitle", defaultMessage: "View system activity and audit trail." })}
-        stats={[{ value: totalRows, label: intl.formatMessage({ id: "activity_log.hero.total", defaultMessage: "Total" }) }]}
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "activity-logs-index",
+        itemCount: totalRows,
+        page: pagination.pageIndex + 1,
+        search,
+      })}
+    >
+      <PageHeader
+        module="user"
+        eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+        title={intl.formatMessage({
+          id: "activity_log.index.title",
+          defaultMessage: "Activity Logs",
+        })}
+        description={intl.formatMessage({
+          id: "activity_log.index.subtitle",
+          defaultMessage: "View system activity and audit trail.",
+        })}
       />
 
-      <div className="m-toolbar">
-        <ModuleSearch
-          value={searchInput} onChange={setSearchInput}
-          placeholder={intl.formatMessage({ id: "activity_log.index.search_placeholder", defaultMessage: "Search activity logs…" })}
-          searchIcon={<ActivityLogIcon name="search" size={16} />}
-          clearIcon={<ActivityLogIcon name="close" size={12} />}
-          clearLabel={intl.formatMessage({ id: "common.action.clear", defaultMessage: "Clear" })}
-        />
-        <span className="m-count">
-          {intl.formatMessage({ id: "activity_log.index.count_label", defaultMessage: "{count, plural, one {# log} other {# logs}}" }, { count: totalRows })}
-        </span>
-      </div>
-
-      <ModuleTable
+      <DataTable
         density="crm"
-        table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
-        pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        isError={isError}
         onRowClick={(row) => navigate(`/activity-logs/${row.id}`)}
-        onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}
-        paginationLabel={intl.formatMessage({ id: "common.pagination_info", defaultMessage: "Page {page} of {total}" }, { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) })}
-        emptyState={
-          <ModuleEmpty
-            title={intl.formatMessage({ id: "activity_log.index.empty_title", defaultMessage: "No activity logs found" })}
-            description={intl.formatMessage({ id: "activity_log.index.empty_desc", defaultMessage: "Try adjusting your search." })}
+        toolbar={
+          <FilterBar
+            search={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder={intl.formatMessage({
+              id: "activity_log.index.search_placeholder",
+              defaultMessage: "Search activity logs…",
+            })}
+            countLabel={intl.formatMessage(
+              {
+                id: "activity_log.index.count_label",
+                defaultMessage: "{count, plural, one {# log} other {# logs}}",
+              },
+              { count: totalRows },
+            )}
           />
         }
+        empty={
+          <EmptyState
+            module="user"
+            title={intl.formatMessage({
+              id: "activity_log.index.empty_title",
+              defaultMessage: "No activity logs found",
+            })}
+            description={intl.formatMessage({
+              id: "activity_log.index.empty_desc",
+              defaultMessage: "Try adjusting your search.",
+            })}
+          />
+        }
+        footer={
+          totalPages > 1 ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {intl.formatMessage(
+                  { id: "common.pagination_info", defaultMessage: "Page {page} of {total}" },
+                  { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) },
+                )}
+              </p>
+              <Pagination
+                page={pagination.pageIndex + 1}
+                totalPages={totalPages}
+                onChange={(p) => setPagination({ pageIndex: p - 1, pageSize: pagination.pageSize })}
+              />
+            </div>
+          ) : null
+        }
       />
-    </ModulePage>
+    </section>
   );
 };
