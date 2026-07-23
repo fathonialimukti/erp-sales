@@ -135,7 +135,7 @@ export const CustomerIndexPage = () => {
       await trpcClient.customer.delete.mutate({ id: itemToDelete.id });
       await queryClient.invalidateQueries({ queryKey: ["customerList"] });
       setDeleteModalOpen(false); setItemToDelete(null);
-      toast.success(intl.formatMessage({ id: "customer.index.delete_success", defaultMessage: "Region deleted" }));
+      toast.success(intl.formatMessage({ id: "customer.index.delete_success", defaultMessage: "Customer deleted" }));
     } catch (e) { toast.error(e instanceof Error ? e.message : "Failed to delete"); }
     finally { setIsDeleting(false); }
   };

@@ -752,10 +752,10 @@ export const Dashboard = () => {
               {intl.formatMessage({ id: "dashboard.ai_insight_sales_trend", defaultMessage: "Sales trend" })}
             </button>
           </div>
-          {insightLoading && <div className="text-sm text-gray-500">Loading...</div>}
-          {insightError && <div className="text-sm text-red-600">{insightError}</div>}
+          {insightLoading && <div className="ios-dash__insight-loading">Loading...</div>}
+          {insightError && <div className="ios-dash__insight-error">{insightError}</div>}
           {insightResult && (
-            <div className="prose prose-sm max-w-none">
+            <div className="ios-dash__insight-result">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightResult}</ReactMarkdown>
             </div>
           )}
