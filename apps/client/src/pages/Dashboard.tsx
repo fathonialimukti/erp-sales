@@ -16,12 +16,31 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  ClipboardList,
+  Package,
+  ShoppingCart,
+  Sparkles,
+  Users,
+} from "lucide-react";
+
+import { KpiCard } from "../components/KpiCard";
 import { Stagger, StaggerItem } from "../components/motion/Stagger";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { trpcClient } from "../lib/trpc";
 import { authUserAtom, hasPermissionAtom } from "../lib/atoms";
-import { Skeleton } from "../ui/Skeleton";
 import { icons } from "../assets/icons";
-import "./Dashboard.css";
 
 type SalesDashboard = {
   kpis: {
@@ -56,13 +75,10 @@ type SalesDashboard = {
 const chartColors = {
   primary: "var(--chart-1)",
   secondary: "var(--chart-2)",
-  tertiary: "var(--chart-3)",
-  positive: "var(--chart-positive)",
-  negative: "var(--chart-negative)",
   grid: "var(--chart-grid)",
   axis: "var(--chart-axis)",
   tooltipBg: "var(--chart-tooltip-bg)",
-  border: "var(--color-border)",
+  border: "var(--border)",
 } as const;
 
 const chartTooltipStyle = {
@@ -70,21 +86,31 @@ const chartTooltipStyle = {
   border: `1px solid ${chartColors.border}`,
   borderRadius: 12,
   fontSize: 12,
-  boxShadow: "var(--ios-shadow-card)",
-  color: "var(--ios-label)",
+  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+  color: "var(--foreground)",
 } as const;
 
 const MAIN_CHART_HEIGHT = 280;
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(value);
 
 const formatCompact = (value: number) =>
-  new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+  new Intl.NumberFormat("id-ID", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
 
 const formatShortDate = (date: string | Date) => {
   const d = new Date(date);
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(d);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+  }).format(d);
 };
 
 const formatRelative = (date: string | Date) => {
@@ -97,8 +123,18 @@ const formatRelative = (date: string | Date) => {
   if (h < 24) return `${h}h ago`;
   const days = Math.floor(h / 24);
   if (days < 7) return `${days}d ago`;
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(d);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+  }).format(d);
 };
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("");
 
 export const Dashboard = () => {
   const intl = useIntl();
@@ -151,10 +187,6 @@ export const Dashboard = () => {
   });
 
   const sales = data as SalesDashboard | undefined;
-
-  // "Today" agenda — today's visit logs + draft sales orders, merged into
-  // a single actionable rail. Turns the dashboard from a report into a
-  // launchpad.
   const todayISO = new Date().toISOString().slice(0, 10);
 
   const todayVisitsQuery = useQuery({
@@ -210,7 +242,12 @@ export const Dashboard = () => {
   }, [todayVisitsQuery.data, draftOrdersQuery.data]);
 
   const revenueChartData = useMemo(
-    () => (sales?.revenueTrend ?? []).map((p) => ({ date: p.date, label: formatShortDate(p.date), total: p.total })),
+    () =>
+      (sales?.revenueTrend ?? []).map((p) => ({
+        date: p.date,
+        label: formatShortDate(p.date),
+        total: p.total,
+      })),
     [sales?.revenueTrend],
   );
 
@@ -219,50 +256,68 @@ export const Dashboard = () => {
       {
         id: "new-order",
         icon: icons.dashNewOrder,
-        label: intl.formatMessage({ id: "dashboard.action.new_order", defaultMessage: "New sales order" }),
+        label: intl.formatMessage({
+          id: "dashboard.action.new_order",
+          defaultMessage: "New sales order",
+        }),
         permission: "sales-order@create",
         href: "/sales-order/create",
-        tint: "green" as const,
+        tone: "bg-[color-mix(in_srgb,var(--module-order)_16%,transparent)]",
       },
       {
         id: "new-visit",
         icon: icons.dashNewVisit,
-        label: intl.formatMessage({ id: "dashboard.action.new_visit", defaultMessage: "Log a visit" }),
+        label: intl.formatMessage({
+          id: "dashboard.action.new_visit",
+          defaultMessage: "Log a visit",
+        }),
         permission: "visit-log@create",
         href: "/visit-log/create",
-        tint: "purple" as const,
+        tone: "bg-[color-mix(in_srgb,var(--module-visit)_16%,transparent)]",
       },
       {
         id: "new-customer",
         icon: icons.dashNewCustomer,
-        label: intl.formatMessage({ id: "dashboard.action.new_customer", defaultMessage: "Add customer" }),
+        label: intl.formatMessage({
+          id: "dashboard.action.new_customer",
+          defaultMessage: "Add customer",
+        }),
         permission: "customer@create",
         href: "/customer/create",
-        tint: "pink" as const,
+        tone: "bg-[color-mix(in_srgb,var(--module-customer)_16%,transparent)]",
       },
       {
         id: "new-sku",
         icon: icons.dashNewSku,
-        label: intl.formatMessage({ id: "dashboard.action.new_sku", defaultMessage: "Add SKU" }),
+        label: intl.formatMessage({
+          id: "dashboard.action.new_sku",
+          defaultMessage: "Add SKU",
+        }),
         permission: "sku@create",
         href: "/sku/create",
-        tint: "orange" as const,
+        tone: "bg-[color-mix(in_srgb,var(--module-sku)_16%,transparent)]",
       },
       {
         id: "new-program",
         icon: icons.dashNewProgram,
-        label: intl.formatMessage({ id: "dashboard.action.new_program", defaultMessage: "New action program" }),
+        label: intl.formatMessage({
+          id: "dashboard.action.new_program",
+          defaultMessage: "New action program",
+        }),
         permission: "action-program@create",
         href: "/action-program/create",
-        tint: "red" as const,
+        tone: "bg-[color-mix(in_srgb,var(--module-planning)_16%,transparent)]",
       },
       {
         id: "new-event",
         icon: icons.dashNewEvent,
-        label: intl.formatMessage({ id: "dashboard.action.new_event", defaultMessage: "New event proposal" }),
+        label: intl.formatMessage({
+          id: "dashboard.action.new_event",
+          defaultMessage: "New event proposal",
+        }),
         permission: "event-proposal@create",
         href: "/event-proposal/create",
-        tint: "teal" as const,
+        tone: "bg-[color-mix(in_srgb,var(--module-event)_16%,transparent)]",
       },
     ],
     [intl],
@@ -284,9 +339,12 @@ export const Dashboard = () => {
     month: "long",
   }).format(new Date());
 
+  const delta = sales?.kpis.revenueDeltaPercent ?? null;
+  const allowedActions = quickActions.filter((a) => hasPermission(a.permission));
+
   return (
     <section
-      className="ios-dash"
+      className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
         section: "dashboard",
         greetingKey,
@@ -296,507 +354,559 @@ export const Dashboard = () => {
         recentActivityCount: sales?.recentActivity?.length ?? 0,
       })}
     >
-      {/* ============== HERO GREETING CARD ============== */}
-      <header className="ios-dash__hero">
-        <div className="ios-dash__hero-text">
-          <span className="ios-dash__hero-eyebrow">{todayLabel}</span>
-          <h1 className="ios-dash__hero-title">
-            {greeting}, <span className="ios-dash__hero-name">{userName}</span>
-          </h1>
-          <p className="ios-dash__hero-sub">
-            {intl.formatMessage({
-              id: "dashboard.subtitle_v2",
-              defaultMessage: "Sales performance, approvals, and customer activity at a glance.",
-            })}
-          </p>
-        </div>
-        <div className="ios-dash__hero-orb" aria-hidden="true">
-          <img src={icons.dashSun} alt="" className="ios-dash__hero-sun" />
-        </div>
-      </header>
-
-      {/* ============== LARGE PRIMARY METRIC — REVENUE ============== */}
-      <section className="ios-dash__primary" aria-label="Month revenue">
-        <div className="ios-dash__primary-label">
-          <span className="ios-dash__primary-kicker">
-            {intl.formatMessage({ id: "dashboard.kpi.month_revenue", defaultMessage: "Month revenue" })}
-          </span>
-          {sales?.kpis.revenueDeltaPercent !== null && sales?.kpis.revenueDeltaPercent !== undefined && (
-            <span
-              className={`ios-dash__chip ${
-                sales.kpis.revenueDeltaPercent > 0
-                  ? "ios-dash__chip--up"
-                  : sales.kpis.revenueDeltaPercent < 0
-                  ? "ios-dash__chip--down"
-                  : "ios-dash__chip--flat"
-              }`}
-            >
-              <img
-                src={sales.kpis.revenueDeltaPercent > 0 ? icons.dashArrowUp : icons.dashArrowDown}
-                alt=""
-                className="ios-dash__chip-arrow"
-              />
-              {Math.abs(sales.kpis.revenueDeltaPercent).toFixed(1)}%
-            </span>
-          )}
-        </div>
-        <div className="ios-dash__primary-value">
-          {isLoading || !sales ? (
-            <Skeleton style={{ height: 56, width: 240 }} />
-          ) : (
-            formatCurrency(sales.kpis.monthRevenue)
-          )}
-        </div>
-        {sales?.kpis.prevMonthRevenue ? (
-          <div className="ios-dash__primary-sub">
-            {intl.formatMessage({ id: "dashboard.kpi.vs_prev_month", defaultMessage: "vs last month" })}
-          </div>
-        ) : null}
-
-        <div className="ios-dash__primary-chart">
-          {isLoading ? (
-            <Skeleton style={{ height: 96, width: "100%", borderRadius: 12 }} />
-          ) : revenueChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={96}>
-              <AreaChart data={revenueChartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="iosHeroFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={chartColors.primary} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={chartColors.primary} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="total"
-                  stroke={chartColors.primary}
-                  strokeWidth={2.5}
-                  fill="url(#iosHeroFill)"
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="ios-dash__primary-empty">
-              <img src={icons.dashSparkle} alt="" />
-              <span>
-                {intl.formatMessage({ id: "dashboard.chart.no_data", defaultMessage: "No approved sales yet" })}
-              </span>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ============== 3 SECONDARY METRIC ROWS (iOS list style) ============== */}
-      <Stagger className="ios-dash__metrics" aria-label="Key metrics">
-        <StaggerItem>
-          <IosMetricRow
-            icon={icons.dashOrders}
-            tint="blue"
-            label={intl.formatMessage({ id: "dashboard.kpi.open_orders", defaultMessage: "Open orders" })}
-            value={sales ? formatCompact(sales.kpis.openOrders) : null}
-            detail={
-              sales
-                ? `${sales.kpis.draftOrders} ${intl.formatMessage({ id: "dashboard.kpi.draft", defaultMessage: "draft" })} · ${sales.kpis.proposedOrders} ${intl.formatMessage({ id: "dashboard.kpi.proposed", defaultMessage: "proposed" })}`
-                : null
-            }
-            isLoading={isLoading}
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <IosMetricRow
-            icon={icons.dashCustomers}
-            tint="pink"
-            label={intl.formatMessage({ id: "dashboard.kpi.customers", defaultMessage: "Customers" })}
-            value={sales ? formatCompact(sales.kpis.customerCount) : null}
-            detail={
-              sales
-                ? `${sales.kpis.skuCount} ${intl.formatMessage({ id: "dashboard.kpi.skus", defaultMessage: "SKUs" })} · ${sales.kpis.activeSkuCount} ${intl.formatMessage({ id: "dashboard.kpi.active", defaultMessage: "active" })}`
-                : null
-            }
-            isLoading={isLoading}
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <IosMetricRow
-            icon={icons.dashVisits}
-            tint="orange"
-            label={intl.formatMessage({ id: "dashboard.kpi.visits", defaultMessage: "Visit logs" })}
-            value={sales ? formatCompact(sales.kpis.visitCount) : null}
-            detail={
-              sales
-                ? `${sales.kpis.orderItemsThisMonth} ${intl.formatMessage({ id: "dashboard.kpi.line_items", defaultMessage: "line items this month" })}`
-                : null
-            }
-            isLoading={isLoading}
-          />
-        </StaggerItem>
-      </Stagger>
-
-      {/* ============== REVENUE TREND CARD ============== */}
-      <section className="ios-dash__card" aria-label="Revenue trend">
-        <header className="ios-dash__card-header">
-          <div className="ios-dash__card-icon" data-tint="green">
-            <img src={icons.dashChart} alt="" />
-          </div>
-          <div className="ios-dash__card-heading">
-            <h2 className="ios-dash__card-title">
-              {intl.formatMessage({ id: "dashboard.chart.revenue_trend", defaultMessage: "Revenue trend" })}
-            </h2>
-            <p className="ios-dash__card-sub">
+      <header className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary via-indigo-600 to-violet-600 px-6 py-7 text-white shadow-sm sm:px-8">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(255,255,255,0.28),transparent_55%)]"
+          aria-hidden
+        />
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <div className="min-w-0 space-y-2">
+            <p className="text-xs font-semibold tracking-[0.08em] text-white/85 uppercase">
+              {todayLabel}
+            </p>
+            <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+              {greeting}, <span className="text-white/90">{userName}</span>
+            </h1>
+            <p className="max-w-xl text-sm text-white/85">
               {intl.formatMessage({
-                id: "dashboard.chart.revenue_trend_sub",
-                defaultMessage: "Approved sales orders — last 30 days",
+                id: "dashboard.subtitle_v2",
+                defaultMessage:
+                  "Sales performance, approvals, and customer activity at a glance.",
               })}
             </p>
           </div>
-        </header>
-        <div className="ios-dash__card-body">
-          {isLoading ? (
-            <Skeleton
-              className="ios-dash__chart-skeleton"
-              style={{ height: MAIN_CHART_HEIGHT, width: "100%", borderRadius: 16 }}
-            />
-          ) : (
-            <div className="ios-dash__chart" style={{ height: MAIN_CHART_HEIGHT }}>
+          <div
+            className="hidden size-16 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm sm:flex"
+            aria-hidden
+          >
+            <img src={icons.dashSun} alt="" className="size-10 drop-shadow" />
+          </div>
+        </div>
+      </header>
+
+      <Card className="shadow-sm">
+        <CardContent className="flex flex-col gap-4 px-5 py-5 sm:px-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "dashboard.kpi.month_revenue",
+                  defaultMessage: "Month revenue",
+                })}
+              </p>
+              <div className="font-heading text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl">
+                {isLoading || !sales ? (
+                  <Skeleton className="h-10 w-56" />
+                ) : (
+                  formatCurrency(sales.kpis.monthRevenue)
+                )}
+              </div>
+              {sales?.kpis.prevMonthRevenue ? (
+                <p className="text-sm text-muted-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.kpi.vs_prev_month",
+                    defaultMessage: "vs last month",
+                  })}
+                </p>
+              ) : null}
+            </div>
+            {delta !== null && delta !== undefined ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
+                  delta > 0 && "bg-success/15 text-success",
+                  delta < 0 && "bg-destructive/10 text-destructive",
+                  delta === 0 && "bg-muted text-muted-foreground",
+                )}
+              >
+                {delta > 0 ? (
+                  <ArrowUpRight className="size-3.5" aria-hidden />
+                ) : delta < 0 ? (
+                  <ArrowDownRight className="size-3.5" aria-hidden />
+                ) : null}
+                {Math.abs(delta).toFixed(1)}%
+              </span>
+            ) : null}
+          </div>
+
+          <div className="h-24 w-full">
+            {isLoading ? (
+              <Skeleton className="h-full w-full rounded-xl" />
+            ) : revenueChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <AreaChart data={revenueChartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="iosRevFill" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="auroraHeroFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={chartColors.primary} stopOpacity={0.35} />
                       <stop offset="100%" stopColor={chartColors.primary} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke={chartColors.grid} vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fill: chartColors.axis, fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    interval="preserveStartEnd"
-                    minTickGap={24}
-                  />
-                  <YAxis
-                    tick={{ fill: chartColors.axis, fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={48}
-                    tickFormatter={(v) => formatCompact(Number(v))}
-                  />
-                  <Tooltip
-                    contentStyle={chartTooltipStyle}
-                    formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
-                  />
                   <Area
                     type="monotone"
                     dataKey="total"
                     stroke={chartColors.primary}
                     strokeWidth={2.5}
-                    fill="url(#iosRevFill)"
+                    fill="url(#auroraHeroFill)"
+                    isAnimationActive={false}
                   />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ============== TOP CUSTOMERS CARD ============== */}
-      <section className="ios-dash__card" aria-label="Top customers">
-        <header className="ios-dash__card-header">
-          <div className="ios-dash__card-icon" data-tint="yellow">
-            <img src={icons.dashTrophy} alt="" />
+            ) : (
+              <div className="flex h-full items-center gap-2 text-sm text-muted-foreground">
+                <Sparkles className="size-4 opacity-60" aria-hidden />
+                {intl.formatMessage({
+                  id: "dashboard.chart.no_data",
+                  defaultMessage: "No approved sales yet",
+                })}
+              </div>
+            )}
           </div>
-          <div className="ios-dash__card-heading">
-            <h2 className="ios-dash__card-title">
-              {intl.formatMessage({ id: "dashboard.chart.top_customers", defaultMessage: "Top customers" })}
-            </h2>
-            <p className="ios-dash__card-sub">
+        </CardContent>
+      </Card>
+
+      <Stagger
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        aria-label="Key metrics"
+      >
+        <StaggerItem>
+          <KpiCard
+            module="order"
+            icon={<ShoppingCart className="size-5" aria-hidden />}
+            label={intl.formatMessage({
+              id: "dashboard.kpi.open_orders",
+              defaultMessage: "Open orders",
+            })}
+            value={
+              isLoading || !sales ? (
+                <Skeleton className="h-7 w-16" />
+              ) : (
+                formatCompact(sales.kpis.openOrders)
+              )
+            }
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <KpiCard
+            module="customer"
+            icon={<Users className="size-5" aria-hidden />}
+            label={intl.formatMessage({
+              id: "dashboard.kpi.customers",
+              defaultMessage: "Customers",
+            })}
+            value={
+              isLoading || !sales ? (
+                <Skeleton className="h-7 w-16" />
+              ) : (
+                formatCompact(sales.kpis.customerCount)
+              )
+            }
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <KpiCard
+            module="visit"
+            icon={<ClipboardList className="size-5" aria-hidden />}
+            label={intl.formatMessage({
+              id: "dashboard.kpi.visits",
+              defaultMessage: "Visit logs",
+            })}
+            value={
+              isLoading || !sales ? (
+                <Skeleton className="h-7 w-16" />
+              ) : (
+                formatCompact(sales.kpis.visitCount)
+              )
+            }
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <KpiCard
+            module="sku"
+            icon={<Package className="size-5" aria-hidden />}
+            label={intl.formatMessage({
+              id: "dashboard.kpi.skus",
+              defaultMessage: "SKUs",
+            })}
+            value={
+              isLoading || !sales ? (
+                <Skeleton className="h-7 w-16" />
+              ) : (
+                formatCompact(sales.kpis.skuCount)
+              )
+            }
+          />
+        </StaggerItem>
+      </Stagger>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "dashboard.chart.revenue_trend",
+                defaultMessage: "Revenue trend",
+              })}
+            </CardTitle>
+            <CardDescription>
+              {intl.formatMessage({
+                id: "dashboard.chart.revenue_trend_sub",
+                defaultMessage: "Approved sales orders — last 30 days",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="w-full rounded-xl" style={{ height: MAIN_CHART_HEIGHT }} />
+            ) : (
+              <div style={{ height: MAIN_CHART_HEIGHT }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="auroraRevFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={chartColors.primary} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={chartColors.primary} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke={chartColors.grid} vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fill: chartColors.axis, fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                      minTickGap={24}
+                    />
+                    <YAxis
+                      tick={{ fill: chartColors.axis, fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={48}
+                      tickFormatter={(v) => formatCompact(Number(v))}
+                    />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      stroke={chartColors.primary}
+                      strokeWidth={2.5}
+                      fill="url(#auroraRevFill)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "dashboard.chart.top_customers",
+                defaultMessage: "Top customers",
+              })}
+            </CardTitle>
+            <CardDescription>
               {intl.formatMessage({
                 id: "dashboard.chart.top_customers_sub",
                 defaultMessage: "By approved revenue this month",
               })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="w-full rounded-xl" style={{ height: MAIN_CHART_HEIGHT }} />
+            ) : sales?.topCustomers?.length ? (
+              <div style={{ height: MAIN_CHART_HEIGHT }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={sales.topCustomers}
+                    layout="vertical"
+                    margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid stroke={chartColors.grid} horizontal={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fill: chartColors.axis, fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => formatCompact(Number(v))}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      tick={{ fill: chartColors.axis, fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={110}
+                    />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                    />
+                    <Bar dataKey="total" fill={chartColors.secondary} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex h-[280px] flex-col items-center justify-center gap-1 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.chart.no_data",
+                    defaultMessage: "No approved sales yet",
+                  })}
+                </p>
+                <p className="max-w-xs text-sm text-muted-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.chart.no_data_sub",
+                    defaultMessage:
+                      "Once orders are approved, your top customers will appear here.",
+                  })}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {allowedActions.length > 0 ? (
+        <section className="space-y-3" aria-label="Quick actions">
+          <div>
+            <h2 className="font-heading text-base font-semibold">
+              {intl.formatMessage({
+                id: "dashboard.section.quick_actions",
+                defaultMessage: "Quick actions",
+              })}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {intl.formatMessage({
+                id: "dashboard.section.quick_actions_sub",
+                defaultMessage: "Jump into a workflow",
+              })}
             </p>
           </div>
-        </header>
-        <div className="ios-dash__card-body">
-          {isLoading ? (
-            <Skeleton
-              className="ios-dash__chart-skeleton"
-              style={{ height: MAIN_CHART_HEIGHT, width: "100%", borderRadius: 16 }}
-            />
-          ) : sales?.topCustomers?.length ? (
-            <div className="ios-dash__chart" style={{ height: MAIN_CHART_HEIGHT }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={sales.topCustomers}
-                  layout="vertical"
-                  margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid stroke={chartColors.grid} horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={{ fill: chartColors.axis, fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => formatCompact(Number(v))}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fill: chartColors.axis, fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={110}
-                  />
-                  <Tooltip
-                    contentStyle={chartTooltipStyle}
-                    formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
-                  />
-                  <Bar dataKey="total" fill={chartColors.secondary} radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="ios-dash__empty">
-              <img src={icons.dashInbox} alt="" className="ios-dash__empty-icon" />
-              <span className="ios-dash__empty-title">
-                {intl.formatMessage({ id: "dashboard.chart.no_data", defaultMessage: "No approved sales yet" })}
-              </span>
-              <span className="ios-dash__empty-text">
-                {intl.formatMessage({
-                  id: "dashboard.chart.no_data_sub",
-                  defaultMessage: "Once orders are approved, your top customers will appear here.",
-                })}
-              </span>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ============== QUICK ACTIONS — 2x3 app-icon grid ============== */}
-      <section className="ios-dash__quick" aria-label="Quick actions">
-        <h2 className="ios-dash__section-title">
-          {intl.formatMessage({ id: "dashboard.section.quick_actions", defaultMessage: "Quick actions" })}
-        </h2>
-        <p className="ios-dash__section-sub">
-          {intl.formatMessage({
-            id: "dashboard.section.quick_actions_sub",
-            defaultMessage: "Jump into a workflow",
-          })}
-        </p>
-        <div className="ios-dash__quick-grid">
-          {quickActions
-            .filter((a) => hasPermission(a.permission))
-            .map((a) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {allowedActions.map((a) => (
               <button
                 key={a.id}
                 type="button"
-                className="ios-dash__quick-tile"
                 onClick={() => navigate(a.href)}
-              >
-                <span className="ios-dash__quick-icon" data-tint={a.tint}>
-                  <img src={a.icon} alt="" />
-                </span>
-                <span className="ios-dash__quick-label">{a.label}</span>
-              </button>
-            ))}
-        </div>
-      </section>
-
-      {/* ============== TODAY AGENDA — actionable launchpad ============== */}
-      <section className="ios-dash__today" aria-label="Today">
-        <header className="ios-dash__activity-header">
-          <h2 className="ios-dash__section-title">
-            {intl.formatMessage({ id: "dashboard.section.today", defaultMessage: "Today" })}
-          </h2>
-          <p className="ios-dash__section-sub">
-            {intl.formatMessage({
-              id: "dashboard.section.today_sub",
-              defaultMessage: "Your visits and drafts for the day",
-            })}
-          </p>
-        </header>
-        <div className="ios-dash__today-list">
-          {todayAgenda.length === 0 ? (
-            <div className="ios-dash__empty">
-              <img src={icons.dashClock} alt="" className="ios-dash__empty-icon" />
-              <span className="ios-dash__empty-title">
-                {intl.formatMessage({ id: "dashboard.today_empty", defaultMessage: "Nothing scheduled yet" })}
-              </span>
-              <span className="ios-dash__empty-text">
-                {intl.formatMessage({
-                  id: "dashboard.today_empty_sub",
-                  defaultMessage: "Log a visit or start a draft order to see it here.",
-                })}
-              </span>
-            </div>
-          ) : (
-            todayAgenda.map((item) => (
-              <button
-                key={`${item.type}-${item.id}`}
-                type="button"
-                className="ios-dash__today-row"
-                onClick={() => navigate(item.href)}
+                className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center shadow-sm transition-colors duration-200 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <span
-                  className="ios-dash__today-icon"
-                  data-tint={item.type === "visit" ? "orange" : "blue"}
-                  aria-hidden="true"
+                  className={cn(
+                    "flex size-11 items-center justify-center overflow-hidden rounded-xl",
+                    a.tone,
+                  )}
                 >
-                  <img src={item.type === "visit" ? icons.dashVisits : icons.dashOrders} alt="" />
+                  <img src={a.icon} alt="" className="size-full object-cover" />
                 </span>
-                <div className="ios-dash__today-body">
-                  <span className="ios-dash__today-title">{item.title}</span>
-                  <span className="ios-dash__today-sub">{item.subtitle}</span>
-                </div>
-                <span className="ios-dash__today-tag" data-type={item.type}>
-                  {item.type === "visit"
-                    ? intl.formatMessage({ id: "dashboard.today.visit", defaultMessage: "Visit" })
-                    : intl.formatMessage({ id: "dashboard.today.draft", defaultMessage: "Draft" })}
-                </span>
+                <span className="text-xs font-medium text-foreground">{a.label}</span>
               </button>
-            ))
-          )}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-      {/* ============== RECENT ACTIVITY — iOS list ============== */}
-      <section className="ios-dash__activity" aria-label="Recent activity">
-        <header className="ios-dash__activity-header">
-          <h2 className="ios-dash__section-title">
-            {intl.formatMessage({ id: "dashboard.section.activity", defaultMessage: "Recent activity" })}
-          </h2>
-          <p className="ios-dash__section-sub">
-            {intl.formatMessage({
-              id: "dashboard.section.activity_sub",
-              defaultMessage: "Latest system actions across all users",
-            })}
-          </p>
-        </header>
-        <div className="ios-dash__activity-list">
-          {isLoading ? (
-            <div className="ios-dash__activity-skeleton">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="ios-dash__activity-skeleton-row">
-                  <Skeleton style={{ width: 36, height: 36, borderRadius: 10 }} />
-                  <div className="ios-dash__activity-skeleton-lines">
-                    <Skeleton style={{ width: "60%", height: 12 }} />
-                    <Skeleton style={{ width: "30%", height: 10 }} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "dashboard.section.today",
+                defaultMessage: "Today",
+              })}
+            </CardTitle>
+            <CardDescription>
+              {intl.formatMessage({
+                id: "dashboard.section.today_sub",
+                defaultMessage: "Your visits and drafts for the day",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1 px-3 pb-3 sm:px-4">
+            {todayAgenda.length === 0 ? (
+              <div className="flex flex-col items-center gap-1 py-8 text-center">
+                <p className="text-sm font-medium">
+                  {intl.formatMessage({
+                    id: "dashboard.today_empty",
+                    defaultMessage: "Nothing scheduled yet",
+                  })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.today_empty_sub",
+                    defaultMessage: "Log a visit or start a draft order to see it here.",
+                  })}
+                </p>
+              </div>
+            ) : (
+              todayAgenda.map((item) => (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  type="button"
+                  onClick={() => navigate(item.href)}
+                  className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <span
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
+                      item.type === "visit"
+                        ? "bg-[color-mix(in_srgb,var(--module-visit)_16%,transparent)]"
+                        : "bg-[color-mix(in_srgb,var(--module-order)_16%,transparent)]",
+                    )}
+                    aria-hidden
+                  >
+                    <img
+                      src={item.type === "visit" ? icons.dashVisits : icons.dashOrders}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {item.title}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {item.subtitle}
+                    </span>
+                  </span>
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    {item.type === "visit"
+                      ? intl.formatMessage({
+                          id: "dashboard.today.visit",
+                          defaultMessage: "Visit",
+                        })
+                      : intl.formatMessage({
+                          id: "dashboard.today.draft",
+                          defaultMessage: "Draft",
+                        })}
+                  </span>
+                </button>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "dashboard.section.activity",
+                defaultMessage: "Recent activity",
+              })}
+            </CardTitle>
+            <CardDescription>
+              {intl.formatMessage({
+                id: "dashboard.section.activity_sub",
+                defaultMessage: "Latest system actions across all users",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1 px-3 pb-3 sm:px-4">
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-2 py-2.5">
+                  <Skeleton className="size-9 rounded-lg" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-2.5 w-1/3" />
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : sales?.recentActivity?.length ? (
-            sales.recentActivity.map((a, i) => (
-              <div
-                key={a.id}
-                className={`ios-dash__activity-row ${i === 0 ? "ios-dash__activity-row--first" : ""}`}
-              >
-                <span className="ios-dash__activity-avatar" aria-hidden="true">
-                  {a.userName
-                    .split(/\s+/)
-                    .slice(0, 2)
-                    .map((s) => s[0]?.toUpperCase() ?? "")
-                    .join("")}
-                </span>
-                <div className="ios-dash__activity-body">
-                  <span className="ios-dash__activity-name">{a.userName}</span>
-                  <span className="ios-dash__activity-msg">{a.message}</span>
+              ))
+            ) : sales?.recentActivity?.length ? (
+              sales.recentActivity.map((a) => (
+                <div key={a.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5">
+                  <span
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary"
+                    aria-hidden
+                  >
+                    {initials(a.userName)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{a.userName}</p>
+                    <p className="truncate text-xs text-muted-foreground">{a.message}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[11px] text-muted-foreground tabular-nums">
+                      {formatRelative(a.createdAt)}
+                    </p>
+                    <p className="text-[10px] font-medium tracking-wide text-muted-foreground/80 uppercase">
+                      {a.resource}
+                    </p>
+                  </div>
                 </div>
-                <div className="ios-dash__activity-meta">
-                  <span className="ios-dash__activity-time">{formatRelative(a.createdAt)}</span>
-                  <span className="ios-dash__activity-resource">{a.resource}</span>
-                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                {intl.formatMessage({
+                  id: "dashboard.activity_empty",
+                  defaultMessage: "No recent activity",
+                })}
               </div>
-            ))
-          ) : (
-            <div className="ios-dash__empty">
-              <img src={icons.dashClock} alt="" className="ios-dash__empty-icon" />
-              <span className="ios-dash__empty-title">
-                {intl.formatMessage({ id: "dashboard.activity_empty", defaultMessage: "No recent activity" })}
-              </span>
-            </div>
-          )}
-        </div>
-      </section>
-      {/* ============== AI INSIGHTS ============== */}
-      <section className="ios-dash__card" aria-label="AI Insights">
-        <div className="ios-dash__card-header">
-          <h2 className="ios-dash__card-title">
-            {intl.formatMessage({ id: "dashboard.ai_insights_title", defaultMessage: "AI Insights" })}
-          </h2>
-        </div>
-        <div className="ios-dash__card-body">
-          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className="ios-dash__insight-chip"
-              onClick={() => handleInsightClick(
-                intl.formatMessage({ id: "dashboard.ai_insight_top_customers", defaultMessage: "Top 5 customers this month" })
-              )}
-              disabled={insightLoading}
-            >
-              {intl.formatMessage({ id: "dashboard.ai_insight_top_customers", defaultMessage: "Top 5 customers this month" })}
-            </button>
-            <button
-              type="button"
-              className="ios-dash__insight-chip"
-              onClick={() => handleInsightClick(
-                intl.formatMessage({ id: "dashboard.ai_insight_at_risk", defaultMessage: "At-risk orders" })
-              )}
-              disabled={insightLoading}
-            >
-              {intl.formatMessage({ id: "dashboard.ai_insight_at_risk", defaultMessage: "At-risk orders" })}
-            </button>
-            <button
-              type="button"
-              className="ios-dash__insight-chip"
-              onClick={() => handleInsightClick(
-                intl.formatMessage({ id: "dashboard.ai_insight_sales_trend", defaultMessage: "Sales trend" })
-              )}
-              disabled={insightLoading}
-            >
-              {intl.formatMessage({ id: "dashboard.ai_insight_sales_trend", defaultMessage: "Sales trend" })}
-            </button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-heading text-base">
+            {intl.formatMessage({
+              id: "dashboard.ai_insights_title",
+              defaultMessage: "AI Insights",
+            })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                {
+                  id: "dashboard.ai_insight_top_customers",
+                  defaultMessage: "Top 5 customers this month",
+                },
+                {
+                  id: "dashboard.ai_insight_at_risk",
+                  defaultMessage: "At-risk orders",
+                },
+                {
+                  id: "dashboard.ai_insight_sales_trend",
+                  defaultMessage: "Sales trend",
+                },
+              ] as const
+            ).map((item) => {
+              const label = intl.formatMessage(item);
+              return (
+                <Button
+                  key={item.id}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={insightLoading}
+                  onClick={() => handleInsightClick(label)}
+                >
+                  {label}
+                </Button>
+              );
+            })}
           </div>
-          {insightLoading && <div className="ios-dash__insight-loading">Loading...</div>}
-          {insightError && <div className="ios-dash__insight-error">{insightError}</div>}
-          {insightResult && (
-            <div className="ios-dash__insight-result">
+          {insightLoading ? (
+            <p className="text-sm text-muted-foreground">
+              {intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}
+            </p>
+          ) : null}
+          {insightError ? <p className="text-sm text-destructive">{insightError}</p> : null}
+          {insightResult ? (
+            <div className="prose prose-sm max-w-none rounded-xl border bg-muted/30 p-4 text-foreground dark:prose-invert">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightResult}</ReactMarkdown>
             </div>
-          )}
-        </div>
-      </section>    </section>
+          ) : null}
+        </CardContent>
+      </Card>
+    </section>
   );
 };
-
-/* ============================================================
- * iOS Metric Row — label + value + detail + chevron, no card chrome.
- * ============================================================ */
-interface IosMetricRowProps {
-  icon: string;
-  tint: "blue" | "green" | "pink" | "orange" | "purple" | "red" | "yellow" | "teal" | "indigo";
-  label: string;
-  value: string | null;
-  detail: string | null;
-  isLoading?: boolean;
-}
-
-const IosMetricRow = ({ icon, tint, label, value, detail, isLoading }: IosMetricRowProps) => (
-  <div className="ios-dash__metric">
-    <span className="ios-dash__metric-icon" data-tint={tint}>
-      <img src={icon} alt="" />
-    </span>
-    <div className="ios-dash__metric-body">
-      <span className="ios-dash__metric-label">{label}</span>
-      {isLoading || value === null ? (
-        <Skeleton style={{ height: 22, width: 96 }} />
-      ) : (
-        <span className="ios-dash__metric-value">{value}</span>
-      )}
-      {detail && <span className="ios-dash__metric-detail">{detail}</span>}
-    </div>
-    <img src={icons.dashChevron} alt="" className="ios-dash__metric-chevron" />
-  </div>
-);
