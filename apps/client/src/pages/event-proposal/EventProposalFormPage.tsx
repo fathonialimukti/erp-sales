@@ -1,18 +1,33 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { Loader2, Save } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { Spinner } from "../../ui/Spinner";
-import { useToast } from "../../ui/useToast";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { ModulePage } from "../../components/ModulePage";
-import { EventProposalIcon } from "./EventProposalIcons";
-import type { CreateEventProposalInput, UpdateEventProposalInput } from "@repo/schemas/event-proposal";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import type {
+  CreateEventProposalInput,
+  UpdateEventProposalInput,
+} from "@repo/schemas/event-proposal";
 
 interface FormValues {
   name: string;
@@ -44,6 +59,9 @@ const defaults = (): FormValues => ({
   currency: "IDR",
 });
 
+const selectClass =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
+
 export const EventProposalFormPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -51,7 +69,6 @@ export const EventProposalFormPage = () => {
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
   const canSave = hasPermission(id ? "eventProposal@update" : "eventProposal@create");
-  const toast = useToast();
 
   const isEdit = Boolean(id);
   const [modalStage, setModalStage] = useState<ModalStage>("idle");
@@ -69,29 +86,38 @@ export const EventProposalFormPage = () => {
   });
 
   const form = useForm({
-    defaultValues: (isEdit && data ? {
-      name: data.name,
-      eventType: data.eventType ?? "",
-      description: data.description ?? "",
-      venue: data.venue ?? "",
-      eventDate: data.eventDate,
-      eventEndDate: data.eventEndDate ?? "",
-      organizerName: data.organizerName ?? "",
-      organizerContact: data.organizerContact ?? "",
-      areaId: data.areaId,
-      proposedBudget: data.proposedBudget != null ? String(data.proposedBudget) : "",
-      currency: data.currency,
-    } : defaults()) as FormValues,
+    defaultValues: (isEdit && data
+      ? {
+          name: data.name,
+          eventType: data.eventType ?? "",
+          description: data.description ?? "",
+          venue: data.venue ?? "",
+          eventDate: data.eventDate,
+          eventEndDate: data.eventEndDate ?? "",
+          organizerName: data.organizerName ?? "",
+          organizerContact: data.organizerContact ?? "",
+          areaId: data.areaId,
+          proposedBudget: data.proposedBudget != null ? String(data.proposedBudget) : "",
+          currency: data.currency,
+        }
+      : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
     },
   });
 
+  // ponytail: keep original seed-via-defaultValues only (detail query gates render via isLoading)
+
   const createMutation = useMutation({
     mutationFn: (d: CreateEventProposalInput) => trpcClient.eventProposal.create.mutate(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["eventProposalList"] });
-      setResultMessage(intl.formatMessage({ id: "event_proposal.form.success.created", defaultMessage: "Region created" }));
+      setResultMessage(
+        intl.formatMessage({
+          id: "event_proposal.form.success.created",
+          defaultMessage: "Region created",
+        }),
+      );
       setModalStage("success");
       setTimeout(() => navigate("/eventProposal"), 1200);
     },
@@ -106,7 +132,12 @@ export const EventProposalFormPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["eventProposalList"] });
       queryClient.invalidateQueries({ queryKey: ["eventProposalDetail", id] });
-      setResultMessage(intl.formatMessage({ id: "event_proposal.form.success.updated", defaultMessage: "Region updated" }));
+      setResultMessage(
+        intl.formatMessage({
+          id: "event_proposal.form.success.updated",
+          defaultMessage: "Region updated",
+        }),
+      );
       setModalStage("success");
       setTimeout(() => navigate(`/eventProposal/${id}`), 1200);
     },
@@ -136,7 +167,9 @@ export const EventProposalFormPage = () => {
         e.preventDefault();
         if (modalStage === "idle") form.handleSubmit();
       }
-      if (e.key === "Escape" && modalStage !== "idle") setModalStage("idle");
+      if (e.key === "Escape" && modalStage !== "idle" && modalStage !== "loading") {
+        setModalStage("idle");
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
@@ -144,339 +177,393 @@ export const EventProposalFormPage = () => {
 
   if (isLoading) {
     return (
-      <ModulePage accent="#14B8A6" accentEnd="#0D948D" aiContext={{ section: "eventProposal-form", loading: true }}>
-        <div className="m-loading"><Spinner size="lg" /></div>
-      </ModulePage>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "eventProposal-form", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-48 w-full" />
+      </section>
     );
   }
 
   return (
-    <ModulePage accent="#14B8A6" accentEnd="#0D948D" aiContext={{ section: "eventProposal-form", isEdit, id: id ?? null }}>
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "eventProposal-form",
+        isEdit,
+        id: id ?? null,
+      })}
+    >
       <form
-        className="m-page"
-        onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
-        style={{ gap: "1.25rem" }}
+        className="flex flex-col gap-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
       >
-        {/* ── Header ── */}
-        <div className="so-form__header">
-          <div>
-            <h1 className="so-form__title">
-              {isEdit
-                ? intl.formatMessage({ id: "event_proposal.form.title_edit", defaultMessage: "Edit eventProposal" })
-                : intl.formatMessage({ id: "event_proposal.form.title_create", defaultMessage: "New eventProposal" })}
-            </h1>
-            <p className="so-form__subtitle">
-              {isEdit ? "Update eventProposal details" : "Create a new geographical eventProposal"}
-            </p>
-          </div>
-          <button type="button" className="so-form__back" onClick={() => navigate(isEdit && id ? `/eventProposal/${id}` : "/eventProposal")}>
-            <EventProposalIcon name="back" size={14} />
-            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-          </button>
-        </div>
+        <PageHeader
+          module="event"
+          title={
+            isEdit
+              ? intl.formatMessage({
+                  id: "event_proposal.form.title_edit",
+                  defaultMessage: "Edit eventProposal",
+                })
+              : intl.formatMessage({
+                  id: "event_proposal.form.title_create",
+                  defaultMessage: "New eventProposal",
+                })
+          }
+          description={
+            isEdit
+              ? intl.formatMessage({
+                  id: "event_proposal.form.subtitle_edit",
+                  defaultMessage: "Update eventProposal details",
+                })
+              : intl.formatMessage({
+                  id: "event_proposal.form.subtitle_create",
+                  defaultMessage: "Create a new geographical eventProposal",
+                })
+          }
+          onBack={() => navigate(isEdit && id ? `/eventProposal/${id}` : "/eventProposal")}
+          actions={
+            <Button
+              type="submit"
+              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {intl.formatMessage({
+                id: "event_proposal.form.save_button",
+                defaultMessage: "Save",
+              })}
+            </Button>
+          }
+        />
 
-        {/* ── Fields ── */}
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><EventProposalIcon name="document" size={14} /></span>
-              {intl.formatMessage({ id: "event_proposal.form.section_basic", defaultMessage: "Basic information" })}
-            </h2>
-          </div>
-          <div className="so-card__body">
-            <div className="so-section">
-              <form.Field name="name" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_name", defaultMessage: "Event name" })} *
-                    </label>
-                    <input
-                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                    {f.state.meta.errors.length > 0 && (
-                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
-                    )}
-                  </div>
-                )}
-              </form.Field>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-heading text-base">
+              {intl.formatMessage({
+                id: "event_proposal.form.section_basic",
+                defaultMessage: "Basic information",
+              })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-2">
+            <form.Field
+              name="name"
+              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+            >
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-name">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_name",
+                      defaultMessage: "Event name",
+                    })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="ep-name"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    aria-invalid={f.state.meta.errors.length > 0}
+                  />
+                  {f.state.meta.errors.length > 0 ? (
+                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                  ) : null}
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="eventType">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_event_type", defaultMessage: "Event type" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
+            <form.Field name="eventType">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-type">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_event_type",
+                      defaultMessage: "Event type",
+                    })}
+                  </Label>
+                  <Input
+                    id="ep-type"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="description">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_description", defaultMessage: "Description" })}
-                    </label>
-                    <textarea
-                      className="so-field__input"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
+            <form.Field name="description">
+              {(f) => (
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <Label htmlFor="ep-description">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_description",
+                      defaultMessage: "Description",
+                    })}
+                  </Label>
+                  <Textarea
+                    id="ep-description"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="venue">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_venue", defaultMessage: "Venue" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
+            <form.Field name="venue">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-venue">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_venue",
+                      defaultMessage: "Venue",
+                    })}
+                  </Label>
+                  <Input
+                    id="ep-venue"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="eventDate" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_event_date", defaultMessage: "Event date" })} *
-                    </label>
-                    <input
-                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
-                      type="date"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                    {f.state.meta.errors.length > 0 && (
-                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
-                    )}
-                  </div>
-                )}
-              </form.Field>
+            <form.Field
+              name="eventDate"
+              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+            >
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-date">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_event_date",
+                      defaultMessage: "Event date",
+                    })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="ep-date"
+                    type="date"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    aria-invalid={f.state.meta.errors.length > 0}
+                  />
+                  {f.state.meta.errors.length > 0 ? (
+                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                  ) : null}
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="eventEndDate">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_event_end_date", defaultMessage: "Event end date" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="date"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
+            <form.Field name="eventEndDate">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-end">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_event_end_date",
+                      defaultMessage: "Event end date",
+                    })}
+                  </Label>
+                  <Input
+                    id="ep-end"
+                    type="date"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="organizerName">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_organizer_name", defaultMessage: "Organizer name" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
+            <form.Field name="organizerName">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-org-name">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_organizer_name",
+                      defaultMessage: "Organizer name",
+                    })}
+                  </Label>
+                  <Input
+                    id="ep-org-name"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="organizerContact">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_organizer_contact", defaultMessage: "Organizer contact" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
+            <form.Field name="organizerContact">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-org-contact">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_organizer_contact",
+                      defaultMessage: "Organizer contact",
+                    })}
+                  </Label>
+                  <Input
+                    id="ep-org-contact"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="areaId" validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}>
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_area", defaultMessage: "Area" })} *
-                    </label>
-                    <select
-                      className={`so-field__input${f.state.meta.errors.length ? " so-field__input--invalid" : ""}`}
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    >
-                      <option value="">{intl.formatMessage({ id: "event_proposal.form.field_area_placeholder", defaultMessage: "Select area" })}</option>
-                      {(areas?.data ?? []).map((a) => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
-                      ))}
-                    </select>
-                    {f.state.meta.errors.length > 0 && (
-                      <span className="so-field__error">{f.state.meta.errors[0]}</span>
-                    )}
-                  </div>
-                )}
-              </form.Field>
+            <form.Field
+              name="areaId"
+              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+            >
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-area">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_area",
+                      defaultMessage: "Area",
+                    })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <select
+                    id="ep-area"
+                    className={selectClass}
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    aria-invalid={f.state.meta.errors.length > 0}
+                  >
+                    <option value="">
+                      {intl.formatMessage({
+                        id: "event_proposal.form.field_area_placeholder",
+                        defaultMessage: "Select area",
+                      })}
+                    </option>
+                    {(areas?.data ?? []).map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                  {f.state.meta.errors.length > 0 ? (
+                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                  ) : null}
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="proposedBudget">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_proposed_budget", defaultMessage: "Proposed budget" })}
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="number"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
+            <form.Field name="proposedBudget">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-budget">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_proposed_budget",
+                      defaultMessage: "Proposed budget",
+                    })}
+                  </Label>
+                  <Input
+                    id="ep-budget"
+                    type="number"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-              <form.Field name="currency">
-                {(f) => (
-                  <div className="so-field">
-                    <label className="so-field__label">
-                      {intl.formatMessage({ id: "event_proposal.form.field_currency", defaultMessage: "Currency" })} *
-                    </label>
-                    <input
-                      className="so-field__input"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Actions ── */}
-        <div className="so-actions">
-          <ButtonGroup
-            items={[
-              {
-                key: "save",
-                label: intl.formatMessage({ id: "event_proposal.form.save_button", defaultMessage: "Save" }),
-                icon: <EventProposalIcon name="check" size={14} />,
-                onClick: () => { form.handleSubmit(); },
-                disabled: !canSave || createMutation.isPending || updateMutation.isPending,
-                isLoading: createMutation.isPending || updateMutation.isPending,
-                variant: "primary",
-              },
-            ]}
-          />
-        </div>
+            <form.Field name="currency">
+              {(f) => (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ep-currency">
+                    {intl.formatMessage({
+                      id: "event_proposal.form.field_currency",
+                      defaultMessage: "Currency",
+                    })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="ep-currency"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
+          </CardContent>
+        </Card>
       </form>
 
-      {/* ── Modal ── */}
-      {modalStage !== "idle" && createPortal(
-        <div className="so-modal__backdrop" onClick={() => modalStage !== "loading" && modalStage !== "confirm" && setModalStage("idle")}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            {modalStage === "confirm" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>
-                    {intl.formatMessage({ id: "event_proposal.form.modal.confirm_title", defaultMessage: "Confirm save" })}
-                  </h3>
-                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
-                    <EventProposalIcon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <EventProposalIcon name="check" size={28} />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage({ id: "event_proposal.form.modal.confirm_body", defaultMessage: "Save changes to this eventProposal?" })}
-                  </h3>
-                </div>
-                <div className="so-modal__footer">
-                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
-                    {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-                  </button>
-                  <button className="so-btn so-btn--primary" onClick={runSave}>
-                    {intl.formatMessage({ id: "common.action.confirm", defaultMessage: "Confirm" })}
-                  </button>
-                </div>
-              </>
-            )}
+      <ConfirmDialog
+        open={modalStage === "confirm"}
+        onOpenChange={(open) => {
+          if (!open) setModalStage("idle");
+        }}
+        title={intl.formatMessage({
+          id: "event_proposal.form.modal.confirm_title",
+          defaultMessage: "Confirm save",
+        })}
+        description={intl.formatMessage({
+          id: "event_proposal.form.modal.confirm_body",
+          defaultMessage: "Save changes to this eventProposal?",
+        })}
+        confirmLabel={intl.formatMessage({
+          id: "common.action.confirm",
+          defaultMessage: "Confirm",
+        })}
+        onConfirm={runSave}
+      />
 
-            {modalStage === "loading" && (
-              <div className="so-modal__body">
-                <div className="so-modal__icon so-modal__icon--success" style={{ background: "var(--so-surface-2)", color: "var(--so-accent)" }}>
-                  <span className="so-spinner so-spinner--lg" />
-                </div>
-                <p className="so-modal__msg">{intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}</p>
-              </div>
-            )}
-
-            {modalStage === "success" && (
-              <>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--success">
-                    <EventProposalIcon name="check" size={28} />
-                  </div>
-                  <h3 className="so-modal__title">
-                    {intl.formatMessage({ id: "event_proposal.form.modal.success", defaultMessage: "Success!" })}
-                  </h3>
-                  <p className="so-modal__msg">{resultMessage}</p>
-                </div>
-              </>
-            )}
-
-            {modalStage === "error" && (
-              <>
-                <div className="so-modal__header">
-                  <h3>
-                    {intl.formatMessage({ id: "event_proposal.form.modal.error_title", defaultMessage: "Error" })}
-                  </h3>
-                  <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setModalStage("idle")} aria-label="Close">
-                    <EventProposalIcon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="so-modal__body">
-                  <div className="so-modal__icon so-modal__icon--error">
-                    <EventProposalIcon name="close" size={28} />
-                  </div>
-                  <p className="so-modal__msg">{resultMessage}</p>
-                </div>
-                <div className="so-modal__footer">
-                  <button className="so-btn so-btn--ghost" onClick={() => setModalStage("idle")}>
-                    {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>,
-        document.body,
-      )}
-    </ModulePage>
+      <Dialog
+        open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
+        onOpenChange={(open) => {
+          if (!open && modalStage !== "loading") setModalStage("idle");
+        }}
+      >
+        <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
+          {modalStage === "loading" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <DialogDescription>
+                {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
+              </DialogDescription>
+            </div>
+          ) : null}
+          {modalStage === "success" ? (
+            <DialogHeader>
+              <DialogTitle>
+                {intl.formatMessage({
+                  id: "event_proposal.form.modal.success",
+                  defaultMessage: "Success!",
+                })}
+              </DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+          ) : null}
+          {modalStage === "error" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {intl.formatMessage({
+                    id: "event_proposal.form.modal.error_title",
+                    defaultMessage: "Error",
+                  })}
+                </DialogTitle>
+                <DialogDescription>{resultMessage}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setModalStage("idle")}>
+                  {intl.formatMessage({ id: "common.action.close", defaultMessage: "Close" })}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 };
