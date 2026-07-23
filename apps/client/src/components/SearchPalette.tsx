@@ -3,11 +3,27 @@ import { useIntl } from "react-intl";
 import { useAtom, useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { icons } from "../assets/icons";
-import { hasPermissionAtom, searchOpenAtom } from "../lib/atoms";
-import { NAV_MENU, type NavMenuItem } from "../constants/nav-menu";
-import { trpcClient } from "../lib/trpc";
-import "./SearchPalette.css";
+import {
+  ArrowUpDown,
+  CornerDownLeft,
+  FileText,
+  Package,
+  Search,
+  UserRound,
+} from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { icons } from "@/assets/icons";
+import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
+import { hasPermissionAtom, searchOpenAtom } from "@/lib/atoms";
+import { trpcClient } from "@/lib/trpc";
+import { cn } from "@/lib/utils";
 
 type SearchResultKind = "page" | "customer" | "sku" | "sales-order";
 
@@ -55,6 +71,14 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
+const TINT_CLASS: Record<string, string> = {
+  violet: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
+  green: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  pink: "bg-pink-500/15 text-pink-600 dark:text-pink-400",
+  orange: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  blue: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+};
+
 export const SearchPalette = () => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -65,7 +89,6 @@ export const SearchPalette = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Static nav pages — derived once per open change.
   const navPages = useMemo<SearchResult[]>(() => {
     const leaves = flattenLeaves(NAV_MENU).filter(
       (l) => !l.permission || hasPermission(l.permission),
@@ -75,22 +98,72 @@ export const SearchPalette = () => {
       id: l.href,
       href: l.href,
       label: intl.formatMessage({ id: l.name, defaultMessage: l.name }),
-      hint: intl.formatMessage({ id: "search.hint.navigate", defaultMessage: "Go to page" }),
+      hint: intl.formatMessage({
+        id: "search.hint.navigate",
+        defaultMessage: "Go to page",
+      }),
       icon: l.icon,
       tint: "violet",
     }));
   }, [hasPermission, intl]);
 
-  // "Global create" shortcuts — shown when the query is empty or matches
-  // a create keyword. Permission-gated so users only see what they can do.
   const createActions = useMemo<SearchResult[]>(() => {
-    const actions: Array<{ id: string; href: string; labelId: string; label: string; permission: string; icon?: string }> = [
-      { id: "create-sales-order", href: "/sales-order/create", labelId: "search.create.sales_order", label: "New sales order", permission: "sales-order@create", icon: icons.dashNewOrder },
-      { id: "create-customer", href: "/customer/create", labelId: "search.create.customer", label: "New customer", permission: "customer@create", icon: icons.dashNewCustomer },
-      { id: "create-visit", href: "/visit-log/create", labelId: "search.create.visit", label: "Log a visit", permission: "visit-log@create", icon: icons.dashNewVisit },
-      { id: "create-sku", href: "/sku/create", labelId: "search.create.sku", label: "New SKU", permission: "sku@create", icon: icons.dashNewSku },
-      { id: "create-action-program", href: "/action-program/create", labelId: "search.create.action_program", label: "New action program", permission: "action-program@create", icon: icons.dashNewProgram },
-      { id: "create-event-proposal", href: "/event-proposal/create", labelId: "search.create.event_proposal", label: "New event proposal", permission: "event-proposal@create", icon: icons.dashNewEvent },
+    const actions: Array<{
+      id: string;
+      href: string;
+      labelId: string;
+      label: string;
+      permission: string;
+      icon?: string;
+    }> = [
+      {
+        id: "create-sales-order",
+        href: "/sales-order/create",
+        labelId: "search.create.sales_order",
+        label: "New sales order",
+        permission: "sales-order@create",
+        icon: icons.dashNewOrder,
+      },
+      {
+        id: "create-customer",
+        href: "/customer/create",
+        labelId: "search.create.customer",
+        label: "New customer",
+        permission: "customer@create",
+        icon: icons.dashNewCustomer,
+      },
+      {
+        id: "create-visit",
+        href: "/visit-log/create",
+        labelId: "search.create.visit",
+        label: "Log a visit",
+        permission: "visit-log@create",
+        icon: icons.dashNewVisit,
+      },
+      {
+        id: "create-sku",
+        href: "/sku/create",
+        labelId: "search.create.sku",
+        label: "New SKU",
+        permission: "sku@create",
+        icon: icons.dashNewSku,
+      },
+      {
+        id: "create-action-program",
+        href: "/action-program/create",
+        labelId: "search.create.action_program",
+        label: "New action program",
+        permission: "action-program@create",
+        icon: icons.dashNewProgram,
+      },
+      {
+        id: "create-event-proposal",
+        href: "/event-proposal/create",
+        labelId: "search.create.event_proposal",
+        label: "New event proposal",
+        permission: "event-proposal@create",
+        icon: icons.dashNewEvent,
+      },
     ];
     return actions
       .filter((a) => hasPermission(a.permission))
@@ -98,19 +171,21 @@ export const SearchPalette = () => {
         kind: "page" as const,
         id: a.id,
         href: a.href,
-        label: intl.formatMessage({ id: a.labelId, defaultMessage: a.label }),
-        hint: intl.formatMessage({ id: "search.hint.create", defaultMessage: "Create new" }),
+        label: intl.formatMessage({
+          id: a.labelId,
+          defaultMessage: a.label,
+        }),
+        hint: intl.formatMessage({
+          id: "search.hint.create",
+          defaultMessage: "Create new",
+        }),
         icon: a.icon,
         tint: "green",
       }));
   }, [hasPermission, intl]);
 
-  // Debounced query for live search.
   const debouncedQuery = useDebounced(query, 220);
 
-  // Live queries for each entity. We only fire when query is long enough
-  // and we don't gate on permission here — tRPC will reject unauthorized
-  // calls and react-query will simply show no results.
   const customerQuery = useQuery({
     queryKey: ["search", "customer", debouncedQuery],
     queryFn: () =>
@@ -147,8 +222,6 @@ export const SearchPalette = () => {
     staleTime: 10_000,
   });
 
-  // Build merged result list (nav pages filter live; entity results
-  // come from tRPC; create shortcuts surface on empty / "new" queries).
   const results = useMemo<SearchResult[]>(() => {
     const q = normalize(query);
     const isCreateIntent = /^(new|create|\+|add|buat|baru)/.test(q);
@@ -158,24 +231,33 @@ export const SearchPalette = () => {
     }
 
     if (isCreateIntent) {
-      const matched = createActions.filter((a) => a.label.toLowerCase().includes(q) || a.hint.toLowerCase().includes(q));
+      const matched = createActions.filter(
+        (a) =>
+          a.label.toLowerCase().includes(q) ||
+          a.hint.toLowerCase().includes(q),
+      );
       const filteredPages = navPages.filter(
-        (r) => r.label.toLowerCase().includes(q) || r.href.toLowerCase().includes(q),
+        (r) =>
+          r.label.toLowerCase().includes(q) ||
+          r.href.toLowerCase().includes(q),
       );
       return [...matched, ...filteredPages].slice(0, 12);
     }
 
     const filteredPages = navPages.filter(
-      (r) => r.label.toLowerCase().includes(q) || r.href.toLowerCase().includes(q),
+      (r) =>
+        r.label.toLowerCase().includes(q) || r.href.toLowerCase().includes(q),
     );
 
     const customerItems = (
-      (customerQuery.data?.data as unknown as Array<{
-        id: string;
-        name: string;
-        code?: string | null;
-        _count?: { outlets?: number };
-      }> | undefined) ?? []
+      (customerQuery.data?.data as unknown as
+        | Array<{
+            id: string;
+            name: string;
+            code?: string | null;
+            _count?: { outlets?: number };
+          }>
+        | undefined) ?? []
     ).map<SearchResult>((c) => ({
       kind: "customer",
       id: c.id,
@@ -188,11 +270,13 @@ export const SearchPalette = () => {
     }));
 
     const skuItems = (
-      (skuQuery.data?.data as unknown as Array<{
-        id: string;
-        name: string;
-        code?: string | null;
-      }> | undefined) ?? []
+      (skuQuery.data?.data as unknown as
+        | Array<{
+            id: string;
+            name: string;
+            code?: string | null;
+          }>
+        | undefined) ?? []
     ).map<SearchResult>((s) => ({
       kind: "sku",
       id: s.id,
@@ -203,12 +287,14 @@ export const SearchPalette = () => {
     }));
 
     const soItems = (
-      (salesOrderQuery.data?.data as unknown as Array<{
-        id: string;
-        documentNumber?: string | null;
-        grandTotal?: number | null;
-        customer?: { name?: string | null } | null;
-      }> | undefined) ?? []
+      (salesOrderQuery.data?.data as unknown as
+        | Array<{
+            id: string;
+            documentNumber?: string | null;
+            grandTotal?: number | null;
+            customer?: { name?: string | null } | null;
+          }>
+        | undefined) ?? []
     ).map<SearchResult>((so) => ({
       kind: "sales-order",
       id: so.id,
@@ -218,62 +304,65 @@ export const SearchPalette = () => {
       tint: "blue",
     }));
 
-    return [...filteredPages, ...customerItems, ...skuItems, ...soItems].slice(0, 20);
-  }, [query, navPages, customerQuery.data, skuQuery.data, salesOrderQuery.data]);
+    return [
+      ...filteredPages,
+      ...customerItems,
+      ...skuItems,
+      ...soItems,
+    ].slice(0, 20);
+  }, [
+    query,
+    navPages,
+    createActions,
+    customerQuery.data,
+    skuQuery.data,
+    salesOrderQuery.data,
+  ]);
 
-  // Keep activeIndex in range when results shrink.
   useEffect(() => {
     if (activeIndex >= results.length) setActiveIndex(0);
   }, [results.length, activeIndex]);
 
-  // Global Cmd/Ctrl+K + Escape handlers.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
+      const isCmdK =
+        (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
       if (isCmdK) {
         e.preventDefault();
         setOpen((prev) => !prev);
-        return;
-      }
-      if (!open) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setOpen(false);
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open, setOpen]);
+  }, [setOpen]);
 
-  // Focus the input + reset state when opened.
   useEffect(() => {
     if (open) {
       setQuery("");
       setActiveIndex(0);
-      // Focus after the modal mounts.
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
 
-  // In-palette keyboard navigation.
+  const goTo = (href: string) => {
+    navigate(href);
+    setOpen(false);
+  };
+
   const onInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, results.length - 1));
+      setActiveIndex((i) => Math.min(i + 1, Math.max(results.length - 1, 0)));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
       const target = results[activeIndex];
-      if (target) {
-        navigate(target.href);
-        setOpen(false);
-      }
+      if (target) goTo(target.href);
     }
   };
 
-  // Auto-scroll active item into view.
   useEffect(() => {
     const el = listRef.current?.querySelector<HTMLElement>(
       `[data-result-index="${activeIndex}"]`,
@@ -281,31 +370,71 @@ export const SearchPalette = () => {
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
-  if (!open) return null;
+  const kindLabel = (kind: SearchResultKind) => {
+    if (kind === "page") {
+      return intl.formatMessage({
+        id: "search.kind.page",
+        defaultMessage: "Page",
+      });
+    }
+    if (kind === "customer") {
+      return intl.formatMessage({
+        id: "search.kind.customer",
+        defaultMessage: "Customer",
+      });
+    }
+    if (kind === "sku") {
+      return intl.formatMessage({
+        id: "search.kind.sku",
+        defaultMessage: "SKU",
+      });
+    }
+    return intl.formatMessage({
+      id: "search.kind.salesOrder",
+      defaultMessage: "Sales order",
+    });
+  };
 
   return (
-    <div
-      className="ios-search"
-      role="dialog"
-      aria-modal="true"
-      aria-label={intl.formatMessage({ id: "search.title", defaultMessage: "Search" })}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) setOpen(false);
-      }}
-    >
-      <div className="ios-search__backdrop" aria-hidden="true" />
-      <div className="ios-search__panel" role="document">
-        <div className="ios-search__input-row">
-          <span className="ios-search__input-icon" aria-hidden="true">
-            <img src={icons.uiSearch} alt="" />
-          </span>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent
+        showCloseButton={false}
+        className="top-[12%] w-full max-w-xl translate-y-0 gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl sm:max-w-xl"
+        data-ai-context={JSON.stringify({
+          section: "search-palette",
+          open,
+          resultCount: results.length,
+        })}
+      >
+        <DialogHeader className="sr-only">
+          <DialogTitle>
+            {intl.formatMessage({
+              id: "search.title",
+              defaultMessage: "Search",
+            })}
+          </DialogTitle>
+          <DialogDescription>
+            {intl.formatMessage({
+              id: "search.placeholder",
+              defaultMessage:
+                "Search pages, customers, SKUs, sales orders…",
+            })}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex items-center gap-2 border-b border-border px-3">
+          <Search
+            className="size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
           <input
             ref={inputRef}
-            className="ios-search__input"
             type="text"
+            className="h-12 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             placeholder={intl.formatMessage({
               id: "search.placeholder",
-              defaultMessage: "Search pages, customers, SKUs, sales orders…",
+              defaultMessage:
+                "Search pages, customers, SKUs, sales orders…",
             })}
             value={query}
             onChange={(e) => {
@@ -316,19 +445,29 @@ export const SearchPalette = () => {
             autoComplete="off"
             spellCheck={false}
           />
-          <span className="ios-search__esc" aria-hidden="true">esc</span>
+          <kbd className="hidden rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-block">
+            esc
+          </kbd>
         </div>
 
-        <div className="ios-search__list" ref={listRef} role="listbox">
+        <div
+          ref={listRef}
+          role="listbox"
+          className="max-h-[min(420px,55vh)] overflow-y-auto p-1.5"
+        >
           {results.length === 0 ? (
-            <div className="ios-search__empty">
-              <span className="ios-search__empty-title">
-                {intl.formatMessage({ id: "search.empty.title", defaultMessage: "No results" })}
+            <div className="flex flex-col items-center gap-1 px-4 py-10 text-center">
+              <span className="text-sm font-medium text-foreground">
+                {intl.formatMessage({
+                  id: "search.empty.title",
+                  defaultMessage: "No results",
+                })}
               </span>
-              <span className="ios-search__empty-text">
+              <span className="text-xs text-muted-foreground">
                 {intl.formatMessage({
                   id: "search.empty.text",
-                  defaultMessage: "Try a different keyword or check your spelling.",
+                  defaultMessage:
+                    "Try a different keyword or check your spelling.",
                 })}
               </span>
             </div>
@@ -340,73 +479,93 @@ export const SearchPalette = () => {
                 data-result-index={i}
                 role="option"
                 aria-selected={i === activeIndex}
-                className={`ios-search__result ${i === activeIndex ? "ios-search__result--active" : ""}`}
+                className={cn(
+                  "flex w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2 text-left outline-none transition-colors",
+                  i === activeIndex
+                    ? "bg-primary/10 text-foreground"
+                    : "hover:bg-accent",
+                )}
                 onMouseEnter={() => setActiveIndex(i)}
-                onClick={() => {
-                  navigate(r.href);
-                  setOpen(false);
-                }}
+                onClick={() => goTo(r.href)}
               >
                 <span
-                  className="ios-search__result-icon"
-                  data-tint={r.tint}
-                  aria-hidden="true"
+                  className={cn(
+                    "inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
+                    TINT_CLASS[r.tint] ?? TINT_CLASS.violet,
+                  )}
+                  aria-hidden
                 >
                   {r.icon ? (
-                    <img src={r.icon} alt="" />
+                    <img src={r.icon} alt="" className="size-5" />
+                  ) : r.kind === "customer" ? (
+                    <UserRound className="size-4" />
+                  ) : r.kind === "sku" ? (
+                    <Package className="size-4" />
+                  ) : r.kind === "sales-order" ? (
+                    <FileText className="size-4" />
                   ) : (
-                    <span className="ios-search__result-glyph">
-                      {r.kind === "customer" ? "👤" : r.kind === "sku" ? "📦" : r.kind === "sales-order" ? "📄" : "•"}
-                    </span>
+                    <Search className="size-4" />
                   )}
                 </span>
-                <span className="ios-search__result-text">
-                  <span className="ios-search__result-label">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-foreground">
                     <HighlightedText text={r.label} query={query} />
                   </span>
                   {r.hint ? (
-                    <span className="ios-search__result-hint">
+                    <span className="block truncate text-xs text-muted-foreground">
                       <HighlightedText text={r.hint} query={query} />
                     </span>
                   ) : null}
                 </span>
-                <span className="ios-search__result-kind" aria-hidden="true">
-                  {r.kind === "page"
-                    ? intl.formatMessage({ id: "search.kind.page", defaultMessage: "Page" })
-                    : r.kind === "customer"
-                    ? intl.formatMessage({ id: "search.kind.customer", defaultMessage: "Customer" })
-                    : r.kind === "sku"
-                    ? intl.formatMessage({ id: "search.kind.sku", defaultMessage: "SKU" })
-                    : intl.formatMessage({ id: "search.kind.salesOrder", defaultMessage: "Sales order" })}
+                <span className="shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  {kindLabel(r.kind)}
                 </span>
               </button>
             ))
           )}
         </div>
 
-        <footer className="ios-search__footer">
-          <span className="ios-search__hint">
-            <kbd className="ios-search__kbd">↑</kbd>
-            <kbd className="ios-search__kbd">↓</kbd>
-            {intl.formatMessage({ id: "search.hint.navigate", defaultMessage: "navigate" })}
+        <footer className="flex flex-wrap items-center gap-3 border-t border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="inline-flex items-center rounded border border-border bg-card px-1 py-0.5 font-mono text-[10px]">
+              <ArrowUpDown className="size-3" aria-hidden />
+            </kbd>
+            {intl.formatMessage({
+              id: "search.hint.navigate",
+              defaultMessage: "navigate",
+            })}
           </span>
-          <span className="ios-search__hint">
-            <kbd className="ios-search__kbd">↵</kbd>
-            {intl.formatMessage({ id: "search.hint.open", defaultMessage: "open" })}
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="inline-flex items-center rounded border border-border bg-card px-1 py-0.5 font-mono text-[10px]">
+              <CornerDownLeft className="size-3" aria-hidden />
+            </kbd>
+            {intl.formatMessage({
+              id: "search.hint.open",
+              defaultMessage: "open",
+            })}
           </span>
-          <span className="ios-search__hint">
-            <kbd className="ios-search__kbd">esc</kbd>
-            {intl.formatMessage({ id: "search.hint.close", defaultMessage: "close" })}
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[10px]">
+              esc
+            </kbd>
+            {intl.formatMessage({
+              id: "search.hint.close",
+              defaultMessage: "close",
+            })}
           </span>
         </footer>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-/* ---------- Highlight matched substring ---------- */
-
-const HighlightedText = ({ text, query }: { text: string; query: string }) => {
+const HighlightedText = ({
+  text,
+  query,
+}: {
+  text: string;
+  query: string;
+}) => {
   const q = query.trim();
   if (!q) return <>{text}</>;
   const lower = text.toLowerCase();
@@ -415,13 +574,13 @@ const HighlightedText = ({ text, query }: { text: string; query: string }) => {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="ios-search__mark">{text.slice(idx, idx + q.length)}</mark>
+      <mark className="rounded-sm bg-primary/20 px-0.5 text-foreground">
+        {text.slice(idx, idx + q.length)}
+      </mark>
       {text.slice(idx + q.length)}
     </>
   );
 };
-
-/* ---------- Tiny useDebounce hook ---------- */
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
