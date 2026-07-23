@@ -1,15 +1,26 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronRight, KeyRound, Pencil, Shield, Trash2, Users } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
-import { ModulePage, ModuleDetailHero, ModuleDetailSummary } from "../../components/ModulePage";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type RolePermission = { permission: { id: string; name: string; description: string | null } };
 type RoleUser = { id: string; name: string; email: string };
@@ -21,27 +32,6 @@ type RoleDetail = {
   permissions: RolePermission[];
   users: RoleUser[];
 };
-
-const BackIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20h9 M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4z" />
-  </svg>
-);
-const DeleteIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
-const CloseIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
 
 export const RoleDetailPage = () => {
   const intl = useIntl();
@@ -71,7 +61,9 @@ export const RoleDetailPage = () => {
       await trpcClient.accessControl.role.delete.mutate({ id: role.id });
       await queryClient.invalidateQueries({ queryKey: ["rolesList"] });
       setDeleteModalOpen(false);
-      toast.success(intl.formatMessage({ id: "roles.detail.delete_success", defaultMessage: "Role deleted" }));
+      toast.success(
+        intl.formatMessage({ id: "roles.detail.delete_success", defaultMessage: "Role deleted" }),
+      );
       navigate("/access-control");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
@@ -82,30 +74,35 @@ export const RoleDetailPage = () => {
 
   if (isLoading) {
     return (
-      <ModulePage accent="#22D3EE" accentEnd="#0E7490" aiContext={{ section: "role-detail", loading: true }}>
-        <div className="m-state m-state--loading">
-          <Spinner size="lg" />
-          <span className="m-state__title">{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
-        </div>
-      </ModulePage>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "role-detail", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </section>
     );
   }
 
   if (!role) {
     return (
-      <ModulePage accent="#22D3EE" accentEnd="#0E7490" aiContext={{ section: "role-detail", notFound: true }}>
-        <div className="m-state">
-          <span className="m-state__title">{intl.formatMessage({ id: "roles.detail.not_found", defaultMessage: "Role not found" })}</span>
-          <button type="button" className="m-state__cta" onClick={() => navigate("/access-control")}>
-            <BackIcon />
-            {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-          </button>
-        </div>
-      </ModulePage>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "role-detail", notFound: true })}
+      >
+        <PageHeader
+          module="user"
+          title={intl.formatMessage({
+            id: "roles.detail.not_found",
+            defaultMessage: "Role not found",
+          })}
+          onBack={() => navigate("/access-control")}
+        />
+      </section>
     );
   }
 
-  // Group permissions by resource for display
   const permGroups = new Map<string, string[]>();
   for (const p of role.permissions) {
     const [resource, action] = p.permission.name.split("@");
@@ -113,131 +110,211 @@ export const RoleDetailPage = () => {
     group.push(action ?? p.permission.name);
     permGroups.set(resource, group);
   }
-  const groupedPermissions = Array.from(permGroups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  const groupedPermissions = Array.from(permGroups.entries()).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
 
   return (
-    <ModulePage accent="#22D3EE" accentEnd="#0E7490" aiContext={{ section: "role-detail", id: role.id, name: role.name, permissionCount: role.permissions.length, userCount: role.users.length }}>
-      <ModuleDetailHero
-        kicker={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "role-detail",
+        id: role.id,
+        name: role.name,
+        permissionCount: role.permissions.length,
+        userCount: role.users.length,
+      })}
+    >
+      <PageHeader
+        module="user"
+        eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
         title={role.name}
-        subtitle={role.description ?? undefined}
+        description={role.description ?? undefined}
+        onBack={() => navigate("/access-control")}
         actions={
-          <ButtonGroup
-            size="md"
-            items={[
-              { key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <BackIcon />, to: "/access-control" },
-              ...(canUpdate && !role.isSystem ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <EditIcon />, to: `/access-control/${role.id}/edit` }] : []),
-              ...(canDelete && !role.isSystem ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <DeleteIcon />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
-            ]}
-          />
+          <>
+            {canUpdate && !role.isSystem ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(`/access-control/${role.id}/edit`)}
+              >
+                <Pencil className="size-4" />
+                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+              </Button>
+            ) : null}
+            {canDelete && !role.isSystem ? (
+              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+                <Trash2 className="size-4" />
+                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+              </Button>
+            ) : null}
+          </>
         }
       />
 
-      <ModuleDetailSummary
-        fields={[
-          { label: intl.formatMessage({ id: "roles.detail.name", defaultMessage: "Name" }), value: role.name },
-          { label: intl.formatMessage({ id: "roles.detail.description", defaultMessage: "Description" }), value: role.description ?? "—" },
-          { label: intl.formatMessage({ id: "roles.detail.users_count", defaultMessage: "Users" }), value: role.users.length },
-          { label: intl.formatMessage({ id: "roles.detail.permissions_count", defaultMessage: "Permissions" }), value: role.permissions.length },
-        ]}
-      />
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+              <Shield className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({ id: "roles.detail.summary", defaultMessage: "Summary" })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "roles.detail.name", defaultMessage: "Name" })}
+              </dt>
+              <dd className="text-sm font-medium text-foreground">{role.name}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "roles.detail.description",
+                  defaultMessage: "Description",
+                })}
+              </dt>
+              <dd className="text-sm text-foreground">{role.description ?? "—"}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "roles.detail.users_count", defaultMessage: "Users" })}
+              </dt>
+              <dd className="text-sm tabular-nums text-foreground">{role.users.length}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "roles.detail.permissions_count",
+                  defaultMessage: "Permissions",
+                })}
+              </dt>
+              <dd className="text-sm tabular-nums text-foreground">{role.permissions.length}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
 
-      {/* Permissions */}
-      <section className="m-card">
-        <div className="m-card__header">
-          <h2 className="m-card__title">{intl.formatMessage({ id: "roles.detail.permissions", defaultMessage: "Permissions" })}</h2>
-          <p className="m-card__hint">{role.permissions.length} selected</p>
-        </div>
-        <div className="m-card__body">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+              <KeyRound className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({ id: "roles.detail.permissions", defaultMessage: "Permissions" })}
+          </CardTitle>
+          <CardDescription>
+            {intl.formatMessage(
+              {
+                id: "roles.detail.permissions_selected",
+                defaultMessage: "{count} selected",
+              },
+              { count: role.permissions.length },
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {groupedPermissions.length === 0 ? (
-            <p className="m-card__hint">{intl.formatMessage({ id: "roles.detail.no_permissions", defaultMessage: "No permissions assigned." })}</p>
+            <p className="text-sm text-muted-foreground">
+              {intl.formatMessage({
+                id: "roles.detail.no_permissions",
+                defaultMessage: "No permissions assigned.",
+              })}
+            </p>
           ) : (
-            <div className="m-perms">
-              {groupedPermissions.map(([resource, actions]) => (
-                <div key={resource} className="m-perm-group m-perm-group--open">
-                  <div className="m-perm-group__head">
-                    <span className="m-perm-group__head-left">
-                      <span className="m-perm-group__title">{resource}</span>
-                      <span className="m-perm-group__count m-perm-group__count--active m-perm-group__count--full">All</span>
-                    </span>
-                  </div>
-                  <div className="m-perm-group__body">
-                    <div className="m-perm-group__body-inner">
-                      <div className="m-perm-grid">
-                        {actions.map((action) => (
-                          <div key={action} className="chk-wrapper">
-                            <label className="chk-label">
-                              <input className="chk-input" type="checkbox" checked readOnly />
-                              <span className="chk-box" aria-hidden="true" />
-                              <span className="chk-text">
-                                <span className="chk-text__label">{action}</span>
-                              </span>
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+            groupedPermissions.map(([resource, actions]) => (
+              <div key={resource} className="rounded-lg border p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">{resource}</p>
+                  <Badge variant="secondary">All</Badge>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Assigned users */}
-      <section className="m-card">
-        <div className="m-card__header">
-          <h2 className="m-card__title">{intl.formatMessage({ id: "roles.detail.assigned_users", defaultMessage: "Assigned Users" })}</h2>
-          <p className="m-card__hint">{role.users.length}</p>
-        </div>
-        <div className="m-card__body">
-          {role.users.length === 0 ? (
-            <p className="m-card__hint">{intl.formatMessage({ id: "roles.detail.no_users", defaultMessage: "No users assigned to this role." })}</p>
-          ) : (
-            <div className="m-table-card" style={{ background: "transparent", border: "none", boxShadow: "none", backdropFilter: "none", padding: 0 }}>
-              <table className="m-table tbl tbl--compact">
-                <thead>
-                  <tr>
-                    <th>{intl.formatMessage({ id: "roles.detail.user_name", defaultMessage: "Name" })}</th>
-                    <th>{intl.formatMessage({ id: "roles.detail.user_email", defaultMessage: "Email" })}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {role.users.map((user) => (
-                    <tr key={user.id} className="m-row" style={{ cursor: "pointer" }} onClick={() => navigate(`/users/${user.id}`)}>
-                      <td><span className="m-doc"><span className="m-doc__text"><span className="m-doc__code">{user.name}</span></span></span></td>
-                      <td><span className="m-cell"><span className="m-cell__primary m-cell__primary--muted">{user.email}</span></span></td>
-                    </tr>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {actions.map((action) => (
+                    <label key={action} className="flex items-center gap-2 text-sm text-foreground">
+                      <Checkbox checked disabled />
+                      <span>{action}</span>
+                    </label>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ))
           )}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      {deleteModalOpen && createPortal(
-        <div className="m-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
-          <div className="m-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="m-modal__header">
-              <h3>{intl.formatMessage({ id: "roles.index.delete_modal_title", defaultMessage: "Delete Role" })}</h3>
-              <button className="m-btn m-btn--ghost m-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close" disabled={isDeleting}><CloseIcon /></button>
-            </div>
-            <div className="m-modal__body">
-              <p className="m-modal__msg">{intl.formatMessage({ id: "roles.index.delete_modal_body", defaultMessage: "Are you sure you want to delete role {roleName}? This action cannot be undone." }, { roleName: role.name })}</p>
-            </div>
-            <div className="m-modal__footer">
-              <button className="m-btn m-btn--ghost" onClick={() => setDeleteModalOpen(false)} disabled={isDeleting}>{intl.formatMessage({ id: "roles.index.delete_cancel", defaultMessage: "Cancel" })}</button>
-              <button className="m-btn m-btn--danger" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting ? <span className="m-spinner" /> : null}
-                {isDeleting ? intl.formatMessage({ id: "roles.index.delete_deleting", defaultMessage: "Deleting..." }) : intl.formatMessage({ id: "roles.index.delete_confirm", defaultMessage: "Delete" })}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-    </ModulePage>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+              <Users className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({
+              id: "roles.detail.assigned_users",
+              defaultMessage: "Assigned Users",
+            })}
+          </CardTitle>
+          <CardDescription>{role.users.length}</CardDescription>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          {role.users.length === 0 ? (
+            <p className="px-6 pb-6 text-sm text-muted-foreground">
+              {intl.formatMessage({
+                id: "roles.detail.no_users",
+                defaultMessage: "No users assigned to this role.",
+              })}
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {role.users.map((user) => (
+                <li key={user.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/users/${user.id}`)}
+                    className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-foreground">
+                        {user.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <ConfirmDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title={intl.formatMessage({
+          id: "roles.index.delete_modal_title",
+          defaultMessage: "Delete Role",
+        })}
+        description={intl.formatMessage(
+          {
+            id: "roles.index.delete_modal_body",
+            defaultMessage:
+              "Are you sure you want to delete role {roleName}? This action cannot be undone.",
+          },
+          { roleName: role.name },
+        )}
+        confirmLabel={intl.formatMessage({
+          id: "roles.index.delete_confirm",
+          defaultMessage: "Delete",
+        })}
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={handleDelete}
+      />
+    </section>
   );
 };
