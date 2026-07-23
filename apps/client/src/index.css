@@ -1,14 +1,11 @@
 /* ============================================================
  * Global styles — Tailwind v4 + Aurora Commerce tokens
- * Legacy kit imports kept temporarily (Phase 6 purge).
+ * tokens.css: legacy --color-* scales still used by widgets/landing
+ * reports.css: report-* classes still used by reports module
  * ============================================================ */
 
 @import "tailwindcss";
 @import "./styles/tokens.css";
-@import "./styles/animations.css";
-@import "./styles/utilities.css";
-@import "./styles/page-system.css";
-@import "./styles/module-page.css";
 @import "./styles/reports.css";
 @import "react-day-picker/style.css";
 @import "tw-animate-css";
