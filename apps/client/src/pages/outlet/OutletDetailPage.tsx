@@ -1,17 +1,25 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronRight, Pencil, Store, Trash2, UserRound } from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { Chip } from "../../ui/Chip";
-import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
-
-import { OutletIcon } from "./OutletIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { StatusChip } from "../../components/StatusChip";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type OutletDetail = {
   id: string;
@@ -52,7 +60,9 @@ export const OutletDetailPage = () => {
       await trpcClient.outlet.delete.mutate({ id: outlet.id });
       await queryClient.invalidateQueries({ queryKey: ["outletList"] });
       setDeleteModalOpen(false);
-      toast.success(intl.formatMessage({ id: "outlet.detail.delete_success", defaultMessage: "Region deleted" }));
+      toast.success(
+        intl.formatMessage({ id: "outlet.detail.delete_success", defaultMessage: "Outlet deleted" }),
+      );
       navigate("/outlet");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
@@ -63,183 +73,203 @@ export const OutletDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="so-page">
-        <div className="so-loading">
-          <Spinner size="lg" />
-          <span>{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "outlet-detail", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </section>
     );
   }
 
   if (!outlet) {
     return (
-      <div className="so-page">
-        <div className="so-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
-          <div className="so-card">
-            <div className="so-card__body">
-              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
-                {intl.formatMessage({ id: "outlet.detail.not_found", defaultMessage: "Region not found" })}
-              </p>
-              <button type="button" className="so-btn so-btn--ghost" style={{ marginTop: 12 }} onClick={() => navigate("/outlet")}>
-                <OutletIcon name="back" size={14} />
-                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "outlet-detail", notFound: true })}
+      >
+        <PageHeader
+          module="outlet"
+          title={intl.formatMessage({
+            id: "outlet.detail.not_found",
+            defaultMessage: "Outlet not found",
+          })}
+          onBack={() => navigate("/outlet")}
+        />
+      </section>
     );
   }
 
   return (
-    <section className="so-page" data-ai-context={JSON.stringify({ section: "outlet-detail", id: outlet.id, name: outlet.name, areaCount: outlet.contacts?.length ?? 0 })}>
-      {/* ── Hero ── */}
-      <header className="so-detail-hero">
-        <div className="so-detail-hero__top">
-          <ButtonGroup
-            size="md"
-            items={[{ key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <OutletIcon name="back" size={14} />, to: "/outlet" }]}
-          />
-          <ButtonGroup
-            size="md"
-            items={[
-              ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <OutletIcon name="edit" size={14} />, to: `/outlet/${outlet.id}/edit` }] : []),
-              ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <OutletIcon name="delete" size={14} />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
-            ]}
-          />
-        </div>
-
-        <div className="so-detail-hero__title-block">
-          <div className="so-detail-hero__title-row">
-            <div className="so-detail-hero__title-stack">
-              <span className="so-detail-hero__kicker">{intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}</span>
-              <h1 className="so-detail-hero__title">{outlet.name}</h1>
-              <span className="so-detail-hero__sub">{outlet.code ?? "—"}</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ── Summary ── */}
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon"><OutletIcon name="store" size={14} /></span>
-            {intl.formatMessage({ id: "outlet.detail.summary", defaultMessage: "Summary" })}
-          </h2>
-        </div>
-        <div className="so-card__body">
-          <div className="so-section so-section--2">
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.code_label", defaultMessage: "Code" })}</span>
-              <span className="so-field__value">{outlet.code ?? "—"}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.name_label", defaultMessage: "Name" })}</span>
-              <span className="so-field__value">{outlet.name}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.customer_label", defaultMessage: "Customer" })}</span>
-              <span className="so-field__value">{outlet.customer?.name ?? "—"}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.area_label", defaultMessage: "Area" })}</span>
-              <span className="so-field__value">{outlet.area?.name ?? "—"}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.region_label", defaultMessage: "Region" })}</span>
-              <span className="so-field__value">{outlet.area?.region?.name ?? "—"}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.contacts_label", defaultMessage: "Contacts" })}</span>
-              <span className="so-field__value">{outlet.contacts?.length ?? 0}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.status_label", defaultMessage: "Status" })}</span>
-              <span className="so-field__value">
-                <Chip tone={outlet.status === "ACTIVE" ? "success" : "neutral"} size="sm">
-                  {outlet.status === "ACTIVE"
-                    ? intl.formatMessage({ id: "outlet.detail.status_active", defaultMessage: "Active" })
-                    : outlet.status === "INACTIVE"
-                      ? intl.formatMessage({ id: "outlet.detail.status_inactive", defaultMessage: "Inactive" })
-                      : outlet.status}
-                </Chip>
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Contacts ── */}
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon"><OutletIcon name="contact" size={14} /></span>
-            {intl.formatMessage({ id: "outlet.detail.contacts_title", defaultMessage: "Contacts" })}
-          </h2>
-          <p className="so-card__hint">{outlet.contacts?.length ?? 0} contacts</p>
-        </div>
-        <div className="so-card__body" style={{ padding: 0 }}>
-          {(outlet.contacts?.length ?? 0) === 0 ? (
-            <div className="so-card__body" style={{ textAlign: "center", padding: "2rem" }}>
-              <OutletIcon name="contact" size={48} />
-              <p style={{ marginTop: 12, color: "var(--ios-label-2)" }}>{intl.formatMessage({ id: "outlet.detail.no_contacts", defaultMessage: "No contacts yet" })}</p>
-            </div>
-          ) : (
-            <div className="so-items-table so-items-table--compact">
-              <div className="so-items-table__body">
-                {outlet.contacts?.map((contact) => (
-                  <div key={contact.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/contact/${contact.id}`)}>
-                    <div className="so-items-table__td so-items-table__td--product">
-                      <span className="so-items-table__icon" data-tint="blue" aria-hidden="true"><OutletIcon name="contact" size={16} /></span>
-                      <div className="so-items-table__product">
-                        <span className="so-items-table__product-name">{contact.name}</span>
-                        {contact.title && <span className="so-items-table__product-code">{contact.title}</span>}
-                      </div>
-                    </div>
-                    <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
-                      <OutletIcon name="chevron-right" size={16} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── Delete Modal ── */}
-      {deleteModalOpen && createPortal(
-        <div className="so-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="so-modal__header">
-              <h3><OutletIcon name="delete" size={16} /> {intl.formatMessage({ id: "outlet.detail.delete_title", defaultMessage: "Delete outlet" })}</h3>
-              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close">
-                <OutletIcon name="close" size={14} />
-              </button>
-            </div>
-            <div className="so-modal__body">
-              <div className="so-modal__icon so-modal__icon--error"><OutletIcon name="delete" size={28} /></div>
-              <h3 className="so-modal__title">{intl.formatMessage({ id: "outlet.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}</h3>
-              <p className="so-modal__msg">
-                {intl.formatMessage({ id: "outlet.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: outlet.name })}
-              </p>
-            </div>
-            <div className="so-modal__footer">
-              <button className="so-btn so-btn--ghost" onClick={() => setDeleteModalOpen(false)}>
-                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-              </button>
-              <button className="so-btn so-btn--danger" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting && <span className="so-spinner" />}
-                <OutletIcon name="delete" size={14} />
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "outlet-detail",
+        id: outlet.id,
+        name: outlet.name,
+        contactCount: outlet.contacts?.length ?? 0,
+      })}
+    >
+      <PageHeader
+        module="outlet"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+        title={outlet.name}
+        description={outlet.code ?? "—"}
+        onBack={() => navigate("/outlet")}
+        actions={
+          <>
+            {canUpdate ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(`/outlet/${outlet.id}/edit`)}
+              >
+                <Pencil className="size-4" />
+                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+              </Button>
+            ) : null}
+            {canDelete ? (
+              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+                <Trash2 className="size-4" />
                 {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </button>
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_14%,transparent)] text-[var(--module-outlet)]">
+              <Store className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({ id: "outlet.detail.summary", defaultMessage: "Summary" })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "outlet.detail.code_label", defaultMessage: "Code" })}
+              </dt>
+              <dd className="font-mono text-sm text-foreground">{outlet.code ?? "—"}</dd>
             </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "outlet.detail.name_label", defaultMessage: "Name" })}
+              </dt>
+              <dd className="text-sm font-medium text-foreground">{outlet.name}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "outlet.detail.customer_label", defaultMessage: "Customer" })}
+              </dt>
+              <dd className="text-sm text-foreground">{outlet.customer?.name ?? "—"}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "outlet.detail.area_label", defaultMessage: "Area" })}
+              </dt>
+              <dd className="text-sm text-foreground">{outlet.area?.name ?? "—"}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "outlet.detail.region_label", defaultMessage: "Region" })}
+              </dt>
+              <dd className="text-sm text-foreground">{outlet.area?.region?.name ?? "—"}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "outlet.detail.status_label", defaultMessage: "Status" })}
+              </dt>
+              <dd>
+                <StatusChip status={outlet.status} />
+              </dd>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "outlet.form.field_address", defaultMessage: "Address" })}
+              </dt>
+              <dd className="text-sm text-foreground">{outlet.address ?? "—"}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_14%,transparent)] text-[var(--module-customer)]">
+              <UserRound className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({ id: "outlet.detail.contacts_title", defaultMessage: "Contacts" })}
+          </CardTitle>
+          <CardDescription>
+            {intl.formatMessage(
+              {
+                id: "outlet.detail.contacts_count",
+                defaultMessage: "{count, plural, one {# contact} other {# contacts}}",
+              },
+              { count: outlet.contacts?.length ?? 0 },
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          {(outlet.contacts?.length ?? 0) === 0 ? (
+            <p className="px-6 pb-6 text-sm text-muted-foreground">
+              {intl.formatMessage({
+                id: "outlet.detail.no_contacts",
+                defaultMessage: "No contacts yet",
+              })}
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {outlet.contacts?.map((contact) => (
+                <li key={contact.id}>
+                  <div className="flex w-full items-center gap-3 px-6 py-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_14%,transparent)] text-[var(--module-customer)]">
+                      <UserRound className="size-4" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-foreground">
+                        {contact.name}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {[contact.title, contact.phone, contact.email].filter(Boolean).join(" · ") ||
+                          "—"}
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground opacity-0" aria-hidden />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <ConfirmDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title={intl.formatMessage({
+          id: "outlet.detail.delete_title",
+          defaultMessage: "Delete outlet",
+        })}
+        description={intl.formatMessage(
+          {
+            id: "outlet.index.delete_confirm_body",
+            defaultMessage: 'Delete "{name}"? This action cannot be undone.',
+          },
+          { name: outlet.name },
+        )}
+        confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={handleDelete}
+      />
     </section>
   );
 };
