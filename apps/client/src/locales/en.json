@@ -2151,10 +2151,16 @@
   "customer.detail.contacts_title": "Contacts",
   "customer.detail.no_contacts": "No contacts yet",
   "customer.detail.outlets_title": "Outlets",
+  "customer.detail.outlets_count": "{count, plural, one {# outlet} other {# outlets}}",
   "customer.detail.no_outlets": "No outlets yet",
+  "customer.detail.summary": "Summary",
+  "customer.detail.areas_label": "Outlets",
+  "customer.detail.delete_title": "Delete customer",
   "customer.detail.delete_success": "Customer deleted",
   "customer.form.title_create": "New customer",
   "customer.form.title_edit": "Edit customer",
+  "customer.form.subtitle_create": "Create a new geographical customer",
+  "customer.form.subtitle_edit": "Update customer details",
   "customer.form.section_basic": "Basic information",
   "customer.form.section_address": "Billing address",
   "customer.form.section_notes": "Notes",
@@ -2801,5 +2807,6 @@
   "emailCrm.common.save": "Save",
   "emailCrm.common.cancel": "Cancel",
   "emailCrm.common.delete": "Delete conversation",
-  "emailCrm.common.delete_confirm": "Delete conversation with \"{email}\"? This action cannot be undone."
+  "emailCrm.common.delete_confirm": "Delete conversation with \"{email}\"? This action cannot be undone.",
+  "sales_order.index.filter_date": "Select date"
 }

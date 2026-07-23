@@ -2138,10 +2138,16 @@
   "customer.detail.contacts_title": "Kontak",
   "customer.detail.no_contacts": "Belum ada kontak",
   "customer.detail.outlets_title": "Outlet",
+  "customer.detail.outlets_count": "{count, plural, one {# outlet} other {# outlet}}",
   "customer.detail.no_outlets": "Belum ada outlet",
+  "customer.detail.summary": "Ringkasan",
+  "customer.detail.areas_label": "Outlet",
+  "customer.detail.delete_title": "Hapus pelanggan",
   "customer.detail.delete_success": "Pelanggan dihapus",
   "customer.form.title_create": "Pelanggan baru",
   "customer.form.title_edit": "Edit pelanggan",
+  "customer.form.subtitle_create": "Buat pelanggan geografis baru",
+  "customer.form.subtitle_edit": "Perbarui detail pelanggan",
   "customer.form.section_basic": "Informasi dasar",
   "customer.form.section_address": "Alamat penagihan",
   "customer.form.section_notes": "Catatan",
@@ -2788,5 +2794,6 @@
   "emailCrm.common.save": "Simpan",
   "emailCrm.common.cancel": "Batal",
   "emailCrm.common.delete": "Hapus percakapan",
-  "emailCrm.common.delete_confirm": "Hapus percakapan dengan \"{email}\"? Tindakan ini tidak dapat dibatalkan."
+  "emailCrm.common.delete_confirm": "Hapus percakapan dengan \"{email}\"? Tindakan ini tidak dapat dibatalkan.",
+  "sales_order.index.filter_date": "Pilih tanggal"
 }
