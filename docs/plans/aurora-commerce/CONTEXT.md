@@ -39,7 +39,15 @@ i18n: react-intl; both en.json + id.json
 Data: vanilla tRPC + TanStack Query (unchanged)
 Forms: @tanstack/react-form + shadcn fields
 React/Tailwind: composition, cn(), token-driven, no new shell CSS files
-Old kit: abandon apps/client/src/ui/** + Sidebar.css + Topbar.css after cutover
+Motion: `motion` (Framer) ONLY — no anime.js / animate.css
+Motion style: professional, not bloated — shared presets in lib/motion.ts
+  - page enter: fade+8px y, 200-280ms
+  - shell: subtle opacity only
+  - KPI/list stagger: 40-50ms, max ~8 items
+  - tables: NO per-row bounce; optional light container fade only
+  - always useReducedMotion / reduced-motion skip
+  - no layout thrashing, no scroll-jacking, no perpetual decoration
+Old kit: src/ui is Aurora adapters; page CSS purge ongoing
 Backend: untouched
 MCP: shadcn, context7, playwright, chrome-devtools
 Skills: frontend-design, ui-ux-pro-max (override monochrome with Aurora)

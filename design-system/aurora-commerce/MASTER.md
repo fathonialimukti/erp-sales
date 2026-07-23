@@ -645,3 +645,40 @@ Module color on the **tile** is always on; row wash uses the **same module token
 - [ ] Reduced motion respected  
 - [ ] Responsive 375 / 768 / 1024 / 1440  
 - [ ] Tables: TP checklist (identity first, chips, money right, ≤8 cols, crm density)  
+
+
+---
+
+## Motion system (`motion`) — professional, not bloated
+
+**Package:** `motion` (Framer Motion for React) — **only** animation library.  
+**Banned:** anime.js, Animate.css, GSAP for app chrome (landing may stay CSS if already fine).
+
+### Principles
+1. Shared presets in `apps/client/src/lib/motion.ts` — no one-off spring chaos
+2. Motion supports meaning (enter, feedback, hierarchy) — not decoration
+3. CRM tables stay calm: no bouncing rows on every filter
+4. Always honor `prefers-reduced-motion` via `useReducedMotion()`
+5. Prefer opacity + translateY; avoid animating width/height/layout when possible
+6. Caps: page enter ≤280ms; stagger delay 40–50ms; stagger children ≤8 visible
+
+### Presets (normative)
+| Preset | Use |
+|--------|-----|
+| `fadeIn` | Soft shell / overlays |
+| `pageEnter` | Main content on route change |
+| `staggerContainer` + `staggerItem` | KPI grids, landing feature rows |
+| `softPop` | Empty states, confirm success moments (rare) |
+
+### Where applied
+- PrivateLayout main outlet / page wrapper
+- Sidebar nav items light stagger on first mount (optional, reduced)
+- Dashboard KPIs
+- Login / Landing hero blocks
+- Dialogs already use tw-animate; do not double-animate heavily
+
+### Anti-patterns
+- Animating every table row on data refresh
+- Infinite aurora blobs that distract from data
+- Different spring configs per page
+- Motion without reduced-motion path
