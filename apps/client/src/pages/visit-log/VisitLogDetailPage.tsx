@@ -1,20 +1,44 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  ChevronRight,
+  ClipboardList,
+  Loader2,
+  MapPin,
+  Pencil,
+  ShoppingCart,
+  Sparkles,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { ButtonGroup } from "../../components/ButtonGroup";
-import { Chip } from "../../ui/Chip";
-import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
-import { Modal, ModalHeader, ModalBody } from "../../ui";
-
-import { VisitLogIcon } from "./VisitLogIcons";
+import { PageHeader } from "../../components/PageHeader";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { StatusChip } from "../../components/StatusChip";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type VisitLogDetail = {
   id: string;
@@ -26,16 +50,13 @@ type VisitLogDetail = {
   notes: string | null;
   feedback: string | null;
   salesman: { id: string; name: string } | null;
-  outlet: { id: string; name: string; customer: { id: string; name: string } | null; area: { id: string; name: string } | null } | null;
+  outlet: {
+    id: string;
+    name: string;
+    customer: { id: string; name: string } | null;
+    area: { id: string; name: string } | null;
+  } | null;
   salesOrder: { id: string; documentNumber: string | null; grandTotal: number | null } | null;
-};
-
-const APPROVAL_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  DRAFT: "neutral",
-  VALIDATING: "warning",
-  PROPOSED: "info",
-  APPROVED: "success",
-  REJECTED: "danger",
 };
 
 export const VisitLogDetailPage = () => {
@@ -54,6 +75,14 @@ export const VisitLogDetailPage = () => {
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftResult, setDraftResult] = useState("");
   const [draftError, setDraftError] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["visitLogDetail", id],
+    enabled: Boolean(id),
+    queryFn: () => trpcClient.visitLog.detail.query({ id: id ?? "" }),
+  });
+
+  const visitLog = data as VisitLogDetail | undefined;
 
   const handleDraftFollowUp = async () => {
     if (!visitLog) return;
@@ -102,14 +131,6 @@ export const VisitLogDetailPage = () => {
     }
   };
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["visitLogDetail", id],
-    enabled: Boolean(id),
-    queryFn: () => trpcClient.visitLog.detail.query({ id: id ?? "" }),
-  });
-
-  const visitLog = data as VisitLogDetail | undefined;
-
   const handleDelete = async () => {
     if (!visitLog || isDeleting) return;
     setIsDeleting(true);
@@ -117,7 +138,12 @@ export const VisitLogDetailPage = () => {
       await trpcClient.visitLog.delete.mutate({ id: visitLog.id });
       await queryClient.invalidateQueries({ queryKey: ["visitLogList"] });
       setDeleteModalOpen(false);
-      toast.success(intl.formatMessage({ id: "visit_log.detail.delete_success", defaultMessage: "Region deleted" }));
+      toast.success(
+        intl.formatMessage({
+          id: "visit_log.detail.delete_success",
+          defaultMessage: "Region deleted",
+        }),
+      );
       navigate("/visitLog");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
@@ -126,197 +152,283 @@ export const VisitLogDetailPage = () => {
     }
   };
 
+  const statusLabel = (status: string) => {
+    const s = status.toUpperCase();
+    if (s === "DRAFT")
+      return intl.formatMessage({ id: "visit_log.index.status_draft", defaultMessage: "Draft" });
+    if (s === "VALIDATING")
+      return intl.formatMessage({
+        id: "visit_log.index.status_validating",
+        defaultMessage: "AI Processing",
+      });
+    if (s === "PROPOSED")
+      return intl.formatMessage({
+        id: "visit_log.index.status_proposed",
+        defaultMessage: "Pending Approval",
+      });
+    if (s === "APPROVED")
+      return intl.formatMessage({
+        id: "visit_log.index.status_approved",
+        defaultMessage: "Approved",
+      });
+    if (s === "REJECTED")
+      return intl.formatMessage({
+        id: "visit_log.index.status_rejected",
+        defaultMessage: "Rejected",
+      });
+    return status;
+  };
+
   if (isLoading) {
     return (
-      <div className="so-page">
-        <div className="so-loading">
-          <Spinner size="lg" />
-          <span>{intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}</span>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "visitLog-detail", loading: true })}
+      >
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </section>
     );
   }
 
   if (!visitLog) {
     return (
-      <div className="so-page">
-        <div className="so-form__shell" style={{ maxWidth: 480, margin: "60px auto" }}>
-          <div className="so-card">
-            <div className="so-card__body">
-              <p style={{ color: "var(--ios-state-danger, #DC2626)", margin: 0 }}>
-                {intl.formatMessage({ id: "visit_log.detail.not_found", defaultMessage: "Region not found" })}
-              </p>
-              <button type="button" className="so-btn so-btn--ghost" style={{ marginTop: 12 }} onClick={() => navigate("/visitLog")}>
-                <VisitLogIcon name="back" size={14} />
-                {intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" })}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <section
+        className="flex flex-col gap-6 pt-2 pb-8"
+        data-ai-context={JSON.stringify({ section: "visitLog-detail", notFound: true })}
+      >
+        <PageHeader
+          module="visit"
+          title={intl.formatMessage({
+            id: "visit_log.detail.not_found",
+            defaultMessage: "Region not found",
+          })}
+          onBack={() => navigate("/visitLog")}
+        />
+      </section>
     );
   }
 
-  const title = visitLog.outlet?.name ?? intl.formatMessage({ id: "visit_log.detail.unnamed", defaultMessage: "Visit Log" });
+  const title =
+    visitLog.outlet?.name ??
+    intl.formatMessage({ id: "visit_log.detail.unnamed", defaultMessage: "Visit Log" });
 
   return (
-    <section className="so-page" data-ai-context={JSON.stringify({ section: "visitLog-detail", id: visitLog.id, name: title, outletId: visitLog.outlet?.id, approvalStatus: visitLog.approvalStatus })}>
-      {/* ── Hero ── */}
-      <header className="so-detail-hero">
-        <div className="so-detail-hero__top">
-          <ButtonGroup
-            size="md"
-            items={[{ key: "back", label: intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" }), icon: <VisitLogIcon name="back" size={14} />, to: "/visitLog" }]}
-          />
-          <ButtonGroup
-            size="md"
-            items={[
-              ...(canUpdate ? [{ key: "edit", label: intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" }), icon: <VisitLogIcon name="edit" size={14} />, to: `/visitLog/${visitLog.id}/edit` }] : []),
-              { key: "draft", label: intl.formatMessage({ id: "visit_log.detail.draft_followup", defaultMessage: "Draft follow-up" }), icon: <VisitLogIcon name="sparkle" size={14} />, onClick: handleDraftFollowUp },
-              ...(canDelete ? [{ key: "delete", label: intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" }), icon: <VisitLogIcon name="delete" size={14} />, onClick: () => setDeleteModalOpen(true), variant: "danger" as const }] : []),
-            ]}
-          />
-        </div>
-
-        <div className="so-detail-hero__title-block">
-          <div className="so-detail-hero__title-row">
-            <div className="so-detail-hero__title-stack">
-              <span className="so-detail-hero__kicker">{intl.formatMessage({ id: "nav.field_ops", defaultMessage: "Field Operations" })}</span>
-              <h1 className="so-detail-hero__title">{title}</h1>
-              <span className="so-detail-hero__sub">{visitLog.outlet?.customer?.name ?? "—"}</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ── Summary ── */}
-      <section className="so-card">
-        <div className="so-card__header">
-          <h2 className="so-card__title">
-            <span className="so-card__icon"><VisitLogIcon name="clipboard" size={14} /></span>
-            {intl.formatMessage({ id: "visit_log.detail.summary", defaultMessage: "Summary" })}
-          </h2>
-        </div>
-        <div className="so-card__body">
-          <div className="so-section so-section--2">
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.date_label", defaultMessage: "Date" })}</span>
-              <span className="so-field__value">{visitLog.date}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.status_label", defaultMessage: "Status" })}</span>
-              <span className="so-field__value">
-                <Chip tone={APPROVAL_TONE[visitLog.approvalStatus] ?? "neutral"} size="sm">
-                  {(() => {
-                    const s = visitLog.approvalStatus.toUpperCase();
-                    if (s === "DRAFT") return intl.formatMessage({ id: "visit_log.index.status_draft", defaultMessage: "Draft" });
-                    if (s === "VALIDATING") return intl.formatMessage({ id: "visit_log.index.status_validating", defaultMessage: "AI Processing" });
-                    if (s === "PROPOSED") return intl.formatMessage({ id: "visit_log.index.status_proposed", defaultMessage: "Pending Approval" });
-                    if (s === "APPROVED") return intl.formatMessage({ id: "visit_log.index.status_approved", defaultMessage: "Approved" });
-                    if (s === "REJECTED") return intl.formatMessage({ id: "visit_log.index.status_rejected", defaultMessage: "Rejected" });
-                    return visitLog.approvalStatus;
-                  })()}
-                </Chip>
-              </span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.salesman_label", defaultMessage: "Salesman" })}</span>
-              <span className="so-field__value">{visitLog.salesman?.name ?? "—"}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.outlet_label", defaultMessage: "Outlet" })}</span>
-              <span className="so-field__value">{visitLog.outlet?.name ?? "—"}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.purpose_label", defaultMessage: "Purpose" })}</span>
-              <span className="so-field__value">{visitLog.purpose ?? "—"}</span>
-            </div>
-            <div className="so-field">
-              <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.notes_label", defaultMessage: "Notes" })}</span>
-              <span className="so-field__value">{visitLog.notes ?? "—"}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Linked Sales Order ── */}
-      {visitLog.salesOrder && (
-        <section className="so-card">
-          <div className="so-card__header">
-            <h2 className="so-card__title">
-              <span className="so-card__icon"><VisitLogIcon name="item" size={14} /></span>
-              {intl.formatMessage({ id: "visit_log.detail.order_title", defaultMessage: "Linked Sales Order" })}
-            </h2>
-          </div>
-          <div className="so-card__body" style={{ padding: 0 }}>
-            <div className="so-items-table so-items-table--compact">
-              <div className="so-items-table__body">
-                <div className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/sales-order/${visitLog.salesOrder!.id}`)}>
-                  <div className="so-items-table__td so-items-table__td--product">
-                    <span className="so-items-table__icon" data-tint="blue" aria-hidden="true"><VisitLogIcon name="item" size={16} /></span>
-                    <div className="so-items-table__product">
-                      <span className="so-items-table__product-name">{visitLog.salesOrder.documentNumber ?? visitLog.salesOrder.id}</span>
-                      {visitLog.salesOrder.grandTotal != null && (
-                        <span className="so-items-table__product-code">{visitLog.salesOrder.grandTotal}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="so-items-table__td so-items-table__td--num so-items-table__td--muted">
-                    <VisitLogIcon name="chevron-right" size={16} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── Delete Modal ── */}
-      {deleteModalOpen && createPortal(
-        <div className="so-modal__backdrop" onClick={() => !isDeleting && setDeleteModalOpen(false)}>
-          <div className="so-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="so-modal__header">
-              <h3><VisitLogIcon name="delete" size={16} /> {intl.formatMessage({ id: "visit_log.detail.delete_title", defaultMessage: "Delete visitLog" })}</h3>
-              <button className="so-btn so-btn--ghost so-btn--sm" onClick={() => setDeleteModalOpen(false)} aria-label="Close">
-                <VisitLogIcon name="close" size={14} />
-              </button>
-            </div>
-            <div className="so-modal__body">
-              <div className="so-modal__icon so-modal__icon--error"><VisitLogIcon name="delete" size={28} /></div>
-              <h3 className="so-modal__title">{intl.formatMessage({ id: "visit_log.detail.delete_confirm_title", defaultMessage: "Are you sure?" })}</h3>
-              <p className="so-modal__msg">
-                {intl.formatMessage({ id: "visit_log.index.delete_confirm_body", defaultMessage: 'Delete "{name}"? This action cannot be undone.' }, { name: title })}
-              </p>
-            </div>
-            <div className="so-modal__footer">
-              <button className="so-btn so-btn--ghost" onClick={() => setDeleteModalOpen(false)}>
-                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-              </button>
-              <button className="so-btn so-btn--danger" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting && <span className="so-spinner" />}
-                <VisitLogIcon name="delete" size={14} />
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "visitLog-detail",
+        id: visitLog.id,
+        name: title,
+        outletId: visitLog.outlet?.id,
+        approvalStatus: visitLog.approvalStatus,
+      })}
+    >
+      <PageHeader
+        module="visit"
+        eyebrow={intl.formatMessage({ id: "nav.field_ops", defaultMessage: "Field Operations" })}
+        title={title}
+        description={visitLog.outlet?.customer?.name ?? "—"}
+        onBack={() => navigate("/visitLog")}
+        actions={
+          <>
+            {canUpdate ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(`/visitLog/${visitLog.id}/edit`)}
+              >
+                <Pencil className="size-4" />
+                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" onClick={handleDraftFollowUp}>
+              <Sparkles className="size-4" />
+              {intl.formatMessage({
+                id: "visit_log.detail.draft_followup",
+                defaultMessage: "Draft follow-up",
+              })}
+            </Button>
+            {canDelete ? (
+              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+                <Trash2 className="size-4" />
                 {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </button>
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-visit)_14%,transparent)] text-[var(--module-visit)]">
+              <ClipboardList className="size-4" aria-hidden />
+            </span>
+            {intl.formatMessage({ id: "visit_log.detail.summary", defaultMessage: "Summary" })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({ id: "visit_log.detail.date_label", defaultMessage: "Date" })}
+              </dt>
+              <dd className="text-sm text-foreground">{visitLog.date}</dd>
             </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-      {/* Draft Follow-up Modal */}
-      <Modal isOpen={draftModalOpen} onClose={() => setDraftModalOpen(false)} size="xl">
-        <ModalHeader onClose={() => setDraftModalOpen(false)}>
-          {intl.formatMessage({ id: "visit_log.detail.draft_followup", defaultMessage: "Draft follow-up" })}
-        </ModalHeader>
-        <ModalBody>
-          {draftLoading && <Spinner />}
-          {draftError && <p className="text-red-600">{draftError}</p>}
-          {draftResult && (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm max-w-none">
-              {draftResult}
-            </ReactMarkdown>
-          )}
-        </ModalBody>
-      </Modal>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "visit_log.detail.status_label",
+                  defaultMessage: "Status",
+                })}
+              </dt>
+              <dd>
+                <StatusChip
+                  status={visitLog.approvalStatus}
+                  label={statusLabel(visitLog.approvalStatus)}
+                />
+              </dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "visit_log.detail.salesman_label",
+                  defaultMessage: "Salesman",
+                })}
+              </dt>
+              <dd className="flex items-center gap-2 text-sm text-foreground">
+                <UserRound className="size-3.5 text-muted-foreground" aria-hidden />
+                {visitLog.salesman?.name ?? "—"}
+              </dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "visit_log.detail.outlet_label",
+                  defaultMessage: "Outlet",
+                })}
+              </dt>
+              <dd className="flex items-center gap-2 text-sm text-foreground">
+                <MapPin className="size-3.5 text-muted-foreground" aria-hidden />
+                {visitLog.outlet?.name ?? "—"}
+              </dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "visit_log.detail.purpose_label",
+                  defaultMessage: "Purpose",
+                })}
+              </dt>
+              <dd className="text-sm text-foreground">{visitLog.purpose ?? "—"}</dd>
+            </div>
+            <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "visit_log.detail.notes_label",
+                  defaultMessage: "Notes",
+                })}
+              </dt>
+              <dd className="text-sm text-foreground whitespace-pre-wrap">
+                {visitLog.notes ?? "—"}
+              </dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
+
+      {visitLog.salesOrder ? (
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-heading text-base">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+                <ShoppingCart className="size-4" aria-hidden />
+              </span>
+              {intl.formatMessage({
+                id: "visit_log.detail.order_title",
+                defaultMessage: "Linked Sales Order",
+              })}
+            </CardTitle>
+            <CardDescription>
+              {visitLog.salesOrder.documentNumber ?? visitLog.salesOrder.id}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            <button
+              type="button"
+              onClick={() => navigate(`/sales-order/${visitLog.salesOrder!.id}`)}
+              className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+                <ShoppingCart className="size-4" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {visitLog.salesOrder.documentNumber ?? visitLog.salesOrder.id}
+                </span>
+                {visitLog.salesOrder.grandTotal != null ? (
+                  <span className="block font-mono text-xs tabular-nums text-muted-foreground">
+                    {visitLog.salesOrder.grandTotal}
+                  </span>
+                ) : null}
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            </button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <ConfirmDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title={intl.formatMessage({
+          id: "visit_log.detail.delete_title",
+          defaultMessage: "Delete visitLog",
+        })}
+        description={intl.formatMessage(
+          {
+            id: "visit_log.index.delete_confirm_body",
+            defaultMessage: 'Delete "{name}"? This action cannot be undone.',
+          },
+          { name: title },
+        )}
+        confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={handleDelete}
+      />
+
+      <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {intl.formatMessage({
+                id: "visit_log.detail.draft_followup",
+                defaultMessage: "Draft follow-up",
+              })}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              {intl.formatMessage({
+                id: "visit_log.detail.draft_followup",
+                defaultMessage: "Draft follow-up",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          {draftLoading ? (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+            </div>
+          ) : null}
+          {draftError ? <p className="text-sm text-destructive">{draftError}</p> : null}
+          {draftResult ? (
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{draftResult}</ReactMarkdown>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
