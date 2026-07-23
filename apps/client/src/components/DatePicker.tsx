@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { SOIcon } from "../pages/sales-order/SalesOrderIcons";
-import "./DatePicker.css";
+import { useEffect, useRef, useState } from "react";
+import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 type DatePickerMode = "date" | "datetime" | "daterange";
 
@@ -18,8 +19,18 @@ interface DatePickerProps {
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const formatDate = (date: Date): string => {
@@ -52,13 +63,11 @@ const parseDate = (value: string): Date | null => {
   return date;
 };
 
-const getDaysInMonth = (year: number, month: number): number => {
-  return new Date(year, month + 1, 0).getDate();
-};
+const getDaysInMonth = (year: number, month: number): number =>
+  new Date(year, month + 1, 0).getDate();
 
-const getFirstDayOfMonth = (year: number, month: number): number => {
-  return new Date(year, month, 1).getDay();
-};
+const getFirstDayOfMonth = (year: number, month: number): number =>
+  new Date(year, month, 1).getDay();
 
 export const DatePicker = ({
   value,
@@ -91,19 +100,20 @@ export const DatePicker = ({
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedDate = !Array.isArray(value) && value !== null ? parseDate(value) : null;
-  const rangeStartDate = mode === "daterange" && Array.isArray(value) && value[0] ? parseDate(value[0]) : null;
-  const rangeEndDate = mode === "daterange" && Array.isArray(value) && value[1] ? parseDate(value[1]) : null;
-  
+  const selectedDate =
+    !Array.isArray(value) && value !== null ? parseDate(value) : null;
+
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
 
-  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -111,26 +121,18 @@ export const DatePicker = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handlePrevMonth = () => {
-    setViewDate(new Date(year, month - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setViewDate(new Date(year, month + 1, 1));
-  };
+  const handlePrevMonth = () => setViewDate(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setViewDate(new Date(year, month + 1, 1));
 
   const handleDayClick = (day: number) => {
     const newDate = new Date(year, month, day);
-    
+
     if (mode === "daterange") {
       const formatted = formatDate(newDate);
-      
       if (!rangeStart || (rangeStart && rangeEnd)) {
-        // Start new range
         setRangeStart(formatted);
         setRangeEnd(null);
       } else {
-        // Complete range
         const start = rangeStart < formatted ? rangeStart : formatted;
         const end = rangeStart < formatted ? formatted : rangeStart;
         onChange([start, end]);
@@ -139,19 +141,15 @@ export const DatePicker = ({
         setIsOpen(false);
       }
     } else {
-      const formatted = showTime ? formatDateTime(newDate) : formatDate(newDate);
-      
-      // Check min/max constraints
+      let formatted = showTime ? formatDateTime(newDate) : formatDate(newDate);
       if (min && formatted < min) return;
       if (max && formatted > max) return;
-      
       if (showTime) {
         const [hours, minutes] = timeValue.split(":").map(Number);
         newDate.setHours(hours || 0, minutes || 0);
-        onChange(formatDateTime(newDate));
-      } else {
-        onChange(formatted);
+        formatted = formatDateTime(newDate);
       }
+      onChange(formatted);
       setIsOpen(false);
     }
   };
@@ -160,22 +158,16 @@ export const DatePicker = ({
     const today = new Date();
     const formatted = showTime ? formatDateTime(today) : formatDate(today);
     if ((!min || formatted >= min) && (!max || formatted <= max)) {
-      if (mode === "daterange") {
-        onChange([formatted, formatted]);
-      } else {
-        onChange(formatted);
-      }
+      if (mode === "daterange") onChange([formatted, formatted]);
+      else onChange(formatted);
       setViewDate(today);
       setIsOpen(false);
     }
   };
 
   const handleClear = () => {
-    if (mode === "daterange") {
-      onChange(["", ""]);
-    } else {
-      onChange("");
-    }
+    if (mode === "daterange") onChange(["", ""]);
+    else onChange("");
     setRangeStart(null);
     setRangeEnd(null);
     setIsOpen(false);
@@ -190,12 +182,20 @@ export const DatePicker = ({
 
   const isToday = (day: number): boolean => {
     const today = new Date();
-    return day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    return (
+      day === today.getDate() &&
+      month === today.getMonth() &&
+      year === today.getFullYear()
+    );
   };
 
   const isSelected = (day: number): boolean => {
     if (!selectedDate) return false;
-    return day === selectedDate.getDate() && month === selectedDate.getMonth() && year === selectedDate.getFullYear();
+    return (
+      day === selectedDate.getDate() &&
+      month === selectedDate.getMonth() &&
+      year === selectedDate.getFullYear()
+    );
   };
 
   const isInRange = (day: number): boolean => {
@@ -206,9 +206,7 @@ export const DatePicker = ({
     if (activeStart && activeEnd) {
       return dateStr >= activeStart && dateStr <= activeEnd;
     }
-    if (activeStart) {
-      return dateStr === activeStart;
-    }
+    if (activeStart) return dateStr === activeStart;
     return false;
   };
 
@@ -216,74 +214,98 @@ export const DatePicker = ({
     if (mode !== "daterange") return false;
     const activeStart = rangeStart || (Array.isArray(value) ? value[0] : null);
     if (!activeStart) return false;
-    const dateStr = formatDate(new Date(year, month, day));
-    return dateStr === activeStart;
+    return formatDate(new Date(year, month, day)) === activeStart;
   };
 
   const isRangeEnd = (day: number): boolean => {
     if (mode !== "daterange") return false;
     const activeEnd = rangeEnd || (Array.isArray(value) ? value[1] : null);
     if (!activeEnd) return false;
-    const dateStr = formatDate(new Date(year, month, day));
-    return dateStr === activeEnd;
+    return formatDate(new Date(year, month, day)) === activeEnd;
   };
 
   const renderCalendarDays = () => {
     const days = [];
     const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-
     for (let i = 0; i < totalCells; i++) {
       const dayNumber = i - firstDay + 1;
       const isValidDay = dayNumber > 0 && dayNumber <= daysInMonth;
-      const isDisabled = isValidDay && isDateDisabled(dayNumber);
-
+      const disabledDay = isValidDay && isDateDisabled(dayNumber);
       days.push(
         <button
           key={i}
           type="button"
-          className={`dp-day 
-            ${isValidDay ? "" : "dp-day--empty"} 
-            ${isSelected(dayNumber) ? "dp-day--selected" : ""} 
-            ${isToday(dayNumber) ? "dp-day--today" : ""} 
-            ${isDisabled ? "dp-day--disabled" : ""}
-            ${isInRange(dayNumber) ? "dp-day--in-range" : ""}
-            ${isRangeStart(dayNumber) ? "dp-day--range-start" : ""}
-            ${isRangeEnd(dayNumber) ? "dp-day--range-end" : ""}
-          `}
-          onClick={() => isValidDay && !isDisabled && handleDayClick(dayNumber)}
-          disabled={!isValidDay || isDisabled}
-          aria-label={isValidDay ? `${MONTHS[month]} ${dayNumber}, ${year}` : undefined}
+          className={cn(
+            "flex size-8 items-center justify-center rounded-full text-[0.8125rem] transition-colors",
+            !isValidDay && "invisible",
+            isValidDay &&
+              !disabledDay &&
+              "cursor-pointer text-foreground hover:bg-accent",
+            isToday(dayNumber) &&
+              !isSelected(dayNumber) &&
+              "font-semibold text-primary ring-1 ring-primary/40",
+            (isSelected(dayNumber) ||
+              isRangeStart(dayNumber) ||
+              isRangeEnd(dayNumber)) &&
+              "bg-primary text-primary-foreground hover:bg-primary",
+            isInRange(dayNumber) &&
+              !isRangeStart(dayNumber) &&
+              !isRangeEnd(dayNumber) &&
+              "bg-primary/10 text-primary",
+            disabledDay && "cursor-not-allowed opacity-40",
+          )}
+          onClick={() =>
+            isValidDay && !disabledDay && handleDayClick(dayNumber)
+          }
+          disabled={!isValidDay || disabledDay}
+          aria-label={
+            isValidDay ? `${MONTHS[month]} ${dayNumber}, ${year}` : undefined
+          }
         >
           {isValidDay ? dayNumber : ""}
-        </button>
+        </button>,
       );
     }
-
     return days;
   };
 
   const getDisplayValue = (): string => {
     if (mode === "daterange" && Array.isArray(value)) {
-      const start = value[0] ? parseDate(value[0])?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
-      const end = value[1] ? parseDate(value[1])?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+      const start = value[0]
+        ? parseDate(value[0])?.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "";
+      const end = value[1]
+        ? parseDate(value[1])?.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "";
       if (start && end) return `${start} - ${end}`;
       if (start) return `${start} - ...`;
       return "";
     }
-    
     if (!Array.isArray(value) && value) {
       const date = parseDate(value);
       if (date) {
         if (showTime) {
-          return date.toLocaleString("en-US", { 
-            month: "short", 
-            day: "numeric", 
+          return date.toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
             year: "numeric",
             hour: "2-digit",
-            minute: "2-digit"
+            minute: "2-digit",
           });
         }
-        return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
       }
     }
     return "";
@@ -292,84 +314,134 @@ export const DatePicker = ({
   const displayValue = getDisplayValue();
 
   return (
-    <div className={`dp ${isOpen ? "dp--open" : ""} ${disabled ? "dp--disabled" : ""}`} ref={containerRef}>
-      {label && <label className="dp-label">{label}</label>}
-      <div className="dp-trigger">
+    <div
+      className={cn(
+        "relative flex flex-col gap-1.5",
+        isOpen && "z-[101]",
+        disabled && "opacity-60",
+      )}
+      ref={containerRef}
+    >
+      {label ? (
+        <label className="text-[0.6875rem] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+          {label}
+        </label>
+      ) : null}
+
+      <div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[0.8125rem] shadow-none transition-colors hover:border-ring/40 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30">
         <button
           type="button"
-          className="dp-trigger__button"
+          className="flex h-full w-full cursor-pointer items-center gap-2 bg-transparent p-0 text-[0.8125rem] font-medium text-foreground disabled:cursor-not-allowed"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           aria-label={label || placeholder}
         >
-          <SOIcon name="calendar" size={16} />
-          <span className={`dp-trigger__text ${!displayValue ? "dp-trigger__text--placeholder" : ""}`}>
+          <Calendar className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span
+            className={cn(
+              "flex-1 text-left",
+              !displayValue && "text-muted-foreground",
+            )}
+          >
             {displayValue || placeholder}
           </span>
-          {displayValue && (
-            <button
-              type="button"
-              className="dp-trigger__clear"
+          {displayValue ? (
+            <span
+              role="button"
+              tabIndex={0}
+              className="flex size-5 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 handleClear();
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleClear();
+                }
+              }}
               aria-label="Clear date"
             >
-              <SOIcon name="close" size={14} />
-            </button>
-          )}
+              <X className="size-3.5" aria-hidden />
+            </span>
+          ) : null}
         </button>
       </div>
 
-      {isOpen && (
-        <div className="dp-dropdown">
-          <div className="dp-header">
-            <button type="button" className="dp-nav-btn" onClick={handlePrevMonth} aria-label="Previous month">
-              <SOIcon name="chevron-left" size={18} />
+      {isOpen ? (
+        <div className="absolute top-[calc(100%+0.5rem)] left-0 z-[100] min-w-[18rem] w-full rounded-xl border border-border bg-card shadow-lg">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <button
+              type="button"
+              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
+              onClick={handlePrevMonth}
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="size-4" aria-hidden />
             </button>
-            <span className="dp-month-year">
+            <span className="text-sm font-semibold text-foreground">
               {MONTHS[month]} {year}
             </span>
-            <button type="button" className="dp-nav-btn" onClick={handleNextMonth} aria-label="Next month">
-              <SOIcon name="chevron-right" size={18} />
+            <button
+              type="button"
+              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
+              onClick={handleNextMonth}
+              aria-label="Next month"
+            >
+              <ChevronRight className="size-4" aria-hidden />
             </button>
           </div>
 
-          <div className="dp-weekdays">
+          <div className="grid grid-cols-7 gap-1 px-3 pt-2 pb-1">
             {DAYS.map((day) => (
-              <div key={day} className="dp-weekday">
+              <div
+                key={day}
+                className="text-center text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase"
+              >
                 {day}
               </div>
             ))}
           </div>
 
-          <div className="dp-days">{renderCalendarDays()}</div>
+          <div className="grid grid-cols-7 place-items-center gap-1 px-3 pb-3 pt-1">
+            {renderCalendarDays()}
+          </div>
 
-          {showTime && mode !== "daterange" && (
-            <div className="dp-time-picker">
-              <label className="dp-time-label">Time</label>
+          {showTime && mode !== "daterange" ? (
+            <div className="flex items-center gap-2 border-t border-border px-4 py-3">
+              <label className="text-xs font-medium text-muted-foreground">
+                Time
+              </label>
               <input
                 type="time"
-                className="dp-time-input"
+                className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground"
                 value={timeValue}
                 onChange={(e) => setTimeValue(e.target.value)}
               />
             </div>
-          )}
+          ) : null}
 
-          <div className="dp-footer">
-            <button type="button" className="dp-footer-btn" onClick={handleToday}>
+          <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-2.5">
+            <button
+              type="button"
+              className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+              onClick={handleToday}
+            >
               Today
             </button>
-            {displayValue && (
-              <button type="button" className="dp-footer-btn dp-footer-btn--clear" onClick={handleClear}>
+            {displayValue ? (
+              <button
+                type="button"
+                className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted"
+                onClick={handleClear}
+              >
                 Clear
               </button>
-            )}
+            ) : null}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

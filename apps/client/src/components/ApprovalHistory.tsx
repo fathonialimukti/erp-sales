@@ -1,21 +1,23 @@
 import { useMemo, useState } from "react";
-import { Icon } from "../ui";
+import { History } from "lucide-react";
 import { useIntl } from "react-intl";
-import { Button } from "../ui/Button";
-import { Modal, ModalHeader, ModalBody } from "../ui/Modal";
-import { EmptyState } from "../ui/EmptyState";
-import "./ApprovalHistory.css";
+
+import { EmptyState } from "@/components/EmptyState";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface ApprovalHistoryEntry {
   message: string | null;
   process: string;
   userName: string;
   timeframe: string;
-}
-
-interface TimelineTone {
-  badgeClass: string;
-  dotClass: string;
 }
 
 interface ApprovalHistoryProps {
@@ -50,12 +52,28 @@ const parseApprovalHistory = (value: unknown): ApprovalHistoryEntry[] => {
   });
 };
 
-const getTimelineTone = (process: string): TimelineTone => {
+const processTone = (process: string) => {
   switch (process) {
-    case "APPROVED": return { badgeClass: "ah-badge--approved", dotClass: "ah-dot--approved" };
-    case "REJECTED": return { badgeClass: "ah-badge--rejected", dotClass: "ah-dot--rejected" };
-    case "PROPOSED": return { badgeClass: "ah-badge--proposed", dotClass: "ah-dot--proposed" };
-    default: return { badgeClass: "ah-badge--default", dotClass: "ah-dot--default" };
+    case "APPROVED":
+      return {
+        badge: "border-transparent bg-success/15 text-success",
+        dot: "bg-success",
+      };
+    case "REJECTED":
+      return {
+        badge: "border-transparent bg-destructive/10 text-destructive",
+        dot: "bg-destructive",
+      };
+    case "PROPOSED":
+      return {
+        badge: "border-transparent bg-warning/15 text-warning",
+        dot: "bg-warning",
+      };
+    default:
+      return {
+        badge: "border-transparent bg-muted text-muted-foreground",
+        dot: "bg-muted-foreground",
+      };
   }
 };
 
@@ -66,7 +84,10 @@ const formatDate = (timeframe: string, fallback: string) => {
   return d.toLocaleString();
 };
 
-export const ApprovalHistory = ({ approvalHistory, history }: ApprovalHistoryProps) => {
+export const ApprovalHistory = ({
+  approvalHistory,
+  history,
+}: ApprovalHistoryProps) => {
   const intl = useIntl();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -89,50 +110,67 @@ export const ApprovalHistory = ({ approvalHistory, history }: ApprovalHistoryPro
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(true)}
-        leftIcon={<Icon icon="solar:history-linear" />}
-      >
-        {intl.formatMessage({ id: "activitylog_audittraildetail", defaultMessage: "Audit Trail" })}
+      <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
+        <History className="size-4" aria-hidden />
+        {intl.formatMessage({
+          id: "activitylog_audittraildetail",
+          defaultMessage: "Audit Trail",
+        })}
       </Button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="lg">
-        <ModalHeader onClose={() => setIsOpen(false)}>
-          {intl.formatMessage({ id: "activitylog_audittraildetail", defaultMessage: "Audit Trail" })}
-        </ModalHeader>
-        <ModalBody>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {intl.formatMessage({
+                id: "activitylog_audittraildetail",
+                defaultMessage: "Audit Trail",
+              })}
+            </DialogTitle>
+          </DialogHeader>
+
           {entries.length === 0 ? (
             <EmptyState
-              icon="solar:history-linear"
               title={intl.formatMessage({
                 id: "activitylog_detail_nodetails",
                 defaultMessage: "No details available.",
               })}
             />
           ) : (
-            <ol className="ah-timeline">
+            <ol className="relative flex flex-col gap-4 border-l border-border pl-5">
               {entries.map((entry, idx) => {
-                const tone = getTimelineTone(entry.process);
+                const tone = processTone(entry.process);
                 return (
-                  <li key={idx} className="ah-entry">
-                    <span className={`ah-dot ${tone.dotClass}`} />
-                    <div className="ah-entry__content">
-                      <div className="ah-entry__header">
-                        <span className={`ah-badge ${tone.badgeClass}`}>{entry.process}</span>
-                        <span className="ah-entry__time">{formatDate(entry.timeframe, unknownTime)}</span>
+                  <li key={idx} className="relative">
+                    <span
+                      className={cn(
+                        "absolute top-1 -left-[27px] size-3 rounded-full ring-2 ring-card",
+                        tone.dot,
+                      )}
+                    />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className={tone.badge}>{entry.process}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(entry.timeframe, unknownTime)}
+                        </span>
                       </div>
-                      <p className="ah-entry__user">{entry.userName}</p>
-                      {entry.message && <p className="ah-entry__message">{entry.message}</p>}
+                      <p className="text-sm font-medium text-foreground">
+                        {entry.userName}
+                      </p>
+                      {entry.message ? (
+                        <p className="text-sm text-muted-foreground">
+                          {entry.message}
+                        </p>
+                      ) : null}
                     </div>
                   </li>
                 );
               })}
             </ol>
           )}
-        </ModalBody>
-      </Modal>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
