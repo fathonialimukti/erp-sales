@@ -8,6 +8,7 @@ import { SearchPalette } from "@/components/SearchPalette";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { UserMenuPopover } from "@/components/UserMenuPopover";
+import { PageTransition } from "@/components/motion/PageTransition";
 import { sidebarOpenAtom } from "@/lib/atoms";
 import {
   requestPushPermission,
@@ -49,7 +50,9 @@ export const PrivateLayout = () => {
       >
         <Topbar />
         <main className="min-h-0 flex-1 overflow-auto rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm md:p-6">
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
 

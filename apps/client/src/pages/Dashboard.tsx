@@ -16,6 +16,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Stagger, StaggerItem } from "../components/motion/Stagger";
 import { trpcClient } from "../lib/trpc";
 import { authUserAtom, hasPermissionAtom } from "../lib/atoms";
 import { Skeleton } from "../ui/Skeleton";
@@ -386,44 +387,50 @@ export const Dashboard = () => {
       </section>
 
       {/* ============== 3 SECONDARY METRIC ROWS (iOS list style) ============== */}
-      <section className="ios-dash__metrics" aria-label="Key metrics">
-        <IosMetricRow
-          icon={icons.dashOrders}
-          tint="blue"
-          label={intl.formatMessage({ id: "dashboard.kpi.open_orders", defaultMessage: "Open orders" })}
-          value={sales ? formatCompact(sales.kpis.openOrders) : null}
-          detail={
-            sales
-              ? `${sales.kpis.draftOrders} ${intl.formatMessage({ id: "dashboard.kpi.draft", defaultMessage: "draft" })} · ${sales.kpis.proposedOrders} ${intl.formatMessage({ id: "dashboard.kpi.proposed", defaultMessage: "proposed" })}`
-              : null
-          }
-          isLoading={isLoading}
-        />
-        <IosMetricRow
-          icon={icons.dashCustomers}
-          tint="pink"
-          label={intl.formatMessage({ id: "dashboard.kpi.customers", defaultMessage: "Customers" })}
-          value={sales ? formatCompact(sales.kpis.customerCount) : null}
-          detail={
-            sales
-              ? `${sales.kpis.skuCount} ${intl.formatMessage({ id: "dashboard.kpi.skus", defaultMessage: "SKUs" })} · ${sales.kpis.activeSkuCount} ${intl.formatMessage({ id: "dashboard.kpi.active", defaultMessage: "active" })}`
-              : null
-          }
-          isLoading={isLoading}
-        />
-        <IosMetricRow
-          icon={icons.dashVisits}
-          tint="orange"
-          label={intl.formatMessage({ id: "dashboard.kpi.visits", defaultMessage: "Visit logs" })}
-          value={sales ? formatCompact(sales.kpis.visitCount) : null}
-          detail={
-            sales
-              ? `${sales.kpis.orderItemsThisMonth} ${intl.formatMessage({ id: "dashboard.kpi.line_items", defaultMessage: "line items this month" })}`
-              : null
-          }
-          isLoading={isLoading}
-        />
-      </section>
+      <Stagger className="ios-dash__metrics" aria-label="Key metrics">
+        <StaggerItem>
+          <IosMetricRow
+            icon={icons.dashOrders}
+            tint="blue"
+            label={intl.formatMessage({ id: "dashboard.kpi.open_orders", defaultMessage: "Open orders" })}
+            value={sales ? formatCompact(sales.kpis.openOrders) : null}
+            detail={
+              sales
+                ? `${sales.kpis.draftOrders} ${intl.formatMessage({ id: "dashboard.kpi.draft", defaultMessage: "draft" })} · ${sales.kpis.proposedOrders} ${intl.formatMessage({ id: "dashboard.kpi.proposed", defaultMessage: "proposed" })}`
+                : null
+            }
+            isLoading={isLoading}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <IosMetricRow
+            icon={icons.dashCustomers}
+            tint="pink"
+            label={intl.formatMessage({ id: "dashboard.kpi.customers", defaultMessage: "Customers" })}
+            value={sales ? formatCompact(sales.kpis.customerCount) : null}
+            detail={
+              sales
+                ? `${sales.kpis.skuCount} ${intl.formatMessage({ id: "dashboard.kpi.skus", defaultMessage: "SKUs" })} · ${sales.kpis.activeSkuCount} ${intl.formatMessage({ id: "dashboard.kpi.active", defaultMessage: "active" })}`
+                : null
+            }
+            isLoading={isLoading}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <IosMetricRow
+            icon={icons.dashVisits}
+            tint="orange"
+            label={intl.formatMessage({ id: "dashboard.kpi.visits", defaultMessage: "Visit logs" })}
+            value={sales ? formatCompact(sales.kpis.visitCount) : null}
+            detail={
+              sales
+                ? `${sales.kpis.orderItemsThisMonth} ${intl.formatMessage({ id: "dashboard.kpi.line_items", defaultMessage: "line items this month" })}`
+                : null
+            }
+            isLoading={isLoading}
+          />
+        </StaggerItem>
+      </Stagger>
 
       {/* ============== REVENUE TREND CARD ============== */}
       <section className="ios-dash__card" aria-label="Revenue trend">

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
 import { Search } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { icons } from "@/assets/icons";
 import { NavModuleTile } from "@/components/NavModuleTile";
@@ -13,6 +14,7 @@ import {
   searchOpenAtom,
   sidebarOpenAtom,
 } from "@/lib/atoms";
+import { fadeIn, getMotionProps } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { ModuleKey } from "@/types/module";
 import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
@@ -86,6 +88,7 @@ export const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
   const setSearchOpen = useSetAtom(searchOpenAtom);
   const isLgUp = useMediaQuery("(min-width: 1024px)");
+  const reducedMotion = useReducedMotion();
 
   const [tooltip, setTooltip] = useState<{ label: string; top: number } | null>(
     null,
@@ -177,9 +180,11 @@ export const Sidebar = () => {
   });
 
   return (
-    <aside
+    <motion.aside
       aria-label="Sidebar"
       data-collapsed={isCollapsed || undefined}
+      variants={fadeIn}
+      {...getMotionProps(reducedMotion)}
       className={cn(
         "fixed top-3 bottom-3 left-3 z-100 flex flex-col overflow-visible",
         "rounded-2xl border border-border bg-card/95 shadow-sm backdrop-blur-xl",
@@ -371,6 +376,6 @@ export const Sidebar = () => {
         tabIndex={-1}
         aria-hidden
       />
-    </aside>
+    </motion.aside>
   );
 };

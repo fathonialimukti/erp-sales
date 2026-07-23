@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useIntl } from "react-intl";
+import { motion, useReducedMotion } from "motion/react";
+import { Stagger, StaggerItem } from "../components/motion/Stagger";
+import { fadeIn, getMotionProps } from "../lib/motion";
 import { Button } from "../ui/Button";
 import { DecorBlob, HeroDashboard, ApprovalFlow, EmailToOrderFlow, AiWorkflow } from "./landing-assets";
 import "./LandingPage.css";
@@ -101,6 +104,8 @@ const FOOTER_LINKS = [
 export const LandingPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
+  const reducedMotion = useReducedMotion();
+  const softEnter = getMotionProps(reducedMotion);
 
   const t = (id: string, fallback: string) => intl.formatMessage({ id, defaultMessage: fallback });
 
@@ -176,35 +181,47 @@ export const LandingPage = () => {
         <DecorBlob className="landing__hero-blob landing__hero-blob--1" variant="a" />
         <DecorBlob className="landing__hero-blob landing__hero-blob--2" variant="b" />
         <div className="landing__hero-inner">
-          <div className="landing__hero-copy">
-            <span className="landing__badge reveal stagger-1">
-              <Icon name="star" />
-              {t("landing.badge", "ERP SALES")}
-            </span>
-            <h1 className="landing__title reveal stagger-2">{t("landing.hero_title", "Sales Management, Reimagined")}</h1>
-            <p className="landing__desc reveal stagger-3">{t("landing.hero_subtitle", "One platform to manage customers, outlets, sales orders, visits, and approvals.")}</p>
-            <div className="landing__actions reveal stagger-4">
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => navigate("/login")}
-                leftIcon={<Icon name="login" />}
-              >
-                {t("landing.cta_primary", "Sign In")}
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => scrollTo("features")}
-                rightIcon={<Icon name="arrowDown" />}
-              >
-                {t("landing.cta_secondary", "Learn More")}
-              </Button>
-            </div>
-          </div>
-          <div className="landing__hero-art reveal stagger-3">
+          <Stagger className="landing__hero-copy">
+            <StaggerItem>
+              <span className="landing__badge">
+                <Icon name="star" />
+                {t("landing.badge", "ERP SALES")}
+              </span>
+            </StaggerItem>
+            <StaggerItem>
+              <h1 className="landing__title">{t("landing.hero_title", "Sales Management, Reimagined")}</h1>
+            </StaggerItem>
+            <StaggerItem>
+              <p className="landing__desc">{t("landing.hero_subtitle", "One platform to manage customers, outlets, sales orders, visits, and approvals.")}</p>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="landing__actions">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate("/login")}
+                  leftIcon={<Icon name="login" />}
+                >
+                  {t("landing.cta_primary", "Sign In")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => scrollTo("features")}
+                  rightIcon={<Icon name="arrowDown" />}
+                >
+                  {t("landing.cta_secondary", "Learn More")}
+                </Button>
+              </div>
+            </StaggerItem>
+          </Stagger>
+          <motion.div
+            className="landing__hero-art"
+            variants={fadeIn}
+            {...softEnter}
+          >
             <HeroDashboard className="landing__hero-dashboard" />
-          </div>
+          </motion.div>
         </div>
         <div className="landing__scroll-hint" aria-hidden="true">
           <Icon name="arrowDown" />

@@ -3,6 +3,13 @@ import { Navigate, useNavigate } from "react-router";
 import { useForm } from "@tanstack/react-form";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
+import { motion, useReducedMotion } from "motion/react";
+import {
+  getMotionProps,
+  pageEnter,
+  staggerContainer,
+  staggerItem,
+} from "../lib/motion";
 
 const Svg = ({ d, size = 18 }: { d: string; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -54,6 +61,8 @@ export const LoginPage = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const toast = useToast();
+  const reducedMotion = useReducedMotion();
+  const enterProps = getMotionProps(reducedMotion);
 
   const copyrightYear = useMemo(() => new Date().getFullYear(), []);
 
@@ -87,15 +96,19 @@ export const LoginPage = () => {
             <span className="login-brand__noise" />
           </div>
 
-          <div className="login-brand__inner">
-            <div className="login-brand__top">
+          <motion.div
+            className="login-brand__inner"
+            variants={staggerContainer}
+            {...enterProps}
+          >
+            <motion.div className="login-brand__top" variants={staggerItem}>
               <div className="login-brand__mark">
                 <Svg d={ICONS.brand} />
               </div>
               <span className="login-brand__name">ERP Sales</span>
-            </div>
+            </motion.div>
 
-            <div className="login-brand__hero">
+            <motion.div className="login-brand__hero" variants={staggerItem}>
               <span className="login-brand__kicker">
                 {intl.formatMessage({ id: "login.brand_kicker" })}
               </span>
@@ -105,9 +118,13 @@ export const LoginPage = () => {
               <p className="login-brand__subtitle">
                 {intl.formatMessage({ id: "login.brand_subtitle" })}
               </p>
-            </div>
+            </motion.div>
 
-            <div className="login-brand__stats" role="list">
+            <motion.div
+              className="login-brand__stats"
+              role="list"
+              variants={staggerItem}
+            >
               <div className="login-stat" role="listitem">
                 <span className="login-stat__icon">
                   <Svg d={ICONS.orders} />
@@ -135,9 +152,9 @@ export const LoginPage = () => {
                   {intl.formatMessage({ id: "login.stat_approvals_label" })}
                 </span>
               </div>
-            </div>
+            </motion.div>
 
-            <ul className="login-brand__features">
+            <motion.ul className="login-brand__features" variants={staggerItem}>
               <li className="login-feature">
                 <span className="login-feature__icon">
                   <Svg d={ICONS.shield} />
@@ -177,9 +194,9 @@ export const LoginPage = () => {
                   </span>
                 </div>
               </li>
-            </ul>
+            </motion.ul>
 
-            <figure className="login-brand__quote">
+            <motion.figure className="login-brand__quote" variants={staggerItem}>
               <span className="login-brand__quote-mark"><Svg d={ICONS.quote} /></span>
               <blockquote className="login-brand__quote-text">
                 {intl.formatMessage({ id: "login.testimonial_quote" })}
@@ -187,8 +204,8 @@ export const LoginPage = () => {
               <figcaption className="login-brand__quote-author">
                 {intl.formatMessage({ id: "login.testimonial_author" })}
               </figcaption>
-            </figure>
-          </div>
+            </motion.figure>
+          </motion.div>
         </aside>
 
         {/* ── RIGHT: Form panel ── */}
@@ -218,7 +235,11 @@ export const LoginPage = () => {
           </div>
 
           <div className="login-form-panel__center">
-            <div className="login-form-card">
+            <motion.div
+              className="login-form-card"
+              variants={pageEnter}
+              {...enterProps}
+            >
               <header className="login-form-card__head">
                 <span className="login-form-card__kicker">
                   {intl.formatMessage({ id: "login.form_kicker" })}
@@ -385,7 +406,7 @@ export const LoginPage = () => {
                 <Svg d={ICONS.shieldCheck} size={16} />
                 <span>{intl.formatMessage({ id: "login.secure_note" })}</span>
               </footer>
-            </div>
+            </motion.div>
           </div>
 
           <div className="login-form-panel__bottom">
