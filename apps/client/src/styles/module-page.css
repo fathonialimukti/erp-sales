@@ -1332,6 +1332,24 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Nested line-item density (compact) — detail nested lists (m- and so- prefixes) */
+.m-items-table--compact,
+.m-items-table.tbl--compact,
+.so-items-table--compact {
+  font-size: 12.5px;
+}
+
+.m-items-table--compact .m-items-table__header,
+.m-items-table--compact .m-items-table__row,
+.m-items-table.tbl--compact .m-items-table__header,
+.m-items-table.tbl--compact .m-items-table__row,
+.so-items-table--compact .so-items-table__header,
+.so-items-table--compact .so-items-table__row {
+  padding: 6px 10px;
+  gap: 0.375rem;
+  min-height: 32px;
+}
+
 .m-items-table__header {
   display: grid;
   grid-template-columns:

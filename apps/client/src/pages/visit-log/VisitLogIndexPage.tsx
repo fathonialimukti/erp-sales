@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { Chip } from "../../ui/Chip";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
@@ -24,6 +25,14 @@ type VisitLogRow = {
   salesman: { id: string; name: string };
   outlet: { id: string; name: string } | null;
   approvalStatus: string;
+};
+
+const APPROVAL_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  DRAFT: "neutral",
+  VALIDATING: "warning",
+  PROPOSED: "info",
+  APPROVED: "success",
+  REJECTED: "danger",
 };
 
 export const VisitLogIndexPage = () => {
@@ -57,7 +66,18 @@ export const VisitLogIndexPage = () => {
   const totalPages = data?.meta?.totalPages ?? 1;
   const totalRows = data?.meta?.total ?? 0;
 
-  const columns = useMemo<ColumnDef<VisitLogRow>[]>(() => [
+  const columns = useMemo<ColumnDef<VisitLogRow>[]>(() => {
+    const statusLabel = (status: string) => {
+      const s = status.toUpperCase();
+      if (s === "DRAFT") return intl.formatMessage({ id: "visit_log.index.status_draft", defaultMessage: "Draft" });
+      if (s === "VALIDATING") return intl.formatMessage({ id: "visit_log.index.status_validating", defaultMessage: "AI Processing" });
+      if (s === "PROPOSED") return intl.formatMessage({ id: "visit_log.index.status_proposed", defaultMessage: "Pending Approval" });
+      if (s === "APPROVED") return intl.formatMessage({ id: "visit_log.index.status_approved", defaultMessage: "Approved" });
+      if (s === "REJECTED") return intl.formatMessage({ id: "visit_log.index.status_rejected", defaultMessage: "Rejected" });
+      return status;
+    };
+
+    return [
     {
       id: "date", header: intl.formatMessage({ id: "visit_log.index.header_code", defaultMessage: "Date" }),
       cell: ({ row }) => (
@@ -78,7 +98,11 @@ export const VisitLogIndexPage = () => {
     },
     {
       id: "status", header: intl.formatMessage({ id: "visit_log.index.header_status", defaultMessage: "Status" }),
-      cell: ({ row }) => <span className="m-cell m-cell--single"><span className="m-cell__primary">{row.original.approvalStatus}</span></span>,
+      cell: ({ row }) => (
+        <Chip tone={APPROVAL_TONE[row.original.approvalStatus] ?? "neutral"} size="sm">
+          {statusLabel(row.original.approvalStatus)}
+        </Chip>
+      ),
     },
     {
       id: "actions", header: "",
@@ -93,7 +117,8 @@ export const VisitLogIndexPage = () => {
         />
       ),
     },
-  ], [intl, navigate, canUpdate, canDelete]);
+  ];
+  }, [intl, navigate, canUpdate, canDelete]);
 
   const table = useReactTable({
     data: rows, columns, pageCount: totalPages,
@@ -140,6 +165,7 @@ export const VisitLogIndexPage = () => {
       </div>
 
       <ModuleTable
+        density="crm"
         table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
         pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
         onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}

@@ -138,6 +138,7 @@ export const RolesIndexPage = () => {
       </div>
 
       <ModuleTable
+        density="crm"
         table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
         onRowClick={(row) => navigate(`/access-control/${row.id}`)}
         pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}

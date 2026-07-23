@@ -159,7 +159,7 @@ export const AreaDetailPage = () => {
               <p style={{ marginTop: 12, color: "var(--ios-label-2)" }}>{intl.formatMessage({ id: "area.detail.no_outlets", defaultMessage: "No outlets yet" })}</p>
             </div>
           ) : (
-            <div className="so-items-table">
+            <div className="so-items-table so-items-table--compact">
               <div className="so-items-table__body">
                 {area.outlets.map((outlet) => (
                   <div key={outlet.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/outlet/${outlet.id}`)}>

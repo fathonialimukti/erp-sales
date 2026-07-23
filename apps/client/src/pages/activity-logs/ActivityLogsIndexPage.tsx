@@ -123,6 +123,7 @@ export const ActivityLogsIndexPage = () => {
       </div>
 
       <ModuleTable
+        density="crm"
         table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
         pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
         onRowClick={(row) => navigate(`/activity-logs/${row.id}`)}

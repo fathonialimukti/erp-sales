@@ -196,7 +196,7 @@ export const RoleDetailPage = () => {
             <p className="m-card__hint">{intl.formatMessage({ id: "roles.detail.no_users", defaultMessage: "No users assigned to this role." })}</p>
           ) : (
             <div className="m-table-card" style={{ background: "transparent", border: "none", boxShadow: "none", backdropFilter: "none", padding: 0 }}>
-              <table className="m-table">
+              <table className="m-table tbl tbl--compact">
                 <thead>
                   <tr>
                     <th>{intl.formatMessage({ id: "roles.detail.user_name", defaultMessage: "Name" })}</th>

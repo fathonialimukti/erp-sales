@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { Chip } from "../../ui/Chip";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 import { ButtonGroup } from "../../components/ButtonGroup";
@@ -162,10 +163,13 @@ export const SkuDetailPage = () => {
             <div className="m-field">
               <span className="m-field__label">{intl.formatMessage({ id: "sku.detail.status_label", defaultMessage: "Status" })}</span>
               <span className="m-field__value">
-                <span className={`m-status ${sku.status === "ACTIVE" ? "m-status--success" : "m-status--neutral"}`}>
-                  <span className="m-status__dot" aria-hidden="true" />
-                  {sku.status}
-                </span>
+                <Chip tone={sku.status === "ACTIVE" ? "success" : "neutral"} size="sm">
+                  {sku.status === "ACTIVE"
+                    ? intl.formatMessage({ id: "sku.detail.status_active", defaultMessage: "Active" })
+                    : sku.status === "INACTIVE"
+                      ? intl.formatMessage({ id: "sku.detail.status_inactive", defaultMessage: "Inactive" })
+                      : sku.status}
+                </Chip>
               </span>
             </div>
           </div>

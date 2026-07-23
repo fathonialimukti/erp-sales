@@ -130,6 +130,7 @@ export const SkuCategoryIndexPage = () => {
       </div>
 
       <ModuleTable
+        density="crm"
         table={table} totalRows={totalRows} totalPages={totalPages} isLoading={isLoading}
         pageIndex={pagination.pageIndex} pageSize={pagination.pageSize}
         onPageChange={(p) => setPagination({ pageIndex: p, pageSize: pagination.pageSize })}

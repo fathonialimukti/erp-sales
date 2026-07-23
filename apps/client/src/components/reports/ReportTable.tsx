@@ -20,7 +20,7 @@ export const ReportTable = ({ columns, rows, emptyMessage }: ReportTableProps) =
   }
   return (
     <div className="report-table-wrap">
-      <Table>
+      <Table density="crm">
         <THead>
           <TR>
             {columns.map((c) => (

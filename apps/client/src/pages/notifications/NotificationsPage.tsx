@@ -126,7 +126,7 @@ const NotificationsPage = () => {
         />
       ) : (
         <div className="m-table-card">
-          <div className="m-items-table">
+          <div className="m-items-table m-items-table--compact">
             <div className="m-items-table__body">
               {rows.map((n) => (
                 <div

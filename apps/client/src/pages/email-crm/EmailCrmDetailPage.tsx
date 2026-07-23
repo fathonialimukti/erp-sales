@@ -7,11 +7,33 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
+import { Chip } from "../../ui/Chip";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 import { EmailCrmIcon } from "./EmailCrmIcons";
 
 type AgentStatus = "IDLE" | "RUNNING" | "SENT" | "FAILED" | string;
+
+const STATUS_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  OPEN: "info",
+  PENDING: "warning",
+  RESOLVED: "success",
+  SPAM: "neutral",
+};
+
+const PRIORITY_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  LOW: "neutral",
+  NORMAL: "info",
+  HIGH: "warning",
+  URGENT: "danger",
+};
+
+const AGENT_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  IDLE: "neutral",
+  RUNNING: "warning",
+  SENT: "success",
+  FAILED: "danger",
+};
 
 type EmailMessage = {
   id: string;
@@ -365,13 +387,35 @@ export const EmailCrmDetailPage = () => {
               <span className="so-field__label">
                 {intl.formatMessage({ id: "emailCrm.form.status", defaultMessage: "Status" })}
               </span>
-              <span className="so-field__value">{conversation.status}</span>
+              <span className="so-field__value">
+                <Chip tone={STATUS_TONE[conversation.status] ?? "neutral"} size="sm">
+                  {(() => {
+                    const s = conversation.status.toUpperCase();
+                    if (s === "OPEN") return intl.formatMessage({ id: "emailCrm.index.status_open", defaultMessage: "Open" });
+                    if (s === "PENDING") return intl.formatMessage({ id: "emailCrm.index.status_pending", defaultMessage: "Pending" });
+                    if (s === "RESOLVED") return intl.formatMessage({ id: "emailCrm.index.status_resolved", defaultMessage: "Resolved" });
+                    if (s === "SPAM") return intl.formatMessage({ id: "emailCrm.index.status_spam", defaultMessage: "Spam" });
+                    return conversation.status;
+                  })()}
+                </Chip>
+              </span>
             </div>
             <div className="so-field">
               <span className="so-field__label">
                 {intl.formatMessage({ id: "emailCrm.form.priority", defaultMessage: "Priority" })}
               </span>
-              <span className="so-field__value">{conversation.priority}</span>
+              <span className="so-field__value">
+                <Chip tone={PRIORITY_TONE[conversation.priority] ?? "neutral"} size="sm">
+                  {(() => {
+                    const p = conversation.priority.toUpperCase();
+                    if (p === "LOW") return intl.formatMessage({ id: "emailCrm.index.priority_low", defaultMessage: "Low" });
+                    if (p === "NORMAL") return intl.formatMessage({ id: "emailCrm.index.priority_normal", defaultMessage: "Normal" });
+                    if (p === "HIGH") return intl.formatMessage({ id: "emailCrm.index.priority_high", defaultMessage: "High" });
+                    if (p === "URGENT") return intl.formatMessage({ id: "emailCrm.index.priority_urgent", defaultMessage: "Urgent" });
+                    return conversation.priority;
+                  })()}
+                </Chip>
+              </span>
             </div>
             <div className="so-field">
               <span className="so-field__label">
@@ -408,7 +452,15 @@ export const EmailCrmDetailPage = () => {
               <span className="so-field__label">
                 {intl.formatMessage({ id: "emailCrm.detail.agent_status", defaultMessage: "Agent" })}
               </span>
-              <span className="so-field__value">{agentStatus}</span>
+              <span className="so-field__value">
+                <Chip tone={AGENT_TONE[agentStatus] ?? "neutral"} size="sm">
+                  {agentRunning
+                    ? intl.formatMessage({ id: "emailCrm.detail.agent_running", defaultMessage: "Agent is running…" })
+                    : agentStatus === "FAILED"
+                      ? intl.formatMessage({ id: "emailCrm.detail.agent_failed", defaultMessage: "Agent failed" })
+                      : agentStatus}
+                </Chip>
+              </span>
             </div>
           </div>
         </div>
@@ -589,7 +641,7 @@ export const EmailCrmDetailPage = () => {
               </p>
             </div>
           ) : (
-            <div className="so-items-table">
+            <div className="so-items-table so-items-table--compact">
               <div className="so-items-table__body">
                 {conversation.salesOrders.map((order) => (
                   <div

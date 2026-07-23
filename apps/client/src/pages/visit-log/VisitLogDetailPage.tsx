@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
+import { Chip } from "../../ui/Chip";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 import { Modal, ModalHeader, ModalBody } from "../../ui";
@@ -27,6 +28,14 @@ type VisitLogDetail = {
   salesman: { id: string; name: string } | null;
   outlet: { id: string; name: string; customer: { id: string; name: string } | null; area: { id: string; name: string } | null } | null;
   salesOrder: { id: string; documentNumber: string | null; grandTotal: number | null } | null;
+};
+
+const APPROVAL_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  DRAFT: "neutral",
+  VALIDATING: "warning",
+  PROPOSED: "info",
+  APPROVED: "success",
+  REJECTED: "danger",
 };
 
 export const VisitLogDetailPage = () => {
@@ -196,7 +205,19 @@ export const VisitLogDetailPage = () => {
             </div>
             <div className="so-field">
               <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.status_label", defaultMessage: "Status" })}</span>
-              <span className="so-field__value">{visitLog.approvalStatus}</span>
+              <span className="so-field__value">
+                <Chip tone={APPROVAL_TONE[visitLog.approvalStatus] ?? "neutral"} size="sm">
+                  {(() => {
+                    const s = visitLog.approvalStatus.toUpperCase();
+                    if (s === "DRAFT") return intl.formatMessage({ id: "visit_log.index.status_draft", defaultMessage: "Draft" });
+                    if (s === "VALIDATING") return intl.formatMessage({ id: "visit_log.index.status_validating", defaultMessage: "AI Processing" });
+                    if (s === "PROPOSED") return intl.formatMessage({ id: "visit_log.index.status_proposed", defaultMessage: "Pending Approval" });
+                    if (s === "APPROVED") return intl.formatMessage({ id: "visit_log.index.status_approved", defaultMessage: "Approved" });
+                    if (s === "REJECTED") return intl.formatMessage({ id: "visit_log.index.status_rejected", defaultMessage: "Rejected" });
+                    return visitLog.approvalStatus;
+                  })()}
+                </Chip>
+              </span>
             </div>
             <div className="so-field">
               <span className="so-field__label">{intl.formatMessage({ id: "visit_log.detail.salesman_label", defaultMessage: "Salesman" })}</span>
@@ -228,7 +249,7 @@ export const VisitLogDetailPage = () => {
             </h2>
           </div>
           <div className="so-card__body" style={{ padding: 0 }}>
-            <div className="so-items-table">
+            <div className="so-items-table so-items-table--compact">
               <div className="so-items-table__body">
                 <div className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/sales-order/${visitLog.salesOrder!.id}`)}>
                   <div className="so-items-table__td so-items-table__td--product">

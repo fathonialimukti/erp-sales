@@ -118,6 +118,7 @@ export const KnowledgeBaseIndexPage = () => {
       </div>
 
       <ModuleTable
+        density="crm"
         table={table}
         totalRows={totalRows}
         totalPages={totalPages}

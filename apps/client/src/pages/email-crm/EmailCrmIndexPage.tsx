@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { Chip } from "../../ui/Chip";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "../../ui/Modal";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
@@ -27,6 +28,20 @@ type EmailCrmRow = {
   lastMessageAt: string | Date | null;
   customer: { id: string; name: string; code: string | null } | null;
   _count: { messages: number; salesOrders: number };
+};
+
+const STATUS_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  OPEN: "info",
+  PENDING: "warning",
+  RESOLVED: "success",
+  SPAM: "neutral",
+};
+
+const PRIORITY_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  LOW: "neutral",
+  NORMAL: "info",
+  HIGH: "warning",
+  URGENT: "danger",
 };
 
 const formatDateTime = (value: string | Date | null) => {
@@ -80,7 +95,25 @@ export const EmailCrmIndexPage = () => {
   const totalRows = data?.meta?.total ?? 0;
 
   const columns = useMemo<ColumnDef<EmailCrmRow>[]>(
-    () => [
+    () => {
+      const statusLabel = (status: string) => {
+        const s = status.toUpperCase();
+        if (s === "OPEN") return intl.formatMessage({ id: "emailCrm.index.status_open", defaultMessage: "Open" });
+        if (s === "PENDING") return intl.formatMessage({ id: "emailCrm.index.status_pending", defaultMessage: "Pending" });
+        if (s === "RESOLVED") return intl.formatMessage({ id: "emailCrm.index.status_resolved", defaultMessage: "Resolved" });
+        if (s === "SPAM") return intl.formatMessage({ id: "emailCrm.index.status_spam", defaultMessage: "Spam" });
+        return status;
+      };
+      const priorityLabel = (priority: string) => {
+        const p = priority.toUpperCase();
+        if (p === "LOW") return intl.formatMessage({ id: "emailCrm.index.priority_low", defaultMessage: "Low" });
+        if (p === "NORMAL") return intl.formatMessage({ id: "emailCrm.index.priority_normal", defaultMessage: "Normal" });
+        if (p === "HIGH") return intl.formatMessage({ id: "emailCrm.index.priority_high", defaultMessage: "High" });
+        if (p === "URGENT") return intl.formatMessage({ id: "emailCrm.index.priority_urgent", defaultMessage: "Urgent" });
+        return priority;
+      };
+
+      return [
       {
         id: "email",
         header: intl.formatMessage({ id: "emailCrm.index.col_email", defaultMessage: "Email" }),
@@ -104,12 +137,20 @@ export const EmailCrmIndexPage = () => {
       {
         id: "status",
         header: intl.formatMessage({ id: "emailCrm.index.col_status", defaultMessage: "Status" }),
-        cell: ({ row }) => <span className="m-badge">{row.original.status}</span>,
+        cell: ({ row }) => (
+          <Chip tone={STATUS_TONE[row.original.status] ?? "neutral"} size="sm">
+            {statusLabel(row.original.status)}
+          </Chip>
+        ),
       },
       {
         id: "priority",
         header: intl.formatMessage({ id: "emailCrm.index.col_priority", defaultMessage: "Priority" }),
-        cell: ({ row }) => <span className="m-badge">{row.original.priority}</span>,
+        cell: ({ row }) => (
+          <Chip tone={PRIORITY_TONE[row.original.priority] ?? "neutral"} size="sm">
+            {priorityLabel(row.original.priority)}
+          </Chip>
+        ),
       },
       {
         id: "customer",
@@ -171,7 +212,8 @@ export const EmailCrmIndexPage = () => {
           />
         ),
       },
-    ],
+    ];
+    },
     [intl, navigate, canUpdate, canDelete],
   );
 
@@ -262,6 +304,7 @@ export const EmailCrmIndexPage = () => {
       </div>
 
       <ModuleTable
+        density="crm"
         table={table}
         totalRows={totalRows}
         totalPages={totalPages}

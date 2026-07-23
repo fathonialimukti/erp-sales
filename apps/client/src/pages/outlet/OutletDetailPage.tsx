@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { ButtonGroup } from "../../components/ButtonGroup";
+import { Chip } from "../../ui/Chip";
 import { Spinner } from "../../ui/Spinner";
 import { useToast } from "../../ui/useToast";
 
@@ -154,6 +155,18 @@ export const OutletDetailPage = () => {
               <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.contacts_label", defaultMessage: "Contacts" })}</span>
               <span className="so-field__value">{outlet.contacts?.length ?? 0}</span>
             </div>
+            <div className="so-field">
+              <span className="so-field__label">{intl.formatMessage({ id: "outlet.detail.status_label", defaultMessage: "Status" })}</span>
+              <span className="so-field__value">
+                <Chip tone={outlet.status === "ACTIVE" ? "success" : "neutral"} size="sm">
+                  {outlet.status === "ACTIVE"
+                    ? intl.formatMessage({ id: "outlet.detail.status_active", defaultMessage: "Active" })
+                    : outlet.status === "INACTIVE"
+                      ? intl.formatMessage({ id: "outlet.detail.status_inactive", defaultMessage: "Inactive" })
+                      : outlet.status}
+                </Chip>
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -174,7 +187,7 @@ export const OutletDetailPage = () => {
               <p style={{ marginTop: 12, color: "var(--ios-label-2)" }}>{intl.formatMessage({ id: "outlet.detail.no_contacts", defaultMessage: "No contacts yet" })}</p>
             </div>
           ) : (
-            <div className="so-items-table">
+            <div className="so-items-table so-items-table--compact">
               <div className="so-items-table__body">
                 {outlet.contacts?.map((contact) => (
                   <div key={contact.id} className="so-items-table__row" style={{ cursor: "pointer" }} onClick={() => navigate(`/contact/${contact.id}`)}>
