@@ -3,7 +3,12 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
+import {
+  type ColumnDef,
+  type OnChangeFn,
+  type PaginationState,
+  type SortingState,
+} from "@tanstack/react-table";
 import {
   ArrowDownUp,
   Eye,
@@ -117,6 +122,39 @@ export const SalesOrderIndexPage = () => {
   const [dateTo, setDateTo] = useState("");
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<string>("desc");
+  const sorting = useMemo<SortingState>(
+    () =>
+      sortBy
+        ? [
+            {
+              id: sortBy === "grandTotal" ? "total" : sortBy,
+              desc: sortOrder === "desc",
+            },
+          ]
+        : [],
+    [sortBy, sortOrder],
+  );
+  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
+    const next = typeof updater === "function" ? updater(sorting) : updater;
+    const first = next[0];
+    if (!first) {
+      setSortBy("createdAt");
+      setSortOrder("desc");
+      setPagination((p) => ({ ...p, pageIndex: 0 }));
+      return;
+    }
+    const id = first.id === "total" ? "grandTotal" : first.id;
+    if (
+      id === "createdAt" ||
+      id === "date" ||
+      id === "grandTotal" ||
+      id === "documentNumber"
+    ) {
+      setSortBy(id);
+      setSortOrder(first.desc ? "desc" : "asc");
+      setPagination((p) => ({ ...p, pageIndex: 0 }));
+    }
+  };
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<SalesOrderRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -194,6 +232,8 @@ export const SalesOrderIndexPage = () => {
     () => [
       {
         id: "documentNumber",
+        accessorKey: "documentNumber",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "sales_order.index.header_doc",
           defaultMessage: "Doc #",
@@ -211,6 +251,7 @@ export const SalesOrderIndexPage = () => {
       },
       {
         id: "customer",
+        enableSorting: false,
         header: intl.formatMessage({
           id: "sales_order.index.header_customer",
           defaultMessage: "Customer",
@@ -230,6 +271,7 @@ export const SalesOrderIndexPage = () => {
       },
       {
         id: "area",
+        enableSorting: false,
         header: intl.formatMessage({
           id: "sales_order.index.header_area",
           defaultMessage: "Area",
@@ -240,6 +282,7 @@ export const SalesOrderIndexPage = () => {
       },
       {
         id: "items",
+        enableSorting: false,
         header: intl.formatMessage({
           id: "sales_order.index.header_items",
           defaultMessage: "Items",
@@ -252,6 +295,8 @@ export const SalesOrderIndexPage = () => {
       },
       {
         id: "total",
+        accessorKey: "grandTotal",
+        enableSorting: true,
         header: () => (
           <span className="block text-right">
             {intl.formatMessage({
@@ -271,6 +316,7 @@ export const SalesOrderIndexPage = () => {
       },
       {
         id: "status",
+        enableSorting: false,
         header: intl.formatMessage({
           id: "sales_order.index.header_status",
           defaultMessage: "Status",
@@ -279,6 +325,7 @@ export const SalesOrderIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
@@ -644,6 +691,9 @@ export const SalesOrderIndexPage = () => {
           data={rows}
           isLoading={isLoading}
           isError={isError}
+          sorting={sorting}
+          onSortingChange={handleSortingChange}
+          manualSorting
           onRowClick={(row) => navigate(`/sales-order/${row.id}`)}
           empty={
             <EmptyState

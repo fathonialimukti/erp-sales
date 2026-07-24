@@ -76,6 +76,8 @@ export const CustomerIndexPage = () => {
     return [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "customer.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
@@ -85,6 +87,8 @@ export const CustomerIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "customer.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => (
           <span className="font-medium text-foreground">{row.original.name}</span>
@@ -92,11 +96,15 @@ export const CustomerIndexPage = () => {
       },
       {
         id: "status",
+        accessorKey: "status",
+        enableSorting: true,
         header: intl.formatMessage({ id: "customer.index.header_status", defaultMessage: "Status" }),
         cell: ({ row }) => <StatusChip status={row.original.status} />,
       },
       {
         id: "outlets",
+        accessorFn: (row) => row._count.outlets,
+        enableSorting: true,
         header: intl.formatMessage({ id: "customer.index.header_outlets", defaultMessage: "Outlets" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-muted-foreground">
@@ -106,6 +114,7 @@ export const CustomerIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

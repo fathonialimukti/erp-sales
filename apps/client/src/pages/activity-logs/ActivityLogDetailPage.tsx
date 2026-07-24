@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ScrollText } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,14 +53,16 @@ export const ActivityLogDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "activity-log-detail", notFound: true })}
       >
-        <PageHeader
-          module="user"
-          title={intl.formatMessage({
-            id: "activity_log.detail.not_found",
-            defaultMessage: "Activity log not found",
-          })}
-          onBack={() => navigate("/activity-logs")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/activity-logs")} />
+          <PageHeader
+            module="user"
+            title={intl.formatMessage({
+              id: "activity_log.detail.not_found",
+              defaultMessage: "Activity log not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -77,13 +80,15 @@ export const ActivityLogDetailPage = () => {
         resource: record.resource,
       })}
     >
-      <PageHeader
-        module="user"
-        eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
-        title={new Date(timestamp).toLocaleString("id-ID")}
-        description={`${record.action} · ${record.resource}`}
-        onBack={() => navigate("/activity-logs")}
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/activity-logs")} />
+        <PageHeader
+          module="user"
+          eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+          title={new Date(timestamp).toLocaleString("id-ID")}
+          description={`${record.action} · ${record.resource}`}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

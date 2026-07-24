@@ -8,6 +8,7 @@ import { ChevronRight, KeyRound, Pencil, Shield, Trash2, Users } from "lucide-re
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -91,14 +92,16 @@ export const RoleDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "role-detail", notFound: true })}
       >
-        <PageHeader
-          module="user"
-          title={intl.formatMessage({
-            id: "roles.detail.not_found",
-            defaultMessage: "Role not found",
-          })}
-          onBack={() => navigate("/access-control")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/access-control")} />
+          <PageHeader
+            module="user"
+            title={intl.formatMessage({
+              id: "roles.detail.not_found",
+              defaultMessage: "Role not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -125,33 +128,41 @@ export const RoleDetailPage = () => {
         userCount: role.users.length,
       })}
     >
-      <PageHeader
-        module="user"
-        eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
-        title={role.name}
-        description={role.description ?? undefined}
-        onBack={() => navigate("/access-control")}
-        actions={
-          <>
-            {canUpdate && !role.isSystem ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/access-control/${role.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete && !role.isSystem ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/access-control")}>
+          {canUpdate && !role.isSystem ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/access-control/${role.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete && !role.isSystem ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="user"
+          eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+          title={role.name}
+          description={role.description ?? undefined}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

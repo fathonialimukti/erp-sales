@@ -206,9 +206,10 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
       })}
     >
       <NavButtonGroup
+        className="self-end"
         onBack={() =>
-            navigate(isEdit && conversationId ? `/email-crm/${conversationId}` : "/email-crm")
-          }
+          navigate(isEdit && conversationId ? `/email-crm/${conversationId}` : "/email-crm")
+        }
       />
 
       <PageHeader
@@ -405,14 +406,16 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <Button size="sm"
-              type="submit"
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 px-2.5"
+            type="submit"
               disabled={!canSave || createMutation.isPending || updateMutation.isPending}
             >
               {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
-                <Save className="size-4" aria-hidden />
+                <Save className="size-3.5" aria-hidden />
               )}
               {intl.formatMessage({ id: "emailCrm.common.save", defaultMessage: "Save" })}
             </Button>

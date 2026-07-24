@@ -1,6 +1,48 @@
 import { tool } from 'ai';
 import * as z from 'zod';
+import {
+  searchKnowledgeChunks,
+  toKnowledgeSearchHits,
+} from './rag.js';
 
+/**
+ * Server-side tools — include `execute`. Merged into streamText tools on the server.
+ * Keep separate from clientTools so browser tools stay client-executed only.
+ */
+export const serverTools = {
+  searchKnowledge: tool({
+    description:
+      'Get information from product documentation and the ERP knowledge base (workflows, permissions, navigation, form field names, schema docs). ' +
+      'Call this before answering how-to / process / "what is" / permission / navigation / which page questions when injected docs are empty or insufficient. ' +
+      'Do NOT use for live transactional counts, order totals, inventory levels, or current CRM records — use queryDatabase for those. ' +
+      'Returns ranked documentation hits with title, source, and snippet.',
+    inputSchema: z.object({
+      query: z
+        .string()
+        .min(1)
+        .describe(
+          'Natural language or keyword search over documentation (e.g. "approval workflow", "sales-order@approve", "create customer fields")',
+        ),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(10)
+        .default(5)
+        .optional()
+        .describe('Max documentation hits to return (1-10, default 5)'),
+    }),
+    execute: async ({ query, limit }) => {
+      // Hybrid FTS + vector (falls back to FTS-only when embeddings unavailable).
+      const hits = await searchKnowledgeChunks(query, limit ?? 5);
+      const searchHits = toKnowledgeSearchHits(hits);
+      return {
+        hits: searchHits,
+        count: searchHits.length,
+      };
+    },
+  }),
+};
 
 /**
  * Client-side tools — NO `execute`. These are returned as tool calls in the stream

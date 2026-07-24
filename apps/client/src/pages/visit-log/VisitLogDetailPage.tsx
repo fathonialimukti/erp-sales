@@ -20,6 +20,7 @@ import {
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
@@ -198,14 +199,16 @@ export const VisitLogDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "visitLog-detail", notFound: true })}
       >
-        <PageHeader
-          module="visit"
-          title={intl.formatMessage({
-            id: "visit_log.detail.not_found",
-            defaultMessage: "Region not found",
-          })}
-          onBack={() => navigate("/visitLog")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/visitLog")} />
+          <PageHeader
+            module="visit"
+            title={intl.formatMessage({
+              id: "visit_log.detail.not_found",
+              defaultMessage: "Region not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -225,40 +228,54 @@ export const VisitLogDetailPage = () => {
         approvalStatus: visitLog.approvalStatus,
       })}
     >
-      <PageHeader
-        module="visit"
-        eyebrow={intl.formatMessage({ id: "nav.field_ops", defaultMessage: "Field Operations" })}
-        title={title}
-        description={visitLog.outlet?.customer?.name ?? "—"}
-        onBack={() => navigate("/visitLog")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/visitLog/${visitLog.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            <Button type="button" variant="outline" onClick={handleDraftFollowUp}>
-              <Sparkles className="size-4" />
-              {intl.formatMessage({
-                id: "visit_log.detail.draft_followup",
-                defaultMessage: "Draft follow-up",
-              })}
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/visitLog")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/visitLog/${visitLog.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
             </Button>
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleDraftFollowUp}
+            className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <Sparkles className="size-3.5" aria-hidden />
+            {intl.formatMessage({
+              id: "visit_log.detail.draft_followup",
+              defaultMessage: "Draft follow-up",
+            })}
+          </Button>
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="visit"
+          eyebrow={intl.formatMessage({ id: "nav.field_ops", defaultMessage: "Field Operations" })}
+          title={title}
+          description={visitLog.outlet?.customer?.name ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

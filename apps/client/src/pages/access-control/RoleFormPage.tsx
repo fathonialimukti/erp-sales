@@ -220,6 +220,7 @@ const InnerForm = ({
       })}
     >
       <NavButtonGroup
+        className="self-end"
         onBack={() => navigate("/access-control")}
       />
 
@@ -389,11 +390,11 @@ const InnerForm = ({
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <Button size="sm" type="submit" disabled={isPending || Boolean(nameError)}>
+          <Button size="sm" className="h-8 gap-1.5 px-2.5" type="submit" disabled={isPending || Boolean(nameError)}>
               {isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
-                <Save className="size-4" aria-hidden />
+                <Save className="size-3.5" aria-hidden />
               )}
               {isEdit
                 ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })

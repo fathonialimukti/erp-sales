@@ -8,6 +8,7 @@ import { ChevronRight, Map, MapPin, Pencil, Trash2 } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -85,14 +86,16 @@ export const RegionDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "region-detail", notFound: true })}
       >
-        <PageHeader
-          module="region"
-          title={intl.formatMessage({
-            id: "region.detail.not_found",
-            defaultMessage: "Region not found",
-          })}
-          onBack={() => navigate("/region")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/region")} />
+          <PageHeader
+            module="region"
+            title={intl.formatMessage({
+              id: "region.detail.not_found",
+              defaultMessage: "Region not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -107,33 +110,41 @@ export const RegionDetailPage = () => {
         areaCount: region.areas.length,
       })}
     >
-      <PageHeader
-        module="region"
-        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
-        title={region.name}
-        description={region.code ?? "—"}
-        onBack={() => navigate("/region")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/region/${region.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/region")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/region/${region.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="region"
+          eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+          title={region.name}
+          description={region.code ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

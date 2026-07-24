@@ -23,7 +23,7 @@ POST /api/ai/chat
     │
     ├── 1. Auth (JWT cookie or Bearer header)
     ├── 2. RAG  → retrieveRelevantChunks(userText)
-    │              └── PostgreSQL FTS on knowledge_chunks
+    │              └── Hybrid FTS + vector (FTS-only fallback)
     ├── 3. User context (name, role, permissions from DB)
     ├── 4. buildSystemPrompt(user, permissions, ragContext)
     └── 5. streamText() + createUIMessageStream()
@@ -43,15 +43,50 @@ POST /api/ai/chat
 
 ---
 
-## RAG Pipeline
+## RAG Pipeline (hybrid FTS + vector)
 
-> **Storage engine:** PostgreSQL full-text search (GIN index on `knowledge_chunks`).
-> This is **text-based retrieval**, not vector/embedding search. There is no pgvector or embedding model involved.
+> **Hybrid retrieval:** FTS always; vector cosine when `EMBEDDING_*` is configured **and** some rows have non-null `embedding`.
+> **pgvector:** expected installed (`vector` 0.8.5). Columns: `embedding vector(1536)`, `embedding_model`, `embedding_updated_at`.
+> **Graceful fallback:** missing/unreachable embedding endpoint → FTS-only, no crash.
+
+### Embedding env
+
+```env
+EMBEDDING_BASE_URL=https://your-embed-host/v1
+EMBEDDING_API_KEY=
+EMBEDDING_MODEL=text-embedding-3-small
+# optional — dimensions locked to 1536 (column is vector(1536)); leave unset or set 1536
+EMBEDDING_DIMENSIONS=1536
+EMBEDDING_SIMILARITY_THRESHOLD=0.5
+```
+
+Module: `src/lib/ai-embedding.ts` (`isEmbeddingConfigured`, `generateEmbedding(s)`, `upsertChunkEmbedding`, `clearChunkEmbedding`, best-effort helpers).
+
+**Phase-2 lock:** product uses `vector(1536)` only. If `EMBEDDING_DIMENSIONS` is set to another value, runtime warns once and still embeds at 1536.
+
+**KB update:** title/content change clears embedding columns first, then best-effort re-embed (avoids ranking stale vectors if embed fails).
+
+### Schema (knowledge_chunks)
+
+| Column | Notes |
+|---|---|
+| id, source, title, content, created_at, updated_at | CRUD + FTS |
+| embedding | `vector(1536)` NULL — Prisma `Unsupported("vector")?`; write via raw SQL |
+| embedding_model | TEXT NULL |
+| embedding_updated_at | TIMESTAMPTZ NULL |
+
+Ensure columns + indexes once per environment (idempotent):
+
+```bash
+# required before hybrid vector path is usable on a fresh DB
+bun src/scripts/ensure-knowledge-vector-columns.ts
+# also run as part of ingest-knowledge.ts
+```
 
 ### Knowledge Ingestion
 
-**Script:** `src/scripts/ingest-knowledge.ts`
-**Trigger:** `bun src/scripts/ingest-knowledge.ts` (also called by `bun run db:seed`)
+**Script:** `src/scripts/ingest-knowledge.ts`  
+**Trigger:** `bun src/scripts/ingest-knowledge.ts` / `bun run ai:ingest` (also called by `bun run db:all`)
 
 ```
 src/knowledge/*.md
@@ -63,34 +98,56 @@ src/knowledge/*.md
         │   ├── Max chunk size: 800 characters
         │   └── Large sections split further by paragraph (\n\n)
         │
-        ▼ prisma.knowledgeChunk.deleteMany()   ← full re-ingest
+        ▼ ensureVectorReadyColumns()   ← extension + nullable embedding cols
         │
-        ▼ prisma.knowledgeChunk.createMany()
-        │   Fields: id (ULID), source (filename), title, content, createdAt, updatedAt
+        ▼ deleteMany({ source: { in: markdown basenames } })
+        │   ← only replace md-sourced rows; UI-created KB rows preserved
         │
-        ▼ CREATE INDEX IF NOT EXISTS knowledge_chunks_fts_idx
-              USING GIN (to_tsvector('english', title || ' ' || content))
+        ▼ createMany() title/content/source
+        │
+        ▼ if EMBEDDING_* configured: embedMany + upsert vectors
+        │
+        ▼ FTS GIN index + HNSW cosine index (when embedding configured)
 ```
+
+KB UI create/update (`knowledgeBaseRouter`) also best-effort re-embeds title+content when configured (never fails the mutation).
 
 ### Retrieval at Query Time
 
 **File:** `src/lib/rag.ts`
 
-```sql
-SELECT title, content
-FROM knowledge_chunks
-WHERE to_tsvector('english', title || ' ' || content)
-   @@ plainto_tsquery('english', :query)
-ORDER BY ts_rank(
-    to_tsvector('english', title || ' ' || content),
-    plainto_tsquery('english', :query)
-) DESC
-LIMIT 5
-```
+| Export | Purpose |
+|---|---|
+| `searchKnowledgeChunks(query, limit)` | Hybrid structured hits |
+| `searchKnowledgeChunksFts` / `searchKnowledgeChunksVector` | Path-specific search |
+| `findRelevantContent` | Guide-aligned alias of hybrid search |
+| `mergeKnowledgeHits` | Dedupe/rank merge |
+| `formatKnowledgeHits(hits)` | Markdown `### title (source: x)` for prompt injection |
+| `toKnowledgeSearchHits(hits)` | Tool payload snippets |
+| `retrieveRelevantChunks(query, limit)` | Formatted string (call-site compatible) |
 
-- If the user message is empty, retrieval is skipped entirely.
-- Up to 5 ranked chunks are returned and injected into the system prompt under a `## Retrieved Knowledge` section.
-- Ranking is purely by `ts_rank` (term frequency in the document).
+Dev log: `[rag] mode=vector|fts|hybrid fts=N vector=N merged=N …`
+
+- Empty user message → no hits.
+- Up to 5 ranked chunks injected under `## Relevant Documentation`.
+- Vector path uses `1 - (embedding <=> query)` with `EMBEDDING_SIMILARITY_THRESHOLD` (default 0.5).
+
+### searchKnowledge tool
+
+**File:** `src/lib/ai-tools.ts` → `serverTools.searchKnowledge`  
+**Wired in:** `routes/ai.ts` and `routes/ai-admin.ts` (`...clientTools, ...serverTools`)
+
+- Server-executed (`execute` present) so the chat UI can show a **Knowledge** tool chip.
+- Returns `{ hits: [{ title, source, snippet, rank }], count }`.
+- Hybrid retrieval under the hood.
+- Use for docs/workflows/permissions/navigation/schema; **not** live transactional counts (`queryDatabase`).
+
+### Prompt policy
+
+- Prefer injected docs / call `searchKnowledge` first for how-to, process, permission, navigation, form fields, schema.
+- Prefer `queryDatabase` (or admin SQL tool) only for live operational data.
+- Cite documentation title/source when answering from docs.
+- Do **not** force “Sorry I don’t know” for navigate/create/SQL tasks.
 
 ### Knowledge Base Files
 
@@ -105,15 +162,17 @@ Located in `src/knowledge/`:
 | `approvals.md` | Approval workflow (DRAFT → PROPOSED → APPROVED/REJECTED) |
 | `general.md` | General ERP system information |
 
-### Upgrading to Vector Search (Future)
+### Re-ingest + embed
 
-The current FTS approach works well for keyword-heavy ERP queries. To upgrade to semantic/vector search:
-
-1. Add `pgvector` extension to PostgreSQL.
-2. Add an `embedding vector(1536)` column to `knowledge_chunks`.
-3. In `ingest-knowledge.ts`, call an embedding model (e.g. `text-embedding-3-small`) per chunk and store the result.
-4. In `rag.ts`, embed the user query and switch to `ORDER BY embedding <=> query_vec LIMIT 5`.
-5. Add an `ivfflat` or `hnsw` index for performance.
+```bash
+# 1) set EMBEDDING_* in apps/server/.env
+# 2) ensure columns
+bun src/scripts/ensure-knowledge-vector-columns.ts
+# 3) re-ingest markdown (embeds when configured)
+bun run ai:ingest
+# verify
+# SELECT COUNT(*) FROM knowledge_chunks WHERE embedding IS NOT NULL;
+```
 
 ---
 
@@ -147,13 +206,16 @@ DevTools middleware is automatically disabled in `NODE_ENV=production`.
 
 ### `src/lib/ai-tools.ts`
 
-All tools are **client-side** — no `execute` function. They are returned as tool calls in the stream and executed in the browser.
+Tools are split into **server** (`serverTools`, with `execute`) and **client** (`clientTools`, no `execute`). Chat handlers merge both into `streamText({ tools })`.
 
-| Tool | Input | Action |
-|---|---|---|
-| `navigateTo` | `path`, `reason` | Navigate user to the given app route |
-| `fillFormFields` | `fields` (key → value map) | Pre-fill form inputs on the active page |
-| `getPageContext` | `reason` (optional) | Scrape DOM `[data-ai-context]` annotations |
+| Tool | Side | Input | Action |
+|---|---|---|---|
+| `searchKnowledge` | server | `query`, optional `limit` | Hybrid FTS+vector docs search → `{ hits, count }` (Knowledge chip) |
+| `navigateTo` | client | `path`, `reason` | Navigate user to the given app route |
+| `fillFormFields` | client | `fields` (key → value map) | Pre-fill form inputs on the active page |
+| `getPageContext` | client | `reason` (optional) | Scrape DOM `[data-ai-context]` annotations |
+| `queryDatabase` | client (HTTP) | `sql`, optional `limit` | Read-only SQL via `/api/ai/query-database` |
+| other page helpers | client | varies | summarize / draft / next-steps helpers |
 
 ---
 

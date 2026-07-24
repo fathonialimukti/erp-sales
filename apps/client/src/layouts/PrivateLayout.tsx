@@ -7,7 +7,6 @@ import { NotificationDrawer } from "@/components/NotificationDrawer";
 import { SearchPalette } from "@/components/SearchPalette";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
-import { UserMenuPopover } from "@/components/UserMenuPopover";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { sidebarOpenAtom } from "@/lib/atoms";
 import {
@@ -60,7 +59,6 @@ export const PrivateLayout = () => {
       <NotificationDrawer />
       <AiAssistant />
       <SearchPalette />
-      <UserMenuPopover />
     </div>
   );
 };

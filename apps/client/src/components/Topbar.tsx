@@ -68,7 +68,8 @@ export const Topbar = () => {
   const [notifsOpen, setNotifsOpen] = useAtom(notificationsOpenAtom);
   const { locale, setLocale } = useLocale();
   const isLgUp = useMediaQuery("(min-width: 1024px)");
-  const showAvatarInSidebar = sidebarOpen && isLgUp;
+  // Desktop: avatar lives in the sidebar (expanded or collapsed). Mobile: topbar.
+  const showAvatarInSidebar = isLgUp;
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {

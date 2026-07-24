@@ -198,6 +198,7 @@ export const EventProposalFormPage = () => {
       })}
     >
       <NavButtonGroup
+        className="self-end"
         onBack={() => navigate(isEdit && id ? `/eventProposal/${id}` : "/eventProposal")}
       />
 
@@ -483,14 +484,16 @@ export const EventProposalFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <Button size="sm"
-              type="submit"
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 px-2.5"
+            type="submit"
               disabled={!canSave || createMutation.isPending || updateMutation.isPending}
             >
               {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
-                <Save className="size-4" aria-hidden />
+                <Save className="size-3.5" aria-hidden />
               )}
               {intl.formatMessage({
                 id: "event_proposal.form.save_button",

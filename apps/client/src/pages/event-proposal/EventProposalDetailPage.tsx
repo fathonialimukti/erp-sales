@@ -18,6 +18,7 @@ import {
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -166,14 +167,16 @@ export const EventProposalDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "eventProposal-detail", notFound: true })}
       >
-        <PageHeader
-          module="event"
-          title={intl.formatMessage({
-            id: "event_proposal.detail.not_found",
-            defaultMessage: "Region not found",
-          })}
-          onBack={() => navigate("/eventProposal")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/eventProposal")} />
+          <PageHeader
+            module="event"
+            title={intl.formatMessage({
+              id: "event_proposal.detail.not_found",
+              defaultMessage: "Region not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -188,40 +191,54 @@ export const EventProposalDetailPage = () => {
         areaCount: eventProposal.skus?.length ?? 0,
       })}
     >
-      <PageHeader
-        module="event"
-        eyebrow={intl.formatMessage({ id: "nav.programs", defaultMessage: "Programs" })}
-        title={eventProposal.name}
-        description={eventProposal.documentNumber ?? "—"}
-        onBack={() => navigate("/eventProposal")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/eventProposal/${eventProposal.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            <Button type="button" variant="outline" onClick={handleDraftFollowUp}>
-              <Sparkles className="size-4" />
-              {intl.formatMessage({
-                id: "event_proposal.detail.draft_followup",
-                defaultMessage: "Draft follow-up",
-              })}
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/eventProposal")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/eventProposal/${eventProposal.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
             </Button>
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleDraftFollowUp}
+            className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <Sparkles className="size-3.5" aria-hidden />
+            {intl.formatMessage({
+              id: "event_proposal.detail.draft_followup",
+              defaultMessage: "Draft follow-up",
+            })}
+          </Button>
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="event"
+          eyebrow={intl.formatMessage({ id: "nav.programs", defaultMessage: "Programs" })}
+          title={eventProposal.name}
+          description={eventProposal.documentNumber ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

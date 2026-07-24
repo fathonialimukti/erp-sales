@@ -76,6 +76,8 @@ export const OutletIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
@@ -83,11 +85,15 @@ export const OutletIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
         id: "customer",
+        accessorKey: "customerName",
+        enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_customer", defaultMessage: "Customer" }),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.customerName || "—"}</span>
@@ -95,6 +101,8 @@ export const OutletIndexPage = () => {
       },
       {
         id: "area",
+        accessorKey: "areaName",
+        enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_area", defaultMessage: "Area" }),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.areaName || "—"}</span>
@@ -102,6 +110,7 @@ export const OutletIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

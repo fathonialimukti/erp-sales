@@ -18,6 +18,7 @@ import {
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
@@ -267,14 +268,16 @@ export const EmailCrmDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "email-crm-detail", notFound: true })}
       >
-        <PageHeader
-          module="email"
-          title={intl.formatMessage({
-            id: "emailCrm.detail.not_found",
-            defaultMessage: "Conversation not found",
-          })}
-          onBack={() => navigate("/email-crm")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/email-crm")} />
+          <PageHeader
+            module="email"
+            title={intl.formatMessage({
+              id: "emailCrm.detail.not_found",
+              defaultMessage: "Conversation not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -313,54 +316,64 @@ export const EmailCrmDetailPage = () => {
         orderCount: conversation.salesOrders?.length ?? 0,
       })}
     >
-      <PageHeader
-        module="email"
-        eyebrow={intl.formatMessage({
-          id: "emailCrm.detail.title",
-          defaultMessage: "Email conversation",
-        })}
-        title={conversation.subject ?? conversation.email}
-        description={conversation.email}
-        onBack={() => navigate("/email-crm")}
-        actions={
-          <>
-            {canUpdate && agentStatus === "FAILED" ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => retryAgentMutation.mutate()}
-                disabled={retryAgentMutation.isPending}
-              >
-                {retryAgentMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <Sparkles className="size-4" />
-                )}
-                {intl.formatMessage({
-                  id: "emailCrm.detail.retry_agent",
-                  defaultMessage: "Retry agent",
-                })}
-              </Button>
-            ) : null}
-            {canUpdate ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/email-crm/${conversation.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/email-crm")}>
+          {canUpdate && agentStatus === "FAILED" ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => retryAgentMutation.mutate()}
+              disabled={retryAgentMutation.isPending}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              {retryAgentMutation.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              ) : (
+                <Sparkles className="size-3.5" aria-hidden />
+              )}
+              {intl.formatMessage({
+                id: "emailCrm.detail.retry_agent",
+                defaultMessage: "Retry agent",
+              })}
+            </Button>
+          ) : null}
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/email-crm/${conversation.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="email"
+          eyebrow={intl.formatMessage({
+            id: "emailCrm.detail.title",
+            defaultMessage: "Email conversation",
+          })}
+          title={conversation.subject ?? conversation.email}
+          description={conversation.email}
+        />
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <StatusChip status={conversation.status} label={statusLabel(conversation.status)} />

@@ -14,9 +14,50 @@ import { initialsOf } from "@/lib/initials";
 import { cn } from "@/lib/utils";
 import { useAuthActions } from "@/lib/useAuth";
 
+const POPOVER_W = 240;
+const POPOVER_OFFSET = 8;
+const VIEW_PAD = 8;
+/** Approx menu height for flip decision before paint. */
+const POPOVER_H_EST = 220;
+
+const readActiveTriggerRect = (): DOMRect | null => {
+  const el = document.querySelector<HTMLElement>(
+    "[data-user-menu-trigger][aria-expanded='true']",
+  );
+  return el?.getBoundingClientRect() ?? null;
+};
+
+const styleFromAnchor = (anchor: DOMRect): CSSProperties => {
+  // Prefer left-align with trigger (sidebar footer); clamp into viewport.
+  const left = Math.min(
+    Math.max(VIEW_PAD, anchor.left),
+    window.innerWidth - POPOVER_W - VIEW_PAD,
+  );
+  const spaceAbove = anchor.top - VIEW_PAD;
+  const placeAbove = spaceAbove >= POPOVER_H_EST || spaceAbove >= window.innerHeight - anchor.bottom;
+
+  if (placeAbove) {
+    return {
+      top: Math.max(VIEW_PAD, anchor.top - POPOVER_OFFSET),
+      left,
+      width: POPOVER_W,
+      transform: "translateY(-100%)",
+    };
+  }
+
+  return {
+    top: Math.min(
+      anchor.bottom + POPOVER_OFFSET,
+      window.innerHeight - VIEW_PAD - 40,
+    ),
+    left,
+    width: POPOVER_W,
+  };
+};
+
 /**
  * Floating user menu — Profile / Settings / Logout.
- * position: fixed + user-menu-anchor event (keep anchor logic).
+ * Anchored to the active avatar trigger (sidebar footer or topbar).
  */
 export const UserMenuPopover = () => {
   const intl = useIntl();
@@ -29,7 +70,18 @@ export const UserMenuPopover = () => {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setAnchorRect(null);
+      return;
+    }
+
+    // Measure immediately — don't rely on the custom event race
+    // (trigger effect can fire before this listener is attached).
+    const measure = () => {
+      const rect = readActiveTriggerRect();
+      if (rect) setAnchorRect(rect);
+    };
+    measure();
 
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as Node;
@@ -42,49 +94,37 @@ export const UserMenuPopover = () => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-
     const onAnchor = (e: Event) => {
       const detail = (e as CustomEvent<DOMRect>).detail;
       if (detail) setAnchorRect(detail);
     };
+    const onReposition = () => measure();
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
     window.addEventListener("user-menu-anchor", onAnchor);
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
 
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
       window.removeEventListener("user-menu-anchor", onAnchor);
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
     };
   }, [open, setOpen]);
 
   if (!open || !user) return null;
 
-  const POPOVER_W = 240;
-  const POPOVER_OFFSET = 8;
-  const VIEW_PAD = 8;
-  let style: CSSProperties = {};
-
-  if (anchorRect) {
-    const rightEdge = Math.max(VIEW_PAD, window.innerWidth - anchorRect.right);
-    const bottomY = window.innerHeight - anchorRect.top + POPOVER_OFFSET;
-    const fitsAbove = anchorRect.top >= 200;
-    style = fitsAbove
-      ? {
-          top: anchorRect.top - POPOVER_OFFSET,
-          right: rightEdge,
-          transform: "translateY(-100%)",
-        }
-      : { top: bottomY, right: rightEdge };
-    style.maxWidth = `${POPOVER_W}px`;
-  } else {
-    style = {
-      bottom: VIEW_PAD + 56,
-      right: VIEW_PAD + 14,
-      maxWidth: `${POPOVER_W}px`,
-    };
-  }
+  const style: CSSProperties = anchorRect
+    ? styleFromAnchor(anchorRect)
+    : {
+        // Last-resort fallback only if no trigger rect yet
+        bottom: VIEW_PAD + 56,
+        left: VIEW_PAD + 12,
+        width: POPOVER_W,
+      };
 
   const handleSettings = () => {
     setOpen(false);
@@ -207,13 +247,17 @@ export const UserMenuTrigger = ({
   const [open, setOpen] = useAtom(userMenuOpenAtom);
   const ref = useRef<HTMLButtonElement>(null);
 
+  const publishAnchor = () => {
+    if (!ref.current) return;
+    window.dispatchEvent(
+      new CustomEvent("user-menu-anchor", {
+        detail: ref.current.getBoundingClientRect(),
+      }),
+    );
+  };
+
   useEffect(() => {
-    if (open && ref.current) {
-      const rect = ref.current.getBoundingClientRect();
-      window.dispatchEvent(
-        new CustomEvent("user-menu-anchor", { detail: rect }),
-      );
-    }
+    if (open) publishAnchor();
   }, [open]);
 
   return (
@@ -225,7 +269,11 @@ export const UserMenuTrigger = ({
       data-user-menu-trigger=""
       aria-haspopup="menu"
       aria-expanded={open}
-      onClick={() => setOpen((prev) => !prev)}
+      onClick={() => {
+        // Publish before toggle so popover can measure even if effect order races.
+        publishAnchor();
+        setOpen((prev) => !prev);
+      }}
     >
       {children}
     </button>

@@ -13,8 +13,8 @@ interface FormSectionProps {
 }
 
 /**
- * Standard compact form card — dense CRM section recipe.
- * Header strip + tight body padding; use across create/edit forms.
+ * Standard form section card — regular CRM section recipe.
+ * Header strip + default Card spacing; use across create/edit forms.
  */
 export const FormSection = ({
   title,
@@ -25,27 +25,27 @@ export const FormSection = ({
 }: FormSectionProps) => {
   return (
     <Card
-      size="sm"
+      size="default"
       className={cn(
         "gap-0 py-0 shadow-none ring-1 ring-border/70",
         className,
       )}
       data-slot="form-section"
     >
-      <div className="flex items-start justify-between gap-2 border-b border-border/60 px-3 py-2 sm:px-3.5">
-        <div className="min-w-0 space-y-0.5">
-          <h2 className="font-heading text-sm font-semibold tracking-tight text-foreground">
+      <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
+        <div className="min-w-0 space-y-1">
+          <h2 className="font-heading text-base font-semibold tracking-tight text-foreground">
             {title}
           </h2>
           {description ? (
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
           ) : null}
         </div>
         {action ? (
-          <div className="flex shrink-0 items-center gap-1.5">{action}</div>
+          <div className="flex shrink-0 items-center gap-2">{action}</div>
         ) : null}
       </div>
-      <div className="space-y-3 px-3 py-3 sm:px-3.5">{children}</div>
+      <div className="space-y-4 px-4 py-4 sm:px-5">{children}</div>
     </Card>
   );
 };

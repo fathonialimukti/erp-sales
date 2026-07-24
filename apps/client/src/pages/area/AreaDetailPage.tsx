@@ -8,6 +8,7 @@ import { ChevronRight, Grid2x2, MapPin, Pencil, Store, Trash2 } from "lucide-rea
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -86,11 +87,13 @@ export const AreaDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "area-detail", notFound: true })}
       >
-        <PageHeader
-          module="area"
-          title={intl.formatMessage({ id: "area.detail.not_found", defaultMessage: "Area not found" })}
-          onBack={() => navigate("/area")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/area")} />
+          <PageHeader
+            module="area"
+            title={intl.formatMessage({ id: "area.detail.not_found", defaultMessage: "Area not found" })}
+          />
+        </div>
       </section>
     );
   }
@@ -105,29 +108,41 @@ export const AreaDetailPage = () => {
         outletCount: area.outlets.length,
       })}
     >
-      <PageHeader
-        module="area"
-        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
-        title={area.name}
-        description={area.code ?? "—"}
-        onBack={() => navigate("/area")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button type="button" variant="outline" onClick={() => navigate(`/area/${area.id}/edit`)}>
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/area")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/area/${area.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="area"
+          eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+          title={area.name}
+          description={area.code ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

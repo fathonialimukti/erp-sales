@@ -96,7 +96,8 @@ export const Sidebar = () => {
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isCollapsed = !sidebarOpen;
-  const showAvatarInSidebar = sidebarOpen && isLgUp;
+  // Always keep the avatar in the desktop sidebar (compact when collapsed).
+  const showAvatarInSidebar = isLgUp;
 
   const showTooltip = useCallback((label: string, el: HTMLElement) => {
     if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
@@ -186,7 +187,8 @@ export const Sidebar = () => {
       variants={fadeIn}
       {...getMotionProps(reducedMotion)}
       className={cn(
-        "fixed top-3 bottom-3 left-3 z-100 flex flex-col overflow-visible",
+        // z-40: above sticky topbar (z-30), below dialog/sheet overlays (z-50)
+        "fixed top-3 bottom-3 left-3 z-40 flex flex-col overflow-visible",
         "rounded-2xl border border-primary/10 bg-sidebar/95 shadow-sm ring-1 ring-primary/5 backdrop-blur-xl",
         "transition-[width] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
         "motion-reduce:transition-none",
@@ -285,7 +287,7 @@ export const Sidebar = () => {
       {/* Nav */}
       <nav
         aria-label="Primary"
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 py-3"
+        className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 py-3"
       >
         <div className="flex flex-col gap-4">
           {sections.map((section) => (
@@ -350,10 +352,15 @@ export const Sidebar = () => {
         </div>
       </nav>
 
-      {/* Footer — P12 avatar only when expanded + lg */}
+      {/* Footer — avatar stays visible when collapsed (icon-only chrome) */}
       {showAvatarInSidebar && (
-        <footer className="shrink-0 border-t border-border/70 p-2.5">
-          <UserAvatarMenu variant="sidebar" />
+        <footer
+          className={cn(
+            "shrink-0 border-t border-border/70",
+            isCollapsed ? "flex justify-center p-2" : "p-2.5",
+          )}
+        >
+          <UserAvatarMenu variant="sidebar" compact={isCollapsed} />
         </footer>
       )}
 
@@ -361,7 +368,7 @@ export const Sidebar = () => {
       {tooltip && isCollapsed && (
         <div
           role="tooltip"
-          className="pointer-events-none fixed z-120 -translate-y-1/2 rounded-md bg-foreground px-2.5 py-1 text-xs font-medium text-background shadow-md"
+          className="pointer-events-none fixed z-40 -translate-y-1/2 rounded-md bg-foreground px-2.5 py-1 text-xs font-medium text-background shadow-md"
           style={{ top: tooltip.top, left: 92 }}
         >
           {tooltip.label}

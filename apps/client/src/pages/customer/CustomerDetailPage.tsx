@@ -8,6 +8,7 @@ import { ChevronRight, MapPin, Pencil, Trash2, UserRound } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
@@ -85,11 +86,13 @@ export const CustomerDetailPage = () => {
   if (!customer) {
     return (
       <section className="flex flex-col gap-6 pt-2 pb-8" data-ai-context={JSON.stringify({ section: "customer-detail", notFound: true })}>
-        <PageHeader
-          module="customer"
-          title={intl.formatMessage({ id: "customer.detail.not_found", defaultMessage: "Customer not found" })}
-          onBack={() => navigate("/customer")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/customer")} />
+          <PageHeader
+            module="customer"
+            title={intl.formatMessage({ id: "customer.detail.not_found", defaultMessage: "Customer not found" })}
+          />
+        </div>
       </section>
     );
   }
@@ -104,29 +107,41 @@ export const CustomerDetailPage = () => {
         areaCount: customer.outlets?.length ?? 0,
       })}
     >
-      <PageHeader
-        module="customer"
-        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
-        title={customer.name}
-        description={customer.code ?? "—"}
-        onBack={() => navigate("/customer")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button type="button" variant="outline" onClick={() => navigate(`/customer/${customer.id}/edit`)}>
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/customer")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/customer/${customer.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="customer"
+          eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+          title={customer.name}
+          description={customer.code ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

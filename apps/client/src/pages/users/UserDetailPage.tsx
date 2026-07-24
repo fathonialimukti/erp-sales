@@ -8,6 +8,7 @@ import { Pencil, Shield, Trash2, UserRound } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { EntityPhoto } from "../../components/EntityPhoto";
@@ -98,14 +99,16 @@ export const UserDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "user-detail", notFound: true })}
       >
-        <PageHeader
-          module="user"
-          title={intl.formatMessage({
-            id: "users.detail.not_found",
-            defaultMessage: "User not found.",
-          })}
-          onBack={() => navigate("/users")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/users")} />
+          <PageHeader
+            module="user"
+            title={intl.formatMessage({
+              id: "users.detail.not_found",
+              defaultMessage: "User not found.",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -120,33 +123,41 @@ export const UserDetailPage = () => {
         roleId: record.role?.id,
       })}
     >
-      <PageHeader
-        module="user"
-        eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
-        title={record.name ?? record.email}
-        description={record.email}
-        onBack={() => navigate("/users")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/users/${record.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/users")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/users/${record.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="user"
+          eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}
+          title={record.name ?? record.email}
+          description={record.email}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

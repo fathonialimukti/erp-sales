@@ -8,6 +8,7 @@ import { Package, Pencil, Trash2 } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
@@ -90,11 +91,13 @@ export const SkuDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "sku-detail", notFound: true })}
       >
-        <PageHeader
-          module="sku"
-          title={intl.formatMessage({ id: "sku.detail.not_found", defaultMessage: "SKU not found" })}
-          onBack={() => navigate("/sku")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/sku")} />
+          <PageHeader
+            module="sku"
+            title={intl.formatMessage({ id: "sku.detail.not_found", defaultMessage: "SKU not found" })}
+          />
+        </div>
       </section>
     );
   }
@@ -109,29 +112,41 @@ export const SkuDetailPage = () => {
         status: sku.status,
       })}
     >
-      <PageHeader
-        module="sku"
-        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
-        title={sku.name}
-        description={sku.code ?? "—"}
-        onBack={() => navigate("/sku")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button type="button" variant="outline" onClick={() => navigate(`/sku/${sku.id}/edit`)}>
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/sku")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/sku/${sku.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="sku"
+          eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+          title={sku.name}
+          description={sku.code ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

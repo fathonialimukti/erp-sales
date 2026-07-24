@@ -26,7 +26,6 @@ export const sidebarOpenAtom = atomWithStorage<boolean>('sidebar-open', true);
 export const themeModeAtom = atomWithStorage<'light' | 'dark'>('theme-mode', 'light');
 export const notificationsOpenAtom = atomWithStorage<boolean>('notifications-open', false);
 export const searchOpenAtom = atomWithStorage<boolean>('search-open', false);
-export const userMenuOpenAtom = atom(false);
 export const localeAtom = atom<Locale>(getInitialLocale());
 export const localeActionsAtom = atom(null, (_get, set, newLocale: Locale) => {
   set(localeAtom, newLocale);

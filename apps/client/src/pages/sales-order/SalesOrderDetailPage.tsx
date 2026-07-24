@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { ApprovalTimeline } from "../../components/ApprovalTimeline";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
@@ -285,14 +286,16 @@ export const SalesOrderDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "sales-order-detail", notFound: true })}
       >
-        <PageHeader
-          module="order"
-          title={intl.formatMessage({
-            id: "sales_order.detail.not_found",
-            defaultMessage: "Order not found.",
-          })}
-          onBack={() => navigate("/sales-order")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/sales-order")} />
+          <PageHeader
+            module="order"
+            title={intl.formatMessage({
+              id: "sales_order.detail.not_found",
+              defaultMessage: "Order not found.",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -315,77 +318,93 @@ export const SalesOrderDetailPage = () => {
         emailConversationId: record.emailConversationId ?? null,
       })}
     >
-      <PageHeader
-        module="order"
-        eyebrow={intl.formatMessage({ id: "nav.sales_order", defaultMessage: "Sales Order" })}
-        title={record.documentNumber ?? `SO #${record.id.slice(0, 8).toUpperCase()}`}
-        description={record.customer?.name ?? record.outlet?.name ?? undefined}
-        onBack={() => navigate("/sales-order")}
-        actions={
-          <>
-            <Button type="button" variant="outline" onClick={() => setPdfPreviewId(record.id)}>
-              <Printer className="size-4" />
-              {intl.formatMessage({
-                id: "sales_order.action.print_label",
-                defaultMessage: "Print",
-              })}
-            </Button>
-            {canUpdate && editable ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(`/sales-order/${record.id}/edit`)}
-                >
-                  <Pencil className="size-4" />
-                  {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    navigate("/sales-order/create", {
-                      state: {
-                        duplicateFrom: {
-                          outletId: record.outlet.id,
-                          items: record.items.map((item) => ({
-                            skuId: item.sku.id,
-                            quantity: item.quantity,
-                            unitPrice: item.unitPrice,
-                            discountPercent: item.discountPercent,
-                            taxPercent: item.taxPercent,
-                            notes: item.notes,
-                          })),
-                          paymentTerms: record.paymentTerms,
-                          notes: record.notes,
-                        },
-                      },
-                    });
-                    toast.success(
-                      intl.formatMessage({
-                        id: "sales_order.detail.duplicated_toast",
-                        defaultMessage: "Order duplicated. Edit and save as new.",
-                      }),
-                    );
-                  }}
-                >
-                  <Copy className="size-4" />
-                  {intl.formatMessage({
-                    id: "sales_order.action.duplicate",
-                    defaultMessage: "Duplicate",
-                  })}
-                </Button>
-              </>
-            ) : null}
-            {canDelete && editable ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/sales-order")}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPdfPreviewId(record.id)}
+            className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <Printer className="size-3.5" aria-hidden />
+            {intl.formatMessage({
+              id: "sales_order.action.print_label",
+              defaultMessage: "Print",
+            })}
+          </Button>
+          {canUpdate && editable ? (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/sales-order/${record.id}/edit`)}
+                className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <Pencil className="size-3.5" aria-hidden />
+                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
               </Button>
-            ) : null}
-          </>
-        }
-      />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  navigate("/sales-order/create", {
+                    state: {
+                      duplicateFrom: {
+                        outletId: record.outlet.id,
+                        items: record.items.map((item) => ({
+                          skuId: item.sku.id,
+                          quantity: item.quantity,
+                          unitPrice: item.unitPrice,
+                          discountPercent: item.discountPercent,
+                          taxPercent: item.taxPercent,
+                          notes: item.notes,
+                        })),
+                        paymentTerms: record.paymentTerms,
+                        notes: record.notes,
+                      },
+                    },
+                  });
+                  toast.success(
+                    intl.formatMessage({
+                      id: "sales_order.detail.duplicated_toast",
+                      defaultMessage: "Order duplicated. Edit and save as new.",
+                    }),
+                  );
+                }}
+                className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <Copy className="size-3.5" aria-hidden />
+                {intl.formatMessage({
+                  id: "sales_order.action.duplicate",
+                  defaultMessage: "Duplicate",
+                })}
+              </Button>
+            </>
+          ) : null}
+          {canDelete && editable ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="order"
+          eyebrow={intl.formatMessage({ id: "nav.sales_order", defaultMessage: "Sales Order" })}
+          title={record.documentNumber ?? `SO #${record.id.slice(0, 8).toUpperCase()}`}
+          description={record.customer?.name ?? record.outlet?.name ?? undefined}
+        />
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <StatusChip status={record.approvalStatus} />

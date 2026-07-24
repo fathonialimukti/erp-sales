@@ -12,7 +12,7 @@ import {
 import * as z from 'zod';
 import { chatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
-import { clientTools } from '../lib/ai-tools.js';
+import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { prisma } from '../lib/prisma.js';
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
@@ -292,9 +292,16 @@ ${ROUTE_CATALOG}
 - Never mention or display raw route paths in your responses. Refer to destinations by their human-readable module name.
 - For navigation requests, use the navigateTo tool.
 
+## Knowledge vs Live Data
+- Prefer **Relevant Documentation** (injected) for how-to, process, permission, navigation, form fields, and schema questions.
+- Call **searchKnowledge** before answering documentation questions when injected context is empty, thin, or missing the topic.
+- When answering from documentation or tool hits, cite the documentation **title** and **source**.
+- Use **queryDatabaseAdmin** for live data reads/writes only — not for product documentation.
+- Keep navigation/SQL tools available; do not refuse non-doc ERP tasks.
+
 ## Database Query Tool
 You have access to queryDatabaseAdmin — a server-side SQL tool with full read-write access.
-Use it for ALL data operations: SELECT, INSERT, UPDATE, DELETE.
+Use it for ALL live data operations: SELECT, INSERT, UPDATE, DELETE.
 The tool will validate your SQL and block DDL operations.
 Results are returned as JSON with row counts and affected row counts for write operations.${contextSection}`;
 }
@@ -377,8 +384,10 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
                 system: buildAdminSystemPrompt(userName, roleName, userPermissions, relevantContext),
                 messages: modelMessages,
                 temperature: 0,
+                // serverTools.searchKnowledge executes on the server (docs chip).
                 tools: {
                     ...clientTools,
+                    ...serverTools,
                     queryDatabaseAdmin,
                 },
                 stopWhen: stepCountIs(5),

@@ -1,5 +1,9 @@
 import { TRPCError } from '@trpc/server';
 import { logActivity } from '../lib/activity-log.js';
+import {
+  clearChunkEmbedding,
+  embedKnowledgeChunkBestEffort,
+} from '../lib/ai-embedding.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
@@ -51,6 +55,9 @@ export const knowledgeBaseRouter = router({
         detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
       });
 
+      // Best-effort hybrid RAG embedding — never fail the mutation.
+      void embedKnowledgeChunkBestEffort(created.id, created.title, created.content);
+
       return created;
     }),
 
@@ -75,6 +82,22 @@ export const knowledgeBaseRouter = router({
         message: `Updated knowledge entry ${updated.title}`,
         detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
       });
+
+      const contentChanged =
+        updated.title !== existing.title || updated.content !== existing.content;
+      if (contentChanged) {
+        // Drop stale vector first so failed re-embed cannot rank old content.
+        try {
+          await clearChunkEmbedding(updated.id);
+        } catch (err) {
+          console.warn(
+            `[embedding] clear failed for knowledge chunk ${updated.id}:`,
+            err instanceof Error ? err.message : err,
+          );
+        }
+        // Best-effort re-embed — never fail the mutation.
+        void embedKnowledgeChunkBestEffort(updated.id, updated.title, updated.content);
+      }
 
       return updated;
     }),

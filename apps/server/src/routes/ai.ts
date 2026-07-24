@@ -10,7 +10,7 @@ import {
 } from 'ai';
 import { chatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
-import { clientTools } from '../lib/ai-tools.js';
+import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
 
@@ -178,8 +178,11 @@ export async function aiChatHandler(req: Request, res: Response) {
                 system: buildSystemPrompt(userName, roleName, permissions, relevantContext),
                 messages: modelMessages,
                 temperature: 0,
+                // serverTools (searchKnowledge) include execute — run on server.
+                // clientTools stay client-executed via onToolCall.
                 tools: {
                     ...clientTools,
+                    ...serverTools,
                 },
                 stopWhen: stepCountIs(5),
             });
@@ -414,8 +417,15 @@ ${ROUTE_CATALOG}
 - Do not write a lead-in sentence when a tool call can directly satisfy the user request.
 - Permission format is always resource@action (e.g. sales-order@approve, region@create).
 
+## Knowledge vs Live Data
+- Relevant documentation may already be injected under **Relevant Documentation**.
+- For documentation / process / permission / navigation / form-field / schema questions: call **searchKnowledge** before answering when injected docs are empty, thin, or missing the specific topic.
+- When answering from documentation or tool hits, cite the documentation **title** and **source** (e.g. "Approvals (source: approvals)").
+- Use **queryDatabase** only for live transactional/operational data (counts, totals, current records, inventory, CRM rows). Do not use queryDatabase to answer process/docs questions.
+- Navigation, form-fill, and page-context tools remain available — do not refuse those tasks; only prefer searchKnowledge for docs answers.
+
 ## Database Query Tool
-You have access to a read-only SQL query tool called queryDatabase. Use it when users ask about sales data, order records, customer/outlet data, SKU catalog, visit logs, user activity, or any data-related question.
+You have access to a read-only SQL query tool called queryDatabase. Use it when users ask about live sales data, order records, customer/outlet data, SKU catalog, visit logs, user activity, or any data-related question — not for product documentation.
 
 ## Analytics & Insights
 When the user asks for trends, rankings, or "at-risk" analysis, use queryDatabase with aggregate queries, then summarize the result in Markdown.
@@ -425,12 +435,15 @@ Example insight requests and the query shape to use:
 - "Sales trend": monthly SUM(grand_total) of APPROVED orders, ordered by month.
 Always explain the business meaning of the numbers, not just the raw rows.
 
-When to use:
+When to use queryDatabase:
 - User asks "how many SKUs do we have?" or any count/summary question
 - User asks "show me pending/approved/rejected sales orders"
 - User asks "what is the revenue for customer X?" or "total sales this month?"
 - User asks "how many visits did salesman Y log?"
-- User asks about any data that requires querying the database
+- User asks about any live data that requires querying the database
+
+When NOT to use queryDatabase:
+- How approval workflows work, which permission is needed, how to navigate, form field names, or schema documentation — use injected docs / searchKnowledge instead
 
 SQL Guidelines:
 - Only SELECT statements are allowed (INSERT/UPDATE/DELETE/DROP/ALTER/CREATE are blocked)

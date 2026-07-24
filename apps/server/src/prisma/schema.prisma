@@ -664,12 +664,17 @@ model EventProposalPayment {
 }
 
 model KnowledgeChunk {
-  id        String   @id @default(ulid()) @map("id")
-  source    String   @map("source")
-  title     String   @map("title")
-  content   String   @map("content")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                 String                       @id @default(ulid()) @map("id")
+  source             String                       @map("source")
+  title              String                       @map("title")
+  content            String                       @map("content")
+  /// Hybrid RAG vector (pgvector). Written via raw SQL when EMBEDDING_* is configured.
+  /// Prisma Unsupported — use ai-embedding upsertChunkEmbedding for writes.
+  embedding          Unsupported("vector")?       @map("embedding")
+  embeddingModel     String?                      @map("embedding_model")
+  embeddingUpdatedAt DateTime?                    @map("embedding_updated_at")
+  createdAt          DateTime                     @default(now()) @map("created_at")
+  updatedAt          DateTime                     @updatedAt @map("updated_at")
 
   @@index([source])
   @@map("knowledge_chunks")

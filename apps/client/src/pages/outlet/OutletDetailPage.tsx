@@ -8,6 +8,7 @@ import { ChevronRight, Pencil, Store, Trash2, UserRound } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
@@ -90,14 +91,16 @@ export const OutletDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "outlet-detail", notFound: true })}
       >
-        <PageHeader
-          module="outlet"
-          title={intl.formatMessage({
-            id: "outlet.detail.not_found",
-            defaultMessage: "Outlet not found",
-          })}
-          onBack={() => navigate("/outlet")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/outlet")} />
+          <PageHeader
+            module="outlet"
+            title={intl.formatMessage({
+              id: "outlet.detail.not_found",
+              defaultMessage: "Outlet not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -112,33 +115,41 @@ export const OutletDetailPage = () => {
         contactCount: outlet.contacts?.length ?? 0,
       })}
     >
-      <PageHeader
-        module="outlet"
-        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
-        title={outlet.name}
-        description={outlet.code ?? "—"}
-        onBack={() => navigate("/outlet")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/outlet/${outlet.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/outlet")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/outlet/${outlet.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="outlet"
+          eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+          title={outlet.name}
+          description={outlet.code ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>

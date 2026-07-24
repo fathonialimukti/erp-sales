@@ -486,7 +486,7 @@ export const SalesOrderFormPage = () => {
         className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "sales-order-form", notFound: true })}
       >
-        <NavButtonGroup onBack={() => navigate("/sales-order")} />
+        <NavButtonGroup className="self-end" onBack={() => navigate("/sales-order")} />
         <PageHeader
           module="order"
           title={intl.formatMessage({ id: "sales_order.form.not_found", defaultMessage: "Order not found." })}
@@ -542,6 +542,7 @@ export const SalesOrderFormPage = () => {
       })}
     >
       <NavButtonGroup
+        className="self-end"
         onBack={() =>
           navigate(isEdit && id ? `/sales-order/${id}` : "/sales-order")
         }
@@ -873,6 +874,7 @@ export const SalesOrderFormPage = () => {
             type="button"
             variant="outline"
             size="sm"
+            className="h-8 gap-1.5 px-2.5"
             onClick={() => {
               setPendingSaveMode("DRAFT");
               setModalStage("draft-confirm");
@@ -885,6 +887,7 @@ export const SalesOrderFormPage = () => {
           <Button
             type="submit"
             size="sm"
+            className="h-8 gap-1.5 px-2.5"
             disabled={createMutation.isPending || updateMutation.isPending}
           >
             <Send className="size-3.5" />

@@ -253,6 +253,37 @@ const TOOL_META: Record<string, { label: string }> = {
   getPageContext: { label: "Read page" },
   queryDatabase: { label: "Query DB" },
   queryDatabaseAdmin: { label: "Query DB (Admin)" },
+  searchKnowledge: { label: "Knowledge" },
+};
+
+/** Best-effort hit/result count from searchKnowledge tool output (server or client). */
+const resolveKnowledgeHitCount = (output: unknown): number | undefined => {
+  if (output == null) return undefined;
+
+  let value: unknown = output;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    try {
+      value = JSON.parse(trimmed) as unknown;
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (Array.isArray(value)) return value.length;
+  if (!value || typeof value !== "object") return undefined;
+
+  const record = value as Record<string, unknown>;
+  for (const key of ["count", "hitCount", "total", "totalHits"] as const) {
+    const n = record[key];
+    if (typeof n === "number" && Number.isFinite(n) && n >= 0) return Math.floor(n);
+  }
+  for (const key of ["hits", "results", "chunks", "documents", "items"] as const) {
+    const arr = record[key];
+    if (Array.isArray(arr)) return arr.length;
+  }
+  return undefined;
 };
 
 function ToolChip({ toolName, part }: { toolName: string; part: Record<string, unknown> }) {
@@ -264,6 +295,11 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
   if (toolName === "fillFormFields" && input?.fields) {
     const count = Object.keys(input.fields as Record<string, unknown>).length;
     detail = ` (${count} field${count !== 1 ? "s" : ""})`;
+  } else if (toolName === "searchKnowledge") {
+    const hitCount = resolveKnowledgeHitCount(part.output);
+    if (hitCount !== undefined) {
+      detail = ` (${hitCount})`;
+    }
   }
 
   const variant =

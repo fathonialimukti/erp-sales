@@ -8,6 +8,7 @@ import { ChevronRight, FileText, MapPin, Pencil, Trash2 } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -98,14 +99,16 @@ export const ActionProgramDetailPage = () => {
         className="flex flex-col gap-6 pt-2 pb-8"
         data-ai-context={JSON.stringify({ section: "actionProgram-detail", notFound: true })}
       >
-        <PageHeader
-          module="planning"
-          title={intl.formatMessage({
-            id: "action_program.detail.not_found",
-            defaultMessage: "Region not found",
-          })}
-          onBack={() => navigate("/actionProgram")}
-        />
+        <div className="flex flex-col gap-3">
+          <NavButtonGroup className="self-end" onBack={() => navigate("/actionProgram")} />
+          <PageHeader
+            module="planning"
+            title={intl.formatMessage({
+              id: "action_program.detail.not_found",
+              defaultMessage: "Region not found",
+            })}
+          />
+        </div>
       </section>
     );
   }
@@ -120,33 +123,41 @@ export const ActionProgramDetailPage = () => {
         areaCount: actionProgram.outlets?.length ?? 0,
       })}
     >
-      <PageHeader
-        module="planning"
-        eyebrow={intl.formatMessage({ id: "nav.programs", defaultMessage: "Programs" })}
-        title={actionProgram.name}
-        description={actionProgram.code ?? actionProgram.documentNumber ?? "—"}
-        onBack={() => navigate("/actionProgram")}
-        actions={
-          <>
-            {canUpdate ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/actionProgram/${actionProgram.id}/edit`)}
-              >
-                <Pencil className="size-4" />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-                <Trash2 className="size-4" />
-                {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={() => navigate("/actionProgram")}>
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/actionProgram/${actionProgram.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+            </Button>
+          ) : null}
+        </NavButtonGroup>
+
+        <PageHeader
+          module="planning"
+          eyebrow={intl.formatMessage({ id: "nav.programs", defaultMessage: "Programs" })}
+          title={actionProgram.name}
+          description={actionProgram.code ?? actionProgram.documentNumber ?? "—"}
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>
