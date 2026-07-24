@@ -17,7 +17,7 @@ import {
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { useToast } from "../../ui/useToast";
+import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";

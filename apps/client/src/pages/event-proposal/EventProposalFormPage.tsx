@@ -9,12 +9,13 @@ import { Loader2, Save } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
+import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -178,7 +179,7 @@ export const EventProposalFormPage = () => {
   if (isLoading) {
     return (
       <section
-        className="flex flex-col gap-6 pt-2 pb-8"
+        className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "eventProposal-form", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
@@ -189,22 +190,19 @@ export const EventProposalFormPage = () => {
 
   return (
     <section
-      className="flex flex-col gap-6 pt-2 pb-8"
+      className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
         section: "eventProposal-form",
         isEdit,
         id: id ?? null,
       })}
     >
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
-        <PageHeader
-          module="event"
+      <NavButtonGroup
+        onBack={() => navigate(isEdit && id ? `/eventProposal/${id}` : "/eventProposal")}
+      />
+
+      <PageHeader
+        module="event"
           title={
             isEdit
               ? intl.formatMessage({
@@ -227,41 +225,28 @@ export const EventProposalFormPage = () => {
                   defaultMessage: "Create a new geographical eventProposal",
                 })
           }
-          onBack={() => navigate(isEdit && id ? `/eventProposal/${id}` : "/eventProposal")}
-          actions={
-            <Button
-              type="submit"
-              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Save className="size-4" aria-hidden />
-              )}
-              {intl.formatMessage({
-                id: "event_proposal.form.save_button",
-                defaultMessage: "Save",
-              })}
-            </Button>
-          }
         />
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-heading text-base">
-              {intl.formatMessage({
+        <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+      >
+        <FormSection
+          title={intl.formatMessage({
                 id: "event_proposal.form.section_basic",
                 defaultMessage: "Basic information",
               })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-5 sm:grid-cols-2">
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
               name="name"
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-name">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_name",
@@ -284,7 +269,7 @@ export const EventProposalFormPage = () => {
 
             <form.Field name="eventType">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-type">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_event_type",
@@ -320,7 +305,7 @@ export const EventProposalFormPage = () => {
 
             <form.Field name="venue">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-venue">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_venue",
@@ -341,7 +326,7 @@ export const EventProposalFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-date">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_event_date",
@@ -365,7 +350,7 @@ export const EventProposalFormPage = () => {
 
             <form.Field name="eventEndDate">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-end">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_event_end_date",
@@ -384,7 +369,7 @@ export const EventProposalFormPage = () => {
 
             <form.Field name="organizerName">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-org-name">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_organizer_name",
@@ -402,7 +387,7 @@ export const EventProposalFormPage = () => {
 
             <form.Field name="organizerContact">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-org-contact">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_organizer_contact",
@@ -423,7 +408,7 @@ export const EventProposalFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-area">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_area",
@@ -459,7 +444,7 @@ export const EventProposalFormPage = () => {
 
             <form.Field name="proposedBudget">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-budget">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_proposed_budget",
@@ -478,7 +463,7 @@ export const EventProposalFormPage = () => {
 
             <form.Field name="currency">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="ep-currency">
                     {intl.formatMessage({
                       id: "event_proposal.form.field_currency",
@@ -494,9 +479,26 @@ export const EventProposalFormPage = () => {
                 </div>
               )}
             </form.Field>
-          </CardContent>
-        </Card>
-      </form>
+          </div>
+        </FormSection>
+      
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <Button size="sm"
+              type="submit"
+              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {intl.formatMessage({
+                id: "event_proposal.form.save_button",
+                defaultMessage: "Save",
+              })}
+            </Button>
+        </div>
+</form>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

@@ -21,14 +21,14 @@ type StageKey = "DRAFT" | "PROPOSED" | "APPROVED" | "REJECTED";
 const STAGES: StageKey[] = ["DRAFT", "PROPOSED", "APPROVED", "REJECTED"];
 
 const STAGE_ACCENT: Record<StageKey, string> = {
-  DRAFT: "border-t-slate-400",
+  DRAFT: "border-t-foreground",
   PROPOSED: "border-t-primary",
   APPROVED: "border-t-success",
   REJECTED: "border-t-destructive",
 };
 
 const STAGE_COUNT: Record<StageKey, string> = {
-  DRAFT: "bg-slate-100 text-slate-700",
+  DRAFT: "bg-muted text-foreground",
   PROPOSED: "bg-primary/10 text-primary",
   APPROVED: "bg-success/15 text-success",
   REJECTED: "bg-destructive/10 text-destructive",

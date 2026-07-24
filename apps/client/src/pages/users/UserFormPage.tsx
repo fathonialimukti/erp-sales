@@ -7,11 +7,12 @@ import { Loader2, Save } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { PageHeader } from "../../components/PageHeader";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
+import { FormSection } from "../../components/FormSection";
 import { ImageUploadField } from "../../components/ImageUploadField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -186,23 +187,19 @@ const InnerForm = ({
 
   return (
     <section
-      className="flex flex-col gap-6 pt-2 pb-8"
+      className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
         section: "user-form",
         isEdit,
         id: userId ?? null,
       })}
     >
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void form.handleSubmit();
-        }}
-      >
-        <PageHeader
-          module="user"
+      <NavButtonGroup
+        onBack={() => navigate(isEdit && userId ? `/users/${userId}` : "/users")}
+      />
+
+      <PageHeader
+        module="user"
           title={
             isEdit
               ? intl.formatMessage({ id: "users.form.title_edit", defaultMessage: "Edit user" })
@@ -222,34 +219,24 @@ const InnerForm = ({
                   defaultMessage: "Create a new system user",
                 })
           }
-          onBack={() => navigate(isEdit && userId ? `/users/${userId}` : "/users")}
-          actions={
-            <Button type="submit" disabled={isPending}>
-              {isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Save className="size-4" aria-hidden />
-              )}
-              {isEdit
-                ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })
-                : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
-            </Button>
-          }
         />
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-heading text-base">
-              {intl.formatMessage({ id: "users.form.identity", defaultMessage: "Identity" })}
-            </CardTitle>
-            <CardDescription>
-              {intl.formatMessage({
-                id: "users.form.identity_description",
-                defaultMessage: "Display name and contact details.",
-              })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-5 sm:grid-cols-2">
+        <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void form.handleSubmit();
+        }}
+      >
+        <FormSection
+          title={intl.formatMessage({ id: "users.form.identity", defaultMessage: "Identity" })}
+          description={intl.formatMessage({
+            id: "users.form.identity_description",
+            defaultMessage: "Display name and contact details.",
+          })}
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
               name="name"
               validators={{
@@ -258,7 +245,7 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="user-name">
                     {intl.formatMessage({ id: "users.form.name", defaultMessage: "Name" })}
                     <span className="text-destructive">*</span>
@@ -289,7 +276,7 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="user-email">
                     {intl.formatMessage({ id: "users.form.email", defaultMessage: "Email" })}
                     <span className="text-destructive">*</span>
@@ -322,7 +309,7 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="user-password">
                     {intl.formatMessage({ id: "users.form.password", defaultMessage: "Password" })}
                     {!isEdit ? <span className="text-destructive">*</span> : null}
@@ -352,7 +339,7 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="user-role">
                     {intl.formatMessage({ id: "users.form.role", defaultMessage: "Role" })}
                     <span className="text-destructive">*</span>
@@ -385,33 +372,39 @@ const InnerForm = ({
                 </div>
               )}
             </form.Field>
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-heading text-base">
-              {intl.formatMessage({ id: "users.form.photo", defaultMessage: "Profile photo" })}
-            </CardTitle>
-            <CardDescription>
-              {intl.formatMessage({
-                id: "users.form.photo_description",
-                defaultMessage: "Square image, at least 256×256px.",
-              })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form.Field name="photo">
-              {(field) => (
-                <ImageUploadField
-                  value={field.state.value}
-                  onChange={(v) => field.handleChange(v ?? "")}
-                />
+        <FormSection
+          title={intl.formatMessage({ id: "users.form.photo", defaultMessage: "Profile photo" })}
+          description={intl.formatMessage({
+            id: "users.form.photo_description",
+            defaultMessage: "Square image, at least 256×256px.",
+          })}
+        >
+          <form.Field name="photo">
+            {(field) => (
+              <ImageUploadField
+                value={field.state.value}
+                onChange={(v) => field.handleChange(v ?? "")}
+              />
+            )}
+          </form.Field>
+        </FormSection>
+      
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <Button size="sm" type="submit" disabled={isPending}>
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
               )}
-            </form.Field>
-          </CardContent>
-        </Card>
-      </form>
+              {isEdit
+                ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })
+                : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
+            </Button>
+        </div>
+</form>
 
       <Dialog
         open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
@@ -473,7 +466,7 @@ const UserFormPage = () => {
     if (isLoading) {
       return (
         <section
-          className="flex flex-col gap-6 pt-2 pb-8"
+          className="flex flex-col gap-3 pt-1 pb-6"
           data-ai-context={JSON.stringify({ section: "user-form", loading: true })}
         >
           <Skeleton className="h-16 w-full max-w-xl" />
@@ -484,31 +477,29 @@ const UserFormPage = () => {
     if (isError) {
       return (
         <section
-          className="flex flex-col gap-6 pt-2 pb-8"
+          className="flex flex-col gap-3 pt-1 pb-6"
           data-ai-context={JSON.stringify({ section: "user-form", error: true })}
         >
           <PageHeader
-            module="user"
+        module="user"
             title={error instanceof Error ? error.message : "Failed to load user."}
-            onBack={() => navigate("/users")}
-          />
+        />
         </section>
       );
     }
     if (!data) {
       return (
         <section
-          className="flex flex-col gap-6 pt-2 pb-8"
+          className="flex flex-col gap-3 pt-1 pb-6"
           data-ai-context={JSON.stringify({ section: "user-form", notFound: true })}
         >
           <PageHeader
-            module="user"
+        module="user"
             title={intl.formatMessage({
               id: "users.form.not_found",
               defaultMessage: "User not found.",
             })}
-            onBack={() => navigate("/users")}
-          />
+        />
         </section>
       );
     }

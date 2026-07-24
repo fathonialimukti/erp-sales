@@ -6,12 +6,13 @@ import { ChevronDown, Loader2, Save } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { PageHeader } from "../../components/PageHeader";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
+import { FormSection } from "../../components/FormSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -211,16 +212,19 @@ const InnerForm = ({
 
   return (
     <section
-      className="flex flex-col gap-6 pt-2 pb-8"
+      className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
         section: "access-control-form",
         isEdit,
         id: roleId ?? null,
       })}
     >
-      <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-        <PageHeader
-          module="user"
+      <NavButtonGroup
+        onBack={() => navigate("/access-control")}
+      />
+
+      <PageHeader
+        module="user"
           title={
             isEdit
               ? intl.formatMessage({ id: "roles.form.title_edit", defaultMessage: "Edit role" })
@@ -240,29 +244,14 @@ const InnerForm = ({
                   defaultMessage: "Create a new role with permissions",
                 })
           }
-          onBack={() => navigate("/access-control")}
-          actions={
-            <Button type="submit" disabled={isPending || Boolean(nameError)}>
-              {isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Save className="size-4" aria-hidden />
-              )}
-              {isEdit
-                ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })
-                : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
-            </Button>
-          }
         />
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-heading text-base">
-              {intl.formatMessage({ id: "roles.form.identity", defaultMessage: "Identity" })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-5 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
+        <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
+        <FormSection
+          title={intl.formatMessage({ id: "roles.form.identity", defaultMessage: "Identity" })}
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="role-name">
                 {intl.formatMessage({ id: "roles.form.name", defaultMessage: "Name" })}
                 <span className="text-destructive">*</span>
@@ -276,7 +265,7 @@ const InnerForm = ({
               />
               {nameError ? <p className="text-xs text-destructive">{nameError}</p> : null}
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="role-description">
                 {intl.formatMessage({
                   id: "roles.form.description",
@@ -290,27 +279,26 @@ const InnerForm = ({
                 placeholder="What does this role do?"
               />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
 
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-            <div>
-              <CardTitle className="font-heading text-base">
-                {intl.formatMessage({
-                  id: "roles.form.permissions",
-                  defaultMessage: "Permissions",
-                })}
-              </CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                <strong>{formState.permissions.length}</strong> / {allPermissions.length} permissions
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
+        <FormSection
+          title={intl.formatMessage({
+            id: "roles.form.permissions",
+            defaultMessage: "Permissions",
+          })}
+          description={
+            <>
+              <strong>{formState.permissions.length}</strong> / {allPermissions.length} permissions
+            </>
+          }
+          action={
+            <>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="h-7"
                 onClick={() =>
                   setFormState((p) => ({
                     ...p,
@@ -324,13 +312,15 @@ const InnerForm = ({
                 type="button"
                 variant="ghost"
                 size="sm"
+                className="h-7"
                 onClick={() => setFormState((p) => ({ ...p, permissions: [] }))}
               >
                 Clear
               </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </>
+          }
+        >
+          <div className="space-y-2">
             {grouped.map(([resource, perms]) => {
               const selectedInGroup = perms.filter((p) => formState.permissions.includes(p.name));
               const selectedCount = selectedInGroup.length;
@@ -338,8 +328,8 @@ const InnerForm = ({
               const someChecked = selectedCount > 0 && !allChecked;
               const isOpen = openGroups.has(resource);
               return (
-                <div key={resource} className="rounded-lg border">
-                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div key={resource} className="rounded-md border border-border/70">
+                  <div className="flex items-center justify-between gap-3 px-3 py-2">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-foreground">{resource}</p>
                       <Badge variant={allChecked ? "default" : selectedCount > 0 ? "secondary" : "outline"}>
@@ -375,7 +365,7 @@ const InnerForm = ({
                     </div>
                   </div>
                   {isOpen ? (
-                    <div className="grid gap-2 border-t px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-2 border-t px-3 py-2 sm:grid-cols-2 lg:grid-cols-3">
                       {perms.map((p) => (
                         <label
                           key={p.id}
@@ -395,9 +385,22 @@ const InnerForm = ({
                 </div>
               );
             })}
-          </CardContent>
-        </Card>
-      </form>
+          </div>
+        </FormSection>
+      
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <Button size="sm" type="submit" disabled={isPending || Boolean(nameError)}>
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {isEdit
+                ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })
+                : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
+            </Button>
+        </div>
+</form>
 
       <Dialog
         open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}
@@ -460,7 +463,7 @@ export const RoleFormPage = () => {
   if (isEdit && isLoading) {
     return (
       <section
-        className="flex flex-col gap-6 pt-2 pb-8"
+        className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "access-control-form", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />

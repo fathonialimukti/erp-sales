@@ -8,14 +8,14 @@ import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { useToast } from "../../ui/useToast";
+import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
 import { EmptyState } from "../../components/EmptyState";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Pagination } from "../../ui/Pagination";
+import { Pagination } from "../../components/Pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,

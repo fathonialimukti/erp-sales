@@ -6,21 +6,15 @@ import {
   Avatar,
   AvatarFallback,
 } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
 import { authUserAtom } from "@/lib/atoms";
+import { initialsOf } from "@/lib/initials";
+import { cn } from "@/lib/utils";
 import { UserMenuTrigger } from "./UserMenuPopover";
 
 interface UserAvatarMenuProps {
   variant: "sidebar" | "topbar";
   className?: string;
 }
-
-const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
 
 /**
  * P12 single-surface avatar trigger.

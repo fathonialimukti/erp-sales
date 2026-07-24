@@ -145,6 +145,12 @@
       "skillPath": "packages/server/skills/service-oriented-architecture/SKILL.md",
       "computedHash": "dec4ae563a1e5d8618f92f1e6a3153886e446dd225061398f159a058c514d5b4"
     },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "d81caa0f86aabab65b25e302d454f23a3328760386ed9078345584c0d5c8058e"
+    },
     "subscriptions": {
       "source": "trpc/trpc",
       "sourceType": "github",

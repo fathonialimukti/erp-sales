@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck, Info } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
-import { useToast } from "../../ui/useToast";
+import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
 import { EmptyState } from "../../components/EmptyState";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Pagination } from "../../ui/Pagination";
+import { Pagination } from "../../components/Pagination";
 import { cn } from "@/lib/utils";
 
 type Notification = {

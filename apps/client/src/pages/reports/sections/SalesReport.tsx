@@ -33,7 +33,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select } from "../../../ui";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpcClient } from "../../../lib/trpc";
 
 const formatCurrency = (value: number) =>
@@ -295,22 +301,31 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
                   { dimension: dimensionLabel },
                 )}
               </CardTitle>
-              <div className="no-print min-w-[10rem]">
+              <div className="no-print min-w-40">
                 <Select
-                  ariaLabel={intl.formatMessage({
-                    id: "report.filter.dimension",
-                    defaultMessage: "Group by",
-                  })}
-                  options={DIMENSIONS.map((d) => ({
-                    value: d,
-                    label: intl.formatMessage({
-                      id: `report.dimension.${d}`,
-                      defaultMessage: d,
-                    }),
-                  }))}
                   value={dimension}
-                  onChange={(v) => setDimension(v as typeof dimension)}
-                />
+                  onValueChange={(v) => setDimension(v as typeof dimension)}
+                >
+                  <SelectTrigger
+                    className="h-9 w-full"
+                    aria-label={intl.formatMessage({
+                      id: "report.filter.dimension",
+                      defaultMessage: "Group by",
+                    })}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIMENSIONS.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {intl.formatMessage({
+                          id: `report.dimension.${d}`,
+                          defaultMessage: d,
+                        })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>

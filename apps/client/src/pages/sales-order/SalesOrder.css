@@ -408,7 +408,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-slate-400);
+  color: var(--foreground);
   transition: all 0.3s var(--ease-default);
   position: relative;
   z-index: 2;
@@ -455,7 +455,7 @@
 .so-timeline__label-text {
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-slate-500);
+  color: var(--muted-foreground);
   white-space: nowrap;
 }
 
@@ -2601,7 +2601,7 @@
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    color: #64748B;
+    color: #0369A1;
     margin-top: 2pt;
   }
 
@@ -2642,7 +2642,7 @@
     margin-top: 2pt;
   }
 
-  .so-print__status--draft    { background: #E2E8F0; color: #475569; }
+  .so-print__status--draft    { background: #E2E8F0; color: #0B0B14; }
   .so-print__status--proposed { background: #DBEAFE; color: #1D4ED8; }
   .so-print__status--approved { background: #D1FAE5; color: #047857; }
   .so-print__status--rejected { background: #FEE2E2; color: #B91C1C; }
@@ -2666,7 +2666,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #64748B;
+    color: #0369A1;
   }
 
   .so-print__meta-value {
@@ -2698,7 +2698,7 @@
 
   .so-print__th {
     background: #F1F5F9;
-    color: #475569;
+    color: #0B0B14;
     font-size: 7pt;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -2729,7 +2729,7 @@
   .so-print__td--sku { font-family: var(--font-mono, "SF Mono", Menlo, monospace); font-size: 8.5pt; }
 
   .so-print__product-name { font-weight: 600; }
-  .so-print__product-note { font-size: 8pt; color: #64748B; margin-top: 2pt; }
+  .so-print__product-note { font-size: 8pt; color: #0369A1; margin-top: 2pt; }
 
   /* ---------- Totals ---------- */
   tfoot .so-print__total-label,
@@ -2741,7 +2741,7 @@
 
   tfoot .so-print__total-label {
     text-align: right;
-    color: #475569;
+    color: #0B0B14;
     font-weight: 600;
   }
 
@@ -2811,7 +2811,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #64748B;
+    color: #0369A1;
   }
 
   /* ---------- Footer ---------- */
@@ -2822,7 +2822,7 @@
     padding-top: 6pt;
     border-top: 0.5pt solid #CBD5E1;
     font-size: 8pt;
-    color: #64748B;
+    color: #0369A1;
   }
 
   .so-print__footer-thanks {

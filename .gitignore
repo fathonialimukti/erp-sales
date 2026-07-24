@@ -42,3 +42,5 @@ apps/client/src/assets/glb/*
 !apps/client/src/assets/glb/.gitkeep
 
 /docs/superpowers/*
+# heroui-agents-md
+.heroui-docs/

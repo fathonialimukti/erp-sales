@@ -135,7 +135,7 @@ export const Topbar = () => {
     <header
       role="banner"
       className={cn(
-        "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3 shadow-sm backdrop-blur-xl sm:h-15 sm:px-4",
+        "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 rounded-2xl border border-primary/10 bg-card/90 px-3 shadow-sm ring-1 ring-primary/5 backdrop-blur-xl sm:h-15 sm:px-4",
       )}
       data-ai-context={JSON.stringify({
         section: "topbar",
@@ -159,7 +159,7 @@ export const Topbar = () => {
         </Button>
 
         <div className="min-w-0 leading-tight">
-          <span className="block truncate text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+          <span className="block truncate text-[11px] font-semibold tracking-wide text-primary uppercase">
             {kickerLabel}
           </span>
           <span className="block truncate font-heading text-sm font-semibold text-foreground sm:text-base">
@@ -172,7 +172,7 @@ export const Topbar = () => {
 
       <div className="flex items-center gap-1.5 sm:gap-2">
         <div
-          className="hidden items-center gap-1.5 rounded-full border border-border bg-secondary/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground tabular-nums sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-full border border-primary/12 bg-primary/[0.06] px-2.5 py-1.5 text-xs font-medium text-primary tabular-nums sm:inline-flex"
           aria-hidden
           title={intl.formatMessage({
             id: "common.time",

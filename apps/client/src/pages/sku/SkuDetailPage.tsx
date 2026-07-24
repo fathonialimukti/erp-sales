@@ -7,7 +7,7 @@ import { Package, Pencil, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { useToast } from "../../ui/useToast";
+import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";

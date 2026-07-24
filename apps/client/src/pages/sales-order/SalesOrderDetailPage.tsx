@@ -28,7 +28,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { trpcClient } from "../../lib/trpc";
-import { useToast } from "../../ui/useToast";
+import { useToast } from "../../components/useToast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";

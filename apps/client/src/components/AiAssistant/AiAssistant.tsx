@@ -10,7 +10,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { UIMessage } from 'ai';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { aiFormFillAtom, authUserAtom } from '../../lib/atoms';
@@ -338,14 +338,21 @@ const collectPageContext = (): string => {
   });
 };
 
+const SALES_ORDER_PREFILL_PROMPT =
+  'Help me prefill this form with the data:\n...';
+
 export const AiAssistant = () => {
   const intl = useIntl();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const [summarizing, setSummarizing] = useState(false);
   const navigate = useNavigate();
   const setFormFill = useSetAtom(aiFormFillAtom);
+  const isSalesOrderForm =
+    location.pathname === '/sales-order/create' ||
+    /^\/sales-order\/[^/]+\/edit$/.test(location.pathname);
   // Tracks toolCallIds already executed to prevent double-firing (Strict Mode / multiple effects)
   const handledToolCallsRef = useRef(new Set<string>());
   // Tracks pending async tool calls (like queryDatabase) to prevent premature auto-send
@@ -840,7 +847,7 @@ export const AiAssistant = () => {
           </div>
 
           <div className="shrink-0 border-t border-border px-4 pt-3 pb-4">
-            <div className="mb-2.5 flex gap-2">
+            <div className="mb-2.5 flex flex-wrap gap-2">
               <button
                 type="button"
                 className="cursor-pointer border-0 bg-transparent p-0 disabled:cursor-not-allowed disabled:opacity-50"
@@ -852,6 +859,22 @@ export const AiAssistant = () => {
                   {intl.formatMessage({ id: 'common.action.summarize_page', defaultMessage: 'Summarize this page' })}
                 </Badge>
               </button>
+              {isSalesOrderForm ? (
+                <button
+                  type="button"
+                  className="cursor-pointer border-0 bg-transparent p-0 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => setInput(SALES_ORDER_PREFILL_PROMPT)}
+                  disabled={isLoading}
+                >
+                  <Badge variant="secondary" className="gap-1.5 px-2.5 py-1 text-xs font-medium">
+                    <Sparkles className="size-3" aria-hidden />
+                    {intl.formatMessage({
+                      id: 'ai.assistant.prefill_sales_order',
+                      defaultMessage: 'Prefill sales order',
+                    })}
+                  </Badge>
+                </button>
+              ) : null}
             </div>
             <div className="flex w-full items-end gap-2">
               <Input

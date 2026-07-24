@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtom, useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
@@ -13,19 +13,22 @@ import {
 } from "lucide-react";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandShortcut,
+} from "@/components/ui/command";
 import { icons } from "@/assets/icons";
 import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
 import { hasPermissionAtom, searchOpenAtom } from "@/lib/atoms";
 import { trpcClient } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
-type SearchResultKind = "page" | "customer" | "sku" | "sales-order";
+type SearchResultKind = "page" | "customer" | "sku" | "sales-order" | "action";
 
 interface SearchResult {
   kind: SearchResultKind;
@@ -34,7 +37,6 @@ interface SearchResult {
   label: string;
   hint: string;
   icon?: string;
-  tint: string;
 }
 
 interface NavLeaf {
@@ -71,12 +73,12 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-const TINT_CLASS: Record<string, string> = {
-  violet: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
-  green: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  pink: "bg-pink-500/15 text-pink-600 dark:text-pink-400",
-  orange: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
-  blue: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+const KIND_TINT: Record<SearchResultKind, string> = {
+  page: "bg-primary/10 text-primary",
+  action: "bg-muted text-muted-foreground",
+  customer: "bg-primary/10 text-primary",
+  sku: "bg-muted text-foreground",
+  "sales-order": "bg-primary/10 text-primary",
 };
 
 export const SearchPalette = () => {
@@ -85,16 +87,13 @@ export const SearchPalette = () => {
   const hasPermission = useAtomValue(hasPermissionAtom);
   const [open, setOpen] = useAtom(searchOpenAtom);
   const [query, setQuery] = useState("");
-  const [activeIndex, setActiveIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
 
   const navPages = useMemo<SearchResult[]>(() => {
     const leaves = flattenLeaves(NAV_MENU).filter(
       (l) => !l.permission || hasPermission(l.permission),
     );
     return leaves.map((l) => ({
-      kind: "page",
+      kind: "page" as const,
       id: l.href,
       href: l.href,
       label: intl.formatMessage({ id: l.name, defaultMessage: l.name }),
@@ -103,7 +102,6 @@ export const SearchPalette = () => {
         defaultMessage: "Go to page",
       }),
       icon: l.icon,
-      tint: "violet",
     }));
   }, [hasPermission, intl]);
 
@@ -168,7 +166,7 @@ export const SearchPalette = () => {
     return actions
       .filter((a) => hasPermission(a.permission))
       .map((a) => ({
-        kind: "page" as const,
+        kind: "action" as const,
         id: a.id,
         href: a.href,
         label: intl.formatMessage({
@@ -180,7 +178,6 @@ export const SearchPalette = () => {
           defaultMessage: "Create new",
         }),
         icon: a.icon,
-        tint: "green",
       }));
   }, [hasPermission, intl]);
 
@@ -266,7 +263,6 @@ export const SearchPalette = () => {
       hint:
         (c.code ?? "") +
         (c._count?.outlets ? ` · ${c._count.outlets} outlets` : ""),
-      tint: "pink",
     }));
 
     const skuItems = (
@@ -283,7 +279,6 @@ export const SearchPalette = () => {
       href: `/sku/${s.id}`,
       label: s.name,
       hint: s.code ?? "",
-      tint: "orange",
     }));
 
     const soItems = (
@@ -301,7 +296,6 @@ export const SearchPalette = () => {
       href: `/sales-order/${so.id}`,
       label: so.documentNumber ?? so.id,
       hint: `${so.customer?.name ?? "—"} · ${formatCurrency(Number(so.grandTotal ?? 0))}`,
-      tint: "blue",
     }));
 
     return [
@@ -320,10 +314,6 @@ export const SearchPalette = () => {
   ]);
 
   useEffect(() => {
-    if (activeIndex >= results.length) setActiveIndex(0);
-  }, [results.length, activeIndex]);
-
-  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isCmdK =
         (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
@@ -337,11 +327,7 @@ export const SearchPalette = () => {
   }, [setOpen]);
 
   useEffect(() => {
-    if (open) {
-      setQuery("");
-      setActiveIndex(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
+    if (open) setQuery("");
   }, [open]);
 
   const goTo = (href: string) => {
@@ -349,32 +335,17 @@ export const SearchPalette = () => {
     setOpen(false);
   };
 
-  const onInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, Math.max(results.length - 1, 0)));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const target = results[activeIndex];
-      if (target) goTo(target.href);
-    }
-  };
-
-  useEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(
-      `[data-result-index="${activeIndex}"]`,
-    );
-    el?.scrollIntoView({ block: "nearest" });
-  }, [activeIndex]);
-
   const kindLabel = (kind: SearchResultKind) => {
     if (kind === "page") {
       return intl.formatMessage({
         id: "search.kind.page",
         defaultMessage: "Page",
+      });
+    }
+    if (kind === "action") {
+      return intl.formatMessage({
+        id: "search.kind.action",
+        defaultMessage: "Action",
       });
     }
     if (kind === "customer") {
@@ -395,68 +366,57 @@ export const SearchPalette = () => {
     });
   };
 
+  const groups = useMemo(() => {
+    const order: SearchResultKind[] = [
+      "action",
+      "page",
+      "customer",
+      "sku",
+      "sales-order",
+    ];
+    return order
+      .map((kind) => ({
+        kind,
+        items: results.filter((r) => r.kind === kind),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [results]);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent
-        showCloseButton={false}
-        className="top-[12%] w-full max-w-xl translate-y-0 gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl sm:max-w-xl"
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      title={intl.formatMessage({
+        id: "search.title",
+        defaultMessage: "Search",
+      })}
+      description={intl.formatMessage({
+        id: "search.placeholder",
+        defaultMessage: "Search pages, customers, SKUs, sales orders…",
+      })}
+      className="top-[12%] max-w-xl sm:max-w-xl"
+      showCloseButton={false}
+    >
+      <Command
+        shouldFilter={false}
+        className="rounded-none"
         data-ai-context={JSON.stringify({
           section: "search-palette",
           open,
           resultCount: results.length,
         })}
       >
-        <DialogHeader className="sr-only">
-          <DialogTitle>
-            {intl.formatMessage({
-              id: "search.title",
-              defaultMessage: "Search",
-            })}
-          </DialogTitle>
-          <DialogDescription>
-            {intl.formatMessage({
-              id: "search.placeholder",
-              defaultMessage:
-                "Search pages, customers, SKUs, sales orders…",
-            })}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex items-center gap-2 border-b border-border px-3">
-          <Search
-            className="size-4 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
-          <input
-            ref={inputRef}
-            type="text"
-            className="h-12 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-            placeholder={intl.formatMessage({
-              id: "search.placeholder",
-              defaultMessage:
-                "Search pages, customers, SKUs, sales orders…",
-            })}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActiveIndex(0);
-            }}
-            onKeyDown={onInputKey}
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <kbd className="hidden rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-block">
-            esc
-          </kbd>
-        </div>
-
-        <div
-          ref={listRef}
-          role="listbox"
-          className="max-h-[min(420px,55vh)] overflow-y-auto p-1.5"
-        >
-          {results.length === 0 ? (
-            <div className="flex flex-col items-center gap-1 px-4 py-10 text-center">
+        <CommandInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder={intl.formatMessage({
+            id: "search.placeholder",
+            defaultMessage: "Search pages, customers, SKUs, sales orders…",
+          })}
+        />
+        <CommandList className="max-h-[min(420px,55vh)]">
+          <CommandEmpty>
+            <div className="flex flex-col items-center gap-1 px-2 py-4">
               <span className="text-sm font-medium text-foreground">
                 {intl.formatMessage({
                   id: "search.empty.title",
@@ -471,91 +431,89 @@ export const SearchPalette = () => {
                 })}
               </span>
             </div>
-          ) : (
-            results.map((r, i) => (
-              <button
-                type="button"
-                key={`${r.kind}-${r.id}`}
-                data-result-index={i}
-                role="option"
-                aria-selected={i === activeIndex}
-                className={cn(
-                  "flex w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2 text-left outline-none transition-colors",
-                  i === activeIndex
-                    ? "bg-primary/10 text-foreground"
-                    : "hover:bg-accent",
-                )}
-                onMouseEnter={() => setActiveIndex(i)}
-                onClick={() => goTo(r.href)}
-              >
-                <span
-                  className={cn(
-                    "inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
-                    TINT_CLASS[r.tint] ?? TINT_CLASS.violet,
-                  )}
-                  aria-hidden
-                >
-                  {r.icon ? (
-                    <img src={r.icon} alt="" className="size-5" />
-                  ) : r.kind === "customer" ? (
-                    <UserRound className="size-4" />
-                  ) : r.kind === "sku" ? (
-                    <Package className="size-4" />
-                  ) : r.kind === "sales-order" ? (
-                    <FileText className="size-4" />
-                  ) : (
-                    <Search className="size-4" />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-foreground">
-                    <HighlightedText text={r.label} query={query} />
-                  </span>
-                  {r.hint ? (
-                    <span className="block truncate text-xs text-muted-foreground">
-                      <HighlightedText text={r.hint} query={query} />
-                    </span>
-                  ) : null}
-                </span>
-                <span className="shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                  {kindLabel(r.kind)}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
+          </CommandEmpty>
 
-        <footer className="flex flex-wrap items-center gap-3 border-t border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <kbd className="inline-flex items-center rounded border border-border bg-card px-1 py-0.5 font-mono text-[10px]">
-              <ArrowUpDown className="size-3" aria-hidden />
-            </kbd>
-            {intl.formatMessage({
-              id: "search.hint.navigate",
-              defaultMessage: "navigate",
-            })}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <kbd className="inline-flex items-center rounded border border-border bg-card px-1 py-0.5 font-mono text-[10px]">
-              <CornerDownLeft className="size-3" aria-hidden />
-            </kbd>
-            {intl.formatMessage({
-              id: "search.hint.open",
-              defaultMessage: "open",
-            })}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[10px]">
-              esc
-            </kbd>
-            {intl.formatMessage({
-              id: "search.hint.close",
-              defaultMessage: "close",
-            })}
-          </span>
-        </footer>
-      </DialogContent>
-    </Dialog>
+          {groups.map((group) => (
+            <CommandGroup
+              key={group.kind}
+              heading={kindLabel(group.kind)}
+            >
+              {group.items.map((r) => (
+                <CommandItem
+                  key={`${r.kind}-${r.id}`}
+                  value={`${r.kind}-${r.id}-${r.label}`}
+                  onSelect={() => goTo(r.href)}
+                  className="min-h-11 gap-3 rounded-lg px-2.5 py-2"
+                >
+                  <span
+                    className={cn(
+                      "inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
+                      KIND_TINT[r.kind],
+                    )}
+                    aria-hidden
+                  >
+                    {r.icon ? (
+                      <img src={r.icon} alt="" className="size-5" />
+                    ) : r.kind === "customer" ? (
+                      <UserRound className="size-4" />
+                    ) : r.kind === "sku" ? (
+                      <Package className="size-4" />
+                    ) : r.kind === "sales-order" ? (
+                      <FileText className="size-4" />
+                    ) : (
+                      <Search className="size-4" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      <HighlightedText text={r.label} query={query} />
+                    </span>
+                    {r.hint ? (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        <HighlightedText text={r.hint} query={query} />
+                      </span>
+                    ) : null}
+                  </span>
+                  <CommandShortcut className="tracking-wide uppercase">
+                    {kindLabel(r.kind)}
+                  </CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ))}
+        </CommandList>
+      </Command>
+
+      <footer className="flex flex-wrap items-center gap-3 border-t border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <kbd className="inline-flex items-center rounded border border-border bg-card px-1 py-0.5 font-mono text-[10px]">
+            <ArrowUpDown className="size-3" aria-hidden />
+          </kbd>
+          {intl.formatMessage({
+            id: "search.hint.navigate_keys",
+            defaultMessage: "navigate",
+          })}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <kbd className="inline-flex items-center rounded border border-border bg-card px-1 py-0.5 font-mono text-[10px]">
+            <CornerDownLeft className="size-3" aria-hidden />
+          </kbd>
+          {intl.formatMessage({
+            id: "search.hint.open",
+            defaultMessage: "open",
+          })}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[10px]">
+            esc
+          </kbd>
+          {intl.formatMessage({
+            id: "search.hint.close",
+            defaultMessage: "close",
+          })}
+        </span>
+      </footer>
+    </CommandDialog>
   );
 };
 

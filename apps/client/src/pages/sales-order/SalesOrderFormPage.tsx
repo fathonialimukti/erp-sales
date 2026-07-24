@@ -4,22 +4,23 @@ import { useIntl } from "react-intl";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import type { inferProcedureInput } from "@trpc/server";
-import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, Save, Send, Trash2 } from "lucide-react";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
-import { hasPermissionAtom, aiFormFillAtom } from "../../lib/atoms";
+import { hasPermissionAtom } from "../../lib/atoms";
 import { DatePicker } from "../../components/DatePicker";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { SelectSearch } from "../../ui/SelectSearch";
+import { FormSection } from "@/components/FormSection";
+import { SelectSearch } from "../../components/SelectSearch";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -368,36 +369,6 @@ export const SalesOrderFormPage = () => {
     },
   });
 
-  // AI autofill: "Draft from description"
-  const [draftText, setDraftText] = useState("");
-  const [draftLoading, setDraftLoading] = useState(false);
-  const [draftError, setDraftError] = useState("");
-  const setAiFormFill = useSetAtom(aiFormFillAtom);
-
-  const handleAiDraft = useCallback(async () => {
-    if (!draftText.trim()) return;
-    setDraftLoading(true);
-    setDraftError("");
-    try {
-      const res = await fetch("http://localhost:10022/api/ai/extract-sales-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ text: draftText }),
-      });
-      if (!res.ok) throw new Error("Extraction failed");
-      const json = await res.json() as { data?: Record<string, unknown> };
-      if (json.data) {
-        setAiFormFill(json.data);
-        setDraftText("");
-      }
-    } catch (e) {
-      setDraftError(e instanceof Error ? e.message : "Could not extract order data");
-    } finally {
-      setDraftLoading(false);
-    }
-  }, [draftText, setAiFormFill]);
-
   // Read directly from form.state.values so the component re-renders
   // when the form store updates. form.getFieldValue() is a snapshot read
   // and does NOT trigger re-renders, which is why the add/remove
@@ -500,11 +471,11 @@ export const SalesOrderFormPage = () => {
   if (isEdit && isLoading) {
     return (
       <section
-        className="flex flex-col gap-6 pt-2 pb-8"
+        className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "sales-order-form", loading: true })}
       >
-        <Skeleton className="h-16 w-full max-w-xl" />
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-12 w-full max-w-xl" />
+        <Skeleton className="h-36 w-full" />
       </section>
     );
   }
@@ -512,13 +483,13 @@ export const SalesOrderFormPage = () => {
   if (isEdit && !data) {
     return (
       <section
-        className="flex flex-col gap-6 pt-2 pb-8"
+        className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "sales-order-form", notFound: true })}
       >
+        <NavButtonGroup onBack={() => navigate("/sales-order")} />
         <PageHeader
           module="order"
           title={intl.formatMessage({ id: "sales_order.form.not_found", defaultMessage: "Order not found." })}
-          onBack={() => navigate("/sales-order")}
         />
       </section>
     );
@@ -562,7 +533,7 @@ export const SalesOrderFormPage = () => {
 
   return (
     <section
-      className="flex flex-col gap-6 pt-2 pb-8"
+      className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
         section: "sales-order-form",
         mode: isEdit ? "edit" : "create",
@@ -570,92 +541,49 @@ export const SalesOrderFormPage = () => {
         availableSkus: skuList.map((s) => ({ id: s.id, name: s.name, basePrice: s.basePrice })),
       })}
     >
-      {/* AI Draft from Description */}
-      {!isEdit ? (
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-heading text-base">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-ai)_14%,transparent)] text-[var(--module-ai)]">
-                <Sparkles className="size-4" aria-hidden />
-              </span>
-              {intl.formatMessage({ id: "sales_order.form.ai_draft_label", defaultMessage: "Draft from description" })}
-            </CardTitle>
-            <CardDescription>AI will extract order details and pre-fill the form below</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Textarea
-              rows={4}
-              value={draftText}
-              onChange={(e) => setDraftText(e.target.value)}
-              placeholder={intl.formatMessage({ id: "sales_order.form.ai_draft_placeholder", defaultMessage: "Paste or describe the order..." })}
-              disabled={draftLoading}
-            />
-            {draftError ? (
-              <p className="text-sm text-destructive">
-                {intl.formatMessage({ id: "sales_order.form.ai_draft_error", defaultMessage: "Could not extract order data" })}: {draftError}
-              </p>
-            ) : null}
-            <Button type="button" onClick={handleAiDraft} disabled={!draftText.trim() || draftLoading}>
-              {draftLoading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-              {draftLoading ? "Processing..." : intl.formatMessage({ id: "sales_order.form.ai_draft_button", defaultMessage: "Auto-fill form" })}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
+      <NavButtonGroup
+        onBack={() =>
+          navigate(isEdit && id ? `/sales-order/${id}` : "/sales-order")
+        }
+      />
+
+      <PageHeader
+        module="order"
+        eyebrow={intl.formatMessage({ id: "nav.sales", defaultMessage: "Sales" })}
+        title={
+          isEdit
+            ? intl.formatMessage({ id: "sales_order.form.title_edit", defaultMessage: "Edit sales order" })
+            : intl.formatMessage({ id: "sales_order.form.title_create", defaultMessage: "Create sales order" })
+        }
+        description={
+          isEdit
+            ? intl.formatMessage({
+                id: "sales_order.form.subtitle_edit",
+                defaultMessage: "Update line items, totals, and customer information",
+              })
+            : intl.formatMessage({
+                id: "sales_order.form.subtitle_create",
+                defaultMessage: "Create a new sales order with line items and customer details",
+              })
+        }
+      />
+
       <form
         data-so-form
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           form.handleSubmit();
         }}
       >
-        <PageHeader
-          module="order"
-          title={
-            isEdit
-              ? intl.formatMessage({ id: "sales_order.form.title_edit", defaultMessage: "Edit sales order" })
-              : intl.formatMessage({ id: "sales_order.form.title_create", defaultMessage: "Create sales order" })
-          }
-          description={
-            isEdit
-              ? "Update line items, totals, and customer information"
-              : "Create a new sales order with line items and customer details"
-          }
-          onBack={() => navigate(isEdit && id ? `/sales-order/${id}` : "/sales-order")}
-          actions={
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setPendingSaveMode("DRAFT");
-                  setModalStage("draft-confirm");
-                }}
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                <Save className="size-4" />
-                {intl.formatMessage({ id: "sales_order.form.save_draft", defaultMessage: "Save as draft" })}
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                <Send className="size-4" />
-                {intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" })}
-              </Button>
-            </div>
-          }
-        />
-
         {/* Validation Warnings */}
         {validationWarnings.length > 0 ? (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
-              <AlertTriangle className="size-4" />
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="size-3.5" />
               Validation Warnings
             </div>
-            <ul className="list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-300">
+            <ul className="list-disc space-y-0.5 pl-4 text-xs text-amber-800 dark:text-amber-300">
               {validationWarnings.map((warning, idx) => (
                 <li key={idx}>{warning}</li>
               ))}
@@ -663,258 +591,308 @@ export const SalesOrderFormPage = () => {
           </div>
         ) : null}
 
-        {/* Outlet & Location */}
-        <Card className="shadow-sm">
-          <div className="flex items-center justify-between gap-3 px-6 pt-6">
-            <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
-              Outlet &amp; Location
-            </h2>
-            <p className="text-sm text-muted-foreground">Select outlet to auto-fill customer and area</p>
-          </div>
-          <div className="space-y-4 px-6 pb-6 pt-4">
-            <div className="grid gap-5 sm:grid-cols-2">
-              {/* Document Number */}
-              <form.Field name="documentNumber">
-                {(f) => (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium">Document Number</label>
-                    <input
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-                      type="text"
-                      value={f.state.value ?? ""}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                      placeholder="Auto-generated if empty"
-                    />
-                  </div>
-                )}
-              </form.Field>
-
-              {/* Outlet - shows customer name and area */}
-              <form.Field
-                name="outletId"
-                validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
-              >
-                {(f) => (
-                  <SelectSearch
-                    label="Outlet"
-                    isRequired
-                    isInvalid={Boolean(f.state.meta.errors[0])}
-                    errorMessage={String(f.state.meta.errors[0] ?? "")}
-                    value={f.state.value}
-                    onChange={(v) => handleOutletChange(Array.isArray(v) ? v[0] ?? "" : v)}
-                    sourceData={async () => outletList}
-                    optionsKey="id"
-                    queryKeyBase="outletSelect"
-                    getOptionLabel={(o) => o.name}
-                    getOptionDescription={(o) => `${o.customerName} • ${o.areaName}`}
-                    placeholder="Select outlet…"
-                    searchPlaceholder="Search outlets…"
-                    isLoading={outletsLoading}
-                  />
-                )}
-              </form.Field>
-
-              {/* Order Date */}
-              <form.Field name="date">
-                {(f) => (
-                  <DatePicker
-                    label="Order date"
+        <FormSection
+          title="Outlet & Location"
+          description="Select outlet to auto-fill customer and area"
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <form.Field name="documentNumber">
+              {(f) => (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium">Document Number</label>
+                  <input
+                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs"
+                    type="text"
                     value={f.state.value ?? ""}
-                    onChange={(v) => f.handleChange(v as string)}
-                    placeholder="Select order date"
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    placeholder="Auto-generated if empty"
                   />
-                )}
-              </form.Field>
-
-              {/* ETA */}
-              <form.Field name="expectedDeliveryDate">
-                {(f) => (
-                  <DatePicker
-                    label="ETA"
-                    value={f.state.value ?? ""}
-                    onChange={(v) => f.handleChange(v as string)}
-                    placeholder="Select delivery date"
-                    min={f.state.value || undefined}
-                  />
-                )}
-              </form.Field>
-            </div>
-          </div>
-        </Card>
-
-        {/* Items */}
-        <Card className="shadow-sm">
-          <div className="flex items-center justify-between gap-3 px-6 pt-6">
-            <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
-              Line items
-            </h2>
-            <button type="button" className="inline-flex h-8 items-center gap-1 rounded-md border border-input px-3 text-sm hover:bg-muted" onClick={handleAddItem}>
-              <Plus className="size-4" />
-              Add item
-            </button>
-          </div>
-          <div className="space-y-4 px-6 pb-6 pt-4">
-            <div className="space-y-4">
-              <form.Subscribe
-                selector={(s) => (s.values.items ?? []) as LineItem[]}
-              >
-                {(items) => (
-                  <>
-                  {items.map((item, idx) => (
-                <div className="grid gap-3 rounded-lg border p-3 lg:grid-cols-[1.4fr_0.6fr_0.8fr_0.6fr_0.6fr_0.9fr_auto]" key={idx}>
-                  <div>
-                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Product</div>}
-                    <SelectSearch
-                      value={item.skuId}
-                      onChange={(v) => handleItemChange(idx, "skuId", Array.isArray(v) ? v[0] ?? "" : v)}
-                      sourceData={async () => skuList}
-                      optionsKey="id"
-                      queryKeyBase="skuSelect"
-                      getOptionLabel={(o) => o.name}
-                      getOptionDescription={(o) => o.code ?? undefined}
-                      placeholder="Select SKU…"
-                      searchPlaceholder="Search SKUs…"
-                      isLoading={skusLoading}
-                    />
-                  </div>
-                  <div>
-                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Qty</div>}
-                    <input
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-                      type="number"
-                      min={1}
-                      value={String(item.quantity)}
-                      onChange={(e) => handleItemChange(idx, "quantity", Number(e.target.value) || 1)}
-                    />
-                  </div>
-                  <div>
-                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Unit price</div>}
-                    <input
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-                      type="number"
-                      min={0}
-                      value={String(item.unitPrice)}
-                      onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div>
-                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Disc %</div>}
-                    <input
-                      className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs ${autoDiscounts[idx] ? "bg-emerald-500/5" : ""}`}
-                      type="number"
-                      min={0}
-                      value={String(item.discountPercent ?? "")}
-                      onChange={(e) =>
-                        handleItemChange(idx, "discountPercent", e.target.value ? Number(e.target.value) : null)
-                      }
-                      readOnly={Boolean(autoDiscounts[idx])}
-                      title={
-                        autoDiscounts[idx]
-                          ? intl.formatMessage(
-                              { id: "sales_order.form.discount_auto_filled", defaultMessage: "Auto-filled from {program}" },
-                              { program: autoDiscounts[idx].programName },
-                            )
-                          : undefined
-                      }
-                    />
-                    {autoDiscounts[idx] && (
-                      <span className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-600" title={`${autoDiscounts[idx].programName} - ${autoDiscounts[idx].discountPercent}%`}>
-                        <span>✓</span>
-                        {intl.formatMessage({ id: "sales_order.form.discount_auto_filled_short", defaultMessage: "Auto" })}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Tax %</div>}
-                    <input
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-                      type="number"
-                      min={0}
-                      value={String(item.taxPercent ?? "")}
-                      onChange={(e) =>
-                        handleItemChange(idx, "taxPercent", e.target.value ? Number(e.target.value) : null)
-                      }
-                    />
-                  </div>
-                  <div>
-                    {idx === 0 && <div className="mb-1 text-xs font-medium text-muted-foreground">Line total</div>}
-                    <div className="flex h-9 items-center rounded-md border border-input bg-muted/30 px-3 text-sm font-semibold tabular-nums">{formatCurrency(item.lineTotal)}</div>
-                  </div>
-                  <button
-                    type="button"
-                    className="inline-flex size-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
-                    aria-label="Remove item"
-                    onClick={() => handleRemoveItem(idx)}
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
                 </div>
-              ))}
-                  </>
-                )}
-              </form.Subscribe>
-            </div>
+              )}
+            </form.Field>
 
-            <div className="flex justify-end">
-              <form.Subscribe
-                selector={(s) => (s.values.items ?? []) as LineItem[]}
-              >
-                {(items) => {
-                  const totals = recalcTotals(items);
-                  return (
-                    <div className="rounded-lg border bg-muted/30 px-4 py-3 text-right">
-                      <p className="text-xs text-muted-foreground">Grand total</p>
-                      <p className="text-lg font-semibold tabular-nums text-[var(--module-order)]">{formatCurrency(totals.grandTotal)}</p>
+            <form.Field
+              name="outletId"
+              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+            >
+              {(f) => (
+                <SelectSearch
+                  label="Outlet"
+                  isRequired
+                  isInvalid={Boolean(f.state.meta.errors[0])}
+                  errorMessage={String(f.state.meta.errors[0] ?? "")}
+                  value={f.state.value}
+                  onChange={(v) => handleOutletChange(Array.isArray(v) ? v[0] ?? "" : v)}
+                  sourceData={async () => outletList}
+                  optionsKey="id"
+                  queryKeyBase="outletSelect"
+                  getOptionLabel={(o) => o.name}
+                  getOptionDescription={(o) => `${o.customerName} • ${o.areaName}`}
+                  placeholder="Select outlet…"
+                  searchPlaceholder="Search outlets…"
+                  isLoading={outletsLoading}
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="date">
+              {(f) => (
+                <DatePicker
+                  label="Order date"
+                  value={f.state.value ?? ""}
+                  onChange={(v) => f.handleChange(v as string)}
+                  placeholder="Select order date"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="expectedDeliveryDate">
+              {(f) => (
+                <DatePicker
+                  label="ETA"
+                  value={f.state.value ?? ""}
+                  onChange={(v) => f.handleChange(v as string)}
+                  placeholder="Select delivery date"
+                  min={f.state.value || undefined}
+                />
+              )}
+            </form.Field>
+          </div>
+        </FormSection>
+
+        <FormSection
+          title="Line items"
+          action={
+            <Button type="button" variant="outline" size="sm" className="h-7" onClick={handleAddItem}>
+              <Plus className="size-3.5" />
+              Add item
+            </Button>
+          }
+        >
+          <div className="space-y-2">
+            <form.Subscribe selector={(s) => (s.values.items ?? []) as LineItem[]}>
+              {(items) => (
+                <>
+                  {items.map((item, idx) => (
+                    <div
+                      className="grid gap-2 rounded-md border border-border/70 bg-muted/20 p-2 lg:grid-cols-[1.4fr_0.6fr_0.8fr_0.6fr_0.6fr_0.9fr_auto]"
+                      key={idx}
+                    >
+                      <div>
+                        {idx === 0 && (
+                          <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+                            Product
+                          </div>
+                        )}
+                        <SelectSearch
+                          value={item.skuId}
+                          onChange={(v) =>
+                            handleItemChange(idx, "skuId", Array.isArray(v) ? v[0] ?? "" : v)
+                          }
+                          sourceData={async () => skuList}
+                          optionsKey="id"
+                          queryKeyBase="skuSelect"
+                          getOptionLabel={(o) => o.name}
+                          getOptionDescription={(o) => o.code ?? undefined}
+                          placeholder="Select SKU…"
+                          searchPlaceholder="Search SKUs…"
+                          isLoading={skusLoading}
+                        />
+                      </div>
+                      <div>
+                        {idx === 0 && (
+                          <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+                            Qty
+                          </div>
+                        )}
+                        <input
+                          className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs"
+                          type="number"
+                          min={1}
+                          value={String(item.quantity)}
+                          onChange={(e) =>
+                            handleItemChange(idx, "quantity", Number(e.target.value) || 1)
+                          }
+                        />
+                      </div>
+                      <div>
+                        {idx === 0 && (
+                          <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+                            Unit price
+                          </div>
+                        )}
+                        <input
+                          className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs"
+                          type="number"
+                          min={0}
+                          value={String(item.unitPrice)}
+                          onChange={(e) =>
+                            handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)
+                          }
+                        />
+                      </div>
+                      <div>
+                        {idx === 0 && (
+                          <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+                            Disc %
+                          </div>
+                        )}
+                        <input
+                          className={`flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs ${autoDiscounts[idx] ? "bg-emerald-500/5" : ""}`}
+                          type="number"
+                          min={0}
+                          value={String(item.discountPercent ?? "")}
+                          onChange={(e) =>
+                            handleItemChange(
+                              idx,
+                              "discountPercent",
+                              e.target.value ? Number(e.target.value) : null,
+                            )
+                          }
+                          readOnly={Boolean(autoDiscounts[idx])}
+                          title={
+                            autoDiscounts[idx]
+                              ? intl.formatMessage(
+                                  {
+                                    id: "sales_order.form.discount_auto_filled",
+                                    defaultMessage: "Auto-filled from {program}",
+                                  },
+                                  { program: autoDiscounts[idx].programName },
+                                )
+                              : undefined
+                          }
+                        />
+                        {autoDiscounts[idx] ? (
+                          <span
+                            className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-emerald-600"
+                            title={`${autoDiscounts[idx].programName} - ${autoDiscounts[idx].discountPercent}%`}
+                          >
+                            <span>✓</span>
+                            {intl.formatMessage({
+                              id: "sales_order.form.discount_auto_filled_short",
+                              defaultMessage: "Auto",
+                            })}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div>
+                        {idx === 0 && (
+                          <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+                            Tax %
+                          </div>
+                        )}
+                        <input
+                          className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs"
+                          type="number"
+                          min={0}
+                          value={String(item.taxPercent ?? "")}
+                          onChange={(e) =>
+                            handleItemChange(
+                              idx,
+                              "taxPercent",
+                              e.target.value ? Number(e.target.value) : null,
+                            )
+                          }
+                        />
+                      </div>
+                      <div>
+                        {idx === 0 && (
+                          <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+                            Line total
+                          </div>
+                        )}
+                        <div className="flex h-8 items-center rounded-md border border-input bg-muted/30 px-2.5 text-sm font-semibold tabular-nums">
+                          {formatCurrency(item.lineTotal)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="inline-flex size-8 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+                        aria-label="Remove item"
+                        onClick={() => handleRemoveItem(idx)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
                     </div>
-                  );
-                }}
-              </form.Subscribe>
-            </div>
+                  ))}
+                </>
+              )}
+            </form.Subscribe>
           </div>
-        </Card>
 
-        {/* Additional info */}
-        <Card className="shadow-sm">
-          <div className="flex items-center justify-between gap-3 px-6 pt-6">
-            <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
-              Additional information
-            </h2>
-          </div>
-          <div className="space-y-4 px-6 pb-6 pt-4">
-            <div className="grid gap-5 sm:grid-cols-2">
-              <form.Field name="paymentTerms">
-                {(f) => (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium">Payment terms</label>
-                    <input
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-                      placeholder="e.g. NET 30"
-                      value={f.state.value}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
+          <div className="flex justify-end">
+            <form.Subscribe selector={(s) => (s.values.items ?? []) as LineItem[]}>
+              {(items) => {
+                const totals = recalcTotals(items);
+                return (
+                  <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-right">
+                    <p className="text-[11px] text-muted-foreground">Grand total</p>
+                    <p className="text-base font-semibold tabular-nums text-module-order">
+                      {formatCurrency(totals.grandTotal)}
+                    </p>
                   </div>
-                )}
-              </form.Field>
-              <form.Field name="notes">
-                {(f) => (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium">Notes</label>
-                    <textarea
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
-                      placeholder="Add order notes…"
-                      value={f.state.value}
-                      onChange={(e) => f.handleChange(e.target.value)}
-                    />
-                  </div>
-                )}
-              </form.Field>
-            </div>
+                );
+              }}
+            </form.Subscribe>
           </div>
-        </Card>
+        </FormSection>
 
+        <FormSection title="Additional information">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <form.Field name="paymentTerms">
+              {(f) => (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium">Payment terms</label>
+                  <input
+                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs"
+                    placeholder="e.g. NET 30"
+                    value={f.state.value}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
+            <form.Field name="notes">
+              {(f) => (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium">Notes</label>
+                  <textarea
+                    className="flex min-h-16 w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm shadow-xs"
+                    placeholder="Add order notes…"
+                    value={f.state.value}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                  />
+                </div>
+              )}
+            </form.Field>
+          </div>
+        </FormSection>
+
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setPendingSaveMode("DRAFT");
+              setModalStage("draft-confirm");
+            }}
+            disabled={createMutation.isPending || updateMutation.isPending}
+          >
+            <Save className="size-3.5" />
+            {intl.formatMessage({ id: "sales_order.form.save_draft", defaultMessage: "Save as draft" })}
+          </Button>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={createMutation.isPending || updateMutation.isPending}
+          >
+            <Send className="size-3.5" />
+            {intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" })}
+          </Button>
+        </div>
       </form>
 
-      
       <ConfirmDialog
         open={modalStage === "draft-confirm"}
         onOpenChange={(open) => {

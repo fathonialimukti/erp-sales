@@ -7,12 +7,36 @@
     "Prisma-Local": {
       "type": "stdio",
       "command": "bunx",
-      "args": ["prisma", "mcp"],
+      "args": [
+        "prisma",
+        "mcp"
+      ],
       "cwd": "${workspaceFolder}/apps/server"
     },
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ]
+    },
+    "shadcn": {
+      "command": "bunx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
     }
   }
 }

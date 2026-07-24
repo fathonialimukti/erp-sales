@@ -12,7 +12,7 @@ import { DataTable } from "../../components/DataTable";
 import { EmptyState } from "../../components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pagination } from "../../ui/Pagination";
+import { Pagination } from "../../components/Pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,

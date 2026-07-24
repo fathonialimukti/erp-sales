@@ -9,11 +9,12 @@ import { Loader2, Save } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
+import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -197,22 +198,21 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
 
   return (
     <section
-      className="flex flex-col gap-6 pt-2 pb-8"
+      className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
         section: "email-crm-form",
         isEdit,
         id: conversationId ?? null,
       })}
     >
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
-        <PageHeader
-          module="email"
+      <NavButtonGroup
+        onBack={() =>
+            navigate(isEdit && conversationId ? `/email-crm/${conversationId}` : "/email-crm")
+          }
+      />
+
+      <PageHeader
+        module="email"
           title={
             isEdit
               ? intl.formatMessage({
@@ -235,34 +235,22 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
                   defaultMessage: "Create a conversation thread",
                 })
           }
-          onBack={() =>
-            navigate(isEdit && conversationId ? `/email-crm/${conversationId}` : "/email-crm")
-          }
-          actions={
-            <Button
-              type="submit"
-              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Save className="size-4" aria-hidden />
-              )}
-              {intl.formatMessage({ id: "emailCrm.common.save", defaultMessage: "Save" })}
-            </Button>
-          }
         />
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-heading text-base">
-              {intl.formatMessage({
+        <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+      >
+        <FormSection
+          title={intl.formatMessage({
                 id: "emailCrm.form.section_basic",
                 defaultMessage: "Conversation",
               })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-5 sm:grid-cols-2">
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
               name="email"
               validators={{
@@ -274,7 +262,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
               }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="email-crm-email">
                     {intl.formatMessage({ id: "emailCrm.form.email", defaultMessage: "Email" })}
                     <span className="text-destructive">*</span>
@@ -299,7 +287,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
 
             <form.Field name="subject">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="email-crm-subject">
                     {intl.formatMessage({ id: "emailCrm.form.subject", defaultMessage: "Subject" })}
                   </Label>
@@ -318,7 +306,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
 
             <form.Field name="status">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="email-crm-status">
                     {intl.formatMessage({ id: "emailCrm.form.status", defaultMessage: "Status" })}
                   </Label>
@@ -340,7 +328,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
 
             <form.Field name="priority">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="email-crm-priority">
                     {intl.formatMessage({
                       id: "emailCrm.form.priority",
@@ -365,7 +353,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
 
             <form.Field name="customerId">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="email-crm-customer">
                     {intl.formatMessage({
                       id: "emailCrm.form.customer",
@@ -397,7 +385,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
 
             <form.Field name="tags">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="email-crm-tags">
                     {intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" })}
                   </Label>
@@ -413,9 +401,23 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
                 </div>
               )}
             </form.Field>
-          </CardContent>
-        </Card>
-      </form>
+          </div>
+        </FormSection>
+      
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <Button size="sm"
+              type="submit"
+              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {intl.formatMessage({ id: "emailCrm.common.save", defaultMessage: "Save" })}
+            </Button>
+        </div>
+</form>
 
       <ConfirmDialog
         open={modalStage === "confirm"}
@@ -502,7 +504,7 @@ export const EmailCrmFormPage = () => {
   if (isEdit && isLoading) {
     return (
       <section
-        className="flex flex-col gap-6 pt-2 pb-8"
+        className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "email-crm-form", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
@@ -514,16 +516,15 @@ export const EmailCrmFormPage = () => {
   if (isEdit && !data) {
     return (
       <section
-        className="flex flex-col gap-6 pt-2 pb-8"
+        className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "email-crm-form", notFound: true })}
       >
         <PageHeader
-          module="email"
+        module="email"
           title={intl.formatMessage({
             id: "emailCrm.form.not_found",
             defaultMessage: "Conversation not found.",
           })}
-          onBack={() => navigate("/email-crm")}
         />
       </section>
     );

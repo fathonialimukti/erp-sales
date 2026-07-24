@@ -10,15 +10,9 @@ import {
 } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { authUserAtom, userMenuOpenAtom } from "@/lib/atoms";
+import { initialsOf } from "@/lib/initials";
 import { cn } from "@/lib/utils";
 import { useAuthActions } from "@/lib/useAuth";
-
-const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
 
 /**
  * Floating user menu — Profile / Settings / Logout.

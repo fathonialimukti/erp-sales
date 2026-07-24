@@ -35,25 +35,25 @@ interface StatusStyle {
 const STATUS_STYLES: Record<string, StatusStyle> = {
   DRAFT: {
     icon: FileText,
-    className: "border-transparent bg-slate-100 text-slate-700",
+    className: "border-border/60 bg-muted text-foreground",
     messageId: "common.status.draft",
     defaultMessage: "Draft",
   },
   PROPOSED: {
     icon: Clock,
-    className: "border-transparent bg-primary/10 text-primary",
+    className: "border-primary/20 bg-primary/12 text-primary",
     messageId: "common.status.proposed",
     defaultMessage: "Proposed",
   },
   APPROVED: {
     icon: CheckCircle2,
-    className: "border-transparent bg-success/15 text-success",
+    className: "border-success/25 bg-success/15 text-success",
     messageId: "common.status.approved",
     defaultMessage: "Approved",
   },
   REJECTED: {
     icon: XCircle,
-    className: "border-transparent bg-destructive/10 text-destructive",
+    className: "border-destructive/25 bg-destructive/12 text-destructive",
     messageId: "common.status.rejected",
     defaultMessage: "Rejected",
   },
@@ -61,7 +61,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
 
 const FALLBACK_STYLE: StatusStyle = {
   icon: CircleDashed,
-  className: "border-border bg-muted text-muted-foreground",
+  className: "border-border bg-muted text-foreground",
   messageId: "common.status.unknown",
   defaultMessage: "Unknown",
 };

@@ -58,15 +58,19 @@ import { KnowledgeBaseFormPage } from './pages/knowledge-base/KnowledgeBaseFormP
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <LandingPage />,
-    errorElement: <RouteErrorPage />,
-  },
-  {
-    path: '/login',
     element: <PublicLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         index: true,
+        element: <LandingPage />,
+      },
+      {
+        path: 'landing-v1',
+        element: <LandingPage />,
+      },
+      {
+        path: 'login',
         element: <LoginPage />,
       },
     ],

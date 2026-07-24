@@ -37,7 +37,7 @@ export const NavModuleTile = ({
   const activeStyle =
     active && accent
       ? ({
-          backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)`,
+          backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`,
           borderLeftColor: accent,
         } satisfies CSSProperties)
       : undefined;
@@ -52,10 +52,10 @@ export const NavModuleTile = ({
         "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent text-left outline-none transition-colors duration-200",
         "hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
         collapsed ? "justify-center px-0 py-2" : "border-l-[3px] px-2.5 py-2",
-        active && !accent && "border-l-primary bg-primary/10 text-primary",
+        active && !accent && "border-l-primary bg-primary/12 text-primary",
         active && accent && "border-l-[3px]",
         !active && !collapsed && "border-l-transparent",
-        active && "font-medium text-foreground",
+        active && "font-medium text-foreground shadow-sm",
         !active && "text-muted-foreground hover:text-foreground",
       )}
       style={activeStyle}

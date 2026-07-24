@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Globe,
   Lock,
   Mail,
   MapPin,
@@ -31,10 +30,7 @@ import {
 } from "../lib/motion";
 import { useAuthActions } from "../lib/useAuth";
 import { isAuthenticatedAtom } from "../lib/atoms";
-import { useLocale } from "../lib/useLocale";
-import { type Locale } from "../lib/i18n";
-import { isLocale } from "../lib/locale";
-import { useToast } from "../ui/useToast";
+import { useToast } from "../components/useToast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,26 +43,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-
-const LOCALE_OPTIONS: Array<{ value: Locale; label: string }> = [
-  { value: "en", label: "English" },
-  { value: "id", label: "Bahasa Indonesia" },
-];
 
 export const LoginPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
   const { login } = useAuthActions();
-  const { locale, setLocale } = useLocale();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const toast = useToast();
@@ -93,12 +75,12 @@ export const LoginPage = () => {
 
   return (
     <div
-      className="relative min-h-dvh w-full overflow-hidden bg-background text-foreground"
+      className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-background text-foreground"
       data-ai-context={JSON.stringify({ section: "login-page" })}
     >
-      <div className="relative grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+      <div className="relative grid min-h-[calc(100dvh-4rem)] flex-1 lg:grid-cols-[1.05fr_1fr]">
         <aside
-          className="relative hidden overflow-hidden bg-slate-950 text-slate-50 lg:block"
+          className="relative hidden overflow-hidden bg-foreground text-background lg:block"
           aria-label="Brand"
         >
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -130,13 +112,13 @@ export const LoginPage = () => {
             </motion.div>
 
             <motion.div className="max-w-lg space-y-4" variants={staggerItem}>
-              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-indigo-100">
+              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-primary-foreground">
                 {intl.formatMessage({ id: "login.brand_kicker" })}
               </span>
               <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
                 {intl.formatMessage({ id: "login.brand_title" })}
               </h1>
-              <p className="text-base leading-relaxed text-slate-300">
+              <p className="text-base leading-relaxed text-primary-foreground">
                 {intl.formatMessage({ id: "login.brand_subtitle" })}
               </p>
             </motion.div>
@@ -164,11 +146,11 @@ export const LoginPage = () => {
                   role="listitem"
                   className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm"
                 >
-                  <stat.icon className="mb-2 size-4 text-indigo-300" />
+                  <stat.icon className="mb-2 size-4 text-primary" />
                   <div className="font-heading text-xl font-semibold tabular-nums">
                     {stat.value}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-slate-400">{stat.label}</div>
+                  <div className="mt-0.5 text-[11px] font-medium text-primary">{stat.label}</div>
                 </div>
               ))}
             </motion.div>
@@ -192,12 +174,12 @@ export const LoginPage = () => {
                 },
               ].map((feature) => (
                 <li key={feature.title} className="flex gap-3">
-                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-indigo-200">
+                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-primary">
                     <feature.icon className="size-4" />
                   </span>
                   <div>
-                    <div className="text-sm font-medium text-slate-100">{feature.title}</div>
-                    <div className="text-xs leading-relaxed text-slate-400">{feature.desc}</div>
+                    <div className="text-sm font-medium text-background">{feature.title}</div>
+                    <div className="text-xs leading-relaxed text-primary-foreground">{feature.desc}</div>
                   </div>
                 </li>
               ))}
@@ -207,45 +189,19 @@ export const LoginPage = () => {
               className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
               variants={staggerItem}
             >
-              <Quote className="mb-3 size-4 text-indigo-300" />
-              <blockquote className="text-sm leading-relaxed text-slate-200">
+              <Quote className="mb-3 size-4 text-primary" />
+              <blockquote className="text-sm leading-relaxed text-background">
                 {intl.formatMessage({ id: "login.testimonial_quote" })}
               </blockquote>
-              <figcaption className="mt-3 text-xs font-medium text-slate-400">
+              <figcaption className="mt-3 text-xs font-medium text-primary">
                 {intl.formatMessage({ id: "login.testimonial_author" })}
               </figcaption>
             </motion.figure>
           </motion.div>
         </aside>
 
-        <main className="aurora-mesh relative flex min-h-dvh flex-col">
-          <div className="flex items-center justify-end p-4 sm:p-6">
-            <div className="flex items-center gap-2">
-              <Globe className="size-4 text-muted-foreground" aria-hidden="true" />
-              <Label htmlFor="login-locale" className="sr-only">
-                {intl.formatMessage({ id: "login.language_label" })}
-              </Label>
-              <Select
-                value={locale}
-                onValueChange={(next) => {
-                  if (isLocale(next)) setLocale(next);
-                }}
-              >
-                <SelectTrigger id="login-locale" className="w-45 bg-card">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCALE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex flex-1 items-center justify-center px-4 pb-8 sm:px-8">
+        <div className="relative flex min-h-0 flex-col bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_55%)]">
+          <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8">
             <motion.div className="w-full max-w-md" variants={pageEnter} {...enterProps}>
               <Card className="border-border/80 shadow-lg shadow-primary/5">
                 <CardHeader className="space-y-2">
@@ -430,10 +386,10 @@ export const LoginPage = () => {
             </motion.div>
           </div>
 
-          <div className={cn("px-4 pb-6 text-center text-xs text-muted-foreground sm:px-8")}>
+          <div className="px-4 pb-6 text-center text-xs text-muted-foreground sm:px-8">
             {intl.formatMessage({ id: "login.copyright" }, { year: copyrightYear })}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

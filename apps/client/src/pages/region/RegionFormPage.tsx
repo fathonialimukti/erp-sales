@@ -9,11 +9,12 @@ import { Loader2, Save } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
+import { NavButtonGroup } from "../../components/NavButtonGroup";
+import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -135,7 +136,7 @@ export const RegionFormPage = () => {
   if (isLoading) {
     return (
       <section
-        className="flex flex-col gap-6 pt-2 pb-8"
+        className="flex flex-col gap-3 pt-1 pb-6"
         data-ai-context={JSON.stringify({ section: "region-form", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
@@ -146,22 +147,19 @@ export const RegionFormPage = () => {
 
   return (
     <section
-      className="flex flex-col gap-6 pt-2 pb-8"
+      className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
         section: "region-form",
         isEdit,
         id: id ?? null,
       })}
     >
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
-        <PageHeader
-          module="region"
+      <NavButtonGroup
+        onBack={() => navigate(isEdit && id ? `/region/${id}` : "/region")}
+      />
+
+      <PageHeader
+        module="region"
           title={
             isEdit
               ? intl.formatMessage({
@@ -184,35 +182,25 @@ export const RegionFormPage = () => {
                   defaultMessage: "Create a new geographical region",
                 })
           }
-          onBack={() => navigate(isEdit && id ? `/region/${id}` : "/region")}
-          actions={
-            <Button
-              type="submit"
-              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Save className="size-4" aria-hidden />
-              )}
-              {intl.formatMessage({ id: "region.form.save_button", defaultMessage: "Save" })}
-            </Button>
-          }
         />
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-heading text-base">
-              {intl.formatMessage({
+        <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+      >
+        <FormSection
+          title={intl.formatMessage({
                 id: "region.form.section_basic",
                 defaultMessage: "Basic information",
               })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-5 sm:grid-cols-2">
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="code">
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="region-code">
                     {intl.formatMessage({ id: "region.form.field_code", defaultMessage: "Code" })}
                   </Label>
@@ -234,7 +222,7 @@ export const RegionFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Label htmlFor="region-name">
                     {intl.formatMessage({ id: "region.form.field_name", defaultMessage: "Name" })}
                     <span className="text-destructive">*</span>
@@ -255,9 +243,23 @@ export const RegionFormPage = () => {
                 </div>
               )}
             </form.Field>
-          </CardContent>
-        </Card>
-      </form>
+          </div>
+        </FormSection>
+      
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <Button size="sm"
+              type="submit"
+              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              {intl.formatMessage({ id: "region.form.save_button", defaultMessage: "Save" })}
+            </Button>
+        </div>
+</form>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

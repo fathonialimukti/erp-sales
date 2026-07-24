@@ -8,6 +8,7 @@ import { moduleCssVar, type ModuleKey } from "@/types/module";
 interface EmptyStateProps {
   /** Module accent for left bar / icon plate. */
   module?: ModuleKey;
+  icon?: ReactNode;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -16,30 +17,27 @@ interface EmptyStateProps {
 
 export const EmptyState = ({
   module,
+  icon,
   title,
   description,
   action,
   className,
 }: EmptyStateProps) => {
   const accent = moduleCssVar(module);
+  // Quiet content surface — accent only on the icon plate
   const plateStyle = accent
     ? ({
-        backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`,
+        backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`,
         color: accent,
       } satisfies CSSProperties)
-    : undefined;
-  const barStyle = accent
-    ? ({ borderLeftColor: accent } satisfies CSSProperties)
     : undefined;
 
   return (
     <Card
       className={cn(
-        "border-dashed shadow-none",
-        accent ? "border-l-4" : undefined,
+        "border-dashed border-border/70 bg-transparent shadow-none ring-0",
         className,
       )}
-      style={barStyle}
       data-slot="empty-state"
       data-module={module}
     >
@@ -52,10 +50,10 @@ export const EmptyState = ({
           style={plateStyle}
           aria-hidden
         >
-          <Inbox className="size-6" />
+          {icon ?? <Inbox className="size-6" />}
         </div>
 
-        <div className="space-y-1.5">
+        <div className="flex flex-col gap-1">
           <h3 className="font-heading text-base font-semibold text-foreground">
             {title}
           </h3>

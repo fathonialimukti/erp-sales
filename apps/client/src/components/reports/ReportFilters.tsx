@@ -2,9 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
 import { useIntl } from "react-intl";
 
+import { FormDatePicker } from "@/components/FormDatePicker";
 import { Button } from "@/components/ui/button";
-import { FormDatePicker, Select } from "../../ui";
-import type { SelectOption } from "../../ui/Select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpcClient } from "../../lib/trpc";
 
 export interface ReportFilterValue {
@@ -25,17 +31,48 @@ interface ReportFiltersProps {
   show?: Array<"region" | "area" | "customer" | "outlet" | "salesman" | "sku">;
 }
 
+const ALL = "__all__";
+
 const useOptions = (
   queryKey: string[],
   queryFn: () => Promise<{ data: { id: string; name: string | null }[] }>,
   enabled = true,
 ) => {
   const { data } = useQuery({ queryKey, queryFn, staleTime: 60_000, enabled });
-  return (data?.data ?? []).map<SelectOption>((o) => ({
+  return (data?.data ?? []).map((o) => ({
     value: o.id,
     label: o.name ?? o.id,
   }));
 };
+
+interface FilterSelectProps {
+  label: string;
+  value?: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string | undefined) => void;
+}
+
+const FilterSelect = ({ label, value, options, onChange }: FilterSelectProps) => (
+  <div className="flex min-w-40 flex-1 basis-40 flex-col gap-1.5">
+    <span className="text-sm font-medium">{label}</span>
+    <Select
+      value={value ?? ALL}
+      onValueChange={(next) => onChange(next === ALL ? undefined : next)}
+    >
+      <SelectTrigger className="h-9 w-full" size="default" aria-label={label}>
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={ALL}>{label}</SelectItem>
+        {options.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+);
 
 export const ReportFilters = ({
   value,
@@ -72,7 +109,7 @@ export const ReportFilters = ({
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="min-w-[10rem] flex-1 basis-40">
+      <div className="min-w-40 flex-1 basis-40">
         <FormDatePicker
           label={intl.formatMessage({
             id: "report.filter.date_from",
@@ -82,7 +119,7 @@ export const ReportFilters = ({
           onChange={(v) => set({ dateFrom: v || undefined })}
         />
       </div>
-      <div className="min-w-[10rem] flex-1 basis-40">
+      <div className="min-w-40 flex-1 basis-40">
         <FormDatePicker
           label={intl.formatMessage({
             id: "report.filter.date_to",
@@ -93,119 +130,83 @@ export const ReportFilters = ({
         />
       </div>
       {show.includes("region") && (
-        <div className="min-w-[10rem] flex-1 basis-40">
-          <Select
-            ariaLabel={intl.formatMessage({
-              id: "report.filter.region",
-              defaultMessage: "Region",
-            })}
-            placeholder={intl.formatMessage({
-              id: "report.filter.region",
-              defaultMessage: "Region",
-            })}
-            options={regions}
-            value={value.regionId}
-            onChange={(v) =>
-              set({
-                regionId: (v as string) || undefined,
-                areaId: undefined,
-                outletId: undefined,
-                customerId: undefined,
-              })
-            }
-          />
-        </div>
+        <FilterSelect
+          label={intl.formatMessage({
+            id: "report.filter.region",
+            defaultMessage: "Region",
+          })}
+          value={value.regionId}
+          options={regions}
+          onChange={(regionId) =>
+            set({
+              regionId,
+              areaId: undefined,
+              outletId: undefined,
+              customerId: undefined,
+            })
+          }
+        />
       )}
       {show.includes("area") && (
-        <div className="min-w-[10rem] flex-1 basis-40">
-          <Select
-            ariaLabel={intl.formatMessage({
-              id: "report.filter.area",
-              defaultMessage: "Area",
-            })}
-            placeholder={intl.formatMessage({
-              id: "report.filter.area",
-              defaultMessage: "Area",
-            })}
-            options={areas}
-            value={value.areaId}
-            onChange={(v) =>
-              set({
-                areaId: (v as string) || undefined,
-                outletId: undefined,
-                customerId: undefined,
-              })
-            }
-          />
-        </div>
+        <FilterSelect
+          label={intl.formatMessage({
+            id: "report.filter.area",
+            defaultMessage: "Area",
+          })}
+          value={value.areaId}
+          options={areas}
+          onChange={(areaId) =>
+            set({
+              areaId,
+              outletId: undefined,
+              customerId: undefined,
+            })
+          }
+        />
       )}
       {show.includes("customer") && (
-        <div className="min-w-[10rem] flex-1 basis-40">
-          <Select
-            ariaLabel={intl.formatMessage({
-              id: "report.filter.customer",
-              defaultMessage: "Customer",
-            })}
-            placeholder={intl.formatMessage({
-              id: "report.filter.customer",
-              defaultMessage: "Customer",
-            })}
-            options={customers}
-            value={value.customerId}
-            onChange={(v) => set({ customerId: (v as string) || undefined })}
-          />
-        </div>
+        <FilterSelect
+          label={intl.formatMessage({
+            id: "report.filter.customer",
+            defaultMessage: "Customer",
+          })}
+          value={value.customerId}
+          options={customers}
+          onChange={(customerId) => set({ customerId })}
+        />
       )}
       {show.includes("outlet") && (
-        <div className="min-w-[10rem] flex-1 basis-40">
-          <Select
-            ariaLabel={intl.formatMessage({
-              id: "report.filter.outlet",
-              defaultMessage: "Outlet",
-            })}
-            placeholder={intl.formatMessage({
-              id: "report.filter.outlet",
-              defaultMessage: "Outlet",
-            })}
-            options={outlets}
-            value={value.outletId}
-            onChange={(v) => set({ outletId: (v as string) || undefined })}
-          />
-        </div>
+        <FilterSelect
+          label={intl.formatMessage({
+            id: "report.filter.outlet",
+            defaultMessage: "Outlet",
+          })}
+          value={value.outletId}
+          options={outlets}
+          onChange={(outletId) => set({ outletId })}
+        />
       )}
       {show.includes("salesman") && (
-        <div className="min-w-[10rem] flex-1 basis-40">
-          <Select
-            ariaLabel={intl.formatMessage({
-              id: "report.filter.salesman",
-              defaultMessage: "Salesman",
-            })}
-            placeholder={intl.formatMessage({
-              id: "report.filter.salesman",
-              defaultMessage: "Salesman",
-            })}
-            options={salesmen}
-            value={value.salesmanId}
-            onChange={(v) => set({ salesmanId: (v as string) || undefined })}
-          />
-        </div>
+        <FilterSelect
+          label={intl.formatMessage({
+            id: "report.filter.salesman",
+            defaultMessage: "Salesman",
+          })}
+          value={value.salesmanId}
+          options={salesmen}
+          onChange={(salesmanId) => set({ salesmanId })}
+        />
       )}
       {show.includes("sku") && (
-        <div className="min-w-[10rem] flex-1 basis-40">
-          <Select
-            ariaLabel={intl.formatMessage({
-              id: "report.filter.sku",
-              defaultMessage: "Product",
-            })}
-            placeholder={intl.formatMessage({
-              id: "report.filter.sku",
-              defaultMessage: "Product",
-            })}
-            options={skus}
-            value={value.skuId}
-            onChange={(v) => set({ skuId: (v as string) || undefined })}
-          />
-        </div>
+        <FilterSelect
+          label={intl.formatMessage({
+            id: "report.filter.sku",
+            defaultMessage: "Product",
+          })}
+          value={value.skuId}
+          options={skus}
+          onChange={(skuId) => set({ skuId })}
+        />
       )}
       <Button
         type="button"

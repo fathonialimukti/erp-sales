@@ -1,6 +1,7 @@
 /**
- * ERP Design System - Color Palette
- * Professional/Corporate theme with blue-based colors
+ * @deprecated Legacy hex map — do not extend.
+ * Use semantic tokens in `src/index.css` (Aurora Commerce):
+ * `bg-primary`, `text-success`, `var(--module-*)`, etc.
  */
 
 export const colors = {
@@ -32,19 +33,19 @@ export const colors = {
     900: '#000D29',
   },
 
-  // Neutral grays
+  // Surface fills only (not text). Text law: black / white / bold color — never gray.
   neutral: {
     0: '#FFFFFF',
     50: '#F9FAFB',
     100: '#F3F4F6',
     200: '#E5E7EB',
     300: '#D1D5DB',
-    400: '#9CA3AF',
-    500: '#6B7280',
-    600: '#4B5563', // Default text color
-    700: '#374151',
-    800: '#1F2937',
-    900: '#111827',
+    400: '#0B0B14', // was gray mid — remapped to black for any accidental text use
+    500: '#0B0B14',
+    600: '#0B0B14', // Default text color (black)
+    700: '#0B0B14',
+    800: '#0B0B14',
+    900: '#0B0B14',
   },
 
   // Status colors
@@ -57,18 +58,18 @@ export const colors = {
   info: '#3B82F6',
   infoLight: '#DBEAFE',
 
-  // Semantic aliases
+  // Semantic aliases — no gray secondary/tertiary text
   text: {
-    primary: '#111827',
-    secondary: '#6B7280',
-    tertiary: '#9CA3AF',
+    primary: '#0B0B14', // black body
+    secondary: '#0369A1', // bold Azure (matches --muted-foreground intent)
+    tertiary: '#0369A1', // same bold Azure — never gray
     inverse: '#FFFFFF',
   },
   background: {
     primary: '#FFFFFF',
     secondary: '#F9FAFB',
     tertiary: '#F3F4F6',
-    dark: '#111827',
+    dark: '#0B0B14',
   },
   border: '#E5E7EB',
   focus: '#0B5FFA',

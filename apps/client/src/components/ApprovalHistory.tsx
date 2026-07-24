@@ -71,8 +71,8 @@ const processTone = (process: string) => {
       };
     default:
       return {
-        badge: "border-transparent bg-muted text-muted-foreground",
-        dot: "bg-muted-foreground",
+        badge: "border-transparent bg-muted text-foreground",
+        dot: "bg-foreground",
       };
   }
 };

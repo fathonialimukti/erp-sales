@@ -187,7 +187,7 @@ export const Sidebar = () => {
       {...getMotionProps(reducedMotion)}
       className={cn(
         "fixed top-3 bottom-3 left-3 z-100 flex flex-col overflow-visible",
-        "rounded-2xl border border-border bg-card/95 shadow-sm backdrop-blur-xl",
+        "rounded-2xl border border-primary/10 bg-sidebar/95 shadow-sm ring-1 ring-primary/5 backdrop-blur-xl",
         "transition-[width] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
         "motion-reduce:transition-none",
         isCollapsed ? "w-20" : "w-68",
@@ -238,7 +238,7 @@ export const Sidebar = () => {
             onClick={() => setSearchOpen(true)}
             aria-label={searchOpenLabel}
             title={searchLabel}
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-secondary/60 text-primary outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary outline-none transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring"
             onMouseEnter={(e) => showTooltip(searchLabel, e.currentTarget)}
             onMouseLeave={hideTooltip}
             onFocus={(e) => showTooltip(searchLabel, e.currentTarget)}
@@ -251,9 +251,9 @@ export const Sidebar = () => {
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label={searchOpenLabel}
-            className="group relative flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border border-border bg-secondary/50 px-2.5 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            className="group relative flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border border-primary/12 bg-primary/[0.06] px-2.5 py-2 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <Search className="size-4" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
@@ -311,7 +311,7 @@ export const Sidebar = () => {
                 className={cn(
                   "flex flex-col gap-0.5",
                   !isCollapsed &&
-                    "rounded-xl border border-border/60 bg-background/40 p-1",
+                    "rounded-xl border border-primary/8 bg-primary/[0.03] p-1",
                 )}
               >
                 {section.items.map((item) => {

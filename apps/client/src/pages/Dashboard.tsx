@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 import { KpiCard } from "../components/KpiCard";
+import { PageHeader } from "../components/PageHeader";
 import { Stagger, StaggerItem } from "../components/motion/Stagger";
 import {
   Card,
@@ -354,35 +355,18 @@ export const Dashboard = () => {
         recentActivityCount: sales?.recentActivity?.length ?? 0,
       })}
     >
-      <header className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary via-indigo-600 to-violet-600 px-6 py-7 text-white shadow-sm sm:px-8">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(255,255,255,0.28),transparent_55%)]"
-          aria-hidden
-        />
-        <div className="relative z-10 flex items-center justify-between gap-4">
-          <div className="min-w-0 space-y-2">
-            <p className="text-xs font-semibold tracking-[0.08em] text-white/85 uppercase">
-              {todayLabel}
-            </p>
-            <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-              {greeting}, <span className="text-white/90">{userName}</span>
-            </h1>
-            <p className="max-w-xl text-sm text-white/85">
-              {intl.formatMessage({
-                id: "dashboard.subtitle_v2",
-                defaultMessage:
-                  "Sales performance, approvals, and customer activity at a glance.",
-              })}
-            </p>
-          </div>
-          <div
-            className="hidden size-16 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm sm:flex"
-            aria-hidden
-          >
-            <img src={icons.dashSun} alt="" className="size-10 drop-shadow" />
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow={todayLabel}
+        title={`${greeting}, ${userName}`}
+        description={intl.formatMessage({
+          id: "dashboard.subtitle_v2",
+          defaultMessage:
+            "Sales performance, approvals, and customer activity at a glance.",
+        })}
+        icon={
+          <img src={icons.dashSun} alt="" className="size-7 object-contain sm:size-8" />
+        }
+      />
 
       <Card className="shadow-sm">
         <CardContent className="flex flex-col gap-4 px-5 py-5 sm:px-6">

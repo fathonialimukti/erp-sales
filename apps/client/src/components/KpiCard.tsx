@@ -49,9 +49,20 @@ export const KpiCard = ({
   const showDelta = delta !== undefined && delta !== null;
   const deltaUp = showDelta && delta >= 0;
 
+  const cardWash = accent
+    ? ({
+        backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${accent} 12%, transparent), transparent 65%)`,
+      } satisfies CSSProperties)
+    : undefined;
+
   return (
     <Card
-      className={cn("shadow-sm", className)}
+      className={cn(
+        "overflow-hidden border-border/70 shadow-sm ring-1 ring-black/2",
+        !accent && "border-primary/10 bg-primary/[0.03]",
+        className,
+      )}
+      style={cardWash}
       data-slot="kpi-card"
       data-module={module}
     >
@@ -59,8 +70,8 @@ export const KpiCard = ({
         {icon ? (
           <span
             className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-xl",
-              accent ? undefined : "bg-primary/10 text-primary",
+              "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm",
+              accent ? undefined : "bg-primary/15 text-primary",
             )}
             style={plateStyle}
             aria-hidden

@@ -14,7 +14,7 @@ import { DataTable } from "../../components/DataTable";
 import { EmptyState } from "../../components/EmptyState";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
-import { Pagination } from "../../ui/Pagination";
+import { Pagination } from "../../components/Pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,

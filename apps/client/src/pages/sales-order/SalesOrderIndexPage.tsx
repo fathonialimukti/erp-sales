@@ -19,7 +19,7 @@ import {
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { useToast } from "../../ui/useToast";
+import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -28,7 +28,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
 import { DatePicker } from "../../components/DatePicker";
 import { Button } from "@/components/ui/button";
-import { Pagination } from "../../ui/Pagination";
+import { Pagination } from "../../components/Pagination";
 import {
   Select,
   SelectContent,

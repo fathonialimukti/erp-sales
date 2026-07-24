@@ -1,291 +1,68 @@
-# Copilot / Cursor / AI Coding Instructions
+# Project bottom line (all agents)
 
-## Core Principle
+Shared floor for every agent and chat. **Domain detail does not live here** — use the specialist agent + path instructions.
 
-**Write the shortest, cleanest, and most maintainable solution** that follows the existing architecture and modern minimalist principles.
-Prioritize clarity, simplicity, and consistency over cleverness or premature optimization.
+## Stack
 
-Use:
+| Layer | Choice |
+|-------|--------|
+| Runtime / PM | **Bun** + Turborepo |
+| Language | **TypeScript** strict (`exactOptionalPropertyTypes`) |
+| Client | React 19 + Vite + Tauri · Tailwind v4 + **shadcn Aurora** (`@/components/ui/*`) |
+| API | **tRPC v11+** end-to-end typesafe |
+| Server | Express + Prisma (PostgreSQL, ULID ids) |
+| Shared validation | `@repo/schemas` (Zod) |
 
-- **Bun** as runtime, package manager, and script runner
-- **TypeScript** (strict mode) for all code
-- **React 19** + **Vite** + **Tauri** for the frontend
-- **tRPC** (v11+) for end-to-end typesafe communication
-- **Plain CSS** (design tokens + colocated `.css` files) + local UI kit in `apps/client/src/ui/`
-- **Turborepo** for monorepo management
+## Who owns what
 
-Always respect the current project structure and recent file edits.
-Only refer to files provided in context, focus on them and feel free to ask for more files if needed. Do not suggest code that has been deleted in recent edits.
----
+| Work | Agent | Path rules |
+|------|--------|------------|
+| UI / pages / client hooks | **Frontend Engineer** | `.github/instructions/client-frontend.instructions.md`, `i18n-locale.instructions.md` |
+| Routers / Prisma / schemas | **Backend Engineer** | `prisma-server.instructions.md`, `schemas.instructions.md` |
+| Schema + router + pages together | **Full-Stack Engineer** (orchestrates only) | delegates to specialists |
+| Review / audit / ship rec | **Code Reviewer** | read-only git; recommend commit only |
 
-**Preferred architecture**: Feature-Sliced Design (light version) — group by **feature** inside `features/` when it grows.
+Do **not** stuff frontend UI law or Prisma patterns into this file — specialists own those.
 
----
+## Code floor (everywhere)
 
-## CSS & UI Rules (Strict)
+- Match existing architecture; shortest **correct** wiring; no premature abstraction
+- Prefer inference; avoid `any`; no bare `!` without a safety comment
+- Arrow functions, early returns, self-documenting names; comments only when needed
+- Respect recent edits; do not resurrect deleted code
+- Permission strings: always `resource@action` (never `resource_action`)
+- **File edits:** create/update source only via VS Code edit tools (`create_file`, `replace_string_in_file`, multi-edit). **Never** write or overwrite product source (`.ts`, `.tsx`, `.js`, `.jsx`, `.json` locales, CSS, Prisma, configs) via shell/Python (`cat`, heredoc, `Path().write_text()`, `echo >`, etc.). Shell is for running commands only (dev, build, test, typecheck, migrations, `ui-ux-pro-max` search).
+- **Git:** manual only — no `add` / `commit` / `push` / merge / PR unless the user runs it
 
-- **No HeroUI. No Tailwind. No CSS-in-JS.** Styling is plain CSS only.
-- Design tokens live in `apps/client/src/styles/tokens.css` — use CSS variables (`var(--color-*)`, `var(--space-*)`, `var(--radius-*)`, etc.).
-- Global layers: `index.css` imports `tokens.css`, `animations.css`, `utilities.css`, `page-system.css`, `module-page.css`, `reports.css`.
-- Prefer components from `apps/client/src/ui/` (`Button`, `Card`, `Input`, `Modal`, `Table`, `Select`, `Spinner`, …) before inventing new primitives.
-- Colocate component styles as `ComponentName.css` next to `ComponentName.tsx`.
-- Prefer semantic class names (`btn`, `btn--primary`, `card`) over utility soup.
-- Icons: `@iconify/react` `<Icon icon="solar:..." />` or existing `apps/client/src/ui/Icon.tsx` / lucide — **no emoji as UI icons**.
-- Accessibility is manual: labels, focus rings, keyboard nav, contrast via tokens.
+**UI work is not “shortest class list.”** If you touch client UI, Frontend Engineer + design law `docs/design-system/aurora-commerce-design-law.md` + `ui-ux-pro-max` apply — craft > flat minimal shells.
 
----
-
-## TypeScript Rules
-
-- Enable `strict: true` and `exactOptionalPropertyTypes`
-- Prefer **type inference** wherever possible
-- Use `interface` for props and extendable object shapes
-- Use `type` for unions, intersections, utility types, and aliases
-- Avoid `any`. Use `unknown` or `never` when appropriate
-- Never use non-null assertion (`!`) without a clear `// TODO:` or safety comment
-- Colocate types close to their usage
-
----
-
-## React + Frontend Rules
-
-- Functional components only
-- Explicitly type props with `interface ComponentProps {}` (avoid `React.FC`)
-- Default export for pages and root components
-- Named export for reusable components and hooks
-- Keep components small, focused, and single-responsibility
-- Use **feature folders** (`features/auth`, `features/dashboard`, etc.) for complex modules
-- Custom hooks must start with `use` and be colocated in the feature or `hooks/` folder
-- Use `useMemo` / `useCallback` / `React.memo` **only** when performance issues are measured
-- Prefer **composition** and **context** over heavy prop drilling
-- Use **Zustand** or **Jotai** sparingly for global state (only when truly needed)
-- Every page component MUST add a `data-ai-context` attribute on its outermost wrapper element containing `JSON.stringify()` of key page context: `{ section, id, documentNumber, name, approvalStatus, itemCount, ... }`. The `section` value should be a kebab-case identifier matching the route/feature name (e.g., `receiving-transaction-detail`, `area-index`, `region-form`).
-
----
-
-## tRPC Rules (Modern & Clean)
-
-- Use **domain-based nested routers** (`user.ts`, `post.ts`, `settings.ts`)
-- All input/output validation with **Zod** — prefer importing from `@repo/schemas`; add locally only when truly domain-specific
-- Keep procedures **thin** — move complex logic to `services/`
-- Use `TRPCError` with correct error codes (`NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`, `BAD_REQUEST`, `CONFLICT`)
-- All protected routes must use the shared `protectedProcedure` middleware
-- Chain `hasPermission('resource@action')` middleware for permission checks (format is always `resource@action`, **never** `resource_action`)
-- On frontend:
-  - **CRITICAL**: The client uses a **vanilla** `createTRPCClient` (not `createTRPCReact`). There are NO `trpc.router.useQuery()` hooks. All data fetching uses raw `@tanstack/react-query` with `trpcClient.*` calls in `queryFn`/`mutationFn`.
-  - Pattern: `useQuery({ queryKey: [...], queryFn: () => trpcClient.resource.list.query(input) })`
-  - `AppRouter` type is imported directly from `../../../server/src/router` (relative monorepo path)
-  - Always pass `credentials: 'include'` — already configured in the shared client at [apps/client/src/lib/trpc.ts](../apps/client/src/lib/trpc.ts)
-  - Set sensible `staleTime` / `gcTime` based on data volatility
-
-### Router Namespace Map
+## Monorepo map
 
 ```
-appRouter
-├── hello          — public health check
-├── auth           — login, logout, me
-├── user
-├── accessControl  — roles, permissions
-├── warehouse      — NESTED: warehouse.warehouse.*, warehouse.storageLocation.*, warehouse.pallet.*, warehouse.layout.*
-├── activityLog
-├── sku
-├── pallet
-├── inboundTransaction / outboundTransaction / foundTransaction / lossTransaction
-├── upload
-└── notification
+apps/client/                 React client (Tailwind + shadcn Aurora)
+apps/server/                 Express + tRPC + Prisma (port 10022)
+packages/schemas/            Shared Zod (@repo/schemas)
+.agents/skills/              Canonical skills only
+.github/agents/              Specialist agents
+.github/instructions/        Path-scoped rules (applyTo)
+.github/copilot-instructions.md  This bottom line
+docs/design-system/    Aurora Commerce design law (UI authority)
 ```
 
-> The `warehouse` namespace is **two levels deep** — calls look like `trpcClient.warehouse.warehouse.list.query()`.
+Do **not** recreate `.claude/skills/` or `agent/skills/` mirrors for Copilot.
 
----
+## Commands (shared)
 
-## Code Style & Best Practices
+| Scope | Command |
+|-------|---------|
+| Dev / build / types | `bun run dev` · `bun run build` · `bun run check-types` |
+| DB (server pkg) | `bun run db:migrate` · `db:seed` · `db:studio` · `db:push` |
+| Tests | `bun run test` · `bunx vitest run <path>` |
 
-- File naming:
-  - Components: `PascalCase.tsx`
-  - Routers: `domain.ts`
-  - Hooks: `usePascalCase.ts`
-  - Utils: `kebab-case.ts` or `camelCase.ts`
-- Use **arrow functions** consistently
-- Prefer early returns: `if (!condition) return ...`
-- No magic numbers or strings — extract to well-named constants
-- Consistent import order (ESLint enforced)
-- Meaningful names > extreme brevity
-- Write self-documenting code. Comments only when necessary
+## Skills layout
 
-### Performance
+- Real skills: `.agents/skills/` only  
+- Domain module notes (when present): `apps/server/src/routers/*/CLAUDE.md`  
+- Never invent a second design system or second agent tree
 
-- Favor React Server Components where possible (if using any SSR)
-- Use Tauri’s native capabilities wisely (window, dialog, fs, etc.)
-- Keep bundle size in mind — avoid unnecessary dependencies
-
-### Accessibility & Design
-
-- Use design tokens and semantic HTML; pair color with icon/text for status
-- Follow modern minimalist design: generous whitespace, clean typography, subtle interactions
-- Ensure high contrast and keyboard navigation; respect `prefers-reduced-motion`
-
----
-
-## Important Reminders
-
-- **Always check recent file edits** before suggesting changes to existing files.
-- Do **not** suggest deleted code.
-- Prioritize **readability and maintainability** above all.
-- Keep the app **modern and minimalist** in both code and UI.
-- If you need to deviate from these rules, **explain why clearly** first.
-- When in doubt, choose the **simplest solution** that respects the architecture.
-
-Follow these instructions **strictly** for every code suggestion and generation.
-
----
-
-## Project Architecture
-
-### Monorepo Structure
-
-```
-apps/client/              — React 19 + Vite + Tauri frontend (plain CSS + local ui kit)
-apps/server/              — Express + tRPC v11 backend (port: 10022)
-packages/schemas          — Shared Zod schemas (@repo/schemas) — use these first before defining locally
-packages/ui               — Turborepo scaffold placeholder, NOT used by client
-.agents/skills/           — Canonical agent skills (source of truth; install via bunx skills)
-.github/agents/           — Custom Copilot agents (Frontend / Backend / Full-Stack / Code Reviewer)
-.github/instructions/     — Path-scoped coding rules (client, server, schemas, i18n)
-.github/copilot-instructions.md — Global project rules for all agents
-.vscode/mcp.json          — Project MCP servers (Prisma, Prisma-Local, Context7)
-```
-
-### Agent / skills layout (do not reintroduce dups)
-
-| Path | Keep? | Role |
-|------|-------|------|
-| `.agents/skills/` | **Yes** | Real skill files. Only install target. |
-| `.github/agents/` | **Yes** | Custom agent personas for Copilot. |
-| `.github/instructions/` | **Yes** | `applyTo` path rules. |
-| `.claude/skills/` | **No** | Claude Code symlink mirror only. Not used by Copilot. Do not recreate unless using Claude Code. |
-| `agent/skills/` | **No** | Broken duplicate path. Never recreate. |
-
-> **Module-level docs**: Read `apps/server/src/routers/*/CLAUDE.md` before editing a feature — they contain data flows, business rules, and gotchas specific to each domain.
-
-### Build & Dev Commands
-
-| Scope | Command | What it does |
-|-------|---------|--------------|
-| Root | `bun run dev` | Start all apps via Turbo |
-| Root | `bun run build` | Build all apps |
-| Root | `bun run check-types` | Type-check all packages |
-| Server | `bun run db:migrate` | Run Prisma migrations |
-| Server | `bun run db:seed` | Seed roles, permissions, admin user |
-| Server | `bun run db:studio` | Open Prisma Studio |
-| Server | `bun run db:push` | Push schema without migration (dev only) |
-| Server | `bun run test` | Run Vitest tests |
-| Server | `bunx vitest run path/to/test.ts` | Run a single test |
-
-### Server Required Env Variables
-
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `DATABASE_URL` | — | PostgreSQL connection string (**required**) |
-| `JWT_SECRET` | `'your-secret-key-change-this'` | **Must override in prod** |
-| `PORT` | `10022` | HTTP port |
-| `CORS_ORIGIN` | — | Production origin; dev allows all `localhost:*` + `tauri://localhost` |
-
----
-
-## Database (Prisma + PostgreSQL)
-
-- **PostgreSQL** via `pg` pool + `@prisma/adapter-pg` (driver adapter mode)
-- Schema: [apps/server/src/prisma/schema.prisma](../apps/server/src/prisma/schema.prisma)
-- Generated client: `apps/server/src/prisma/generated/` (non-standard — **not** `node_modules/.prisma`)
-- Import Prisma client from `'../prisma/generated/client'` inside the server package
-- All IDs use `@default(ulid())` — never use numeric auto-increment or UUID
-- Key enums: `ApprovalStatus` (`DRAFT | PROPOSED | APPROVED | REJECTED`), `PalletStatus`, `StorageLocationStatus`
-
----
-
-## Server-Side Patterns
-
-- **Prisma client**: import from `'../prisma/generated/client'` (not `@prisma/client`). Singleton at `'../lib/prisma.js'`. In transactional procedures, use `ctx.db` (not `prisma` directly) so queries join the transaction.
-- **All imports use `.js` extensions** (ESM output target).
-- **Activity logging required** on every mutation: `logActivity(prisma, { action, userId, resource, resourceId, message, detail })` with helpers `buildCreateLogDetail`, `buildUpdateLogDetail`, `buildDeleteLogDetail` from `'../lib/log-detail.js'`.
-- **List queries**: use `createListInputSchema()`, `buildPaginationParams`, `buildPaginationMeta`, and `buildTextSearchWhere(input?.search, [...fields])` from `'../lib/list-query.js'`.
-- **Procedure tiers**: `publicProcedure` (no auth), `protectedProcedure` (JWT), `transactionalProtectedProcedure` (JWT + `prisma.$transaction`). Chain `.use(hasPermission('resource@action'))` for permission gating.
-
----
-
-## Shared Schemas (`@repo/schemas`)
-
-- Import from individual domain files (e.g. `@repo/schemas/warehouse`), **not** the barrel `@repo/schemas`.
-- Never define Zod schemas locally in a router if they belong in shared schemas.
-- `update*Schema` **must** include `currentId: z.string()` — required for activity logging and rename tracking.
-- After adding a new schema file, export it from `packages/schemas/src/index.ts`.
-
----
-
-## Authentication & Permissions
-
-- **Cookie-based auth** (`access_token` HTTP-only cookie) with `Authorization: Bearer` fallback
-- Client auth state lives in Jotai atoms (persisted to localStorage): `authUserAtom`, `authTokenAtom`, `userPermissionsAtom`, `hasPermissionAtom`
-- `useAuthBootstrap()` is called once in `App.tsx` — fetches `auth.me`, populates atoms
-- `ProtectedRoute` returns `null` until `authBootstrapReadyAtom` is true
-- Permission format is **always `resource@action`** (e.g. `warehouse@create`, `user@delete`). Never use underscore separator.
-- In components: read permissions via `const hasPermission = useAtomValue(hasPermissionAtom)` → `hasPermission('warehouse@read')`
-- Sidebar nav items declare `permission: string | string[]`; invisible if user lacks permission
-
----
-
-## Frontend Patterns
-
-### Index Page Template
-
-1. `const hasPermission = useAtomValue(hasPermissionAtom)` → derive `canCreate`, `canUpdate`, `canDelete`
-2. `useQuery` with `trpcClient.*.list.query({ page, limit, search })`
-3. Debounced search (300ms) + TanStack Table for columns
-4. Delete modal state (`deleteModalOpen`, `itemToDelete`)
-5. Local UI kit: `Card`, `Table`, `Input`, `Button`, `Dropdown`, `Pagination`, `Modal`, `Spinner` from `apps/client/src/ui/`
-6. Icons via `@iconify/react` `<Icon icon="solar:..." />`
-
-### Detail Page Template
-
-1. `<PageHeader>` with `title`, `onBack`, `onEdit`, `onDelete` (permission-gated)
-2. `useQuery` for detail data
-3. `<EntityPhoto>` for photos
-4. Permission-gated action buttons
-5. Inline delete confirmation modal
-
-### Form Page Template
-
-Split into two components: an **outer** loader and an **inner** form.
-
-**Outer component** (`<ResourceFormPage>`):
-1. `useParams` to get `id`; derive `isEdit = Boolean(id)`
-2. `useQuery` for detail data (enabled only when `isEdit`)
-3. `useQuery` for any dependent list data (e.g. SKU list, warehouse list)
-4. Guard renders: loading spinner modal → not-found modal → edit-blocked modal (when `approvalStatus` is not editable)
-5. Pass `initialValues` (transformed from detail data) and list data as props to inner form
-
-**Inner form component** (`<ResourceForm>`):
-1. `const hasPermission = useAtomValue(hasPermissionAtom)` → derive `canSave`
-2. Modal state machine: `type ModalStage = 'idle' | 'confirm-draft' | 'confirm-propose' | 'loading' | 'success' | 'error'`
-3. `useMutation` for create and update; `onSuccess` invalidates queries, sets `modalStage` to `'success'`, auto-navigates after 1500ms
-4. `useForm` from `@tanstack/react-form` with Zod `safeParse` in `onChange` validator; `onSubmit` builds payload and calls `mutateAsync`
-5. `intentRef = useRef<'DRAFT' | 'PROPOSED'>` — set before opening confirm modal
-6. Layout: `<PageHeader>` → `<Form>` → `<section>` with grid of `<Fieldset>` sections → items `<Card>` → action `<Button>` row → single action `<Modal>`
-7. Modal renders four states inline: `loading` (Spinner), `success` (auto-dismiss), `error` (dismiss), `confirm` (approve/cancel)
-8. All labels and messages via `intl.formatMessage`
-
-**Data transform**:
-- `defaultFormValues()` — returns blank form state
-- `transformDetailToFormValues(data)` — maps API response to form shape; called only when `isEdit && detailQuery.data`
-
-**Export**: named export `{ ResourceFormPage }` (outer component only)
-
-### i18n
-
-- Library: `react-intl` v6 — `IntlProvider` in [apps/client/src/providers.tsx](../apps/client/src/providers.tsx)
-- Locales: `en` and `id` (Indonesian) — files at `apps/client/src/locales/`
-- Usage: `const intl = useIntl(); intl.formatMessage({ id: 'key.path', defaultMessage: 'Fallback' })`
-- Locale persisted as Jotai atom + cookie
-- Key pattern: `{domain}.{page}.{key}` (e.g. `warehouse.form.title_create`). **Always add keys to both `en.json` and `id.json`** — same keys, parallel translations.
-- For dynamic values use ICU message format: `"Delete \"{name}\"?"` with `{ name: record.name }` as `values` argument.
+When in doubt: **simplest solution that matches architecture**, and for UI, **do not ship unfinished gray shells**.

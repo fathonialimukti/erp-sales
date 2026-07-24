@@ -81,9 +81,9 @@ export function DataTable<T>({
   const cellClass = DENSITY_CELL[density];
   const rows = table.getRowModel().rows;
 
-  // Single scroll container so sticky thead works (avoid nested overflow from shadcn Table).
+  // Minimal content shell — color lives in header/KPI, not table chrome
   const shellClass = cn(
-    "relative w-full overflow-auto rounded-xl border bg-card shadow-sm",
+    "relative w-full overflow-auto rounded-xl border border-border/70 bg-card",
     stickyHeader && "max-h-[min(70vh,52rem)]",
   );
 

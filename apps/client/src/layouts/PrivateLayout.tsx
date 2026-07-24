@@ -49,7 +49,8 @@ export const PrivateLayout = () => {
         )}
       >
         <Topbar />
-        <main className="min-h-0 flex-1 overflow-auto rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm md:p-6">
+        {/* 30% work stage — elevated card over tinted mesh */}
+        <main className="min-h-0 flex-1 overflow-auto rounded-2xl border border-primary/10 bg-card/85 p-4 shadow-sm ring-1 ring-primary/5 backdrop-blur-[2px] md:p-6">
           <PageTransition>
             <Outlet />
           </PageTransition>
