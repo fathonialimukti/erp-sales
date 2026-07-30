@@ -393,7 +393,7 @@ export const EmailCrmDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-email)_14%,transparent)] text-[var(--module-email)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-email)_8%,transparent)] text-[var(--module-email)]">
               <Inbox className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "emailCrm.detail.summary", defaultMessage: "Summary" })}
@@ -411,13 +411,13 @@ export const EmailCrmDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.form.subject", defaultMessage: "Subject" })}
               </dt>
-              <dd className="text-sm text-foreground">{conversation.subject ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{conversation.subject ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.form.customer", defaultMessage: "Customer" })}
               </dt>
-              <dd className="text-sm text-foreground">
+              <dd className="text-sm font-normal text-foreground">
                 {conversation.customer ? (
                   <button
                     type="button"
@@ -436,7 +436,7 @@ export const EmailCrmDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" })}
               </dt>
-              <dd className="text-sm text-foreground">{tagsToLabel(conversation.tags)}</dd>
+              <dd className="text-sm font-normal text-foreground">{tagsToLabel(conversation.tags)}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -445,7 +445,7 @@ export const EmailCrmDetailPage = () => {
                   defaultMessage: "Last message",
                 })}
               </dt>
-              <dd className="text-sm text-muted-foreground">
+              <dd className="text-sm font-normal text-foreground">
                 {formatDateTime(conversation.lastMessageAt)}
               </dd>
             </div>
@@ -453,7 +453,7 @@ export const EmailCrmDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "emailCrm.detail.agent_status", defaultMessage: "Agent" })}
               </dt>
-              <dd className="flex items-center gap-2 text-sm text-foreground">
+              <dd className="flex items-center gap-2 text-sm font-normal text-foreground">
                 {agentRunning ? (
                   <Loader2 className="size-3.5 animate-spin text-primary" aria-hidden />
                 ) : (
@@ -469,7 +469,7 @@ export const EmailCrmDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-email)_14%,transparent)] text-[var(--module-email)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-email)_8%,transparent)] text-[var(--module-email)]">
               <MessageSquare className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -501,7 +501,7 @@ export const EmailCrmDetailPage = () => {
                     className={cn(
                       "max-w-[85%] rounded-xl border px-3 py-2.5",
                       inbound
-                        ? "self-start bg-muted/50"
+                        ? "self-start bg-card"
                         : "self-end border-[color-mix(in_srgb,var(--module-email)_30%,transparent)] bg-[color-mix(in_srgb,var(--module-email)_8%,transparent)]",
                     )}
                   >
@@ -510,17 +510,17 @@ export const EmailCrmDetailPage = () => {
                         {msg.direction}
                         {msg.sendStatus ? ` · ${msg.sendStatus}` : ""}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-foreground">
                         {formatDateTime(msg.sentAt ?? msg.createdAt)}
                       </span>
                     </div>
                     {outboundHtml ? (
                       <div
-                        className="prose prose-sm max-w-none break-words dark:prose-invert"
+                        className="text-foreground text-sm font-semibold"
                         dangerouslySetInnerHTML={{ __html: outboundHtml }}
                       />
                     ) : (
-                      <p className="m-0 whitespace-pre-wrap text-sm text-foreground">{msg.body}</p>
+                      <p className="m-0 whitespace-pre-wrap text-sm font-semibold text-foreground">{msg.body}</p>
                     )}
                   </div>
                 );
@@ -534,7 +534,7 @@ export const EmailCrmDetailPage = () => {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-ai)_14%,transparent)] text-[var(--module-ai)]">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-ai)_8%,transparent)] text-[var(--module-ai)]">
                 <Sparkles className="size-4" aria-hidden />
               </span>
               {intl.formatMessage({
@@ -628,7 +628,7 @@ export const EmailCrmDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
               <ShoppingCart className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -655,14 +655,14 @@ export const EmailCrmDetailPage = () => {
                     onClick={() => navigate(`/sales-order/${order.id}`)}
                     className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
                       <ShoppingCart className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-foreground">
                         {order.documentNumber ?? order.id}
                       </span>
-                      <span className="block text-xs text-muted-foreground">
+                      <span className="block text-xs text-foreground">
                         {intl.formatMessage({
                           id: "emailCrm.detail.open_order",
                           defaultMessage: "Open order",

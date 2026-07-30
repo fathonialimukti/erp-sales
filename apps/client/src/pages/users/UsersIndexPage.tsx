@@ -97,12 +97,12 @@ export const UsersIndexPage = () => {
         header: intl.formatMessage({ id: "users.index.header_user", defaultMessage: "User" }),
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <EntityPhoto src={row.original.photo} alt={row.original.name ?? row.original.email} />
+            <EntityPhoto src={row.original.photo} alt={row.original.name ?? row.original.email} className="mr-1" />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">
                 {row.original.name ?? "—"}
               </p>
-              <p className="truncate text-xs text-muted-foreground">{row.original.email}</p>
+              <p className="truncate text-xs text-foreground">{row.original.email}</p>
             </div>
           </div>
         ),
@@ -111,14 +111,14 @@ export const UsersIndexPage = () => {
         id: "role",
         header: intl.formatMessage({ id: "users.index.header_role", defaultMessage: "Role" }),
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">{row.original.role?.name ?? "—"}</span>
+          <span className="text-sm text-foreground">{row.original.role?.name ?? "—"}</span>
         ),
       },
       {
         id: "createdAt",
         header: intl.formatMessage({ id: "users.index.header_created", defaultMessage: "Created" }),
         cell: ({ row }) => (
-          <span className="text-sm tabular-nums text-muted-foreground">
+          <span className="text-sm tabular-nums text-foreground">
             {formatDate(row.original.createdAt)}
           </span>
         ),

@@ -148,8 +148,8 @@ export const PublicLayout = () => {
         className={cn(
           "sticky top-0 z-50 border-b transition-[background-color,box-shadow,border-color] duration-200 motion-reduce:transition-none",
           scrolled
-            ? "border-border/80 bg-background/90 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-background/75"
-            : "border-transparent bg-background/70 backdrop-blur-sm supports-backdrop-filter:bg-background/55",
+            ? "border-border bg-background shadow-sm"
+            : "border-transparent bg-background",
         )}
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -197,7 +197,7 @@ export const PublicLayout = () => {
               >
                 <SelectTrigger
                   aria-label={t("login.language_label", "Language")}
-                  className="h-9 w-[9.5rem] bg-card/70"
+                  className="h-9 w-[9.5rem] bg-card"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -399,7 +399,7 @@ export const PublicLayout = () => {
                 )}
               </p>
               <p className="text-xs sm:text-sm">
-                {t("landing.v2.cta_badge", "Aurora Commerce")}
+                {t("landing.v2.cta_badge", "Bold CRM")}
               </p>
             </div>
           </div>

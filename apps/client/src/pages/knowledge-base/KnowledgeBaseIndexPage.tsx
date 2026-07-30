@@ -93,7 +93,7 @@ export const KnowledgeBaseIndexPage = () => {
           defaultMessage: "Content",
         }),
         cell: ({ row }) => (
-          <span className="line-clamp-1 text-sm text-muted-foreground">
+          <span className="line-clamp-1 text-sm text-foreground">
             {row.original.content.slice(0, 100)}
             {row.original.content.length > 100 ? "…" : ""}
           </span>

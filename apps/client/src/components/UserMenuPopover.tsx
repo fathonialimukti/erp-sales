@@ -272,7 +272,7 @@ export const UserMenuTrigger = ({
       onClick={() => {
         // Publish before toggle so popover can measure even if effect order races.
         publishAnchor();
-        setOpen((prev) => !prev);
+        setOpen((prev: boolean) => !prev);
       }}
     >
       {children}

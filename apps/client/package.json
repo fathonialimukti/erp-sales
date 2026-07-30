@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:seo": "bun scripts/generate-sitemap.ts",
+    "build:full": "bun run build:seo && tsc && vite build",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "preview": "vite preview --host 0.0.0.0 --port 10021",

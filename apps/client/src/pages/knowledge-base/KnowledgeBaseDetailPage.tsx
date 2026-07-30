@@ -148,7 +148,7 @@ export const KnowledgeBaseDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-knowledge)_14%,transparent)] text-[var(--module-knowledge)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-knowledge)_8%,transparent)] text-[var(--module-knowledge)]">
               <BookOpen className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -177,7 +177,7 @@ export const KnowledgeBaseDetailPage = () => {
                   defaultMessage: "Updated",
                 })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">
+              <dd className="text-sm font-normal tabular-nums text-foreground">
                 {new Date(entry.updatedAt).toLocaleString()}
               </dd>
             </div>
@@ -189,7 +189,7 @@ export const KnowledgeBaseDetailPage = () => {
                 defaultMessage: "Content",
               })}
             </p>
-            <div className="whitespace-pre-wrap rounded-lg bg-muted/40 p-4 text-sm leading-relaxed text-foreground">
+            <div className="whitespace-pre-wrap rounded-lg bg-card p-4 text-sm leading-relaxed text-foreground">
               {entry.content}
             </div>
           </div>

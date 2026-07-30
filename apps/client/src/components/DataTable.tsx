@@ -137,13 +137,13 @@ export function DataTable<T>({
   const rows = table.getRowModel().rows;
 
   const shellClass = cn(
-    "relative w-full overflow-auto rounded-xl border border-primary/15 bg-card shadow-sm ring-1 ring-primary/5",
+    "relative w-full overflow-auto rounded-xl border border-border bg-card shadow-sm",
     stickyHeader && "max-h-[min(70vh,52rem)]",
   );
 
   const headerShellClass = cn(
     stickyHeader &&
-      "sticky top-0 z-10 bg-primary/[0.06] shadow-[0_1px_0_0_color-mix(in_oklab,var(--primary)_18%,var(--border))] backdrop-blur-md",
+      "sticky top-0 z-10 bg-muted shadow-[0_1px_0_0_color-mix(in_oklab,var(--primary)_18%,var(--border))]",
   );
 
   return (
@@ -174,9 +174,9 @@ export function DataTable<T>({
 
       {!isError && isLoading ? (
         <div className={shellClass} aria-busy="true" aria-live="polite">
-          <table className="w-full caption-bottom text-sm">
+          <table className="w-full caption-bottom text-sm font-normal text-foreground">
             <TableHeader className={headerShellClass}>
-              <TableRow className="hover:bg-transparent border-b border-primary/10">
+              <TableRow className="hover:bg-transparent border-b border-border">
                 {Array.from({ length: colCount }, (_, i) => (
                   <TableHead key={i} className={cn(headClass, "bg-transparent")}>
                     <Skeleton className="h-3 w-16" />
@@ -205,12 +205,12 @@ export function DataTable<T>({
 
       {!isError && !isLoading && data.length > 0 ? (
         <div className={shellClass}>
-          <table className="w-full caption-bottom text-sm">
+          <table className="w-full caption-bottom text-sm font-normal text-foreground">
             <TableHeader className={headerShellClass}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
-                  className="hover:bg-transparent border-b border-primary/10"
+                  className="hover:bg-transparent border-b border-border"
                 >
                   {headerGroup.headers.map((header) => {
                     const canSort = header.column.getCanSort();
@@ -220,7 +220,7 @@ export function DataTable<T>({
                         key={header.id}
                         className={cn(
                           headClass,
-                          "group/th bg-transparent font-semibold tracking-wide text-muted-foreground",
+                          "group/th bg-transparent font-semibold tracking-wide text-foreground",
                           canSort &&
                             "cursor-pointer select-none transition-colors hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:text-primary focus-visible:outline-none",
                           sorted && "bg-primary/10 text-primary",
@@ -278,7 +278,7 @@ export function DataTable<T>({
                   <TableRow
                     key={row.id}
                     className={cn(
-                      "border-b border-border/60 transition-colors",
+                      "border-b border-border transition-colors",
                       index % 2 === 1 && "bg-primary/[0.025]",
                       "hover:bg-primary/[0.06]",
                       onRowClick && "cursor-pointer",

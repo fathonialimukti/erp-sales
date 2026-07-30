@@ -79,7 +79,7 @@ export const EventProposalIndexPage = () => {
           defaultMessage: "Document",
         }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-xs text-foreground">
             {row.original.documentNumber ?? "—"}
           </span>
         ),
@@ -101,7 +101,7 @@ export const EventProposalIndexPage = () => {
           defaultMessage: "Budget",
         }),
         cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
+          <span className="tabular-nums text-foreground">
             {row.original._count.skus > 0 ? row.original._count.skus : "—"}
           </span>
         ),

@@ -151,7 +151,7 @@ export const SkuDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_14%,transparent)] text-[var(--module-sku)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-[var(--module-sku)]">
               <Package className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "sku.detail.summary", defaultMessage: "Summary" })}
@@ -169,19 +169,19 @@ export const SkuDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "sku.detail.name_label", defaultMessage: "Name" })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{sku.name}</dd>
+              <dd className="text-sm font-normal text-foreground">{sku.name}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "sku.detail.category_label", defaultMessage: "Category" })}
               </dt>
-              <dd className="text-sm text-foreground">{sku.category?.name ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{sku.category?.name ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "sku.detail.price_label", defaultMessage: "Base price" })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">
+              <dd className="text-sm font-normal tabular-nums text-foreground">
                 {sku.basePrice != null ? formatCurrency(sku.basePrice) : "—"}
               </dd>
             </div>
@@ -189,7 +189,7 @@ export const SkuDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "sku.detail.unit_label", defaultMessage: "Base unit" })}
               </dt>
-              <dd className="text-sm text-foreground">{sku.baseUnit ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{sku.baseUnit ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">

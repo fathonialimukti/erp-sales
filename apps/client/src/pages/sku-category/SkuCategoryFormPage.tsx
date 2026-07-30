@@ -15,6 +15,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -28,11 +29,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface FormValues {
   code: string;
   name: string;
+  description: string;
 }
 
 type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
-const defaults = (): FormValues => ({ code: "", name: "" });
+const defaults = (): FormValues => ({ code: "", name: "", description: "" });
 
 export const SkuCategoryFormPage = () => {
   const intl = useIntl();
@@ -54,7 +56,7 @@ export const SkuCategoryFormPage = () => {
 
   const form = useForm({
     defaultValues: (isEdit && data
-      ? { code: data.code ?? "", name: data.name }
+      ? { code: data.code ?? "", name: data.name, description: data.description ?? "" }
       : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
@@ -65,6 +67,7 @@ export const SkuCategoryFormPage = () => {
     if (isEdit && data) {
       form.setFieldValue("code", data.code ?? "");
       form.setFieldValue("name", data.name);
+      form.setFieldValue("description", data.description ?? "");
     }
     // ponytail: only seed when detail arrives
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,7 +84,7 @@ export const SkuCategoryFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate("/skuCategory"), 1200);
+      setTimeout(() => navigate("/sku-category"), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -102,7 +105,7 @@ export const SkuCategoryFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate(`/skuCategory/${id}`), 1200);
+      setTimeout(() => navigate(`/sku-category/${id}`), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -157,11 +160,11 @@ export const SkuCategoryFormPage = () => {
     >
       <NavButtonGroup
         className="self-end"
-        onBack={() => navigate(isEdit && id ? `/skuCategory/${id}` : "/skuCategory")}
+        onBack={() => navigate(isEdit && id ? `/sku-category/${id}` : "/sku-category")}
       />
 
       <PageHeader
-        module="sku"
+        module="skuCategory"
           title={
             isEdit
               ? intl.formatMessage({
@@ -252,6 +255,35 @@ export const SkuCategoryFormPage = () => {
               )}
             </form.Field>
           </div>
+        </FormSection>
+
+        <FormSection
+          title={intl.formatMessage({
+            id: "sku_category.form.section_description",
+            defaultMessage: "Description",
+          })}
+        >
+          <form.Field name="description">
+            {(f) => (
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="sku-category-description">
+                  {intl.formatMessage({
+                    id: "sku_category.form.field_description",
+                    defaultMessage: "Description",
+                  })}
+                </Label>
+                <Textarea
+                  id="sku-category-description"
+                  value={f.state.value ?? ""}
+                  onChange={(e) => f.handleChange(e.target.value)}
+                  placeholder={intl.formatMessage({
+                    id: "sku_category.form.field_description_placeholder",
+                    defaultMessage: "Optional",
+                  })}
+                />
+              </div>
+            )}
+          </form.Field>
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">

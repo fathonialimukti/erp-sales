@@ -3,9 +3,10 @@ import { parse as parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { generateObject } from 'ai';
 import { chatModel } from '../lib/ai-provider.js';
+import { getJwtSecret } from '../lib/jwt-secret.js';
 import { createSalesOrderSchema } from '@repo/schemas/sales-order';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
+const JWT_SECRET = getJwtSecret();
 
 // ponytail: reuse the exact auth block from ai.ts — no new auth logic.
 function extractToken(req: Request): string | null {

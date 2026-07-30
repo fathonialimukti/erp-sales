@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getMotionProps, pageEnter } from "@/lib/motion";
+import { useMeta } from "@/lib/useMeta";
 
 export const NotFoundPage = () => {
   const navigate = useNavigate();
@@ -19,9 +20,15 @@ export const NotFoundPage = () => {
   const reducedMotion = useReducedMotion();
   const enterProps = getMotionProps(reducedMotion);
 
+  useMeta({
+    title: 'Page Not Found',
+    description: 'The page you are looking for does not exist or has been moved.',
+    robots: 'noindex, follow',
+  });
+
   return (
     <div
-      className="aurora-mesh flex min-h-dvh items-center justify-center p-6"
+      className="bg-background flex min-h-dvh items-center justify-center p-6"
       data-ai-context={JSON.stringify({ section: "not-found" })}
     >
       <motion.div className="w-full max-w-md" variants={pageEnter} {...enterProps}>

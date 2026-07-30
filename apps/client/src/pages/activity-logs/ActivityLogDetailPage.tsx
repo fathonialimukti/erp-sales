@@ -93,7 +93,7 @@ export const ActivityLogDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
               <ScrollText className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -133,7 +133,7 @@ export const ActivityLogDetailPage = () => {
                   defaultMessage: "Resource",
                 })}
               </dt>
-              <dd className="text-sm text-foreground">{record.resource}</dd>
+              <dd className="text-sm font-normal text-foreground">{record.resource}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -151,7 +151,7 @@ export const ActivityLogDetailPage = () => {
                   defaultMessage: "User",
                 })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">
+              <dd className="text-sm font-normal text-foreground">
                 {record.user.name ?? "—"}
               </dd>
             </div>
@@ -162,7 +162,7 @@ export const ActivityLogDetailPage = () => {
                   defaultMessage: "Email",
                 })}
               </dt>
-              <dd className="text-sm text-foreground">{record.user.email}</dd>
+              <dd className="text-sm font-normal text-foreground">{record.user.email}</dd>
             </div>
           </dl>
         </CardContent>
@@ -179,7 +179,7 @@ export const ActivityLogDetailPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="max-h-[400px] overflow-auto rounded-lg bg-muted/50 p-4 font-mono text-xs text-muted-foreground">
+            <pre className="max-h-[400px] overflow-auto rounded-lg bg-card p-4 font-mono text-xs text-muted-foreground">
               {details}
             </pre>
           </CardContent>

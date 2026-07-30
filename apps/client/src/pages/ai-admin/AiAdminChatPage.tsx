@@ -222,7 +222,7 @@ const markdownComponents: Components = {
       <table className="min-w-full border-collapse text-[0.75rem]">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="bg-muted/60">{children}</thead>,
+  thead: ({ children }) => <thead className="bg-card">{children}</thead>,
   th: ({ children }) => (
     <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
   ),
@@ -701,7 +701,7 @@ const AiAdminChatPage = () => {
     >
       <header className="mb-4 shrink-0 space-y-2 border-b border-border pb-4">
         <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--module-ai)_14%,transparent)] text-module-ai">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--module-ai)_8%,transparent)] text-module-ai">
             <Layers className="size-5" />
           </span>
           <div className="min-w-0">
@@ -848,7 +848,7 @@ const AiAdminChatPage = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="shrink-0 border-t border-border bg-muted/40 p-3 sm:p-4">
+        <div className="shrink-0 border-t border-border bg-card p-3 sm:p-4">
           <div className="flex items-end gap-2">
             <Textarea
               className="min-h-11 flex-1 resize-none bg-card"

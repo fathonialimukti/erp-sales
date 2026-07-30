@@ -130,7 +130,7 @@ export const EmailCrmIndexPage = () => {
           id: "email",
           header: intl.formatMessage({ id: "emailCrm.index.col_email", defaultMessage: "Email" }),
           cell: ({ row }) => (
-            <span className="font-mono text-xs text-muted-foreground">{row.original.email}</span>
+            <span className="font-mono text-xs text-foreground">{row.original.email}</span>
           ),
         },
         {
@@ -173,7 +173,7 @@ export const EmailCrmIndexPage = () => {
             defaultMessage: "Customer",
           }),
           cell: ({ row }) => (
-            <span className="text-muted-foreground">{row.original.customer?.name ?? "—"}</span>
+            <span className="text-foreground">{row.original.customer?.name ?? "—"}</span>
           ),
         },
         {
@@ -183,7 +183,7 @@ export const EmailCrmIndexPage = () => {
             defaultMessage: "Last message",
           }),
           cell: ({ row }) => (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-foreground">
               {formatDateTime(row.original.lastMessageAt)}
             </span>
           ),

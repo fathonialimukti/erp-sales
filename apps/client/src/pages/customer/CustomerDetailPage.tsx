@@ -146,7 +146,7 @@ export const CustomerDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_14%,transparent)] text-[var(--module-customer)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_8%,transparent)] text-[var(--module-customer)]">
               <UserRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "customer.detail.summary", defaultMessage: "Summary" })}
@@ -164,7 +164,7 @@ export const CustomerDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "customer.detail.name_label", defaultMessage: "Name" })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{customer.name}</dd>
+              <dd className="text-sm font-normal text-foreground">{customer.name}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -178,7 +178,7 @@ export const CustomerDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "customer.detail.areas_label", defaultMessage: "Outlets" })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">{customer.outlets?.length ?? 0}</dd>
+              <dd className="text-sm font-normal tabular-nums text-foreground">{customer.outlets?.length ?? 0}</dd>
             </div>
           </dl>
         </CardContent>
@@ -187,7 +187,7 @@ export const CustomerDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_14%,transparent)] text-[var(--module-outlet)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_8%,transparent)] text-[var(--module-outlet)]">
               <MapPin className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "customer.detail.outlets_title", defaultMessage: "Outlets" })}
@@ -216,13 +216,13 @@ export const CustomerDetailPage = () => {
                     onClick={() => navigate(`/outlet/${outlet.id}`)}
                     className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_14%,transparent)] text-[var(--module-outlet)]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_8%,transparent)] text-[var(--module-outlet)]">
                       <MapPin className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-foreground">{outlet.name}</span>
                       {outlet.code ? (
-                        <span className="block font-mono text-xs text-muted-foreground">{outlet.code}</span>
+                        <span className="block font-mono text-xs text-foreground">{outlet.code}</span>
                       ) : null}
                     </span>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />

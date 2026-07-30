@@ -15,7 +15,7 @@ export function createSmtpTransport() {
   });
 }
 
-export function generateMessageId(domain = 'aetherglo.com') {
+export function generateMessageId(domain = process.env.SMTP_DOMAIN ?? 'aetherglo.com') {
   return `<${randomUUID()}@${domain}>`;
 }
 

@@ -463,7 +463,7 @@ export const SalesOrderDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
               <UserRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "sales_order.detail.summary", defaultMessage: "Summary" })}
@@ -601,7 +601,7 @@ export const SalesOrderDetailPage = () => {
                     className={cn(
                       "flex size-8 items-center justify-center rounded-full border text-xs",
                       isCompleted && "border-emerald-500 bg-emerald-500 text-white",
-                      isCurrent && !isRejected && "border-[var(--module-order)] bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]",
+                      isCurrent && !isRejected && "border-[var(--module-order)] bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]",
                       isRejected && "border-destructive bg-destructive text-white",
                       !isCompleted && !isCurrent && !isRejected && "border-border text-muted-foreground",
                     )}
@@ -632,7 +632,7 @@ export const SalesOrderDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
               <Package className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "sales_order.detail.items", defaultMessage: "Items" })}
@@ -654,7 +654,7 @@ export const SalesOrderDetailPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-y bg-muted/40 text-left text-xs tracking-wide text-muted-foreground uppercase">
+                <tr className="border-y bg-card text-left text-xs tracking-wide text-foreground uppercase">
                   <th className="px-6 py-3 font-medium">
                     {intl.formatMessage({
                       id: "sales_order.detail.product",
@@ -692,28 +692,28 @@ export const SalesOrderDetailPage = () => {
                   <tr key={item.id} className="border-b last:border-0">
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_14%,transparent)] text-[var(--module-sku)]">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-[var(--module-sku)]">
                           <Package className="size-4" aria-hidden />
                         </span>
                         <div className="min-w-0">
                           <p className="truncate font-medium text-foreground">{item.sku.name}</p>
                           {item.sku.code ? (
-                            <p className="font-mono text-xs text-muted-foreground">{item.sku.code}</p>
+                            <p className="font-mono text-xs text-foreground">{item.sku.code}</p>
                           ) : null}
                         </div>
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">
                       {item.quantity}{" "}
-                      <span className="text-muted-foreground">{item.sku.baseUnit}</span>
+                      <span className="text-foreground">{item.sku.baseUnit}</span>
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">
                       {formatCurrency(item.unitPrice)}
                     </td>
-                    <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
+                    <td className="px-3 py-3 text-right tabular-nums text-foreground">
                       {item.discountPercent ?? 0}%
                     </td>
-                    <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
+                    <td className="px-3 py-3 text-right tabular-nums text-foreground">
                       {item.taxPercent ?? 0}%
                     </td>
                     <td className="px-6 py-3 text-right font-semibold tabular-nums">
@@ -724,8 +724,8 @@ export const SalesOrderDetailPage = () => {
               </tbody>
             </table>
           </div>
-          <div className="space-y-2 border-t bg-muted/20 px-6 py-4">
-            <div className="flex justify-between text-sm">
+          <div className="space-y-2 border-t bg-card px-6 py-4">
+            <div className="flex justify-between text-sm font-semibold">
               <span className="text-muted-foreground">
                 {intl.formatMessage({
                   id: "sales_order.detail.subtotal",
@@ -734,7 +734,7 @@ export const SalesOrderDetailPage = () => {
               </span>
               <span className="tabular-nums">{formatCurrency(record.subtotal ?? 0)}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm font-semibold">
               <span className="text-muted-foreground">
                 {intl.formatMessage({
                   id: "sales_order.detail.discount",
@@ -743,7 +743,7 @@ export const SalesOrderDetailPage = () => {
               </span>
               <span className="tabular-nums">−{formatCurrency(record.discountTotal ?? 0)}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm font-semibold">
               <span className="text-muted-foreground">
                 {intl.formatMessage({ id: "sales_order.detail.tax_total", defaultMessage: "Tax" })}
               </span>
@@ -768,14 +768,14 @@ export const SalesOrderDetailPage = () => {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
                 <StickyNote className="size-4" aria-hidden />
               </span>
               {intl.formatMessage({ id: "sales_order.detail.notes", defaultMessage: "Notes" })}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
               {record.notes}
             </p>
           </CardContent>
@@ -789,7 +789,7 @@ export const SalesOrderDetailPage = () => {
           onClick={() => setApprovalHistoryOpen((v) => !v)}
         >
           <span className="flex items-center gap-2 font-heading text-base font-semibold">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
               <CheckCircle2 className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({

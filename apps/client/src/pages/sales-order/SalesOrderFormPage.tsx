@@ -676,7 +676,7 @@ export const SalesOrderFormPage = () => {
                 <>
                   {items.map((item, idx) => (
                     <div
-                      className="grid gap-2 rounded-md border border-border/70 bg-muted/20 p-2 lg:grid-cols-[1.4fr_0.6fr_0.8fr_0.6fr_0.6fr_0.9fr_auto]"
+                      className="grid gap-2 rounded-md border border-border/70 bg-card p-2 lg:grid-cols-[1.4fr_0.6fr_0.8fr_0.6fr_0.6fr_0.9fr_auto]"
                       key={idx}
                     >
                       <div>
@@ -802,7 +802,7 @@ export const SalesOrderFormPage = () => {
                             Line total
                           </div>
                         )}
-                        <div className="flex h-8 items-center rounded-md border border-input bg-muted/30 px-2.5 text-sm font-semibold tabular-nums">
+                        <div className="flex h-8 items-center rounded-md border border-input bg-card px-2.5 text-sm font-semibold tabular-nums">
                           {formatCurrency(item.lineTotal)}
                         </div>
                       </div>
@@ -826,7 +826,7 @@ export const SalesOrderFormPage = () => {
               {(items) => {
                 const totals = recalcTotals(items);
                 return (
-                  <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-right">
+                  <div className="rounded-md border border-border/70 bg-card px-3 py-2 text-right">
                     <p className="text-[11px] text-muted-foreground">Grand total</p>
                     <p className="text-base font-semibold tabular-nums text-module-order">
                       {formatCurrency(totals.grandTotal)}

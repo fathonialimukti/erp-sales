@@ -9,6 +9,7 @@ import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -41,6 +42,12 @@ const formatCurrency = (v: number) =>
 
 export const SkuIndexPage = () => {
   const intl = useIntl();
+
+  useMeta({
+    title: intl.formatMessage({ id: "sku.index.title", defaultMessage: "Products" }),
+    description: intl.formatMessage({ id: "sku.index.subtitle", defaultMessage: "Catalog products with categories, pricing, and stock visibility." }),
+  });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -86,7 +93,7 @@ export const SkuIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "sku.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {
@@ -102,7 +109,7 @@ export const SkuIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "sku.index.header_price", defaultMessage: "Price" }),
         cell: ({ row }) => (
-          <span className="block text-right tabular-nums text-muted-foreground">
+          <span className="block text-right tabular-nums text-foreground">
             {row.original.basePrice != null ? formatCurrency(row.original.basePrice) : "—"}
           </span>
         ),

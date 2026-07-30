@@ -60,7 +60,7 @@ const flattenLeaves = (items: NavMenuItem[]): NavLeaf[] => {
   return leaves;
 };
 
-/** href → Aurora module accent for active wash (P2 / NavModuleTile). */
+/** href → Bold CRM module accent for active wash (P2 / NavModuleTile). */
 const HREF_MODULE: Record<string, ModuleKey> = {
   "/customer": "customer",
   "/outlet": "outlet",
@@ -78,6 +78,9 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   "/email-crm": "email",
   "/knowledge-base": "knowledge",
   "/ai-admin": "ai",
+  // geo master data — module tokens + PageHeader MODULE_ICON exist for these keys
+  "/region": "region",
+  "/area": "area",
 };
 
 export const Sidebar = () => {
@@ -121,7 +124,7 @@ export const Sidebar = () => {
           defaultMessage: "Favorites",
         }),
         items: visible.filter((l) =>
-          ["/dashboard", "/sales-order", "/invoice", "/visit-log"].includes(
+          ["/dashboard", "/sales-order", "/email-crm", "/invoice", "/visit-log"].includes(
             l.href,
           ),
         ),
@@ -165,6 +168,8 @@ export const Sidebar = () => {
             "/access-control",
             "/activity-logs",
             "/notifications",
+            "/knowledge-base",
+            "/ai-admin",
           ].includes(l.href),
         ),
       },
@@ -189,7 +194,7 @@ export const Sidebar = () => {
       className={cn(
         // z-40: above sticky topbar (z-30), below dialog/sheet overlays (z-50)
         "fixed top-3 bottom-3 left-3 z-40 flex flex-col overflow-visible",
-        "rounded-2xl border border-primary/10 bg-sidebar/95 shadow-sm ring-1 ring-primary/5 backdrop-blur-xl",
+        "rounded-2xl border border-border bg-sidebar shadow-sm",
         "transition-[width] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
         "motion-reduce:transition-none",
         isCollapsed ? "w-20" : "w-68",
@@ -198,7 +203,7 @@ export const Sidebar = () => {
       {/* Header — brand + search */}
       <header
         className={cn(
-          "flex shrink-0 flex-col gap-3 border-b border-border/70",
+          "flex shrink-0 flex-col gap-3 border-b border-border",
           isCollapsed ? "items-center px-2.5 py-4" : "px-3.5 py-4",
         )}
       >
@@ -240,7 +245,7 @@ export const Sidebar = () => {
             onClick={() => setSearchOpen(true)}
             aria-label={searchOpenLabel}
             title={searchLabel}
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary outline-none transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-primary/10 text-primary outline-none transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring"
             onMouseEnter={(e) => showTooltip(searchLabel, e.currentTarget)}
             onMouseLeave={hideTooltip}
             onFocus={(e) => showTooltip(searchLabel, e.currentTarget)}
@@ -253,7 +258,7 @@ export const Sidebar = () => {
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label={searchOpenLabel}
-            className="group relative flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border border-primary/12 bg-primary/[0.06] px-2.5 py-2 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
+            className="group relative flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border border-border bg-primary/[0.06] px-2.5 py-2 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <Search className="size-4" aria-hidden />
@@ -301,10 +306,10 @@ export const Sidebar = () => {
                   id={`aurora-sb-group-${section.id}`}
                   className="flex items-center justify-between px-2"
                 >
-                  <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                  <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
                     {section.name}
                   </span>
-                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
                     {section.items.length}
                   </span>
                 </header>
@@ -313,7 +318,7 @@ export const Sidebar = () => {
                 className={cn(
                   "flex flex-col gap-0.5",
                   !isCollapsed &&
-                    "rounded-xl border border-primary/8 bg-primary/[0.03] p-1",
+                    "rounded-xl border border-border bg-primary/[0.03] p-1",
                 )}
               >
                 {section.items.map((item) => {
@@ -356,7 +361,7 @@ export const Sidebar = () => {
       {showAvatarInSidebar && (
         <footer
           className={cn(
-            "shrink-0 border-t border-border/70",
+            "shrink-0 border-t border-border",
             isCollapsed ? "flex justify-center p-2" : "p-2.5",
           )}
         >

@@ -280,7 +280,7 @@ export const VisitLogDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-visit)_14%,transparent)] text-[var(--module-visit)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-visit)_8%,transparent)] text-[var(--module-visit)]">
               <ClipboardList className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "visit_log.detail.summary", defaultMessage: "Summary" })}
@@ -292,7 +292,7 @@ export const VisitLogDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "visit_log.detail.date_label", defaultMessage: "Date" })}
               </dt>
-              <dd className="text-sm text-foreground">{visitLog.date}</dd>
+              <dd className="text-sm font-normal text-foreground">{visitLog.date}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -315,7 +315,7 @@ export const VisitLogDetailPage = () => {
                   defaultMessage: "Salesman",
                 })}
               </dt>
-              <dd className="flex items-center gap-2 text-sm text-foreground">
+              <dd className="flex items-center gap-2 text-sm font-normal text-foreground">
                 <UserRound className="size-3.5 text-muted-foreground" aria-hidden />
                 {visitLog.salesman?.name ?? "—"}
               </dd>
@@ -327,7 +327,7 @@ export const VisitLogDetailPage = () => {
                   defaultMessage: "Outlet",
                 })}
               </dt>
-              <dd className="flex items-center gap-2 text-sm text-foreground">
+              <dd className="flex items-center gap-2 text-sm font-normal text-foreground">
                 <MapPin className="size-3.5 text-muted-foreground" aria-hidden />
                 {visitLog.outlet?.name ?? "—"}
               </dd>
@@ -339,7 +339,7 @@ export const VisitLogDetailPage = () => {
                   defaultMessage: "Purpose",
                 })}
               </dt>
-              <dd className="text-sm text-foreground">{visitLog.purpose ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{visitLog.purpose ?? "—"}</dd>
             </div>
             <div className="space-y-1 sm:col-span-2 lg:col-span-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -348,7 +348,7 @@ export const VisitLogDetailPage = () => {
                   defaultMessage: "Notes",
                 })}
               </dt>
-              <dd className="text-sm text-foreground whitespace-pre-wrap">
+              <dd className="text-sm font-normal text-foreground whitespace-pre-wrap">
                 {visitLog.notes ?? "—"}
               </dd>
             </div>
@@ -360,7 +360,7 @@ export const VisitLogDetailPage = () => {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
                 <ShoppingCart className="size-4" aria-hidden />
               </span>
               {intl.formatMessage({
@@ -378,7 +378,7 @@ export const VisitLogDetailPage = () => {
               onClick={() => navigate(`/sales-order/${visitLog.salesOrder!.id}`)}
               className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_14%,transparent)] text-[var(--module-order)]">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
                 <ShoppingCart className="size-4" aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
@@ -386,7 +386,7 @@ export const VisitLogDetailPage = () => {
                   {visitLog.salesOrder.documentNumber ?? visitLog.salesOrder.id}
                 </span>
                 {visitLog.salesOrder.grandTotal != null ? (
-                  <span className="block font-mono text-xs tabular-nums text-muted-foreground">
+                  <span className="block font-mono text-xs tabular-nums text-foreground">
                     {visitLog.salesOrder.grandTotal}
                   </span>
                 ) : null}
@@ -440,7 +440,7 @@ export const VisitLogDetailPage = () => {
           ) : null}
           {draftError ? <p className="text-sm text-destructive">{draftError}</p> : null}
           {draftResult ? (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="text-foreground text-sm font-semibold">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{draftResult}</ReactMarkdown>
             </div>
           ) : null}

@@ -14,8 +14,9 @@ import { chatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { prisma } from '../lib/prisma.js';
+import { getJwtSecret } from '../lib/jwt-secret.js';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
+const JWT_SECRET = getJwtSecret();
 
 const ROUTE_CATALOG = `
 - Dashboard: /dashboard
@@ -333,7 +334,7 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
         return;
     }
 
-    // --- Permission check: ai-admin@access ---
+    // --- Permission check: admin role or ai-admin@access ---
     const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -346,10 +347,12 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
     });
 
     const userPermissions = user?.role?.permissions.map(rp => rp.permission.name) ?? [];
-    if (!userPermissions.includes('ai-admin@access')) {
+    const isAdminRole = user?.role?.name === 'System Admin';
+    const hasAdminPermission = userPermissions.includes('ai-admin@access');
+    if (!isAdminRole && !hasAdminPermission) {
         res.status(403).json({
-            error: 'Forbidden',
-            message: 'You do not have the ai-admin@access permission required to use the AI System Administrator.',
+            error: 'Forbidden: admin access required',
+            message: 'You must have the System Admin role or the ai-admin@access permission to use the AI System Administrator.',
         });
         return;
     }
@@ -399,6 +402,55 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
     pipeUIMessageStreamToResponse({ response: res, stream });
 }
 
-export async function aiAdminChatResumeHandler(_req: Request, res: Response) {
+export async function aiAdminChatResumeHandler(req: Request, res: Response) {
+    // --- Auth ---
+    let token: string | null = null;
+    const cookieHeader = req.headers.cookie;
+    if (cookieHeader) {
+        const cookies = parseCookie(cookieHeader);
+        if (cookies.access_token) token = cookies.access_token;
+    }
+    if (!token) {
+        const auth = req.headers.authorization;
+        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
+    }
+    if (!token) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+
+    let userId: string;
+    try {
+        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
+        if (!payload?.userId) throw new Error('Invalid token payload');
+        userId = String(payload.userId);
+    } catch {
+        res.status(401).json({ error: 'Invalid token' });
+        return;
+    }
+
+    // --- Permission check: admin role or ai-admin@access ---
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            role: {
+                include: {
+                    permissions: { include: { permission: true } },
+                },
+            },
+        },
+    });
+
+    const userPermissions = user?.role?.permissions.map(rp => rp.permission.name) ?? [];
+    const isAdminRole = user?.role?.name === 'System Admin';
+    const hasAdminPermission = userPermissions.includes('ai-admin@access');
+    if (!isAdminRole && !hasAdminPermission) {
+        res.status(403).json({
+            error: 'Forbidden: admin access required',
+            message: 'You must have the System Admin role or the ai-admin@access permission to use the AI System Administrator.',
+        });
+        return;
+    }
+
     res.status(204).end();
 }

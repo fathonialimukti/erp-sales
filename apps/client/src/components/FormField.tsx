@@ -21,17 +21,18 @@ export const FormField = ({
   error,
   isRequired,
   className,
+  id,
 }: FormFieldProps) => (
   <div className={cn("flex flex-col gap-1.5", className)}>
     {label ? (
-      <Label>
+      <Label htmlFor={id} className="font-semibold">
         {label}
         {isRequired ? <span className="text-destructive">*</span> : null}
       </Label>
     ) : null}
     {children}
     {description && !error ? (
-      <p className="text-xs text-muted-foreground">{description}</p>
+      <p className="text-xs font-semibold text-muted-foreground">{description}</p>
     ) : null}
     {error ? <FieldError>{error}</FieldError> : null}
   </div>

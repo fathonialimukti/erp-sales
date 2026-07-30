@@ -9,6 +9,7 @@ import { Eye, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -35,6 +36,12 @@ type VisitLogRow = {
 
 export const VisitLogIndexPage = () => {
   const intl = useIntl();
+
+  useMeta({
+    title: intl.formatMessage({ id: "visit_log.index.title", defaultMessage: "Visit Logs" }),
+    description: intl.formatMessage({ id: "visit_log.index.subtitle", defaultMessage: "Track field visits with check-in, purpose, and notes tied to the right outlet." }),
+  });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -106,7 +113,7 @@ export const VisitLogIndexPage = () => {
           id: "date",
           header: intl.formatMessage({ id: "visit_log.index.header_code", defaultMessage: "Date" }),
           cell: ({ row }) => (
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="font-mono text-xs text-foreground">
               {new Date(row.original.date).toLocaleDateString()}
             </span>
           ),
@@ -128,7 +135,7 @@ export const VisitLogIndexPage = () => {
             defaultMessage: "Outlet",
           }),
           cell: ({ row }) => (
-            <span className="text-muted-foreground">{row.original.outlet?.name ?? "—"}</span>
+            <span className="text-foreground">{row.original.outlet?.name ?? "—"}</span>
           ),
         },
         {

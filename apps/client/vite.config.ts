@@ -17,6 +17,60 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    // ── Code-split aggressively for Lighthouse ──
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // React core in one chunk (cached forever)
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router') || id.includes('node_modules/scheduler')) {
+            return 'vendor-react';
+          }
+          // TanStack in one chunk
+          if (id.includes('node_modules/@tanstack')) {
+            return 'vendor-tanstack';
+          }
+          // Motion + animation
+          if (id.includes('node_modules/motion') || id.includes('node_modules/framer-motion')) {
+            return 'vendor-motion';
+          }
+          // Icon libraries
+          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/@gravity-ui')) {
+            return 'vendor-icons';
+          }
+          // Radix UI + shadcn
+          if (id.includes('node_modules/radix-ui') || id.includes('node_modules/@radix-ui') || id.includes('node_modules/cmdk') || id.includes('node_modules/sonner') || id.includes('node_modules/input-otp') || id.includes('node_modules/react-day-picker')) {
+            return 'vendor-radix';
+          }
+          // tRPC + TanStack Query
+          if (id.includes('node_modules/@trpc')) {
+            return 'vendor-trpc';
+          }
+          // Tauri
+          if (id.includes('node_modules/@tauri-apps')) {
+            return 'vendor-tauri';
+          }
+          // AI SDK
+          if (id.includes('node_modules/ai') || id.includes('node_modules/@ai-sdk') || id.includes('node_modules/@vercel/ai')) {
+            return 'vendor-ai';
+          }
+          // recharts
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) {
+            return 'vendor-charts';
+          }
+        },
+      },
+    },
+    // Warn if any chunk exceeds 500kB
+    chunkSizeWarningLimit: 500,
+    sourcemap: false,
+    // Optimize for Tauri production builds
+    target: 'esnext',
+    minify: 'esbuild',
+    cssMinify: true,
+    cssCodeSplit: true,
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

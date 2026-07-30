@@ -1,5 +1,5 @@
 /* ============================================================
- * Global styles — Tailwind v4 + Aurora Commerce tokens
+ * Global styles — Tailwind v4 + Trustworthy Corporate tokens
  * Legacy --color-* / --ios-* / --ease-* live in styles/legacy-vars.css
  * ============================================================ */
 
@@ -82,24 +82,24 @@
     --card-foreground: oklch(0.16 0.02 260);
     --popover: oklch(0.995 0.004 242);
     --popover-foreground: oklch(0.16 0.02 260);
-    /* 10% brand signal — Aurora Azure */
-    --primary: oklch(0.5 0.134 242.749);
-    --primary-foreground: oklch(0.977 0.013 236.62);
+    /* 10% brand signal — Aurora Azure (calm-confident, chroma ~0.13) */
+    --primary: oklch(0.5 0.13 242.749);
+    --primary-foreground: oklch(0.98 0.01 236.62);
     --secondary: oklch(0.945 0.018 242);
     --secondary-foreground: oklch(0.22 0.02 260);
     --muted: oklch(0.955 0.012 242);
-    /* Text law: never gray — secondary copy uses bold Aurora Azure */
-    --muted-foreground: oklch(0.42 0.12 242.749);
+    /* Text law: never gray — secondary copy uses bold Azure, deepened for premium weight */
+    --muted-foreground: oklch(0.34 0.10 242.749);
     --accent: oklch(0.94 0.028 242);
     --accent-foreground: oklch(0.22 0.02 260);
     --destructive: oklch(0.577 0.245 27.325);
-    --success: oklch(0.62 0.15 160);
+    --success: oklch(0.62 0.2 160);
     --success-foreground: oklch(0.98 0.02 160);
-    --warning: oklch(0.75 0.14 75);
+    --warning: oklch(0.75 0.18 75);
     --warning-foreground: oklch(0.28 0.05 60);
     --border: oklch(0.9 0.015 242);
     --input: oklch(0.9 0.015 242);
-    --ring: oklch(0.55 0.1 242);
+    --ring: oklch(0.55 0.18 242);
     --chart-1: oklch(0.905 0.182 98.111);
     --chart-2: oklch(0.795 0.184 86.047);
     --chart-3: oklch(0.681 0.162 75.834);
@@ -108,28 +108,30 @@
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0.01 242);
     --sidebar-foreground: oklch(0.16 0.02 260);
-    --sidebar-primary: oklch(0.588 0.158 241.966);
+    --sidebar-primary: oklch(0.588 0.22 241.966);
     --sidebar-primary-foreground: oklch(0.977 0.013 236.62);
     --sidebar-accent: oklch(0.94 0.028 242);
     --sidebar-accent-foreground: oklch(0.16 0.02 260);
     --sidebar-border: oklch(0.9 0.015 242);
-    --sidebar-ring: oklch(0.55 0.1 242);
+    --sidebar-ring: oklch(0.55 0.18 242);
 
-    /* Module spectrum — wayfinding only (law §2) */
-    --module-customer: oklch(0.52 0.14 250);
-    --module-outlet: oklch(0.55 0.12 200);
-    --module-order: oklch(0.5 0.134 242.749);
-    --module-visit: oklch(0.55 0.13 160);
-    --module-sku: oklch(0.62 0.13 85);
-    --module-planning: oklch(0.52 0.14 280);
-    --module-event: oklch(0.58 0.15 20);
-    --module-user: oklch(0.5 0.12 270);
-    --module-report: oklch(0.5 0.12 230);
-    --module-email: oklch(0.52 0.11 210);
-    --module-knowledge: oklch(0.55 0.12 140);
-    --module-ai: oklch(0.55 0.14 300);
-    --module-region: oklch(0.52 0.11 220);
-    --module-area: oklch(0.54 0.11 190);
+    /* Module spectrum — wayfinding + solid header fill (law §2)
+       Light-mode deepened to L≈0.45–0.48 / chroma ~0.20 so white text on a solid
+       PageHeader fill clears WCAG AA. Dark-mode stays L~0.68–0.78 for active-wash. */
+    --module-customer: oklch(0.46 0.2 250);
+    --module-outlet: oklch(0.45 0.2 200);
+    --module-order: oklch(0.46 0.22 242);
+    --module-visit: oklch(0.45 0.2 160);
+    --module-sku: oklch(0.46 0.19 85);
+    --module-planning: oklch(0.46 0.2 280);
+    --module-event: oklch(0.46 0.21 20);
+    --module-user: oklch(0.45 0.2 270);
+    --module-report: oklch(0.45 0.2 230);
+    --module-email: oklch(0.46 0.2 210);
+    --module-knowledge: oklch(0.45 0.2 140);
+    --module-ai: oklch(0.45 0.2 300);
+    --module-region: oklch(0.46 0.2 220);
+    --module-area: oklch(0.45 0.2 190);
 }
 
 .dark {
@@ -139,23 +141,23 @@
     --card-foreground: oklch(0.97 0.005 260);
     --popover: oklch(0.21 0.02 260);
     --popover-foreground: oklch(0.97 0.005 260);
-    --primary: oklch(0.62 0.14 242);
-    --primary-foreground: oklch(0.15 0.03 242);
+    --primary: oklch(0.44 0.16 242);
+    --primary-foreground: oklch(0.98 0.01 236.62);
     --secondary: oklch(0.28 0.02 260);
     --secondary-foreground: oklch(0.98 0.005 260);
     --muted: oklch(0.28 0.02 260);
-    /* Text law: never gray — secondary copy uses bold light Azure */
-    --muted-foreground: oklch(0.82 0.08 242);
+    /* Text law: never gray — secondary copy uses bold light Azure, deepened for premium weight */
+    --muted-foreground: oklch(0.72 0.08 242);
     --accent: oklch(0.3 0.04 242);
     --accent-foreground: oklch(0.98 0.005 260);
     --destructive: oklch(0.704 0.191 22.216);
-    --success: oklch(0.7 0.14 160);
+    --success: oklch(0.7 0.2 160);
     --success-foreground: oklch(0.18 0.04 160);
-    --warning: oklch(0.78 0.12 80);
+    --warning: oklch(0.78 0.18 80);
     --warning-foreground: oklch(0.22 0.04 70);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.55 0.1 242);
+    --ring: oklch(0.55 0.18 242);
     --chart-1: oklch(0.905 0.182 98.111);
     --chart-2: oklch(0.795 0.184 86.047);
     --chart-3: oklch(0.681 0.162 75.834);
@@ -163,27 +165,31 @@
     --chart-5: oklch(0.476 0.114 61.907);
     --sidebar: oklch(0.19 0.02 260);
     --sidebar-foreground: oklch(0.97 0.005 260);
-    --sidebar-primary: oklch(0.685 0.169 237.323);
+    --sidebar-primary: oklch(0.685 0.22 237.323);
     --sidebar-primary-foreground: oklch(0.293 0.066 243.157);
     --sidebar-accent: oklch(0.28 0.03 242);
     --sidebar-accent-foreground: oklch(0.97 0.005 260);
     --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.55 0.1 242);
+    --sidebar-ring: oklch(0.55 0.18 242);
 
-    --module-customer: oklch(0.68 0.12 250);
-    --module-outlet: oklch(0.7 0.1 200);
-    --module-order: oklch(0.68 0.12 242);
-    --module-visit: oklch(0.7 0.11 160);
-    --module-sku: oklch(0.78 0.11 85);
-    --module-planning: oklch(0.7 0.12 280);
-    --module-event: oklch(0.72 0.12 20);
-    --module-user: oklch(0.7 0.1 270);
-    --module-report: oklch(0.7 0.1 230);
-    --module-email: oklch(0.7 0.1 210);
-    --module-region: oklch(0.7 0.1 220);
-    --module-area: oklch(0.72 0.1 190);
-    --module-knowledge: oklch(0.72 0.1 140);
-    --module-ai: oklch(0.72 0.12 300);
+    /* Dark header-safe band (T11 fix): deepened from L~0.68–0.78 to L≈0.44–0.48
+       so white title/eyebrow text on the gradient PageHeader clears WCAG AA
+       in dark mode too (dark mode is the app default). Hue identity matches
+       light-mode tokens; chroma ~0.19–0.21 kept for vivid wayfinding. */
+    --module-customer: oklch(0.52 0.2 250);
+    --module-outlet: oklch(0.5 0.2 200);
+    --module-order: oklch(0.52 0.22 242);
+    --module-visit: oklch(0.5 0.2 160);
+    --module-sku: oklch(0.52 0.19 85);
+    --module-planning: oklch(0.52 0.2 280);
+    --module-event: oklch(0.52 0.21 20);
+    --module-user: oklch(0.5 0.2 270);
+    --module-report: oklch(0.5 0.2 230);
+    --module-email: oklch(0.52 0.2 210);
+    --module-region: oklch(0.52 0.2 220);
+    --module-area: oklch(0.52 0.2 190);
+    --module-knowledge: oklch(0.52 0.2 140);
+    --module-ai: oklch(0.54 0.2 300);
 }
 
 @layer base {
@@ -191,7 +197,7 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-normal;
     }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -201,45 +207,27 @@
     }
 }
 
-/* 60% ambient canvas — soft Azure wash, not pure white */
+/* 60% ambient canvas — near-flat; bold-mesh kept as a ≤3% imperceptible tint
+   so the background reads as solid --background (Trustworthy Corporate §2).
+   Class retained because layout shells reference it. */
 @layer utilities {
-  .aurora-mesh {
+  .bold-mesh {
     background-color: var(--background);
     background-image:
       radial-gradient(
         1200px 600px at 0% -10%,
-        color-mix(in oklch, var(--primary) 14%, transparent),
+        color-mix(in oklch, var(--primary) 3%, transparent),
         transparent 60%
-      ),
-      radial-gradient(
-        900px 500px at 100% 0%,
-        color-mix(in oklch, var(--module-planning) 10%, transparent),
-        transparent 55%
-      ),
-      radial-gradient(
-        800px 480px at 50% 110%,
-        color-mix(in oklch, var(--module-visit) 8%, transparent),
-        transparent 50%
       );
     background-attachment: fixed;
   }
 
-  .dark .aurora-mesh {
+  .dark .bold-mesh {
     background-image:
       radial-gradient(
         1000px 500px at 0% -10%,
-        color-mix(in oklch, var(--primary) 18%, transparent),
+        color-mix(in oklch, var(--primary) 3%, transparent),
         transparent 55%
-      ),
-      radial-gradient(
-        800px 420px at 100% 0%,
-        color-mix(in oklch, var(--module-planning) 12%, transparent),
-        transparent 50%
-      ),
-      radial-gradient(
-        700px 400px at 50% 110%,
-        color-mix(in oklch, var(--module-visit) 10%, transparent),
-        transparent 45%
       );
   }
 }

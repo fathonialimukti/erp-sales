@@ -4,11 +4,14 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 import { verifyPassword } from '../lib/password.js';
 import { logActivity } from '../lib/activity-log.js';
+import { checkRateLimit } from '../lib/rate-limiter.js';
+import { addToBlacklist } from '../lib/token-blacklist.js';
 import { publicProcedure, protectedProcedure, router } from '../trpc.js';
 import { getMessage } from '../lib/locale.js';
 import { loginSchema } from '@repo/schemas/auth';
+import { getJwtSecret } from '../lib/jwt-secret.js';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
+const JWT_SECRET = getJwtSecret();
 const TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
 
 const createAuthCookie = (token: string, rememberMe?: boolean) =>
@@ -34,6 +37,21 @@ export const authRouter = router({
         .input(loginSchema)
         .mutation(async ({ ctx, input }) => {
             const { email, password } = input;
+
+            // Rate limiting: 5 attempts per IP per minute
+            const forwardedFor = ctx.req.headers['x-forwarded-for'];
+            const ip = (typeof forwardedFor === 'string'
+                ? forwardedFor.split(',')[0]?.trim()
+                : undefined)
+                ?? (ctx.req.socket?.remoteAddress as string | undefined)
+                ?? 'unknown';
+            const rateLimit = checkRateLimit(ip);
+            if (!rateLimit.allowed) {
+                throw new TRPCError({
+                    code: 'TOO_MANY_REQUESTS',
+                    message: getMessage(ctx.locale, 'auth.rateLimitExceeded'),
+                });
+            }
 
             const user = await prisma.user.findUnique({
                 where: { email },
@@ -134,6 +152,11 @@ export const authRouter = router({
     }),
 
     logout: protectedProcedure.mutation(async ({ ctx }) => {
+        // Revoke the current token by adding it to the blacklist
+        if (ctx.token) {
+            addToBlacklist(ctx.token, ctx.user.exp * 1000);
+        }
+
         // Log logout activity
         await logActivity(prisma, {
             action: 'LOGOUT',

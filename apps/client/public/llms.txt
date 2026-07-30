@@ -1,0 +1,33 @@
+# ERP Sales — Sales Management Platform
+
+> ERP Sales is a sales management platform for field teams and back-office operations. Manage customers, outlets, sales orders, visits, approvals, and real-time insights in one platform.
+
+## Key Pages
+
+- [Home](https://erp-sales.app/) — Platform overview, features, and demo access
+- [Features](https://erp-sales.app/#features) — All 12 modules: Regions, Areas, Customers, Outlets, SKUs, Sales Orders, Visit Logs, Action Programs, Event Proposals, Email CRM, Knowledge Base, AI Admin
+- [How It Works](https://erp-sales.app/#how-it-works) — 4-step workflow from setup to insight
+- [FAQ](https://erp-sales.app/#faq) — Frequently asked questions about the platform
+- [Contact](https://erp-sales.app/#contact) — Get in touch for custom ERP solutions
+- [Sign In](https://erp-sales.app/login) — Access the demo platform
+
+## API
+
+- tRPC endpoint: `https://erp-sales.app/trpc`
+- Full TypeScript typesafe API for all sales management operations
+
+## Modules
+
+- **Regions & Areas** — Define your sales territory hierarchy
+- **Customer & Outlet CRM** — Manage customer profiles and retail points
+- **Sales Orders** — Create, propose, and approve orders with AI-assisted validation
+- **Visit Logs** — Track field visits with check-in and notes
+- **Action Programs & Events** — Plan promotions with budgets and PIC accountability
+- **Email Concierge** — Inbound email becomes AI-written HTML replies with optional draft orders
+- **Knowledge Base** — Self-service docs grounded in your content via RAG
+- **AI Admin** — Streaming LLM assistant for navigation, drafting, and data queries
+- **Users & Access** — Role-based access control with granular permissions
+
+## Structured Data
+
+The site includes JSON-LD structured data for WebSite, FAQPage, HowTo, SoftwareApplication, and Person schemas.

@@ -35,6 +35,7 @@ export const dashboardRouter = router({
             topCustomersRaw,
             trendRowsRaw,
             recentActivity,
+            revenueBySkuRaw,
         ] = await Promise.all([
             prisma.salesOrder.count({ where: { approvalStatus: { in: ['DRAFT', 'PROPOSED'] } } }),
             prisma.salesOrder.count({ where: { approvalStatus: 'DRAFT' } }),
@@ -71,6 +72,11 @@ export const dashboardRouter = router({
                 take: 8,
                 orderBy: { createdAt: 'desc' },
                 include: { user: { select: { id: true, name: true, email: true } } },
+            }),
+            prisma.salesOrderItem.groupBy({
+                by: ['skuId'],
+                where: { salesOrder: { approvalStatus: 'APPROVED', date: { gte: startOfMonth, lte: endOfMonth } } },
+                _sum: { lineTotal: true },
             }),
         ]);
 
@@ -120,6 +126,40 @@ export const dashboardRouter = router({
             ? Math.round((revenueDelta / prevMonthRevenue) * 1000) / 10
             : null;
 
+        // Revenue by category (this month, approved) — top 6
+        const revenueByCategory = await (async () => {
+            if (revenueBySkuRaw.length === 0) return [];
+            const skuIds = revenueBySkuRaw.map((r) => r.skuId);
+            const skuCats = await prisma.sku.findMany({ where: { id: { in: skuIds } }, select: { id: true, categoryId: true } });
+            const categoryIds = skuCats.map((s) => s.categoryId).filter((id): id is string => id !== null);
+            if (categoryIds.length === 0) return [];
+            const [categories, skuCounts] = await Promise.all([
+                prisma.skuCategory.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } }),
+                prisma.sku.groupBy({
+                    by: ['categoryId'],
+                    where: { categoryId: { in: categoryIds, not: null } },
+                    _count: { _all: true },
+                }),
+            ]);
+            const skuToCategory = new Map(skuCats.map((s) => [s.id, s.categoryId]));
+            const categoryName = new Map(categories.map((c) => [c.id, c.name]));
+            const categorySkuCount = new Map(
+                skuCounts.filter((g) => g.categoryId !== null).map((g) => [g.categoryId as string, g._count._all]),
+            );
+            const fold = new Map<string, { revenue: number; skuCount: number }>();
+            revenueBySkuRaw.forEach((row) => {
+                const categoryId = skuToCategory.get(row.skuId) ?? null;
+                if (!categoryId) return;
+                const agg = fold.get(categoryId) ?? { revenue: 0, skuCount: categorySkuCount.get(categoryId) ?? 0 };
+                agg.revenue += row._sum.lineTotal ? Number(row._sum.lineTotal) : 0;
+                fold.set(categoryId, agg);
+            });
+            return Array.from(fold.entries())
+                .map(([id, agg]) => ({ id, name: categoryName.get(id) ?? 'Unknown', revenue: agg.revenue, skuCount: agg.skuCount }))
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 6);
+        })();
+
         return {
             kpis: {
                 openOrders,
@@ -148,6 +188,7 @@ export const dashboardRouter = router({
                 createdAt: a.createdAt,
                 userName: a.user?.name ?? 'System',
             })),
+            revenueByCategory,
         };
     }),
 });

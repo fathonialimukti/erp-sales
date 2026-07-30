@@ -167,7 +167,7 @@ export const RoleDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
               <Shield className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "roles.detail.summary", defaultMessage: "Summary" })}
@@ -179,7 +179,7 @@ export const RoleDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "roles.detail.name", defaultMessage: "Name" })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{role.name}</dd>
+              <dd className="text-sm font-normal text-foreground">{role.name}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -188,13 +188,13 @@ export const RoleDetailPage = () => {
                   defaultMessage: "Description",
                 })}
               </dt>
-              <dd className="text-sm text-foreground">{role.description ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{role.description ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "roles.detail.users_count", defaultMessage: "Users" })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">{role.users.length}</dd>
+              <dd className="text-sm font-normal tabular-nums text-foreground">{role.users.length}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -203,7 +203,7 @@ export const RoleDetailPage = () => {
                   defaultMessage: "Permissions",
                 })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">{role.permissions.length}</dd>
+              <dd className="text-sm font-normal tabular-nums text-foreground">{role.permissions.length}</dd>
             </div>
           </dl>
         </CardContent>
@@ -212,7 +212,7 @@ export const RoleDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
               <KeyRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "roles.detail.permissions", defaultMessage: "Permissions" })}
@@ -244,7 +244,7 @@ export const RoleDetailPage = () => {
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {actions.map((action) => (
-                    <label key={action} className="flex items-center gap-2 text-sm text-foreground">
+                    <label key={action} className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <Checkbox checked disabled />
                       <span>{action}</span>
                     </label>
@@ -259,7 +259,7 @@ export const RoleDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
               <Users className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -290,7 +290,7 @@ export const RoleDetailPage = () => {
                       <span className="block truncate text-sm font-medium text-foreground">
                         {user.name}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <span className="block truncate text-xs text-foreground">
                         {user.email}
                       </span>
                     </span>

@@ -65,7 +65,15 @@ export const getInitialLocale = (): Locale => {
   const storedLocale = getLocaleFromLocalStorage();
   if (storedLocale) return storedLocale;
 
-  const browserLang = window.navigator.language.split('-')[0];
+  // Check full navigator.languages array first (more comprehensive)
+  const browserLanguages = window.navigator.languages ?? [];
+  for (const lang of browserLanguages) {
+    const normalized = lang.split('-')[0].toLowerCase();
+    if (normalized === 'id') return 'id';
+  }
+
+  // Fallback to single navigator.language
+  const browserLang = window.navigator.language.split('-')[0].toLowerCase();
   if (browserLang === 'id') return 'id';
 
   return 'en';

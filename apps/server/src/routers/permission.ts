@@ -7,7 +7,7 @@ import { hasPermission, protectedProcedure, router } from '../trpc.js';
 
 export const permissionRouter = router({
   list: protectedProcedure
-    .use(hasPermission('user@read'))
+    .use(hasPermission('permission@read'))
     .input(createListInputSchema())
     .query(async ({ input }) => {
       const { page, limit, skip } = buildPaginationParams(input);
@@ -28,7 +28,7 @@ export const permissionRouter = router({
     }),
 
   create: protectedProcedure
-    .use(hasPermission('user@create'))
+    .use(hasPermission('permission@create'))
     .input(z.object({ name: z.string().min(1), description: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
       const created = await prisma.permission.create({ data: input });
@@ -46,7 +46,7 @@ export const permissionRouter = router({
     }),
 
   update: protectedProcedure
-    .use(hasPermission('user@update'))
+    .use(hasPermission('permission@update'))
     .input(z.object({ id: z.string(), name: z.string().min(1).optional(), description: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
@@ -69,7 +69,7 @@ export const permissionRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(hasPermission('user@delete'))
+    .use(hasPermission('permission@delete'))
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const existing = await prisma.permission.findUnique({ where: { id: input.id } });

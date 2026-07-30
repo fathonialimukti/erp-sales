@@ -32,7 +32,7 @@ export const PrivateLayout = () => {
 
   return (
     <div
-      className="aurora-mesh relative min-h-screen"
+      className="relative min-h-screen bg-background"
       data-ai-context={JSON.stringify({
         section: "private-layout",
         sidebarOpen,
@@ -48,8 +48,8 @@ export const PrivateLayout = () => {
         )}
       >
         <Topbar />
-        {/* 30% work stage — elevated card over tinted mesh */}
-        <main className="min-h-0 flex-1 overflow-auto rounded-2xl border border-primary/10 bg-card/85 p-4 shadow-sm ring-1 ring-primary/5 backdrop-blur-[2px] md:p-6">
+        {/* Opaque grounded work stage — solid bg-card over flat canvas */}
+        <main className="min-h-0 flex-1 overflow-auto rounded-2xl border border-border bg-card p-4 shadow-sm md:p-6">
           <PageTransition>
             <Outlet />
           </PageTransition>

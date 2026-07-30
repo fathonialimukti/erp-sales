@@ -28,6 +28,9 @@ import {
 
 import { KpiCard } from "../components/KpiCard";
 import { PageHeader } from "../components/PageHeader";
+import { useMeta } from "../lib/useMeta";
+import { StatusChip } from "../components/StatusChip";
+import { EmptyState } from "../components/EmptyState";
 import { Stagger, StaggerItem } from "../components/motion/Stagger";
 import {
   Card,
@@ -71,14 +74,20 @@ type SalesDashboard = {
     createdAt: string | Date;
     userName: string;
   }[];
+  revenueByCategory: {
+    id: string;
+    name: string;
+    revenue: number;
+    skuCount: number;
+  }[];
 };
 
 const chartColors = {
   primary: "var(--chart-1)",
   secondary: "var(--chart-2)",
-  grid: "var(--chart-grid)",
-  axis: "var(--chart-axis)",
-  tooltipBg: "var(--chart-tooltip-bg)",
+  grid: "var(--border)",
+  axis: "var(--muted-foreground)",
+  tooltipBg: "var(--card)",
   border: "var(--border)",
 } as const;
 
@@ -87,7 +96,7 @@ const chartTooltipStyle = {
   border: `1px solid ${chartColors.border}`,
   borderRadius: 12,
   fontSize: 12,
-  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
   color: "var(--foreground)",
 } as const;
 
@@ -142,6 +151,12 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const hasPermission = useAtomValue(hasPermissionAtom);
   const authUser = useAtomValue(authUserAtom);
+
+  useMeta({
+    title: 'Dashboard',
+    description: 'Sales dashboard — real-time KPIs, order trends, visit summaries, and AI-powered insights for your sales operation.',
+    robots: 'noindex, follow',
+  });
 
   const [insightLoading, setInsightLoading] = useState(false);
   const [insightResult, setInsightResult] = useState("");
@@ -221,7 +236,7 @@ export const Dashboard = () => {
       href: string;
       time: string;
     };
-    const visits = (todayVisitsQuery.data?.data ?? []).map<AgendaItem>((v: any) => ({
+    const visits = (todayVisitsQuery.data?.data ?? []).map<AgendaItem>((v) => ({
       id: v.id,
       type: "visit",
       title: v.outlet?.name ?? "Visit",
@@ -229,7 +244,7 @@ export const Dashboard = () => {
       href: `/visit-log/${v.id}`,
       time: v.date ?? "",
     }));
-    const orders = (draftOrdersQuery.data?.data ?? []).map<AgendaItem>((o: any) => ({
+    const orders = (draftOrdersQuery.data?.data ?? []).map<AgendaItem>((o) => ({
       id: o.id,
       type: "order",
       title: o.documentNumber ?? "Draft order",
@@ -656,8 +671,185 @@ export const Dashboard = () => {
         </Card>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {intl.formatMessage({
+                id: "dashboard.chart.revenue_by_category",
+                defaultMessage: "Revenue by category",
+              })}
+            </CardTitle>
+            <CardDescription>
+              {intl.formatMessage({
+                id: "dashboard.chart.revenue_by_category_sub",
+                defaultMessage: "Top 6 categories by approved revenue this month",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="w-full rounded-xl" style={{ height: MAIN_CHART_HEIGHT }} />
+            ) : sales?.revenueByCategory?.length ? (
+              <div style={{ height: MAIN_CHART_HEIGHT }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={sales.revenueByCategory}
+                    layout="vertical"
+                    margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid stroke={chartColors.grid} horizontal={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fill: chartColors.axis, fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => formatCompact(Number(v))}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      tick={{ fill: chartColors.axis, fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={120}
+                    />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                    />
+                    <Bar
+                      dataKey="revenue"
+                      fill={chartColors.secondary}
+                      radius={[0, 6, 6, 0]}
+                      cursor={
+                        hasPermission("skuCategory@read") ? "pointer" : "default"
+                      }
+                      onClick={
+                        hasPermission("skuCategory@read")
+                          ? (payload: { id?: string }) => {
+                              if (payload?.id) navigate(`/sku-category/${payload.id}`);
+                            }
+                          : undefined
+                      }
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex h-[280px] flex-col items-center justify-center gap-1 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.chart.no_data",
+                    defaultMessage: "No approved sales yet",
+                  })}
+                </p>
+                <p className="max-w-xs text-sm text-muted-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.chart.revenue_by_category_empty_sub",
+                    defaultMessage:
+                      "Once orders are approved, revenue by category will appear here.",
+                  })}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {intl.formatMessage({
+                id: "dashboard.chart.catalog_by_category",
+                defaultMessage: "Catalog by category",
+              })}
+            </CardTitle>
+            <CardDescription>
+              {intl.formatMessage({
+                id: "dashboard.chart.catalog_by_category_sub",
+                defaultMessage: "Top 6 categories by SKU count",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="w-full rounded-xl" style={{ height: MAIN_CHART_HEIGHT }} />
+            ) : sales?.revenueByCategory?.length ? (
+              <div style={{ height: MAIN_CHART_HEIGHT }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={sales.revenueByCategory}
+                    layout="vertical"
+                    margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid stroke={chartColors.grid} horizontal={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fill: chartColors.axis, fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => formatCompact(Number(v))}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      tick={{ fill: chartColors.axis, fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={120}
+                    />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      formatter={(value) => [String(value), "SKUs"]}
+                    />
+                    <Bar
+                      dataKey="skuCount"
+                      fill={chartColors.primary}
+                      radius={[0, 6, 6, 0]}
+                      cursor={
+                        hasPermission("skuCategory@read") ? "pointer" : "default"
+                      }
+                      onClick={
+                        hasPermission("skuCategory@read")
+                          ? (payload: { id?: string }) => {
+                              if (payload?.id) navigate(`/sku-category/${payload.id}`);
+                            }
+                          : undefined
+                      }
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex h-[280px] flex-col items-center justify-center gap-1 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.chart.no_data",
+                    defaultMessage: "No approved sales yet",
+                  })}
+                </p>
+                <p className="max-w-xs text-sm text-muted-foreground">
+                  {intl.formatMessage({
+                    id: "dashboard.chart.revenue_by_category_empty_sub",
+                    defaultMessage:
+                      "Once orders are approved, categories will appear here.",
+                  })}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {allowedActions.length > 0 ? (
-        <section className="space-y-3" aria-label="Quick actions">
+        <section
+          className="space-y-3"
+          aria-label={intl.formatMessage({
+            id: "dashboard.section.quick_actions",
+            defaultMessage: "Quick actions",
+          })}
+          data-ai-context={JSON.stringify({ section: "quick-actions", count: allowedActions.length })}
+        >
           <div>
             <h2 className="font-heading text-base font-semibold">
               {intl.formatMessage({
@@ -672,114 +864,140 @@ export const Dashboard = () => {
               })}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {allowedActions.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => navigate(a.href)}
-                className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center shadow-sm transition-colors duration-200 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              >
-                <span
-                  className={cn(
-                    "flex size-11 items-center justify-center overflow-hidden rounded-xl",
-                    a.tone,
-                  )}
+              <StaggerItem key={a.id} className="w-full">
+                <button
+                  type="button"
+                  onClick={() => navigate(a.href)}
+                  className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-xl border bg-card p-3 text-center shadow-sm transition-colors duration-200 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <img src={a.icon} alt="" className="size-full object-cover" />
-                </span>
-                <span className="text-xs font-medium text-foreground">{a.label}</span>
-              </button>
+                  <span
+                    className={cn(
+                      "flex size-11 items-center justify-center overflow-hidden rounded-xl",
+                      a.tone,
+                    )}
+                  >
+                    <img src={a.icon} alt="" className="size-full object-contain" />
+                  </span>
+                  <span className="text-xs font-semibold text-foreground leading-tight">{a.label}</span>
+                </button>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </section>
-      ) : null}
+      ) : (
+        <EmptyState
+          module="order"
+          icon={<ShoppingCart className="size-6" />}
+          title={intl.formatMessage({
+            id: "dashboard.quick_actions_empty",
+            defaultMessage: "No quick actions available",
+          })}
+          description={intl.formatMessage({
+            id: "dashboard.quick_actions_empty_sub",
+            defaultMessage:
+              "You don't have permission to create any of the listed resources yet.",
+          })}
+        />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="shadow-sm">
+        <Card
+          className="shadow-sm"
+          aria-label={intl.formatMessage({
+            id: "dashboard.section_today",
+            defaultMessage: "Today",
+          })}
+          data-ai-context={JSON.stringify({ section: "today-agenda", count: todayAgenda.length })}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="font-heading text-base">
               {intl.formatMessage({
-                id: "dashboard.section.today",
+                id: "dashboard.section_today",
                 defaultMessage: "Today",
               })}
             </CardTitle>
             <CardDescription>
               {intl.formatMessage({
-                id: "dashboard.section.today_sub",
+                id: "dashboard.section_today_sub",
                 defaultMessage: "Your visits and drafts for the day",
               })}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-1 px-3 pb-3 sm:px-4">
             {todayAgenda.length === 0 ? (
-              <div className="flex flex-col items-center gap-1 py-8 text-center">
-                <p className="text-sm font-medium">
-                  {intl.formatMessage({
-                    id: "dashboard.today_empty",
-                    defaultMessage: "Nothing scheduled yet",
-                  })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {intl.formatMessage({
-                    id: "dashboard.today_empty_sub",
-                    defaultMessage: "Log a visit or start a draft order to see it here.",
-                  })}
-                </p>
-              </div>
+              <EmptyState
+                module="visit"
+                icon={<ClipboardList className="size-6" />}
+                title={intl.formatMessage({
+                  id: "dashboard.today_empty",
+                  defaultMessage: "Nothing scheduled yet",
+                })}
+                description={intl.formatMessage({
+                  id: "dashboard.today_empty_sub",
+                  defaultMessage: "Log a visit or start a draft order to see it here.",
+                })}
+              />
             ) : (
-              todayAgenda.map((item) => (
-                <button
-                  key={`${item.type}-${item.id}`}
-                  type="button"
-                  onClick={() => navigate(item.href)}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                >
-                  <span
-                    className={cn(
-                      "flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
-                      item.type === "visit"
-                        ? "bg-[color-mix(in_srgb,var(--module-visit)_16%,transparent)]"
-                        : "bg-[color-mix(in_srgb,var(--module-order)_16%,transparent)]",
-                    )}
-                    aria-hidden
-                  >
-                    <img
-                      src={item.type === "visit" ? icons.dashVisits : icons.dashOrders}
-                      alt=""
-                      className="size-full object-cover"
-                    />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground">
-                      {item.title}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {item.subtitle}
-                    </span>
-                  </span>
-                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    {item.type === "visit"
-                      ? intl.formatMessage({
-                          id: "dashboard.today.visit",
-                          defaultMessage: "Visit",
-                        })
-                      : intl.formatMessage({
-                          id: "dashboard.today.draft",
-                          defaultMessage: "Draft",
-                        })}
-                  </span>
-                </button>
-              ))
+              <Stagger>
+                {todayAgenda.map((item) => (
+                  <StaggerItem key={`${item.type}-${item.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(item.href)}
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    >
+                      <span
+                        className={cn(
+                          "flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
+                          item.type === "visit"
+                            ? "bg-[color-mix(in_srgb,var(--module-visit)_16%,transparent)]"
+                            : "bg-[color-mix(in_srgb,var(--module-order)_16%,transparent)]",
+                        )}
+                        aria-hidden
+                      >
+                        <img
+                          src={item.type === "visit" ? icons.dashVisits : icons.dashOrders}
+                          alt=""
+                          className="size-full object-contain"
+                        />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-foreground">
+                          {item.title}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {item.subtitle}
+                        </span>
+                      </span>
+                      <StatusChip
+                        status={item.type === "visit" ? "OPEN" : "DRAFT"}
+                        className="shrink-0"
+                      />
+                    </button>
+                  </StaggerItem>
+                ))}
+              </Stagger>
             )}
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
+        <Card
+          className="shadow-sm"
+          aria-label={intl.formatMessage({
+            id: "dashboard.section_activity",
+            defaultMessage: "Recent activity",
+          })}
+          data-ai-context={JSON.stringify({
+            section: "recent-activity",
+            count: sales?.recentActivity?.length ?? 0,
+          })}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="font-heading text-base">
               {intl.formatMessage({
-                id: "dashboard.section.activity",
+                id: "dashboard.section_activity",
                 defaultMessage: "Recent activity",
               })}
             </CardTitle>
@@ -802,35 +1020,45 @@ export const Dashboard = () => {
                 </div>
               ))
             ) : sales?.recentActivity?.length ? (
-              sales.recentActivity.map((a) => (
-                <div key={a.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5">
-                  <span
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary"
-                    aria-hidden
-                  >
-                    {initials(a.userName)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{a.userName}</p>
-                    <p className="truncate text-xs text-muted-foreground">{a.message}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-[11px] text-muted-foreground tabular-nums">
-                      {formatRelative(a.createdAt)}
-                    </p>
-                    <p className="text-[10px] font-medium tracking-wide text-muted-foreground/80 uppercase">
-                      {a.resource}
-                    </p>
-                  </div>
-                </div>
-              ))
+              <Stagger>
+                {sales.recentActivity.map((a) => (
+                  <StaggerItem key={a.id}>
+                    <div className="flex items-start gap-3 rounded-lg px-2 py-2.5">
+                      <span
+                        className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary"
+                        aria-hidden
+                      >
+                        {initials(a.userName)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{a.userName}</p>
+                        <p className="truncate text-xs text-muted-foreground">{a.message}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-[11px] text-muted-foreground tabular-nums">
+                          {formatRelative(a.createdAt)}
+                        </p>
+                        <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                          {a.resource}
+                        </p>
+                      </div>
+                    </div>
+                  </StaggerItem>
+                ))}
+              </Stagger>
             ) : (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                {intl.formatMessage({
+              <EmptyState
+                module="ai"
+                icon={<Sparkles className="size-6" />}
+                title={intl.formatMessage({
                   id: "dashboard.activity_empty",
                   defaultMessage: "No recent activity",
                 })}
-              </div>
+                description={intl.formatMessage({
+                  id: "dashboard.activity_empty_sub",
+                  defaultMessage: "System actions will appear here once they occur.",
+                })}
+              />
             )}
           </CardContent>
         </Card>
@@ -885,7 +1113,7 @@ export const Dashboard = () => {
           ) : null}
           {insightError ? <p className="text-sm text-destructive">{insightError}</p> : null}
           {insightResult ? (
-            <div className="prose prose-sm max-w-none rounded-xl border bg-muted/30 p-4 text-foreground dark:prose-invert">
+            <div className="max-w-none rounded-xl border bg-card p-4 text-foreground">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightResult}</ReactMarkdown>
             </div>
           ) : null}

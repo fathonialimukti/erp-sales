@@ -4,8 +4,9 @@ import jwt from 'jsonwebtoken';
 import { Prisma } from '../prisma/generated/client';
 import { prisma } from '../lib/prisma.js';
 import { streamSalesOrderPdf, type SalesOrderPdfRecord } from '../lib/sales-order-pdf.js';
+import { getJwtSecret } from '../lib/jwt-secret.js';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
+const JWT_SECRET = getJwtSecret();
 
 /**
  * GET /api/sales-order/:id/pdf
@@ -18,7 +19,7 @@ export async function salesOrderPdfHandler(req: Request, res: Response) {
     // --- Auth ---
     // Cookie is httpOnly + cross-origin (client on :10021, server on :10022),
     // so a new browser tab can't send it. Accept the token from either the
-    // cookie, the Authorization header, or a ?token= query param.
+    // cookie or the Authorization header.
     let token: string | null = null;
     const cookieHeader = req.headers.cookie;
     if (cookieHeader) {
@@ -28,10 +29,6 @@ export async function salesOrderPdfHandler(req: Request, res: Response) {
     if (!token) {
         const auth = req.headers.authorization;
         if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
-    }
-    if (!token) {
-        const queryToken = req.query.token;
-        if (typeof queryToken === 'string') token = queryToken;
     }
     if (!token) {
         res.status(401).json({ error: 'Unauthorized' });

@@ -14,7 +14,7 @@ import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormField } from "../../components/FormField";
 import {
   Dialog,
   DialogContent,
@@ -161,31 +161,31 @@ export const RegionFormPage = () => {
 
       <PageHeader
         module="region"
-          title={
-            isEdit
-              ? intl.formatMessage({
-                  id: "region.form.title_edit",
-                  defaultMessage: "Edit region",
-                })
-              : intl.formatMessage({
-                  id: "region.form.title_create",
-                  defaultMessage: "New region",
-                })
-          }
-          description={
-            isEdit
-              ? intl.formatMessage({
-                  id: "region.form.subtitle_edit",
-                  defaultMessage: "Update region details",
-                })
-              : intl.formatMessage({
-                  id: "region.form.subtitle_create",
-                  defaultMessage: "Create a new geographical region",
-                })
-          }
-        />
+        title={
+          isEdit
+            ? intl.formatMessage({
+                id: "region.form.title_edit",
+                defaultMessage: "Edit region",
+              })
+            : intl.formatMessage({
+                id: "region.form.title_create",
+                defaultMessage: "New region",
+              })
+        }
+        description={
+          isEdit
+            ? intl.formatMessage({
+                id: "region.form.subtitle_edit",
+                defaultMessage: "Update region details",
+              })
+            : intl.formatMessage({
+                id: "region.form.subtitle_create",
+                defaultMessage: "Create a new geographical region",
+              })
+        }
+      />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -194,17 +194,20 @@ export const RegionFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "region.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "region.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="code">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="region-code">
-                    {intl.formatMessage({ id: "region.form.field_code", defaultMessage: "Code" })}
-                  </Label>
+                <FormField
+                  id="region-code"
+                  label={intl.formatMessage({
+                    id: "region.form.field_code",
+                    defaultMessage: "Code",
+                  })}
+                >
                   <Input
                     id="region-code"
                     value={f.state.value ?? ""}
@@ -214,7 +217,7 @@ export const RegionFormPage = () => {
                       defaultMessage: "Optional",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -223,11 +226,19 @@ export const RegionFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="region-name">
-                    {intl.formatMessage({ id: "region.form.field_name", defaultMessage: "Name" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="region-name"
+                  label={intl.formatMessage({
+                    id: "region.form.field_name",
+                    defaultMessage: "Name",
+                  })}
+                  isRequired
+                  error={
+                    f.state.meta.errors.length > 0
+                      ? String(f.state.meta.errors[0])
+                      : undefined
+                  }
+                >
                   <Input
                     id="region-name"
                     value={f.state.value ?? ""}
@@ -238,31 +249,28 @@ export const RegionFormPage = () => {
                       defaultMessage: "Region name",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>
         </FormSection>
-      
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+
+        <div className="flex items-center justify-end gap-2 border-t border-border/70 pt-3">
           <Button
             size="sm"
-            className="h-8 gap-1.5 px-2.5"
+            className="h-8 gap-1.5 px-2.5 font-semibold"
             type="submit"
-              disabled={!canSave || createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
-              ) : (
-                <Save className="size-3.5" aria-hidden />
-              )}
-              {intl.formatMessage({ id: "region.form.save_button", defaultMessage: "Save" })}
-            </Button>
+            disabled={!canSave || createMutation.isPending || updateMutation.isPending}
+          >
+            {createMutation.isPending || updateMutation.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            ) : (
+              <Save className="size-3.5" aria-hidden />
+            )}
+            {intl.formatMessage({ id: "region.form.save_button", defaultMessage: "Save" })}
+          </Button>
         </div>
-</form>
+      </form>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

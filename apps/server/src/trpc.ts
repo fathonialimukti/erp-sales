@@ -2,6 +2,7 @@ import { TRPCError, initTRPC } from '@trpc/server';
 import type { Context } from './context.js';
 import { prisma } from './lib/prisma.js';
 import { getMessage } from './lib/locale.js';
+import { CSRF_HEADER, validateCsrfToken } from './lib/csrf.js';
 
 const t = initTRPC.context<Context>().create();
 
@@ -76,8 +77,18 @@ const transactional = t.middleware(async ({ ctx, next }) => {
     });
 });
 
+const csrfProtected = t.middleware(({ ctx, next }) => {
+    const providedToken = ctx.req.headers[CSRF_HEADER]?.toString();
+    if (!providedToken || !validateCsrfToken(providedToken, ctx.csrfToken)) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: getMessage(ctx.locale, 'auth.csrfTokenInvalid') });
+    }
+
+    return next();
+});
+
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(isAuthed);
+export const csrfProtectedProcedure = protectedProcedure.use(csrfProtected);
 export const transactionalProtectedProcedure = protectedProcedure.use(transactional);
 export { hasPermission, transactional };

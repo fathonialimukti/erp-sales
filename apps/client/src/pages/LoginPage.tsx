@@ -6,6 +6,7 @@ import { useAtomValue } from "jotai";
 import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowRight,
+  Building2,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -16,7 +17,6 @@ import {
   Shield,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
   Users,
   Zap,
   AlertTriangle,
@@ -30,6 +30,7 @@ import {
 } from "../lib/motion";
 import { useAuthActions } from "../lib/useAuth";
 import { isAuthenticatedAtom } from "../lib/atoms";
+import { useMeta } from "../lib/useMeta";
 import { useToast } from "../components/useToast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,12 @@ export const LoginPage = () => {
   const enterProps = getMotionProps(reducedMotion);
   const copyrightYear = useMemo(() => new Date().getFullYear(), []);
 
+  useMeta({
+    title: 'Sign In',
+    description: 'Sign in to ERP Sales — sales management platform for field teams and back-office.',
+    robots: 'noindex, follow',
+  });
+
   const form = useForm({
     defaultValues: { email: "", password: "", remember: true },
     onSubmit: async ({ value }) => {
@@ -80,45 +87,31 @@ export const LoginPage = () => {
     >
       <div className="relative grid min-h-[calc(100dvh-4rem)] flex-1 lg:grid-cols-[1.05fr_1fr]">
         <aside
-          className="relative hidden overflow-hidden bg-foreground text-background lg:block"
+          className="relative hidden overflow-hidden border-r border-border bg-background text-foreground lg:block"
           aria-label="Brand"
         >
-          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <span className="absolute -top-28 -left-24 size-130 rounded-full bg-[radial-gradient(circle,var(--primary)_0%,transparent_65%)] opacity-50 blur-[80px] motion-safe:animate-pulse" />
-            <span className="absolute top-1/3 -right-20 size-105 rounded-full bg-[radial-gradient(circle,var(--aurora-cyan)_0%,transparent_65%)] opacity-40 blur-[80px]" />
-            <span className="absolute -bottom-24 left-1/4 size-120 rounded-full bg-[radial-gradient(circle,var(--aurora-rose)_0%,transparent_65%)] opacity-35 blur-[90px]" />
-            <span
-              className="absolute inset-0 opacity-[0.08]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-                backgroundSize: "48px 48px",
-              }}
-            />
-          </div>
-
           <motion.div
             className="relative z-10 flex h-full flex-col justify-between gap-10 p-10 xl:p-14"
             variants={staggerContainer}
             {...enterProps}
           >
             <motion.div className="flex items-center gap-3" variants={staggerItem}>
-              <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-                <Sparkles className="size-5" />
+              <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <Building2 className="size-5" />
               </div>
-              <span className="font-heading text-lg font-semibold tracking-tight">
+              <span className="font-heading text-lg font-bold tracking-tight">
                 ERP Sales
               </span>
             </motion.div>
 
             <motion.div className="max-w-lg space-y-4" variants={staggerItem}>
-              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-primary-foreground">
+              <span className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary uppercase">
                 {intl.formatMessage({ id: "login.brand_kicker" })}
               </span>
-              <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
+              <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight text-foreground xl:text-5xl">
                 {intl.formatMessage({ id: "login.brand_title" })}
               </h1>
-              <p className="text-base leading-relaxed text-primary-foreground">
+              <p className="text-base leading-relaxed text-muted-foreground">
                 {intl.formatMessage({ id: "login.brand_subtitle" })}
               </p>
             </motion.div>
@@ -144,13 +137,15 @@ export const LoginPage = () => {
                 <div
                   key={stat.label}
                   role="listitem"
-                  className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm"
+                  className="rounded-xl border border-border bg-muted p-3"
                 >
                   <stat.icon className="mb-2 size-4 text-primary" />
-                  <div className="font-heading text-xl font-semibold tabular-nums">
+                  <div className="font-heading text-xl font-bold tabular-nums text-foreground">
                     {stat.value}
                   </div>
-                  <div className="mt-0.5 text-[11px] font-medium text-primary">{stat.label}</div>
+                  <div className="mt-0.5 text-[11px] font-medium text-muted-foreground">
+                    {stat.label}
+                  </div>
                 </div>
               ))}
             </motion.div>
@@ -174,26 +169,30 @@ export const LoginPage = () => {
                 },
               ].map((feature) => (
                 <li key={feature.title} className="flex gap-3">
-                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-primary">
+                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
                     <feature.icon className="size-4" />
                   </span>
                   <div>
-                    <div className="text-sm font-medium text-background">{feature.title}</div>
-                    <div className="text-xs leading-relaxed text-primary-foreground">{feature.desc}</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {feature.title}
+                    </div>
+                    <div className="text-xs leading-relaxed text-muted-foreground">
+                      {feature.desc}
+                    </div>
                   </div>
                 </li>
               ))}
             </motion.ul>
 
             <motion.figure
-              className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
+              className="rounded-2xl border border-border bg-card p-5"
               variants={staggerItem}
             >
               <Quote className="mb-3 size-4 text-primary" />
-              <blockquote className="text-sm leading-relaxed text-background">
+              <blockquote className="text-sm leading-relaxed text-foreground">
                 {intl.formatMessage({ id: "login.testimonial_quote" })}
               </blockquote>
-              <figcaption className="mt-3 text-xs font-medium text-primary">
+              <figcaption className="mt-3 text-xs font-semibold text-primary">
                 {intl.formatMessage({ id: "login.testimonial_author" })}
               </figcaption>
             </motion.figure>
@@ -203,7 +202,7 @@ export const LoginPage = () => {
         <div className="relative flex min-h-0 flex-col bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_55%)]">
           <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8">
             <motion.div className="w-full max-w-md" variants={pageEnter} {...enterProps}>
-              <Card className="border-border/80 shadow-lg shadow-primary/5">
+              <Card className="border-border bg-card shadow-sm">
                 <CardHeader className="space-y-2">
                   <span className="text-xs font-semibold tracking-wide text-primary uppercase">
                     {intl.formatMessage({ id: "login.form_kicker" })}

@@ -117,7 +117,7 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
           role="listitem"
           aria-label={stageLabel(stage)}
         >
-          <header className="flex flex-col gap-1 border-b bg-muted/30 px-3 py-3">
+          <header className="flex flex-col gap-1 border-b bg-card px-3 py-3">
             <div className="flex items-center justify-between gap-2">
               <h3 className="truncate text-sm font-semibold tracking-tight text-foreground">
                 {stageLabel(stage)}
@@ -164,7 +164,7 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
                   <span className="truncate font-mono text-xs font-semibold text-foreground">
                     {row.documentNumber ?? row.id.slice(0, 8)}
                   </span>
-                  <span className="truncate text-xs text-muted-foreground">
+                  <span className="truncate text-xs text-foreground">
                     {row.customer.name}
                     {row.outlet ? ` · ${row.outlet.name}` : ""}
                   </span>
@@ -173,10 +173,10 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
                       {formatCurrency(row.grandTotal)}
                     </span>
                   ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
+                    <span className="text-sm font-semibold text-foreground">—</span>
                   )}
                   <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                    <span className="text-[11px] text-foreground tabular-nums">
                       {formatDate(row.date)}
                     </span>
                     <StatusChip status={stage} />

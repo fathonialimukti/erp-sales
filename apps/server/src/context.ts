@@ -1,10 +1,13 @@
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import { parse } from 'cookie';
+import { parse, serialize } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { prisma, type DbClient } from './lib/prisma.js';
 import { parseLocaleCookie, ServerLocale, DEFAULT_LOCALE } from './lib/locale.js';
+import { getJwtSecret } from './lib/jwt-secret.js';
+import { isBlacklisted } from './lib/token-blacklist.js';
+import { generateCsrfToken, CSRF_COOKIE_NAME } from './lib/csrf.js';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
+const JWT_SECRET = getJwtSecret();
 
 export type AuthUser = {
     userId: string;
@@ -20,6 +23,7 @@ export type RequestContext = {
     token: string | null;
     db: DbClient;
     locale: ServerLocale;
+    csrfToken: string;
 };
 
 const getTokenFromRequest = (req: CreateExpressContextOptions['req']) => {
@@ -36,6 +40,7 @@ const getTokenFromRequest = (req: CreateExpressContextOptions['req']) => {
 };
 
 const getUserFromToken = (token: string): AuthUser | null => {
+    if (isBlacklisted(token)) return null;
     try {
         const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
         if (!payload?.userId || !payload?.email || typeof payload.exp !== 'number') {
@@ -58,7 +63,21 @@ export const createContext = ({ req, res }: CreateExpressContextOptions) => {
     const user = token ? getUserFromToken(token) : null;
     const locale = parseLocaleCookie(req.headers.cookie ?? undefined) ?? DEFAULT_LOCALE;
 
-    return { req, res, user, token, db: prisma, locale } satisfies RequestContext;
+    const cookieHeader = req.headers.cookie;
+    const cookies = cookieHeader ? parse(cookieHeader) : {};
+    const csrfToken = cookies[CSRF_COOKIE_NAME] ?? generateCsrfToken();
+
+    res.setHeader(
+        'Set-Cookie',
+        serialize(CSRF_COOKIE_NAME, csrfToken, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+        }),
+    );
+
+    return { req, res, user, token, db: prisma, locale, csrfToken } satisfies RequestContext;
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;

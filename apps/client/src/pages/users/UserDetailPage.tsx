@@ -162,7 +162,7 @@ export const UserDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
               <UserRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -178,7 +178,7 @@ export const UserDetailPage = () => {
               <p className="truncate text-base font-semibold text-foreground">
                 {record.name ?? "—"}
               </p>
-              <p className="truncate text-sm text-muted-foreground">{record.email}</p>
+              <p className="truncate text-sm text-foreground">{record.email}</p>
             </div>
           </div>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -186,31 +186,31 @@ export const UserDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "users.detail.name", defaultMessage: "Name" })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{record.name ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{record.name ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "users.detail.email", defaultMessage: "Email" })}
               </dt>
-              <dd className="text-sm text-foreground">{record.email}</dd>
+              <dd className="text-sm font-normal text-foreground">{record.email}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "users.detail.phone", defaultMessage: "Phone" })}
               </dt>
-              <dd className="text-sm text-foreground">{record.phone ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{record.phone ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "users.detail.role", defaultMessage: "Role" })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{record.role?.name ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{record.role?.name ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "users.detail.created", defaultMessage: "Created" })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">
+              <dd className="text-sm font-normal tabular-nums text-foreground">
                 {formatDate(record.createdAt)}
               </dd>
             </div>
@@ -221,7 +221,7 @@ export const UserDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
               <Shield className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "users.detail.role", defaultMessage: "Role" })}

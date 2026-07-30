@@ -25,6 +25,7 @@ import {
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -103,6 +104,12 @@ const formatDate = (iso: string) =>
 
 export const SalesOrderIndexPage = () => {
   const intl = useIntl();
+
+  useMeta({
+    title: intl.formatMessage({ id: "sales_order.index.title", defaultMessage: "Sales Orders" }),
+    description: intl.formatMessage({ id: "sales_order.index.subtitle", defaultMessage: "Manage customer orders, line items, and approvals." }),
+  });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -243,7 +250,7 @@ export const SalesOrderIndexPage = () => {
             <p className="truncate font-mono text-xs font-semibold text-foreground">
               {row.original.documentNumber ?? row.original.id.slice(0, 8)}
             </p>
-            <p className="text-[11px] text-muted-foreground tabular-nums">
+            <p className="text-[11px] text-foreground tabular-nums">
               {formatDate(row.original.date)}
             </p>
           </div>
@@ -262,7 +269,7 @@ export const SalesOrderIndexPage = () => {
               {row.original.customer.name}
             </p>
             {row.original.outlet ? (
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-xs text-foreground">
                 {row.original.outlet.name}
               </p>
             ) : null}
@@ -277,7 +284,7 @@ export const SalesOrderIndexPage = () => {
           defaultMessage: "Area",
         }),
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">{row.original.area.name}</span>
+          <span className="text-sm text-foreground">{row.original.area.name}</span>
         ),
       },
       {
@@ -288,7 +295,7 @@ export const SalesOrderIndexPage = () => {
           defaultMessage: "Items",
         }),
         cell: ({ row }) => (
-          <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+          <span className="text-xs font-medium tabular-nums text-foreground">
             {row.original._count.items}
           </span>
         ),
@@ -311,7 +318,7 @@ export const SalesOrderIndexPage = () => {
               {formatCurrency(row.original.grandTotal)}
             </span>
           ) : (
-            <span className="block text-right text-muted-foreground">—</span>
+            <span className="block text-right text-foreground">—</span>
           ),
       },
       {

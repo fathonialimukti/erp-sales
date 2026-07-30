@@ -1,8 +1,8 @@
 ---
 name: "Frontend Engineer"
 description: "Standalone frontend implementer for this ERP monorepo. Use directly for simple tasks: fix a page, add a component, wire a form, i18n keys, routes, hooks, or any apps/client/src/ change. Implements immediately — no orchestrator, no frozen contract, no context pack. Owns React 19 + Vite + Tauri, Tailwind + shadcn Aurora UI, tRPC vanilla client, react-intl. Design quality via ui-ux-pro-max."
-tools: [vscode, execute, read, edit, search, web, browser, todo, 'context7/*', 'chrome-devtools/*', 'playwright/*', 'shadcn/*']
-agents: []
+tools: [vscode, execute, read, edit, search, web, browser, todo, agent, 'context7/*', 'chrome-devtools/*', 'playwright/*', 'shadcn/*']
+agents: ["Frontend Engineer"]
 user-invocable: true
 ---
 

@@ -34,6 +34,12 @@ const PERMISSIONS = [
   { name: "sku@update", description: "Update SKUs" },
   { name: "sku@delete", description: "Delete SKUs" },
 
+  // SKU Category
+  { name: "skuCategory@read", description: "Read SKU categories" },
+  { name: "skuCategory@create", description: "Create SKU categories" },
+  { name: "skuCategory@update", description: "Update SKU categories" },
+  { name: "skuCategory@delete", description: "Delete SKU categories" },
+
   // Activity Log
   { name: "activity_log@read", description: "Read activity logs" },
 

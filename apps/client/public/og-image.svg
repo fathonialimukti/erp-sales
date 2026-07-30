@@ -1,0 +1,50 @@
+<!--
+ERP Sales — OG Image (1200×630)
+This is a minimal SVG that browsers/chat apps will render as Open Graph image.
+Replace with a production PNG when branding is ready.
+-->
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <rect x="60" y="60" width="1080" height="510" rx="24" fill="#1e293b"/>
+
+  <!-- Gradient accent bar -->
+  <rect x="60" y="60" width="6" height="510" rx="3" fill="#3B82F6"/>
+
+  <!-- Logo mark -->
+  <rect x="100" y="120" width="64" height="64" rx="16" fill="#3B82F6"/>
+  <text x="132" y="162" font-family="system-ui,sans-serif" font-size="32" font-weight="700" fill="white" text-anchor="middle">E</text>
+
+  <!-- Title -->
+  <text x="100" y="240" font-family="system-ui,sans-serif" font-size="48" font-weight="700" fill="white">ERP Sales</text>
+  <text x="100" y="296" font-family="system-ui,sans-serif" font-size="28" fill="#94a3b8">Sales Management Platform</text>
+
+  <!-- Description -->
+  <text x="100" y="360" font-family="system-ui,sans-serif" font-size="20" fill="#cbd5e1">One platform to manage customers, outlets,</text>
+  <text x="100" y="392" font-family="system-ui,sans-serif" font-size="20" fill="#cbd5e1">sales orders, visits, and approvals.</text>
+
+  <!-- Feature pills -->
+  <rect x="100" y="440" width="160" height="36" rx="18" fill="#3B82F6" opacity="0.2"/>
+  <text x="180" y="464" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#3B82F6" text-anchor="middle">AI-Powered</text>
+
+  <rect x="280" y="440" width="160" height="36" rx="18" fill="#10b981" opacity="0.2"/>
+  <text x="360" y="464" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#10b981" text-anchor="middle">Real-time</text>
+
+  <rect x="460" y="440" width="180" height="36" rx="18" fill="#8b5cf6" opacity="0.2"/>
+  <text x="550" y="464" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#8b5cf6" text-anchor="middle">Audit Trail</text>
+
+  <!-- Right illustration - abstract chart -->
+  <rect x="680" y="120" width="420" height="280" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <rect x="700" y="140" width="380" height="12" rx="6" fill="#334155"/>
+  <rect x="700" y="168" width="380" height="12" rx="6" fill="#334155" opacity="0.5"/>
+
+  <!-- Chart bars -->
+  <rect x="720" y="240" width="40" height="140" rx="6" fill="#3B82F6" opacity="0.4"/>
+  <rect x="780" y="200" width="40" height="180" rx="6" fill="#3B82F6" opacity="0.6"/>
+  <rect x="840" y="260" width="40" height="120" rx="6" fill="#3B82F6" opacity="0.5"/>
+  <rect x="900" y="180" width="40" height="200" rx="6" fill="#3B82F6"/>
+  <rect x="960" y="220" width="40" height="160" rx="6" fill="#3B82F6" opacity="0.7"/>
+  <rect x="1020" y="280" width="40" height="100" rx="6" fill="#3B82F6" opacity="0.35"/>
+
+  <!-- Bottom line -->
+  <text x="100" y="520" font-family="system-ui,sans-serif" font-size="16" fill="#64748b">https://erp-sales.app</text>
+</svg>

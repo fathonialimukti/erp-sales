@@ -48,7 +48,7 @@ const typeTone = (type: string) => {
     case "ERROR":
       return "bg-destructive/10 text-destructive";
     default:
-      return "bg-[color-mix(in_srgb,var(--module-user)_14%,transparent)] text-[var(--module-user)]";
+      return "bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]";
   }
 };
 

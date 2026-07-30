@@ -9,6 +9,7 @@ import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -35,6 +36,12 @@ type OutletRow = {
 
 export const OutletIndexPage = () => {
   const intl = useIntl();
+
+  useMeta({
+    title: intl.formatMessage({ id: "outlet.index.title", defaultMessage: "Outlets" }),
+    description: intl.formatMessage({ id: "outlet.index.subtitle", defaultMessage: "Manage every retail point with location, contact, and performance tracking." }),
+  });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -80,7 +87,7 @@ export const OutletIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {
@@ -96,7 +103,7 @@ export const OutletIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_customer", defaultMessage: "Customer" }),
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">{row.original.customerName || "—"}</span>
+          <span className="text-sm text-foreground">{row.original.customerName || "—"}</span>
         ),
       },
       {
@@ -105,7 +112,7 @@ export const OutletIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_area", defaultMessage: "Area" }),
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">{row.original.areaName || "—"}</span>
+          <span className="text-sm text-foreground">{row.original.areaName || "—"}</span>
         ),
       },
       {

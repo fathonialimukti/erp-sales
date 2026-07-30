@@ -370,7 +370,7 @@ const InnerForm = ({
                       {perms.map((p) => (
                         <label
                           key={p.id}
-                          className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                          className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-foreground"
                         >
                           <Checkbox
                             checked={formState.permissions.includes(p.name)}

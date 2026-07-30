@@ -40,7 +40,6 @@ const IMAGE_EXTENSION_BY_MIME = {
     'image/jpeg': 'jpg',
     'image/jpg': 'jpg',
     'image/png': 'png',
-    'image/svg+xml': 'svg',
     'image/webp': 'webp',
 } as const;
 
@@ -78,6 +77,7 @@ const DEFAULT_GENERIC_EXTENSION_BY_MIME = {
 } as const;
 const MAX_PREFIX_LENGTH = 48;
 const MAX_FILE_STEM_LENGTH = 24;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const sanitizeFileSegment = (value: string, maxLength: number, fallback: string) => {
     const normalized = value
@@ -175,10 +175,15 @@ export const persistUploadedImage = async ({
         throw new UploadImageError('UNSUPPORTED_IMAGE_FORMAT', 'Format foto tidak didukung');
     }
 
+    const buffer = Buffer.from(base64Data, 'base64');
+    if (buffer.length > MAX_FILE_SIZE) {
+        throw new UploadImageError('INVALID_IMAGE_FORMAT', 'File too large. Maximum size is 5MB.');
+    }
+
     const targetDir = await ensureUploadsDir(folder);
     const fileName = `${randomUUID()}.${extension}`;
     const filePath = path.join(targetDir, fileName);
-    await fs.writeFile(filePath, Buffer.from(base64Data, 'base64'));
+    await fs.writeFile(filePath, buffer);
 
     return toUploadUrl(req, folder, fileName);
 };
@@ -219,6 +224,11 @@ export const persistUploadedAttachment = async ({
         throw new Error('Invalid attachment payload.');
     }
 
+    const buffer = Buffer.from(base64Data, 'base64');
+    if (buffer.length > MAX_FILE_SIZE) {
+        throw new Error('File too large. Maximum size is 5MB.');
+    }
+
     const targetDir = await ensureUploadsDir(folder);
     const storedName = buildStoredFileName({
         prefix: fileNamePrefix,
@@ -227,7 +237,7 @@ export const persistUploadedAttachment = async ({
     });
     const filePath = path.join(targetDir, storedName);
 
-    await fs.writeFile(filePath, Buffer.from(base64Data, 'base64'));
+    await fs.writeFile(filePath, buffer);
 
     return {
         name: attachment.name,

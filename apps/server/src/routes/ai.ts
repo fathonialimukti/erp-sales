@@ -13,9 +13,10 @@ import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
+import { getJwtSecret } from '../lib/jwt-secret.js';
 
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'your-secret-key-change-this';
+const JWT_SECRET = getJwtSecret();
 
 const ROUTE_CATALOG = `
 - Dashboard: /dashboard

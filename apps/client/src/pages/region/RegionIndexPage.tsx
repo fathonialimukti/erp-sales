@@ -9,6 +9,7 @@ import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -28,6 +29,12 @@ type RegionRow = { id: string; code: string | null; name: string; _count: { area
 
 export const RegionIndexPage = () => {
   const intl = useIntl();
+
+  useMeta({
+    title: intl.formatMessage({ id: "region.index.title", defaultMessage: "Regions" }),
+    description: intl.formatMessage({ id: "region.index.subtitle", defaultMessage: "Define your sales territory with regions and sub-areas." }),
+  });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -71,7 +78,7 @@ export const RegionIndexPage = () => {
         id: "code",
         header: intl.formatMessage({ id: "region.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {
@@ -83,7 +90,7 @@ export const RegionIndexPage = () => {
         id: "areas",
         header: intl.formatMessage({ id: "region.index.header_areas", defaultMessage: "Areas" }),
         cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
+          <span className="tabular-nums text-foreground">
             {row.original._count.areas > 0 ? row.original._count.areas : "—"}
           </span>
         ),

@@ -34,11 +34,11 @@ export const FormSection = ({
     >
       <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
         <div className="min-w-0 space-y-1">
-          <h2 className="font-heading text-base font-semibold tracking-tight text-foreground">
+          <h2 className="font-heading text-base font-bold tracking-tight text-foreground">
             {title}
           </h2>
           {description ? (
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           ) : null}
         </div>
         {action ? (

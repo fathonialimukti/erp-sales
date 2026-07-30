@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { motion, useReducedMotion } from "motion/react";
@@ -6,12 +5,14 @@ import {
   ArrowDown,
   ArrowRight,
   BarChart3,
+  BookOpen,
   Building2,
   ChartColumn,
   CheckCircle2,
   Code2,
   FilePlus2,
   Handshake,
+  LandPlot,
   Link2,
   LogIn,
   Mail,
@@ -20,15 +21,18 @@ import {
   MessageSquare,
   Phone,
   Quote,
+  Server,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
   User,
   Users,
+  Warehouse,
 } from "lucide-react";
 
 import { Stagger, StaggerItem } from "../components/motion/Stagger";
 import { fadeIn, getMotionProps } from "../lib/motion";
+import { useMeta } from "../lib/useMeta";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -64,11 +68,39 @@ const CONTACT = {
 
 const FEATURES = [
   {
+    key: "region",
+    icon: LandPlot,
+    titleId: "landing.feature_region_title",
+    descId: "landing.feature_region_desc",
+    accent: "var(--module-region, var(--primary))",
+  },
+  {
+    key: "area",
+    icon: Building2,
+    titleId: "landing.feature_area_title",
+    descId: "landing.feature_area_desc",
+    accent: "var(--module-area, var(--primary))",
+  },
+  {
     key: "customers",
     icon: User,
     titleId: "landing.feature_customers_title",
     descId: "landing.feature_customers_desc",
     accent: "var(--module-customer, var(--primary))",
+  },
+  {
+    key: "outlet",
+    icon: Warehouse,
+    titleId: "landing.feature_outlet_title",
+    descId: "landing.feature_outlet_desc",
+    accent: "var(--module-outlet, var(--primary))",
+  },
+  {
+    key: "sku",
+    icon: ShoppingCart,
+    titleId: "landing.feature_sku_title",
+    descId: "landing.feature_sku_desc",
+    accent: "var(--module-sku, var(--primary))",
   },
   {
     key: "orders",
@@ -92,6 +124,20 @@ const FEATURES = [
     accent: "var(--module-planning, var(--primary))",
   },
   {
+    key: "events",
+    icon: FilePlus2,
+    titleId: "landing.feature_events_title",
+    descId: "landing.feature_events_desc",
+    accent: "var(--module-event, var(--primary))",
+  },
+  {
+    key: "email_crm",
+    icon: Mail,
+    titleId: "landing.feature_email_crm_title",
+    descId: "landing.feature_email_crm_desc",
+    accent: "var(--module-email, var(--primary))",
+  },
+  {
     key: "approvals",
     icon: CheckCircle2,
     titleId: "landing.feature_approvals_title",
@@ -106,11 +152,25 @@ const FEATURES = [
     accent: "var(--module-report, var(--primary))",
   },
   {
-    key: "email_concierge",
-    icon: Mail,
-    titleId: "landing.feature_email_concierge_title",
-    descId: "landing.feature_email_concierge_desc",
-    accent: "var(--module-email, var(--primary))",
+    key: "knowledge",
+    icon: BookOpen,
+    titleId: "landing.feature_knowledge_title",
+    descId: "landing.feature_knowledge_desc",
+    accent: "var(--module-knowledge, var(--primary))",
+  },
+  {
+    key: "ai_admin",
+    icon: Sparkles,
+    titleId: "landing.feature_ai_admin_title",
+    descId: "landing.feature_ai_admin_desc",
+    accent: "var(--module-ai, var(--primary))",
+  },
+  {
+    key: "users",
+    icon: Users,
+    titleId: "landing.feature_users_title",
+    descId: "landing.feature_users_desc",
+    accent: "var(--module-user, var(--primary))",
   },
 ] as const;
 
@@ -231,86 +291,165 @@ export const LandingPage = () => {
   const t = (id: string, fallback: string) =>
     intl.formatMessage({ id, defaultMessage: fallback });
 
-  useEffect(() => {
-    const prevTitle = document.title;
-    const metaEls = Array.from(
-      document.querySelectorAll<HTMLMetaElement>(
-        'meta[name="description"], meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"]',
-      ),
-    );
-    const prevMeta = metaEls.map((el) => ({
-      el,
-      content: el.getAttribute("content") ?? "",
-      href: el.getAttribute("href") ?? "",
-    }));
+  // ── SEO / AEO / GEO meta ──
+  const BASE = 'https://erp-sales.app';
+  const faqData = FAQS.map((faq) => {
+    const q = t(faq.qId, '');
+    const a = t(faq.aId, '');
+    return { '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } };
+  });
 
-    const setMeta = (
-      selector: string,
-      attr: "content" | "href",
-      value: string,
-    ) => {
-      const el = document.head.querySelector<HTMLElement>(selector);
-      if (el) el.setAttribute(attr, value);
-    };
-
-    document.title = "ERP Sales — Sales Management Platform";
-    setMeta(
-      'meta[name="description"]',
-      "content",
-      "One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office.",
-    );
-    setMeta(
-      'meta[property="og:title"]',
-      "content",
-      "ERP Sales — Sales Management Platform",
-    );
-    setMeta(
-      'meta[property="og:description"]',
-      "content",
-      "One platform to manage customers, outlets, sales orders, visits, and approvals — built for field teams and back-office alike.",
-    );
-    setMeta('meta[property="og:type"]', "content", "website");
-    setMeta('meta[name="twitter:card"]', "content", "summary_large_image");
-    setMeta(
-      'meta[name="twitter:title"]',
-      "content",
-      "ERP Sales — Sales Management Platform",
-    );
-    setMeta(
-      'meta[name="twitter:description"]',
-      "content",
-      "One platform to manage customers, outlets, sales orders, visits, and approvals — built for field teams and back-office alike.",
-    );
-
-    const jsonLd = {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      name: "ERP Sales",
-      applicationCategory: "BusinessApplication",
-      operatingSystem: "Web, Windows, macOS, Linux",
-      url: window.location.origin,
-      description:
-        "One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL.",
-      author: {
-        "@type": "Organization",
-        name: "Fathoni",
-        url: "https://fathoni.dev",
+  useMeta({
+    title: 'Sales Management Platform',
+    description:
+      'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office. Includes AI-powered approval workflow, email-to-order automation, and real-time analytics.',
+    canonical: BASE,
+    robots: 'index, follow',
+    jsonLd: [
+      // ── Site ──
+      {
+        '@type': 'WebSite',
+        name: 'ERP Sales',
+        url: BASE,
+        description:
+          'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL.',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: { '@type': 'EntryPoint', urlTemplate: `${BASE}/search?q={search_term_string}` },
+          'query-input': 'required name=search_term_string',
+        },
       },
-    };
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.textContent = JSON.stringify(jsonLd);
-    document.head.appendChild(script);
-
-    return () => {
-      document.title = prevTitle;
-      prevMeta.forEach(({ el, content, href }) => {
-        if (content) el.setAttribute("content", content);
-        if (href) el.setAttribute("href", href);
-      });
-      script.remove();
-    };
-  }, []);
+      // ── Breadcrumb ──
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE },
+          { '@type': 'ListItem', position: 2, name: 'Features', item: `${BASE}/#features` },
+          { '@type': 'ListItem', position: 3, name: 'How It Works', item: `${BASE}/#how-it-works` },
+        ],
+      },
+      // ── Portfolio: Person (freelance branding) ──
+      {
+        '@type': 'Person',
+        name: 'Fathoni',
+        alternateName: 'Fathoni Full-Stack Developer',
+        url: 'https://fathoni.dev',
+        image: `${BASE}/og-image.png`,
+        jobTitle: 'Full-Stack Developer & ERP Specialist',
+        description:
+          'Independent full-stack developer specializing in custom ERP systems, CRM platforms, and business automation. TypeScript, React, tRPC, PostgreSQL.',
+        sameAs: [
+          'https://github.com/fathoni',
+          'https://linkedin.com/in/fathoni',
+          'https://fathoni.dev',
+        ],
+        knowsAbout: [
+          'ERP Systems',
+          'Sales Management',
+          'Custom CRM Development',
+          'Business Process Automation',
+          'TypeScript',
+          'React',
+          'tRPC',
+          'PostgreSQL',
+          'Prisma',
+          'Node.js',
+        ],
+        makesOffer: [
+          {
+            '@type': 'Offer',
+            itemOffered: {
+              '@type': 'Service',
+              name: 'Custom ERP Development',
+              description:
+                'End-to-end ERP and CRM platform development for sales teams, field operations, and back-office.',
+            },
+          },
+          {
+            '@type': 'Offer',
+            itemOffered: {
+              '@type': 'Service',
+              name: 'Full-Stack Web Development',
+              description:
+                'TypeScript full-stack web applications with React, tRPC, Prisma, and PostgreSQL.',
+            },
+          },
+        ],
+      },
+      // ── App ──
+      {
+        '@type': 'SoftwareApplication',
+        name: 'ERP Sales',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web, Windows, macOS, Linux',
+        url: BASE,
+        description:
+          'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL.',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+          availability: 'https://schema.org/InStock',
+        },
+        author: { '@type': 'Person', name: 'Fathoni', url: 'https://fathoni.dev' },
+        featureList: [
+          'Customer & Outlet Management',
+          'Sales Order Processing',
+          'Visit Logging & Field Tracking',
+          'Multi-level Approval Workflow with AI Review',
+          'Email-to-Order Automation',
+          'AI Chat Assistant with RAG Knowledge Base',
+          'Real-time Analytics & Reports',
+          'Role-based Access Control',
+        ],
+        screenshot: `${BASE}/og-image.png`,
+      },
+      // ── HowTo (AEO: step-by-step) ──
+      {
+        '@type': 'HowTo',
+        name: 'How to Manage Your Sales Operation with ERP Sales',
+        description:
+          'Set up your territory, register customers and outlets, log visits, process orders, and gain insights — all in one platform.',
+        totalTime: 'P1D',
+        estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
+        tool: [
+          { '@type': 'HowToTool', name: 'Web browser (Chrome, Firefox, Safari)' },
+          { '@type': 'HowToTool', name: 'Desktop app (Windows, macOS, Linux via Tauri)' },
+        ],
+        step: [
+          {
+            '@type': 'HowToStep',
+            position: 1,
+            name: 'Define Territory',
+            text: 'Create regions and areas that map to your sales territory. Organize by province, city, or district.',
+          },
+          {
+            '@type': 'HowToStep',
+            position: 2,
+            name: 'Register Customers & Outlets',
+            text: 'Add customer profiles and link their outlets, visit schedules, and contact information in one place.',
+          },
+          {
+            '@type': 'HowToStep',
+            position: 3,
+            name: 'Log Visits & Place Orders',
+            text: 'Field teams log visits in real-time. Create sales orders tied to customers, SKUs, pricing and discounts.',
+          },
+          {
+            '@type': 'HowToStep',
+            position: 4,
+            name: 'Review Approvals & Analytics',
+            text: 'Every order moves through AI-assisted multi-level approval. Track KPIs, reports, and audit trails from the dashboard.',
+          },
+        ],
+      },
+      // ── FAQ ──
+      {
+        '@type': 'FAQPage',
+        mainEntity: faqData,
+      },
+    ],
+  });
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -319,7 +458,36 @@ export const LandingPage = () => {
   return (
     <div
       className="flex flex-1 flex-col"
-      data-ai-context={JSON.stringify({ section: "landing" })}
+      data-ai-context={JSON.stringify({
+        section: 'landing',
+        site: 'ERP Sales — Sales Management Platform',
+        description:
+          'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office. Includes AI-powered approval workflow, email-to-order automation, and real-time analytics.',
+        features: [
+          'Customer & Outlet Management',
+          'Sales Order Processing',
+          'Visit Logging & Field Tracking',
+          'Multi-level Approval Workflow with AI Review',
+          'Email-to-Order Automation',
+          'AI Chat Assistant with RAG',
+          'Real-time Analytics',
+          'Role-based Access Control',
+        ],
+        author: {
+          name: 'Fathoni',
+          type: 'Full-Stack Developer',
+          portfolio: 'https://fathoni.dev',
+          url: 'https://fathoni.dev',
+          expertise: ['ERP Systems', 'Custom CRM', 'Business Automation', 'TypeScript', 'React', 'tRPC', 'PostgreSQL', 'Prisma'],
+        },
+        techStack: ['TypeScript', 'React', 'tRPC', 'Prisma', 'PostgreSQL', 'n8n', 'Node.js', 'Tailwind CSS', 'Vite', 'Tauri'],
+        howItWorks: [
+          { step: 1, title: 'Define Territory', description: 'Create regions and areas for your sales territory.' },
+          { step: 2, title: 'Register Customers & Outlets', description: 'Add customer profiles and link their outlets.' },
+          { step: 3, title: 'Log Visits & Place Orders', description: 'Field teams log visits and create sales orders.' },
+          { step: 4, title: 'Review Approvals & Analytics', description: 'AI-assisted multi-level approval and KPI tracking.' },
+        ],
+      })}
     >
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8">
@@ -406,7 +574,7 @@ export const LandingPage = () => {
                 {TRUST.map((item) => (
                   <span
                     key={item.key}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 text-xs font-medium text-muted-foreground shadow-sm"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium text-muted-foreground shadow-sm"
                   >
                     <item.icon className="size-3.5 text-primary" />
                     {t(item.labelId, item.key)}
@@ -418,7 +586,7 @@ export const LandingPage = () => {
 
           <motion.div className="relative" variants={fadeIn} {...softEnter}>
             <div className="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl" aria-hidden="true" />
-            <div className="relative rounded-2xl border border-border/80 bg-card/70 p-3 shadow-xl shadow-primary/10 backdrop-blur-sm">
+            <div className="relative rounded-2xl border border-border bg-card p-3 shadow-xl shadow-primary/10">
               <div className="mb-3 flex items-center justify-between px-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("landing.v2.command_stage", "Command stage")}
@@ -436,7 +604,7 @@ export const LandingPage = () => {
       {/* Stats / proof */}
       <section
         aria-labelledby="stats-title"
-        className="border-b border-border bg-card/40 px-4 py-12 sm:px-6 sm:py-14 lg:px-8"
+        className="border-b border-border bg-muted px-4 py-12 sm:px-6 sm:py-14 lg:px-8"
       >
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -553,7 +721,7 @@ export const LandingPage = () => {
       <section
         id="how-it-works"
         aria-labelledby="how-title"
-        className="scroll-mt-20 border-y border-border bg-card/40 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+        className="scroll-mt-20 border-y border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -664,14 +832,14 @@ export const LandingPage = () => {
                 ))}
               </ul>
             </div>
-            <div className="rounded-2xl border border-border bg-card/60 p-3 shadow-sm">
+            <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
               <ApprovalFlow className="w-full" />
             </div>
           </div>
 
           {/* Automation */}
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-            <div className="order-2 rounded-2xl border border-border bg-card/60 p-3 shadow-sm lg:order-1">
+            <div className="order-2 rounded-2xl border border-border bg-card p-3 shadow-sm lg:order-1">
               <EmailToOrderFlow className="w-full" />
             </div>
             <div className="order-1 space-y-4 lg:order-2">
@@ -779,7 +947,7 @@ export const LandingPage = () => {
                 ))}
               </ul>
             </div>
-            <div className="rounded-2xl border border-border bg-card/60 p-3 shadow-sm">
+            <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
               <AiWorkflow className="w-full" />
             </div>
           </div>
@@ -790,7 +958,7 @@ export const LandingPage = () => {
       <section
         id="faq"
         aria-labelledby="faq-title"
-        className="scroll-mt-20 border-y border-border bg-card/40 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+        className="scroll-mt-20 border-y border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center">
@@ -880,7 +1048,7 @@ export const LandingPage = () => {
       <section
         id="contact"
         aria-labelledby="contact-title"
-        className="scroll-mt-20 border-t border-border bg-card/40 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+        className="scroll-mt-20 border-t border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -930,7 +1098,7 @@ export const LandingPage = () => {
               <div className="space-y-2">
                 <Badge variant="secondary" className="gap-1.5">
                   <Sparkles className="size-3.5 text-primary" />
-                  {t("landing.v2.cta_badge", "Aurora Commerce")}
+                  {t("landing.v2.cta_badge", "Bold CRM")}
                 </Badge>
                 <h2 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
                   {t("landing.cta_primary", "Try the Demo")}

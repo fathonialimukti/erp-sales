@@ -162,7 +162,7 @@ export const ActionProgramDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-planning)_14%,transparent)] text-[var(--module-planning)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-planning)_8%,transparent)] text-[var(--module-planning)]">
               <FileText className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "action_program.detail.summary", defaultMessage: "Summary" })}
@@ -180,13 +180,13 @@ export const ActionProgramDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "action_program.detail.name_label", defaultMessage: "Name" })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{actionProgram.name}</dd>
+              <dd className="text-sm font-normal text-foreground">{actionProgram.name}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "action_program.detail.areas_label", defaultMessage: "Outlets" })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">
+              <dd className="text-sm font-normal tabular-nums text-foreground">
                 {actionProgram.outlets?.length ?? 0}
               </dd>
             </div>
@@ -197,7 +197,7 @@ export const ActionProgramDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_14%,transparent)] text-[var(--module-outlet)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_8%,transparent)] text-[var(--module-outlet)]">
               <MapPin className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -232,7 +232,7 @@ export const ActionProgramDetailPage = () => {
                     onClick={() => navigate(`/outlet/${outlet.id}`)}
                     className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_14%,transparent)] text-[var(--module-outlet)]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_8%,transparent)] text-[var(--module-outlet)]">
                       <MapPin className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -240,7 +240,7 @@ export const ActionProgramDetailPage = () => {
                         {outlet.name}
                       </span>
                       {outlet.code ? (
-                        <span className="block font-mono text-xs text-muted-foreground">
+                        <span className="block font-mono text-xs text-foreground">
                           {outlet.code}
                         </span>
                       ) : null}

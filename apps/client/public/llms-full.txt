@@ -1,0 +1,113 @@
+# ERP Sales — Sales Management Platform
+
+> ERP Sales is a sales management platform for field teams and back-office operations. Manage customers, outlets, sales orders, visits, approvals, and real-time insights in one platform.
+
+## Overview
+
+ERP Sales is a comprehensive sales management platform designed for field sales teams, distributors, SMEs, and any organization that needs to track customer relationships, sales orders, and field activity in a structured, auditable system.
+
+Built with React, tRPC, Prisma, and PostgreSQL — with AI-powered approval workflows, email-to-order automation, and a RAG-grounded knowledge base.
+
+## Key Pages
+
+- [Home](https://erp-sales.app/) — Platform overview, features, and demo access
+- [Features](https://erp-sales.app/#features) — All 12 modules
+- [How It Works](https://erp-sales.app/#how-it-works) — 4-step workflow from setup to insight
+- [FAQ](https://erp-sales.app/#faq) — Frequently asked questions
+- [Contact](https://erp-sales.app/#contact) — Get in touch
+- [Sign In](https://erp-sales.app/login) — Access the demo platform
+
+## API
+
+- tRPC endpoint: `https://erp-sales.app/trpc`
+- Full TypeScript typesafe API for all sales management operations
+
+## Modules
+
+### Regions & Areas
+Define your sales territory with regions and sub-areas for clean reporting and access control. Group outlets into areas for territory management and regional reporting.
+
+### Customer & Outlet CRM
+Organize regions, areas, customers, and outlets in a clean hierarchy with full contact history. Manage every retail point with location, contact, and performance tracking.
+
+### Sales Orders
+Create, propose, and approve orders with a multi-level workflow and AI-assisted validation. Every document moves through a clear, multi-level workflow: Draft → AI review → Proposed → Approved or Rejected.
+
+### Visit Logs
+Track field visits with check-in, purpose, and notes — all tied to the right outlet. Field teams log visits in real-time.
+
+### Action Programs & Events
+Plan promotions and event proposals with budgets, areas, and PIC accountability. Plan and track event proposals with budgets, dates, and accountable PICs.
+
+### Email Concierge
+Inbound customer email becomes an AI-written HTML reply, sent from your company inbox — with an optional draft sales order linked to the thread. Customers email your company inbox; Email Concierge drafts an AI HTML reply, sends it from your address, and can open a draft sales order linked to the thread.
+
+### Knowledge Base
+A self-service knowledge base for your team and customers, grounded in your docs via RAG. Chat with RAG over your knowledge base.
+
+### AI Admin
+A streaming LLM assistant inside the app — grounded in your docs, wired to real tools, ready to navigate and draft. Extract orders from free-text or email, ask data in plain language → read-only SQL, auto-summarize pages & draft follow-ups.
+
+### Users & Access
+Role-based access control with granular permissions and a full activity audit trail. Every action is attributed to a specific user, and all data is stored in a PostgreSQL database with proper access controls.
+
+## Approval Workflow
+
+Every document (sales orders, visit logs, action programs, event proposals) goes through a multi-level approval workflow:
+1. **Draft** — Document is created in draft status
+2. **AI review** — LLM checks pricing, quantity & discount risk
+3. **Proposed** — Document is proposed for approval
+4. **Approved or Rejected** — Final decision with full audit trail
+
+Each step is logged with timestamps and user attribution, creating a complete audit trail.
+
+## FAQ
+
+### What is ERP Sales?
+ERP Sales is a sales management platform designed for field teams and back-office operations. It helps you manage customers, outlets, sales orders, visit logs, action programs, and approvals — all in one place with a full audit trail.
+
+### Who is this for?
+ERP Sales is built for field sales teams, distributors, SMEs, and any organization that needs to track customer relationships, sales orders, and field activity in a structured, auditable system.
+
+### How does the approval workflow work?
+Every document (sales orders, visit logs, action programs, event proposals) goes through a multi-level approval workflow: Draft → Proposed → Approved/Rejected. Each step is logged with timestamps and user attribution, creating a complete audit trail.
+
+### Can customers place orders via email?
+Yes. Email Concierge receives inbound customer email, drafts an AI HTML reply from your company inbox, and can create an optional draft sales order linked to the thread — so replies and orders stay connected without manual entry.
+
+### Is my data secure?
+Absolutely. ERP Sales uses role-based access control with granular permissions, JWT authentication, and a full activity log. Every action is attributed to a specific user, and all data is stored in a PostgreSQL database with proper access controls.
+
+## How It Works (4 Steps)
+
+1. **Set Up Your Sales Hierarchy** — Organize regions, areas, customers, and outlets in a clean, searchable structure.
+2. **Create & Propose Orders** — Build sales orders with line items, auto-calculated totals, and AI-assisted validation.
+3. **Track Field Activity** — Log visits, check-ins, action programs, and event proposals tied to the right outlet.
+4. **Get Real-time Insights** — Dashboards and reports surface revenue, pipeline health, and team performance at a glance.
+
+## About the Developer
+
+Built by Fathoni — Full-Stack Developer & ERP Specialist. Independent full-stack developer specializing in custom ERP systems, CRM platforms, and business automation. TypeScript, React, tRPC, PostgreSQL, Prisma.
+
+## Contact
+
+- Email: mailto:fathoni@example.com
+- WhatsApp: https://wa.me/6281234567890
+- GitHub: https://github.com/fathoni
+- LinkedIn: https://linkedin.com/in/fathoni
+- Hire: https://fathoni.dev/hire
+
+## Structured Data
+
+The site includes JSON-LD structured data for WebSite, FAQPage, HowTo, SoftwareApplication, and Person schemas.
+
+## Technical Stack
+
+- Runtime: Bun + Turborepo
+- Language: TypeScript (strict)
+- Client: React 19 + Vite + Tauri
+- Styling: Tailwind CSS v4 + shadcn
+- API: tRPC v11+ (end-to-end typesafe)
+- Server: Express + Prisma (PostgreSQL, ULID ids)
+- Validation: Zod (@repo/schemas)
+- Internationalization: react-intl (en, id)

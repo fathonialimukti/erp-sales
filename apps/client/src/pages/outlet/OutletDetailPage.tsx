@@ -154,7 +154,7 @@ export const OutletDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_14%,transparent)] text-[var(--module-outlet)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_8%,transparent)] text-[var(--module-outlet)]">
               <Store className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "outlet.detail.summary", defaultMessage: "Summary" })}
@@ -172,25 +172,25 @@ export const OutletDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "outlet.detail.name_label", defaultMessage: "Name" })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{outlet.name}</dd>
+              <dd className="text-sm font-normal text-foreground">{outlet.name}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "outlet.detail.customer_label", defaultMessage: "Customer" })}
               </dt>
-              <dd className="text-sm text-foreground">{outlet.customer?.name ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{outlet.customer?.name ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "outlet.detail.area_label", defaultMessage: "Area" })}
               </dt>
-              <dd className="text-sm text-foreground">{outlet.area?.name ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{outlet.area?.name ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "outlet.detail.region_label", defaultMessage: "Region" })}
               </dt>
-              <dd className="text-sm text-foreground">{outlet.area?.region?.name ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{outlet.area?.region?.name ?? "—"}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -204,7 +204,7 @@ export const OutletDetailPage = () => {
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "outlet.form.field_address", defaultMessage: "Address" })}
               </dt>
-              <dd className="text-sm text-foreground">{outlet.address ?? "—"}</dd>
+              <dd className="text-sm font-normal text-foreground">{outlet.address ?? "—"}</dd>
             </div>
           </dl>
         </CardContent>
@@ -213,7 +213,7 @@ export const OutletDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_14%,transparent)] text-[var(--module-customer)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_8%,transparent)] text-[var(--module-customer)]">
               <UserRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "outlet.detail.contacts_title", defaultMessage: "Contacts" })}
@@ -241,14 +241,14 @@ export const OutletDetailPage = () => {
               {outlet.contacts?.map((contact) => (
                 <li key={contact.id}>
                   <div className="flex w-full items-center gap-3 px-6 py-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_14%,transparent)] text-[var(--module-customer)]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_8%,transparent)] text-[var(--module-customer)]">
                       <UserRound className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-foreground">
                         {contact.name}
                       </span>
-                      <span className="block text-xs text-muted-foreground">
+                      <span className="block text-xs text-foreground">
                         {[contact.title, contact.phone, contact.email].filter(Boolean).join(" · ") ||
                           "—"}
                       </span>

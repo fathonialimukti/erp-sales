@@ -1,6 +1,6 @@
 /**
  * @deprecated Legacy hex map — do not extend.
- * Use semantic tokens in `src/index.css` (Aurora Commerce):
+ * Use semantic tokens in `src/index.css` (Bold CRM):
  * `bg-primary`, `text-success`, `var(--module-*)`, etc.
  */
 

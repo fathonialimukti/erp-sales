@@ -1,10 +1,11 @@
-/** Aurora module accent keys (nav / page eyebrow / empty-state tint). */
+/** Bold CRM module accent keys (nav / page eyebrow / empty-state tint). */
 export type ModuleKey =
   | "customer"
   | "outlet"
   | "order"
   | "visit"
   | "sku"
+  | "skuCategory"
   | "planning"
   | "event"
   | "user"
@@ -22,6 +23,7 @@ const KNOWN_MODULES = new Set([
   "order",
   "visit",
   "sku",
+  "skuCategory",
   "planning",
   "event",
   "user",

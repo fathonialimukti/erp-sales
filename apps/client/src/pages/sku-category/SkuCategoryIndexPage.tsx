@@ -71,7 +71,7 @@ export const SkuCategoryIndexPage = () => {
         id: "code",
         header: intl.formatMessage({ id: "sku_category.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {
@@ -83,7 +83,7 @@ export const SkuCategoryIndexPage = () => {
         id: "skus",
         header: intl.formatMessage({ id: "sku_category.index.header_skus", defaultMessage: "SKUs" }),
         cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
+          <span className="tabular-nums text-foreground">
             {row.original._count.skus > 0 ? row.original._count.skus : "—"}
           </span>
         ),
@@ -108,12 +108,12 @@ export const SkuCategoryIndexPage = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate(`/skuCategory/${row.original.id}`)}>
+                <DropdownMenuItem onClick={() => navigate(`/sku-category/${row.original.id}`)}>
                   <Eye className="size-4" />
                   {intl.formatMessage({ id: "common.action.view", defaultMessage: "View" })}
                 </DropdownMenuItem>
                 {canUpdate ? (
-                  <DropdownMenuItem onClick={() => navigate(`/skuCategory/${row.original.id}/edit`)}>
+                  <DropdownMenuItem onClick={() => navigate(`/sku-category/${row.original.id}/edit`)}>
                     <Pencil className="size-4" />
                     {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
                   </DropdownMenuItem>
@@ -186,7 +186,7 @@ export const SkuCategoryIndexPage = () => {
         })}
         actions={
           canCreate ? (
-            <Button type="button" onClick={() => navigate("/skuCategory/create")}>
+            <Button type="button" onClick={() => navigate("/sku-category/create")}>
               <Plus className="size-4" />
               {intl.formatMessage({
                 id: "sku_category.index.create_button",
@@ -203,7 +203,7 @@ export const SkuCategoryIndexPage = () => {
         data={rows}
         isLoading={isLoading}
         isError={isError}
-        onRowClick={(row) => navigate(`/skuCategory/${row.id}`)}
+        onRowClick={(row) => navigate(`/sku-category/${row.id}`)}
         toolbar={
           <FilterBar
             search={searchInput}
@@ -248,7 +248,7 @@ export const SkuCategoryIndexPage = () => {
             }
             action={
               canCreate && !search ? (
-                <Button type="button" onClick={() => navigate("/skuCategory/create")}>
+                <Button type="button" onClick={() => navigate("/sku-category/create")}>
                   <Plus className="size-4" />
                   {intl.formatMessage({
                     id: "sku_category.index.create_button",

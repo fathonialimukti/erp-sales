@@ -1,7 +1,7 @@
-# Aurora Commerce — Design System Law
+# Trustworthy Corporate — Design System Law
 
 **Status:** Approved design law (implementation authority for agents + engineers)  
-**Date:** 2026-07-24  
+**Date:** 2026-07-29  
 **Audience:** Frontend Engineer, Full-Stack orchestrator, Code Reviewer  
 **Stack:** React 19 · Vite · Tailwind v4 · shadcn (`radix-mira`, zinc, CSS variables) · Lucide · **Motion** (`motion/react`)  
 **Canonical tokens:** `apps/client/src/index.css`  
@@ -20,50 +20,56 @@ Corporate field-sales / CRM operators and managers (B2B). Portfolio viewers incl
 
 | Attracts attention | Why |
 |--------------------|-----|
-| At-a-glance KPI strip | Answers “are we ok?” in <2s |
-| Professional blue + high-contrast black/white text | Trust / ops legitimacy |
+| At-a-glance KPI strip | Answers "are we ok?" in <2s |
+| Bold color + high-contrast black/white text | Trust / ops legitimacy / visual confidence |
 | Clear page hierarchy | Title → filters → table without hunting |
 | Dense scannable tables | Real work is lists + filters + bulk actions |
 | Status chips (color + icon + label) | Approval state pops without reading the row |
 | Predictable module wayfinding | Same chrome recipe across domains |
 | Money formatting | Right-align + `tabular-nums` |
-| Subtle premium polish | Soft elevation, 150–250ms motion — expensive, not playful |
+| Premium polish | Soft elevation, 150–250ms motion — expensive, not playful |
 
 | Rejects | Why |
 |---------|-----|
-| Purple/pink “AI template” gradients as brand | Toy / non-enterprise |
-| Dark-by-default dense forms | Fatigue on long order/entry sessions |
+| Gray text (any shade) | Forbidden — weak, unfinished |
+| Gray UI surfaces | Forbidden — washed out, no confidence |
 | Rainbow on every cell | Color loses meaning |
 | Pie / donut / 3D chart decoration | Slow parse, gimmicky |
-| Gray text (any shade) | Forbidden — weak, unfinished |
 | Neon cyber / brutalist / playful skins | Wrong industry vernacular |
+| Dark-by-default dense forms | Fatigue on long order/entry sessions |
 
 ### Brand thesis
 
-**Aurora Commerce** is a **trust-first sales CRM** that is boardroom-ready and still modern.
+**Trustworthy Corporate** is a **trust-first sales CRM** that is boardroom-ready with confident visual presence.
 
 - **Light work surfaces** for long sessions (app default).
-- **Safer corporate primary** — shadcn-native Azure blue (not indigo, not mint).
-- **Module signal accents** only where wayfinding needs them.
-- Portfolio catchiness from **KPI hierarchy + status clarity + module plates + chart warmth**, not from a neon CTA or full-dark product skin.
+- **Restrained, confident color** — chroma tuned for trust, not flash. Color is the primary visual language, used sparingly where it carries meaning.
+- **Text is always black or white** — never gray. Hierarchy comes from **font weight + size + bold color**, not gray washes.
+- **Clear hierarchy** — regular body, bold where it carries meaning (titles, KPI, totals, status, eyebrow).
+- Portfolio catchiness from **KPI hierarchy + status clarity + module plates + chart warmth**, all driven by restrained confident color.
 
 ### Signature (one memorable system)
 
-**Accented operational hierarchy**
+**Structured operational hierarchy: flat toolbar headers, 3px module left-rail, opaque grounded surfaces**
 
-- Module-colored eyebrow + left rail on `PageHeader`
-- Soft module plates on nav active / KPI icons / empty tints
+- Module-colored **solid header band** on `PageHeader` (white title/eyebrow/icon-plate when `module` set) + 3px module left-rail on nav active tile
+- Module plates on nav active / KPI icons / empty tints (calm wash, not high-chroma banners)
 - Semantic status chips on data
+- Opaque `bg-card` work stage with 1px `border-border` + `shadow-sm` (grounded = trustworthy)
 
 Same recipe every domain → product reads as one designed system.
 
 ### Anti-signature (banned)
 
-- Full dark app as default
+- Gray text of any kind
+- Gray UI surfaces / gray muted fills
+- Saturated gradient page banners
+- backdrop-blur floaty surfaces
 - Module rainbow on table body cells
-- Mint / module / chart color as primary CTA
+- Mint / chart color as primary CTA
 - Decorative gradients inside forms
 - 3D charts, radial gauges, pie/donut as default analytics
+- Dark-by-default dense forms
 
 ---
 
@@ -80,13 +86,11 @@ Same recipe every domain → product reads as one designed system.
 
 **Rule:** no raw `#hex` / `rgb()` in new JSX for brand or chrome. Use CSS variables / semantic classes / `var(--module-*)` via `moduleCssVar()`.
 
-### Primary — Aurora Azure (safer corporate)
-
-Lock to the **live shadcn prefilled primary** (do not invent a second brand blue):
+### Primary — Aurora Azure
 
 ```css
---primary: oklch(0.5 0.134 242.749);
---primary-foreground: oklch(0.977 0.013 236.62);
+--primary: oklch(0.5 0.13 242.749);
+--primary-foreground: oklch(0.98 0.01 236.62);
 ```
 
 | Role | Class / token | Notes |
@@ -97,18 +101,19 @@ Lock to the **live shadcn prefilled primary** (do not invent a second brand blue
 | Sidebar brand cue | `--sidebar-primary` | Active module when no module accent |
 
 **Readable name:** Aurora Azure  
-**Chroma policy:** **safer corporate** — keep ~`0.134`, do not push to neon (~0.18+) for portfolio “pop”. Catchiness lives elsewhere (KPI, chips, module plates).
+**Chroma policy:** **calm-confident** — chroma ~`0.13` (Aurora Azure). Corporate-credible, not loud.
 
-**One primary action per view region.** Never mint, module, or chart gold as global CTA.
+**One primary action per view region.** Never mint, module, or chart color as global CTA.
 
 ### Surfaces (light app default)
 
 | Role | Classes / tokens |
 |------|------------------|
-| Canvas | `bg-background` (+ optional `aurora-mesh` on shell) |
-| Work stage | `bg-card` / main: `bg-card/60 border-border/60 rounded-2xl shadow-sm` |
+| Canvas | `bg-background` (+ optional `bold-mesh` on shell, now near-imperceptible) |
+| Work stage | `bg-card` / main: `bg-card border-border rounded-2xl shadow-sm` |
+| Work stage / cards / chrome | `bg-card` / `bg-sidebar` SOLID — NO `backdrop-blur-*`, NO `bg-card/NN` opacity, NO `ring-primary/5` decorative ring. Grounded = trustworthy. |
 | Text (body) | `text-foreground` — **black** (near-black OKLCH), never gray |
-| Secondary / meta text | `text-muted-foreground` resolves to **bold Aurora Azure** (chromatic), never gray |
+| Secondary / meta text | `text-muted-foreground` resolves to **deepened Aurora Azure** (L=0.32, chromatic), never gray |
 | On dark / inverse surfaces | white / `text-primary-foreground` |
 | Quiet fills | `bg-muted` `bg-secondary` (fills may be soft; **text on them must not be gray**) |
 | Borders | `border-border` |
@@ -120,9 +125,9 @@ Dark tokens exist for marketing shells / system preference later. **Product defa
 
 | Meaning | Direction | Use |
 |---------|-----------|-----|
-| Success | mint ≈ `#10B981` / `success` classes | Approved, positive delta, money + |
+| Success | green (~`0.2` chroma) | Approved, positive delta, money + |
 | Destructive | shadcn `--destructive` | Reject, delete, field errors |
-| Warning | amber (chart-adjacent) | Caution only — not CTA |
+| Warning | amber (~`0.18` chroma) | Caution only — not CTA |
 | Info | primary soft | System info, non-alarm |
 
 **Must define** `--success` / `--success-foreground` (and `@theme` maps) in `index.css` if missing — code already uses `text-success`, `bg-success/15`.
@@ -154,12 +159,12 @@ Helper: `moduleCssVar()` in `apps/client/src/types/module.ts` → `var(--module-
 
 **Wash recipe (frozen):**
 
-```txt
+```txt8%, transparent)  /* KPI/summary plates; nav ~8–10
 background: color-mix(in srgb, var(--module-X) 14%, transparent)  /* KPI/summary plates; nav ~12–16% */
 color: var(--module-X)
 ```
 
-**Hue intents** (define as OKLCH in `index.css` — currently consumed but not defined in source):
+**Hue intents** (define as OKLCH in `index.css`, **bold chroma ~0.2–0.24**):
 
 | Module | Hue intent | Feel |
 |--------|------------|------|
@@ -178,6 +183,21 @@ color: var(--module-X)
 
 Also map `--color-module-*` in `@theme inline` if Tailwind utilities like `text-module-ai` are used.
 
+**Header-safe band (T10/T11):** light-mode `--module-*` deepened to L≈0.45–0.48 / chroma ~0.20 so white text on the gradient `PageHeader` fill clears WCAG AA at the text-bearing (top-left) region. Dark-mode `--module-*` ALSO header-safe at L≈0.44–0.54 (deepened from the old L~0.68–0.78 active-wash band on 2026-07-30) so white title/eyebrow text clears AA on the dark-mode gradient header too — dark mode is a live app state, not a fallback. The 6% active-wash + 12% icon-tint on the dark sidebar still read as subtle tints at this band.
+
+### PageHeader recipe
+
+Two modes:
+
+- **Module headers** (`module` set): **directional gradient** fill (`linear-gradient(135deg, var(--module-X), color-mix(in oklch, var(--module-X) 72%, oklch(0.3 0.2 260)))`), white title (`text-white font-bold`) / eyebrow (`text-white/90`) / icon plate (`bg-white/15 text-white`) / description (`text-white/80`) / back (`text-white hover:bg-white/15`), white inset left rail (`bg-white/40`). The gradient runs top-left (module color) → bottom-right (deeper mix of the same hue anchored toward a neutral dark), giving professional section-header depth instead of a flat bloc — the Stripe/Linear/Vercel pattern. The wayfinding band stays a band; only the fill style is a gradient.
+- **Generic headers** (no `module`): flat `bg-card border-b border-border`, black title (`text-foreground font-bold`), description/eyebrow `text-muted-foreground`, 3px `--primary` left rail. Aurora-on-neutral fallback for Dashboard / generic pages.
+
+**Module color must be header-safe**: light-mode `--module-*` at L≈0.45–0.48 / chroma ~0.20 so white text on the text-bearing (top-left) region of the gradient clears WCAG AA (~4.5:1); the deeper bottom-right endpoint sits at ~L≈0.36 and stays away from the title/eyebrow, with `text-white/80` on the description still clearing AA there. Dark-mode `--module-*` stays L~0.68–0.78 for active-wash on the dark sidebar — not for solid headers.
+
+### Login recipe
+
+Light editorial trust panel — `bg-background` near-white, single solid Azure brand block, real proof points (compliance badges or one anchored stat). NO radial blobs, NO grid overlay, NO glass cards, NO animate-pulse.
+
 ### Charts
 
 Keep warm amber ladder (`--chart-1` … `--chart-5`) for dashboard demo contrast against Azure primary.
@@ -194,8 +214,7 @@ Keep warm amber ladder (`--chart-1` … `--chart-5`) for dashboard demo contrast
 | Status = chip + icon + label | Color-only meaning |
 | Module accents on chrome plates | Rainbow table cells |
 | Semantic classes only | New hex in components |
-| Black / white / bold color text only | Gray text of any kind (`text-gray-*`, `text-slate-*`, gray `muted-foreground`) |
-
+| Black / white / bold color text only | Gray text of any kind (`text-gray-*`, `text-slate-*`, gray `muted-foreground`) || Bold weight on meaning elements (titles, KPI, totals, status, eyebrow) | `font-light` on any text; bold weight as the body default |
 ---
 
 ## 3. Typography · radius · density · motion
@@ -205,12 +224,12 @@ Keep warm amber ladder (`--chart-1` … `--chart-5`) for dashboard demo contrast
 | Role | Law |
 |------|-----|
 | Family | **Inter Variable** only (`--font-sans` / `font-heading`) — no second display face in app |
-| Page title | `font-heading text-2xl font-semibold tracking-tight` |
-| KPI value | `text-2xl font-semibold tabular-nums` |
-| Section titles | `text-base` / `text-lg` semibold |
-| Body / table | `text-sm` default · **black** `text-foreground` |
-| Captions / meta | `text-xs` · **bold Azure** `text-muted-foreground` (token is chromatic, not gray) |
-| Eyebrow | `text-xs font-semibold uppercase tracking-wide` (+ module color when set) |
+| Page title | `font-heading text-2xl font-bold tracking-tight` |
+| KPI value | `text-2xl font-bold tabular-nums` |
+| Section titles | `text-base` / `text-lg` **font-bold** |
+| Body / table | `text-sm` default · **black** `text-foreground` · `font-normal` |
+| Captions / meta | `text-xs` · **bold Azure** `text-muted-foreground` (token is chromatic, not gray) · `font-normal` |
+| Eyebrow | `text-xs font-bold uppercase tracking-wide` (+ module color when set) |
 | Buttons | shadcn button scale (compact mira density) |
 
 ### Text color hard ban (frozen)
@@ -221,9 +240,23 @@ Keep warm amber ladder (`--chart-1` … `--chart-5`) for dashboard demo contrast
 |---------|-----------|
 | Black body: `text-foreground` | `text-gray-*`, `text-slate-*`, `text-zinc-*`, `text-neutral-*`, `text-stone-*` |
 | White on dark / inverse: `text-background`, `text-primary-foreground`, pure white | Faded gray opacity text for hierarchy (`text-foreground/50`, `/60`, `/70` as gray stand-in) |
-| Bold color secondary: `text-muted-foreground` (maps to Aurora Azure), `text-primary`, `text-success`, `text-destructive`, `text-warning`, module accents | Gray `muted-foreground` token values; slate hex / `--color-slate-*` for labels |
+| Bold color secondary: `text-muted-foreground` (maps to **deepened** Bold Azure, L=0.32), `text-primary`, `text-success`, `text-destructive`, `text-warning`, module accents | Gray `muted-foreground` token values; slate hex / `--color-slate-*` for labels |
 
-`--muted-foreground` in `index.css` **must stay chromatic** (Azure), never neutral gray. Hierarchy is weight / size / bold color — not gray wash.
+`--muted-foreground` in `index.css` **must stay chromatic** (Azure, L=0.32 light / L=0.72 dark), never neutral gray. The deepened lightness gives secondary text enough visual weight to feel intentional, not "faded" or "placeholder-like." Hierarchy is **font weight + size + bold color** — not gray wash.
+
+### Font weight law (frozen)
+
+**Default body text is `font-normal` (400).** Bold is reserved for meaning-carrying elements: page titles (`font-bold`), KPI values (`font-bold`), totals, status chips, eyebrow (`font-bold`), section titles (`font-bold`). Body/table/caption = `font-normal`. Hierarchy = font weight + size + bold color (used sparingly).
+
+| Role | Weight |
+|------|--------|
+| Body / table cells | `font-normal` (400) |
+| Page titles | `font-bold` (700) |
+| KPI values | `font-bold` (700) |
+| Section titles | `font-bold` (700) |
+| Captions / meta | `font-normal` (400) |
+| Eyebrow | `font-bold` (700) |
+| Buttons | `font-semibold` (500) |
 
 ### Radius
 
@@ -322,11 +355,11 @@ When reduced: `initial: false` → skip enter animation (still land on `visible`
 ### Shell (`PrivateLayout`)
 
 ```txt
-aurora-mesh canvas
+bold-mesh canvas
 ├── Sidebar (module nav, active wash)
 └── column (offset for sidebar)
     ├── Topbar
-    └── main stage: rounded-2xl border bg-card/60 p-4 md:p-6 shadow-sm
+    └── main stage: rounded-2xl border bg-card p-4 md:p-6 shadow-sm
         └── PageTransition → page
 ```
 
@@ -469,16 +502,16 @@ Empty states may take a light module tint; keep dashed border + calm copy.
 
 ## 6. Hard bans (ship blockers)
 
-1. Flat gray “wired-only” pages with no hierarchy  
-2. Mint / module / chart as global CTA  
-3. Module colors on table body cells  
-4. Raw hex/rgb brand colors in new JSX  
-5. Pie / donut / 3D as default analytics  
-6. Cloning unfinished legacy pages as the visual ideal  
-7. Second design system outside this law + `index.css`  
-8. Emoji icons  
-9. Dark-by-default product chrome for dense CRM work  
-10. AI purple/pink gradient as brand identity  
+1. Gray text of any kind
+2. Gray UI surfaces / gray muted fills
+3. Module colors on table body cells
+4. Raw hex/rgb brand colors in new JSX
+5. Pie / donut / 3D as default analytics
+6. Cloning unfinished legacy pages as the visual ideal
+7. Second design system outside this law + `index.css`
+8. Emoji icons
+9. Dark-by-default product chrome for dense CRM work
+10. `font-light` on any text; bold weight (`font-semibold`/`font-bold`) used as the body default instead of reserved for meaning elements
 11. Ad-hoc Motion springs / large travels / staggers on tables instead of `@/lib/motion` presets  
 
 ---
@@ -492,7 +525,7 @@ Documented so agents don’t invent ad-hoc values:
 | `--module-*` used widely, not defined in source CSS | Add OKLCH module tokens + `@theme` color maps in `index.css` |
 | `text-success` / `bg-success/*` used; may lack theme wiring | Add `--success` / `--success-foreground` + `@theme` |
 | `styles/colors.ts` hex map | Mark deprecated; do not add keys; prefer CSS vars |
-| Frontend agent “indigo `#4F46E5`” | Align agent docs to Aurora Azure primary in this law |
+| Frontend agent "indigo `#4F46E5`" | Align agent docs to Aurora Azure primary in this law |
 | Legacy adapters under `components/*` mid-migration | New UI → `@/components/ui/*` + domain recipes |
 
 **This law file does not ship CSS.** Frontend Engineer implements gaps when requested.
@@ -511,7 +544,7 @@ Documented so agents don’t invent ad-hoc values:
 
 ### Conflict order
 
-1. **This law** (Aurora Commerce tokens + recipes + bans)  
+1. **This law** (Trustworthy Corporate tokens + recipes + bans)  
 2. **Live `index.css` tokens**  
 3. **`ui-ux-pro-max`** craft (density, a11y, hierarchy)  
 4. Existing pages for **data/permission wiring only** — not as the visual bar if flat  
@@ -527,7 +560,8 @@ Documented so agents don’t invent ad-hoc values:
 - [ ] i18n en + id  
 - [ ] Focus rings; reduced motion respected  
 - [ ] No ban list violations  
-- [ ] pro-max search run for non-trivial UI (or justify skip)
+- [ ] pro-max search run for non-trivial UI (or justify skip)  
+- [ ] Body text uses `font-normal` (400); bold reserved for titles / KPI / totals / status / eyebrow (never `font-light`)
 
 ---
 
@@ -546,10 +580,10 @@ Documented so agents don’t invent ad-hoc values:
 | Nav accent | `apps/client/src/components/NavModuleTile.tsx` |
 | Shell | `apps/client/src/layouts/PrivateLayout.tsx` |
 | UI primitives | `apps/client/src/components/ui/*` |
-| Frontend agent | `.github/agents/frontend-engineer.agent.md` (align primary note to this law) |
+| Frontend agent | `.github/agents/frontend-engineer.agent.md` |
 
 ---
 
 ## 10. One-line summary
 
-> **Aurora Commerce:** corporate-trust CRM on shadcn zinc + **safer Azure primary**; light dense work surfaces; module signal plates for wayfinding; Motion presets for page/KPI enter; status and KPIs carry the portfolio “wow” — never rainbow tables or neon brand.
+> **Trustworthy Corporate:** corporate-trust CRM on shadcn zinc + **Aurora Azure primary**; light dense work surfaces; restrained confident color; regular body weight + bold on meaning elements; module signal plates for wayfinding; opaque grounded surfaces; Motion presets for page/KPI enter; status and KPIs carry the portfolio "wow" — never rainbow tables, neon brand, gradient banners, or floaty glass.

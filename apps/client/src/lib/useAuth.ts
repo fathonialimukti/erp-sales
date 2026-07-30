@@ -24,6 +24,17 @@ export function useAuthBootstrap() {
     const bootstrap = async () => {
       setAuthBootstrapReady(false);
 
+      // Skip the auth.me call if there's no stored token — avoids 401 noise
+      // for unauthenticated visitors (e.g. landing page, SEO crawlers).
+      const storedToken = typeof window !== 'undefined'
+        ? window.localStorage.getItem('auth-token')
+        : null;
+
+      if (!storedToken) {
+        if (active) setAuthBootstrapReady(true);
+        return;
+      }
+
       try {
         const response = await trpcClient.auth.me.query();
         const rolePermissions = mapPermissions(response.user.roles);

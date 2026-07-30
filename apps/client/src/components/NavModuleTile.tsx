@@ -18,7 +18,7 @@ interface NavModuleTileProps {
 }
 
 /**
- * Aurora nav row: custom SVG plate + soft active wash + 3px accent bar.
+ * Bold CRM nav row: custom SVG plate + soft active wash + 3px accent bar.
  * Lucide is only used for the expanded chevron chrome.
  */
 export const NavModuleTile = ({
@@ -37,8 +37,14 @@ export const NavModuleTile = ({
   const activeStyle =
     active && accent
       ? ({
-          backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`,
+          backgroundColor: `color-mix(in srgb, ${accent} 6%, transparent)`,
           borderLeftColor: accent,
+        } satisfies CSSProperties)
+      : undefined;
+  const iconPlateStyle =
+    active && accent
+      ? ({
+          backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)`,
         } satisfies CSSProperties)
       : undefined;
 
@@ -69,6 +75,7 @@ export const NavModuleTile = ({
           "inline-flex shrink-0 items-center justify-center",
           collapsed ? "size-10" : "size-8",
         )}
+        style={iconPlateStyle}
         aria-hidden
       >
         {icon ? (

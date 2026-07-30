@@ -1,59 +1,70 @@
 import { createBrowserRouter } from 'react-router';
+import { lazy } from 'react';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PrivateLayout } from './layouts/PrivateLayout';
 import { PublicLayout } from './layouts/PublicLayout';
+
+// ── Critical (eager) — needed for first paint / login / 404 ──
 import { Dashboard } from './pages/Dashboard';
-import { ReportsHub } from './pages/reports/ReportsHub';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RouteErrorPage } from './pages/RouteErrorPage';
 import { LandingPage } from './pages/LandingPage';
-import { RegionIndexPage } from './pages/region/RegionIndexPage';
-import { RegionDetailPage } from './pages/region/RegionDetailPage';
-import { RegionFormPage } from './pages/region/RegionFormPage';
-import { AreaIndexPage } from './pages/area/AreaIndexPage';
-import { AreaDetailPage } from './pages/area/AreaDetailPage';
-import { AreaFormPage } from './pages/area/AreaFormPage';
-import { CustomerIndexPage } from './pages/customer/CustomerIndexPage';
-import { CustomerDetailPage } from './pages/customer/CustomerDetailPage';
-import { CustomerFormPage } from './pages/customer/CustomerFormPage';
-import { OutletIndexPage } from './pages/outlet/OutletIndexPage';
-import { OutletDetailPage } from './pages/outlet/OutletDetailPage';
-import { OutletFormPage } from './pages/outlet/OutletFormPage';
-import { SkuCategoryIndexPage } from './pages/sku-category/SkuCategoryIndexPage';
-import { SkuCategoryDetailPage } from './pages/sku-category/SkuCategoryDetailPage';
-import { SkuCategoryFormPage } from './pages/sku-category/SkuCategoryFormPage';
-import { SkuIndexPage } from './pages/sku/SkuIndexPage';
-import { SkuDetailPage } from './pages/sku/SkuDetailPage';
-import { SkuFormPage } from './pages/sku/SkuFormPage';
-import { SalesOrderIndexPage } from './pages/sales-order/SalesOrderIndexPage';
-import { SalesOrderDetailPage } from './pages/sales-order/SalesOrderDetailPage';
-import { SalesOrderFormPage } from './pages/sales-order/SalesOrderFormPage';
-import { VisitLogIndexPage } from './pages/visit-log/VisitLogIndexPage';
-import { VisitLogDetailPage } from './pages/visit-log/VisitLogDetailPage';
-import { VisitLogFormPage } from './pages/visit-log/VisitLogFormPage';
-import { ActionProgramIndexPage } from './pages/action-program/ActionProgramIndexPage';
-import { ActionProgramDetailPage } from './pages/action-program/ActionProgramDetailPage';
-import { ActionProgramFormPage } from './pages/action-program/ActionProgramFormPage';
-import { EventProposalIndexPage } from './pages/event-proposal/EventProposalIndexPage';
-import { EventProposalDetailPage } from './pages/event-proposal/EventProposalDetailPage';
-import { EventProposalFormPage } from './pages/event-proposal/EventProposalFormPage';
-import { UsersIndexPage } from './pages/users/UsersIndexPage';
-import { UserDetailPage } from './pages/users/UserDetailPage';
-import { UserFormPage } from './pages/users/UserFormPage';
-import { RolesIndexPage } from './pages/access-control/RolesIndexPage';
-import { RoleDetailPage } from './pages/access-control/RoleDetailPage';
-import { RoleFormPage } from './pages/access-control/RoleFormPage';
-import { ActivityLogsIndexPage } from './pages/activity-logs/ActivityLogsIndexPage';
-import { ActivityLogDetailPage } from './pages/activity-logs/ActivityLogDetailPage';
-import { NotificationsPage } from './pages/notifications/NotificationsPage';
-import AiAdminChatPage from './pages/ai-admin/AiAdminChatPage';
-import { EmailCrmIndexPage } from './pages/email-crm/EmailCrmIndexPage';
-import { EmailCrmDetailPage } from './pages/email-crm/EmailCrmDetailPage';
-import { EmailCrmFormPage } from './pages/email-crm/EmailCrmFormPage';
-import { KnowledgeBaseIndexPage } from './pages/knowledge-base/KnowledgeBaseIndexPage';
-import { KnowledgeBaseDetailPage } from './pages/knowledge-base/KnowledgeBaseDetailPage';
-import { KnowledgeBaseFormPage } from './pages/knowledge-base/KnowledgeBaseFormPage';
+
+// ── Lazy helper: named → default ──
+const lazyNamed = <T extends Record<string, unknown>, K extends keyof T & string>(
+  importer: () => Promise<T>,
+  name: K,
+) => lazy(() => importer().then((m) => ({ default: m[name] as unknown as React.ComponentType })));
+
+// ── Non-critical (lazy) — loaded on module navigation ──
+const ReportsHub = lazyNamed(() => import('./pages/reports/ReportsHub'), 'ReportsHub');
+const RegionIndexPage = lazyNamed(() => import('./pages/region/RegionIndexPage'), 'RegionIndexPage');
+const RegionDetailPage = lazyNamed(() => import('./pages/region/RegionDetailPage'), 'RegionDetailPage');
+const RegionFormPage = lazyNamed(() => import('./pages/region/RegionFormPage'), 'RegionFormPage');
+const AreaIndexPage = lazyNamed(() => import('./pages/area/AreaIndexPage'), 'AreaIndexPage');
+const AreaDetailPage = lazyNamed(() => import('./pages/area/AreaDetailPage'), 'AreaDetailPage');
+const AreaFormPage = lazyNamed(() => import('./pages/area/AreaFormPage'), 'AreaFormPage');
+const CustomerIndexPage = lazyNamed(() => import('./pages/customer/CustomerIndexPage'), 'CustomerIndexPage');
+const CustomerDetailPage = lazyNamed(() => import('./pages/customer/CustomerDetailPage'), 'CustomerDetailPage');
+const CustomerFormPage = lazyNamed(() => import('./pages/customer/CustomerFormPage'), 'CustomerFormPage');
+const OutletIndexPage = lazyNamed(() => import('./pages/outlet/OutletIndexPage'), 'OutletIndexPage');
+const OutletDetailPage = lazyNamed(() => import('./pages/outlet/OutletDetailPage'), 'OutletDetailPage');
+const OutletFormPage = lazyNamed(() => import('./pages/outlet/OutletFormPage'), 'OutletFormPage');
+const SkuCategoryIndexPage = lazyNamed(() => import('./pages/sku-category/SkuCategoryIndexPage'), 'SkuCategoryIndexPage');
+const SkuCategoryDetailPage = lazyNamed(() => import('./pages/sku-category/SkuCategoryDetailPage'), 'SkuCategoryDetailPage');
+const SkuCategoryFormPage = lazyNamed(() => import('./pages/sku-category/SkuCategoryFormPage'), 'SkuCategoryFormPage');
+const SkuIndexPage = lazyNamed(() => import('./pages/sku/SkuIndexPage'), 'SkuIndexPage');
+const SkuDetailPage = lazyNamed(() => import('./pages/sku/SkuDetailPage'), 'SkuDetailPage');
+const SkuFormPage = lazyNamed(() => import('./pages/sku/SkuFormPage'), 'SkuFormPage');
+const SalesOrderIndexPage = lazyNamed(() => import('./pages/sales-order/SalesOrderIndexPage'), 'SalesOrderIndexPage');
+const SalesOrderDetailPage = lazyNamed(() => import('./pages/sales-order/SalesOrderDetailPage'), 'SalesOrderDetailPage');
+const SalesOrderFormPage = lazyNamed(() => import('./pages/sales-order/SalesOrderFormPage'), 'SalesOrderFormPage');
+const VisitLogIndexPage = lazyNamed(() => import('./pages/visit-log/VisitLogIndexPage'), 'VisitLogIndexPage');
+const VisitLogDetailPage = lazyNamed(() => import('./pages/visit-log/VisitLogDetailPage'), 'VisitLogDetailPage');
+const VisitLogFormPage = lazyNamed(() => import('./pages/visit-log/VisitLogFormPage'), 'VisitLogFormPage');
+const ActionProgramIndexPage = lazyNamed(() => import('./pages/action-program/ActionProgramIndexPage'), 'ActionProgramIndexPage');
+const ActionProgramDetailPage = lazyNamed(() => import('./pages/action-program/ActionProgramDetailPage'), 'ActionProgramDetailPage');
+const ActionProgramFormPage = lazyNamed(() => import('./pages/action-program/ActionProgramFormPage'), 'ActionProgramFormPage');
+const EventProposalIndexPage = lazyNamed(() => import('./pages/event-proposal/EventProposalIndexPage'), 'EventProposalIndexPage');
+const EventProposalDetailPage = lazyNamed(() => import('./pages/event-proposal/EventProposalDetailPage'), 'EventProposalDetailPage');
+const EventProposalFormPage = lazyNamed(() => import('./pages/event-proposal/EventProposalFormPage'), 'EventProposalFormPage');
+const UsersIndexPage = lazyNamed(() => import('./pages/users/UsersIndexPage'), 'UsersIndexPage');
+const UserDetailPage = lazyNamed(() => import('./pages/users/UserDetailPage'), 'UserDetailPage');
+const UserFormPage = lazyNamed(() => import('./pages/users/UserFormPage'), 'UserFormPage');
+const RolesIndexPage = lazyNamed(() => import('./pages/access-control/RolesIndexPage'), 'RolesIndexPage');
+const RoleDetailPage = lazyNamed(() => import('./pages/access-control/RoleDetailPage'), 'RoleDetailPage');
+const RoleFormPage = lazyNamed(() => import('./pages/access-control/RoleFormPage'), 'RoleFormPage');
+const ActivityLogsIndexPage = lazyNamed(() => import('./pages/activity-logs/ActivityLogsIndexPage'), 'ActivityLogsIndexPage');
+const ActivityLogDetailPage = lazyNamed(() => import('./pages/activity-logs/ActivityLogDetailPage'), 'ActivityLogDetailPage');
+const NotificationsPage = lazyNamed(() => import('./pages/notifications/NotificationsPage'), 'NotificationsPage');
+const AiAdminChatPage = lazy(() => import('./pages/ai-admin/AiAdminChatPage'));
+const EmailCrmIndexPage = lazyNamed(() => import('./pages/email-crm/EmailCrmIndexPage'), 'EmailCrmIndexPage');
+const EmailCrmDetailPage = lazyNamed(() => import('./pages/email-crm/EmailCrmDetailPage'), 'EmailCrmDetailPage');
+const EmailCrmFormPage = lazyNamed(() => import('./pages/email-crm/EmailCrmFormPage'), 'EmailCrmFormPage');
+const KnowledgeBaseIndexPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseIndexPage'), 'KnowledgeBaseIndexPage');
+const KnowledgeBaseDetailPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseDetailPage'), 'KnowledgeBaseDetailPage');
+const KnowledgeBaseFormPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseFormPage'), 'KnowledgeBaseFormPage');
 
 export const router = createBrowserRouter([
   {

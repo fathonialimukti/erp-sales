@@ -9,6 +9,7 @@ import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -35,6 +36,12 @@ type CustomerRow = {
 
 export const CustomerIndexPage = () => {
   const intl = useIntl();
+
+  useMeta({
+    title: intl.formatMessage({ id: "customer.index.title", defaultMessage: "Customers" }),
+    description: intl.formatMessage({ id: "customer.index.subtitle", defaultMessage: "Organize regions, areas, customers, and outlets in a clean hierarchy." }),
+  });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -80,7 +87,7 @@ export const CustomerIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "customer.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-xs text-foreground">
             {row.original.code ?? "—"}
           </span>
         ),
@@ -107,7 +114,7 @@ export const CustomerIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "customer.index.header_outlets", defaultMessage: "Outlets" }),
         cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
+          <span className="tabular-nums text-foreground">
             {row.original._count.outlets > 0 ? row.original._count.outlets : "—"}
           </span>
         ),

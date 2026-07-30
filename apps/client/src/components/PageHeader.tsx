@@ -29,7 +29,7 @@ const MODULE_ICON: Record<string, string> = {
 interface PageHeaderProps {
   title: string;
   description?: string;
-  /** Module accent — tints the hero gradient for domain wayfinding. */
+  /** Module accent — drives a directional gradient module-color fill with white wayfinding chrome. */
   module?: ModuleKey;
   /** Optional eyebrow label above the title (e.g. "Customers", date). */
   eyebrow?: string;
@@ -46,8 +46,9 @@ interface PageHeaderProps {
 }
 
 /**
- * Standard page hero — filled gradient plate, white type.
- * Compact chrome: leading module icon + title stack; actions on the right.
+ * Standard page toolbar.
+ * - With `module`: directional gradient module-color band + white-type chrome (strong wayfinding with professional depth).
+ * - Without `module`: flat `bg-card` toolbar, black title, 3px primary rail (generic fallback).
  */
 export const PageHeader = ({
   title,
@@ -62,6 +63,22 @@ export const PageHeader = ({
 }: PageHeaderProps) => {
   const intl = useIntl();
   const accent = moduleCssVar(module);
+  const isModuleHeader = Boolean(accent);
+  const railColor = accent ?? "var(--primary)";
+
+  // Module header fill: a directional 135deg gradient from the module color
+  // (top-left) to a deeper mix of the same hue anchored toward a neutral-dark
+  // (L=0.3, chroma 0.2, hue 260) at 72% module / 28% dark. Every module gets a
+  // consistent "deeper toward dark" direction preserving its hue identity at the
+  // text-bearing top-left region. T10's header-safe tokens (L≈0.45–0.48) keep
+  // white text AA-legible over that region; the deeper bottom-right is away
+  // from the title/eyebrow, and `text-white/80` on the description still clears
+  // AA there.
+  const moduleStyle: CSSProperties | undefined = accent
+    ? {
+        backgroundImage: `linear-gradient(135deg, ${accent}, color-mix(in oklch, ${accent} 72%, oklch(0.3 0.2 260)))`,
+      }
+    : undefined;
 
   const resolvedIcon =
     icon === null
@@ -75,31 +92,32 @@ export const PageHeader = ({
           />
         ) : null));
 
-  // Module-tinted solid gradient; brand default uses Azure → indigo → violet
-  const moduleStyle = accent
-    ? ({
-        backgroundImage: `linear-gradient(to bottom right, ${accent}, color-mix(in oklch, ${accent} 72%, oklch(0.45 0.2 280)), color-mix(in oklch, ${accent} 45%, oklch(0.48 0.22 295)))`,
-      } satisfies CSSProperties)
-    : undefined;
-
   return (
     <header
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-primary/20 px-4 py-3.5 text-white shadow-sm sm:px-5 sm:py-4",
-        !accent &&
-          "bg-linear-to-br from-primary via-indigo-600 to-violet-600",
+        "relative overflow-hidden border-b px-4 py-3.5 shadow-sm sm:px-5 sm:py-4",
+        isModuleHeader
+          ? // gradient module band — directional fill with white inset rail
+            "border-white/15 text-white"
+          : // generic flat toolbar — black title, 3px primary left rail
+            "border-border bg-card",
         className,
       )}
-      style={moduleStyle}
+      style={isModuleHeader ? moduleStyle : undefined}
       data-slot="page-header"
       data-module={module}
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(255,255,255,0.28),transparent_55%)]"
+      {/* 3px left rail: white inset bar on module headers; primary bar on generic headers */}
+      <span
         aria-hidden
+        className={cn(
+          "absolute inset-y-0 left-0 w-[3px]",
+          isModuleHeader ? "bg-white/40" : undefined,
+        )}
+        style={isModuleHeader ? undefined : { backgroundColor: railColor }}
       />
 
-      <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           {onBack ? (
             <Button
@@ -107,7 +125,12 @@ export const PageHeader = ({
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="size-9 shrink-0 text-white hover:bg-white/15 hover:text-white"
+              className={cn(
+                "size-9 shrink-0 hover:bg-accent",
+                isModuleHeader
+                  ? "text-white hover:bg-white/15"
+                  : "text-foreground",
+              )}
               aria-label={intl.formatMessage({
                 id: "common.action.back",
                 defaultMessage: "Back",
@@ -119,7 +142,12 @@ export const PageHeader = ({
 
           {resolvedIcon ? (
             <span
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/15 shadow-sm ring-1 ring-white/20 backdrop-blur-sm sm:size-12"
+              className={cn(
+                "flex size-11 shrink-0 items-center justify-center rounded-xl sm:size-12",
+                isModuleHeader
+                  ? "bg-white/15 text-white"
+                  : "bg-muted text-primary",
+              )}
               aria-hidden
             >
               {resolvedIcon}
@@ -128,15 +156,34 @@ export const PageHeader = ({
 
           <div className="min-w-0 space-y-0.5">
             {eyebrow || module ? (
-              <p className="text-[11px] font-semibold tracking-[0.08em] text-white/85 uppercase">
+              <p
+                className={cn(
+                  "text-xs font-bold uppercase tracking-wide",
+                  isModuleHeader
+                    ? "text-white/90"
+                    : !accent && "text-primary",
+                )}
+              >
                 {eyebrow ?? module}
               </p>
             ) : null}
-            <h1 className="font-heading text-xl font-semibold tracking-tight sm:text-2xl">
+            <h1
+              className={cn(
+                "font-heading text-xl font-bold tracking-tight sm:text-2xl",
+                isModuleHeader ? "text-white" : "text-foreground",
+              )}
+            >
               {title}
             </h1>
             {description ? (
-              <p className="max-w-xl text-xs text-white/80 sm:text-sm">
+              <p
+                className={cn(
+                  "max-w-xl text-sm sm:text-sm",
+                  isModuleHeader
+                    ? "text-white/80"
+                    : "text-muted-foreground",
+                )}
+              >
                 {description}
               </p>
             ) : null}
@@ -147,26 +194,24 @@ export const PageHeader = ({
           <div
             className={cn(
               "flex shrink-0 flex-wrap items-center gap-2.5 sm:justify-end",
-              // Outline / secondary actions stay legible on the filled hero
-              "[&_[data-slot=button][data-variant=outline]]:border-white/30",
-              "[&_[data-slot=button][data-variant=outline]]:bg-white/10",
-              "[&_[data-slot=button][data-variant=outline]]:text-white",
-              "[&_[data-slot=button][data-variant=outline]]:hover:bg-white/20",
-              "[&_[data-slot=button][data-variant=secondary]]:bg-white/15",
-              "[&_[data-slot=button][data-variant=secondary]]:text-white",
-              "[&_[data-slot=button][data-variant=ghost]]:text-white",
-              "[&_[data-slot=button][data-variant=ghost]]:hover:bg-white/15",
-              // Primary CTA pops as solid white on the gradient
-              "[&_[data-slot=button][data-variant=default]]:border-transparent",
-              "[&_[data-slot=button][data-variant=default]]:bg-white",
-              "[&_[data-slot=button][data-variant=default]]:text-primary",
-              "[&_[data-slot=button][data-variant=default]]:hover:bg-white/90",
+              isModuleHeader &&
+                // White CTA on module gradient band — text MUST be a fixed dark
+                // color (not --foreground, which flips to near-white in dark
+                // mode and would render white-on-white). oklch(0.16…) ≈ the
+                // light-mode foreground black; hardcoded so the button reads
+                // the same in both light + dark mode. ~16:1 on white = AAA.
+                "[&_[data-slot=button][data-variant=default]]:bg-white [&_[data-slot=button][data-variant=default]]:!text-[oklch(0.16_0.02_260)] [&_[data-slot=button][data-variant=default]]:hover:bg-white/90 [&_[data-slot=button][data-variant=default]]:border-transparent",
             )}
           >
             {actions}
             {media ? (
               <div
-                className="hidden size-12 shrink-0 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20 backdrop-blur-sm sm:flex"
+                className={cn(
+                  "hidden size-12 shrink-0 items-center justify-center rounded-full sm:flex",
+                  isModuleHeader
+                    ? "bg-white/15 text-white"
+                    : "bg-muted text-primary",
+                )}
                 aria-hidden
               >
                 {media}

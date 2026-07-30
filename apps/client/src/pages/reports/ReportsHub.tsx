@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useIntl } from "react-intl";
 
 import { PageHeader } from "../../components/PageHeader";
+import { useMeta } from "../../lib/useMeta";
 import { ReportFilters, type ReportFilterValue } from "../../components/reports/ReportFilters";
 import { SalesReport } from "./sections/SalesReport";
 import { FieldReport } from "./sections/FieldReport";

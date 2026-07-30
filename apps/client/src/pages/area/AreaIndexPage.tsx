@@ -71,7 +71,7 @@ export const AreaIndexPage = () => {
         id: "code",
         header: intl.formatMessage({ id: "area.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {
@@ -83,7 +83,7 @@ export const AreaIndexPage = () => {
         id: "outlets",
         header: intl.formatMessage({ id: "area.index.header_outlets", defaultMessage: "Outlets" }),
         cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
+          <span className="tabular-nums text-foreground">
             {row.original._count.outlets > 0 ? row.original._count.outlets : "—"}
           </span>
         ),

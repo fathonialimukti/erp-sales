@@ -1,8 +1,6 @@
 import type { CSSProperties } from "react";
 import { icons } from "../../assets/icons";
 
-const accent = { "--m-accent": "#F59E0B", "--m-accent-end": "#D97706" } as React.CSSProperties;
-
 export type SkuCategoryIconName =
   | "back"
   | "edit"

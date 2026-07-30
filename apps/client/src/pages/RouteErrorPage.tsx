@@ -47,7 +47,7 @@ export const RouteErrorPage = () => {
 
   return (
     <div
-      className="aurora-mesh flex min-h-dvh items-center justify-center p-6"
+      className="bg-background flex min-h-dvh items-center justify-center p-6"
       data-ai-context={JSON.stringify({ section: "route-error", title })}
     >
       <motion.div className="w-full max-w-lg" variants={pageEnter} {...enterProps}>
@@ -69,7 +69,7 @@ export const RouteErrorPage = () => {
           </CardHeader>
           {stack ? (
             <CardContent>
-              <pre className="max-h-48 overflow-auto rounded-lg border bg-muted/50 p-3 font-mono text-xs text-muted-foreground">
+              <pre className="max-h-48 overflow-auto rounded-lg border bg-card p-3 font-mono text-xs text-muted-foreground">
                 {stack}
               </pre>
             </CardContent>

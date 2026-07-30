@@ -136,7 +136,7 @@ export const Topbar = () => {
     <header
       role="banner"
       className={cn(
-        "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 rounded-2xl border border-primary/10 bg-card/90 px-3 shadow-sm ring-1 ring-primary/5 backdrop-blur-xl sm:h-15 sm:px-4",
+        "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 rounded-2xl border border-border bg-card px-3 shadow-sm sm:h-15 sm:px-4",
       )}
       data-ai-context={JSON.stringify({
         section: "topbar",
@@ -173,7 +173,7 @@ export const Topbar = () => {
 
       <div className="flex items-center gap-1.5 sm:gap-2">
         <div
-          className="hidden items-center gap-1.5 rounded-full border border-primary/12 bg-primary/[0.06] px-2.5 py-1.5 text-xs font-medium text-primary tabular-nums sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-full border border-border bg-primary/[0.06] px-2.5 py-1.5 text-xs font-medium text-primary tabular-nums sm:inline-flex"
           aria-hidden
           title={intl.formatMessage({
             id: "common.time",

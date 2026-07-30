@@ -243,7 +243,7 @@ export const EventProposalDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-event)_14%,transparent)] text-[var(--module-event)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-event)_8%,transparent)] text-[var(--module-event)]">
               <FileText className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "event_proposal.detail.summary", defaultMessage: "Summary" })}
@@ -269,7 +269,7 @@ export const EventProposalDetailPage = () => {
                   defaultMessage: "Name",
                 })}
               </dt>
-              <dd className="text-sm font-medium text-foreground">{eventProposal.name}</dd>
+              <dd className="text-sm font-normal text-foreground">{eventProposal.name}</dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -278,7 +278,7 @@ export const EventProposalDetailPage = () => {
                   defaultMessage: "Payments",
                 })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">
+              <dd className="text-sm font-normal tabular-nums text-foreground">
                 {eventProposal.skus?.length ?? 0}
               </dd>
             </div>
@@ -289,7 +289,7 @@ export const EventProposalDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_14%,transparent)] text-[var(--module-sku)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-[var(--module-sku)]">
               <Package className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({
@@ -324,7 +324,7 @@ export const EventProposalDetailPage = () => {
                     onClick={() => navigate(`/sku/${row.sku.id}`)}
                     className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_14%,transparent)] text-[var(--module-sku)]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-[var(--module-sku)]">
                       <Package className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -332,7 +332,7 @@ export const EventProposalDetailPage = () => {
                         {row.sku.name}
                       </span>
                       {row.sku.code ? (
-                        <span className="block font-mono text-xs text-muted-foreground">
+                        <span className="block font-mono text-xs text-foreground">
                           {row.sku.code}
                         </span>
                       ) : null}
@@ -389,7 +389,7 @@ export const EventProposalDetailPage = () => {
           ) : null}
           {draftError ? <p className="text-sm text-destructive">{draftError}</p> : null}
           {draftResult ? (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="text-foreground text-sm font-semibold">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{draftResult}</ReactMarkdown>
             </div>
           ) : null}

@@ -1,8 +1,6 @@
 import type { CSSProperties } from "react";
 import { icons } from "../../assets/icons";
 
-const accent = { "--m-accent": "#8B5CF6", "--m-accent-end": "#6D28D9" } as React.CSSProperties;
-
 export type VisitLogIconName =
   | "back"
   | "edit"

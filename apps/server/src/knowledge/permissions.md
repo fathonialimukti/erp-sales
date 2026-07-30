@@ -37,6 +37,10 @@ Examples: `region@create`, `sales-order@approve`, `user@delete`
 - `sku@create` — Create SKU categories and SKUs
 - `sku@update` — Edit SKU categories and SKUs
 - `sku@delete` — Delete SKU categories and SKUs
+- `skuCategory@read` — Read SKU categories
+- `skuCategory@create` — Create SKU categories
+- `skuCategory@update` — Update SKU categories
+- `skuCategory@delete` — Delete SKU categories
 
 ### Sales Order
 - `sales-order@read` — View sales orders

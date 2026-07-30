@@ -14,8 +14,8 @@ const messages: Record<ServerLocale, Record<string, string>> = {
     'auth.authenticationRequired': 'Authentication required',
     'auth.noRoleAssigned': 'No role assigned',
     'auth.insufficientPermissions': 'Insufficient permissions',
-
-    // Notification
+    'auth.rateLimitExceeded': 'Too many login attempts. Please try again later.',
+    'auth.csrfTokenInvalid': 'Invalid CSRF token',
     'notification.notFound': 'Notification not found',
     'notification.noAccess': 'You do not have access to this notification',
     'notification.noRecipients': 'No recipients specified.',
@@ -48,8 +48,8 @@ const messages: Record<ServerLocale, Record<string, string>> = {
     'auth.authenticationRequired': 'Autentikasi diperlukan',
     'auth.noRoleAssigned': 'Tidak ada peran yang ditetapkan',
     'auth.insufficientPermissions': 'Izin tidak mencukupi',
-
-    // Notification
+    'auth.rateLimitExceeded': 'Terlalu banyak upaya login. Silakan coba lagi nanti.',
+    'auth.csrfTokenInvalid': 'Token CSRF tidak valid',
     'notification.notFound': 'Notifikasi tidak ditemukan',
     'notification.noAccess': 'Anda tidak memiliki akses ke notifikasi ini',
     'notification.noRecipients': 'Tidak ada penerima yang ditentukan.',

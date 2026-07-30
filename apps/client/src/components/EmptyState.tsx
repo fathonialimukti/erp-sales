@@ -27,7 +27,7 @@ export const EmptyState = ({
   // Quiet content surface — accent only on the icon plate
   const plateStyle = accent
     ? ({
-        backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`,
+        backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)`,
         color: accent,
       } satisfies CSSProperties)
     : undefined;

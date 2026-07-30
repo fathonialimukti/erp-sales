@@ -148,8 +148,8 @@ export const RegionDetailPage = () => {
 
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <CardTitle className="flex items-center gap-2 font-heading text-base font-bold">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-region)_8%,transparent)] text-[var(--module-region)]">
               <Map className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "region.detail.summary", defaultMessage: "Summary" })}
@@ -158,22 +158,22 @@ export const RegionDetailPage = () => {
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1">
-              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {intl.formatMessage({ id: "region.detail.code_label", defaultMessage: "Code" })}
-              </dt>
-              <dd className="font-mono text-sm text-foreground">{region.code ?? "—"}</dd>
+            <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              {intl.formatMessage({ id: "region.detail.code_label", defaultMessage: "Code" })}
+            </dt>
+            <dd className="font-mono text-sm font-normal text-foreground">{region.code ?? "—"}</dd>
             </div>
             <div className="space-y-1">
-              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {intl.formatMessage({ id: "region.detail.name_label", defaultMessage: "Name" })}
-              </dt>
-              <dd className="text-sm font-medium text-foreground">{region.name}</dd>
+            <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              {intl.formatMessage({ id: "region.detail.name_label", defaultMessage: "Name" })}
+            </dt>
+            <dd className="text-sm font-normal text-foreground">{region.name}</dd>
             </div>
             <div className="space-y-1">
-              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {intl.formatMessage({ id: "region.detail.areas_label", defaultMessage: "Areas" })}
               </dt>
-              <dd className="text-sm tabular-nums text-foreground">{region.areas.length}</dd>
+              <dd className="text-sm font-normal tabular-nums text-foreground">{region.areas.length}</dd>
             </div>
           </dl>
         </CardContent>
@@ -181,8 +181,8 @@ export const RegionDetailPage = () => {
 
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <CardTitle className="flex items-center gap-2 font-heading text-base font-bold">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-region)_8%,transparent)] text-[var(--module-region)]">
               <MapPin className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "region.detail.areas_title", defaultMessage: "Areas" })}
@@ -209,17 +209,17 @@ export const RegionDetailPage = () => {
                   <button
                     type="button"
                     onClick={() => navigate(`/area/${area.id}`)}
-                    className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-region)_8%,transparent)] text-[var(--module-region)]">
                       <MapPin className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-foreground">
+                      <span className="block truncate text-sm font-semibold text-foreground">
                         {area.name}
                       </span>
                       {area.code ? (
-                        <span className="block font-mono text-xs text-muted-foreground">
+                        <span className="block font-mono text-xs text-foreground">
                           {area.code}
                         </span>
                       ) : null}

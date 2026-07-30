@@ -41,7 +41,7 @@ export const KpiCard = ({
   const accent = moduleCssVar(module);
   const plateStyle = accent
     ? ({
-        backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`,
+        backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)`,
         color: accent,
       } satisfies CSSProperties)
     : undefined;
@@ -49,20 +49,13 @@ export const KpiCard = ({
   const showDelta = delta !== undefined && delta !== null;
   const deltaUp = showDelta && delta >= 0;
 
-  const cardWash = accent
-    ? ({
-        backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${accent} 12%, transparent), transparent 65%)`,
-      } satisfies CSSProperties)
-    : undefined;
-
   return (
     <Card
       className={cn(
-        "overflow-hidden border-border/70 shadow-sm ring-1 ring-black/2",
-        !accent && "border-primary/10 bg-primary/[0.03]",
+        "overflow-hidden border-border/70 shadow-sm",
+        !accent && "border-primary/10 bg-primary/[0.04]",
         className,
       )}
-      style={cardWash}
       data-slot="kpi-card"
       data-module={module}
     >
@@ -81,10 +74,10 @@ export const KpiCard = ({
         ) : null}
 
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             {label}
           </p>
-          <p className="font-heading text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+          <p className="font-heading text-2xl font-bold tracking-tight text-foreground tabular-nums">
             {value}
           </p>
           {showDelta ? (

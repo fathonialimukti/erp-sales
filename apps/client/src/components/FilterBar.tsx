@@ -39,7 +39,7 @@ export const FilterBar = ({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border border-border/70 bg-card/50 p-3 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
       data-slot="filter-bar"

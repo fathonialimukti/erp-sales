@@ -83,7 +83,7 @@ export const UserAvatarMenu = ({
       <button
         type="button"
         className={cn(
-          "flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-card/60 px-2.5 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+          "flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-card px-2.5 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
         aria-label={ariaLabel}
