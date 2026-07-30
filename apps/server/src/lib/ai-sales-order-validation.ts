@@ -150,7 +150,7 @@ Provide your validation analysis in the required JSON format.`;
 
   const { output } = await generateText({
     model: chatModel,
-    system: systemPrompt,
+    instructions: systemPrompt,
     prompt: userPrompt,
     output: Output.object({
       schema: aiValidationResultSchema,

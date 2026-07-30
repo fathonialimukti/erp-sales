@@ -32,8 +32,8 @@ export const NavButtonGroup = ({
       data-slot="nav-button-group"
       className={cn(
         "inline-flex w-fit items-center rounded-lg border border-border bg-card p-0.5 shadow-sm",
-        "[&_[data-slot=button]]:rounded-md",
-        "[&_[data-slot=button]]:shadow-none",
+        "**:data-[slot=button]:rounded-md",
+        "**:data-[slot=button]:shadow-none",
         className,
       )}
     >

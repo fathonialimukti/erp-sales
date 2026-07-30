@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { parse as parseCookie } from 'cookie';
+import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import {
     streamText,
@@ -384,7 +384,7 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
         execute: ({ writer }) => {
             const result = streamText({
                 model: chatModel,
-                system: buildAdminSystemPrompt(userName, roleName, userPermissions, relevantContext),
+                instructions: buildAdminSystemPrompt(userName, roleName, userPermissions, relevantContext),
                 messages: modelMessages,
                 temperature: 0,
                 // serverTools.searchKnowledge executes on the server (docs chip).

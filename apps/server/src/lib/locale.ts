@@ -1,4 +1,4 @@
-import { parse } from 'cookie';
+import { parseCookie } from 'cookie';
 
 export type ServerLocale = 'en' | 'id';
 export const DEFAULT_LOCALE: ServerLocale = 'en';
@@ -80,7 +80,7 @@ const messages: Record<ServerLocale, Record<string, string>> = {
 
 export const parseLocaleCookie = (cookieHeader?: string): ServerLocale => {
   if (!cookieHeader) return DEFAULT_LOCALE;
-  const cookies = parse(cookieHeader);
+  const cookies = parseCookie(cookieHeader);
   const candidate = cookies[LOCALE_COOKIE_NAME];
   if (candidate === 'id') return 'id';
   return DEFAULT_LOCALE;

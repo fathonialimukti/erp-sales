@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { parse as parseCookie } from 'cookie';
+import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { generateObject } from 'ai';
 import { chatModel } from '../lib/ai-provider.js';
@@ -54,7 +54,7 @@ export async function aiExtractSalesOrderHandler(req: Request, res: Response) {
     try {
         const { object } = await generateObject({
             model: chatModel,
-            system: EXTRACT_SYSTEM,
+            instructions: EXTRACT_SYSTEM,
             prompt: text,
             schema: createSalesOrderSchema,
             temperature: 0,

@@ -481,7 +481,7 @@ export const SalesOrderIndexPage = () => {
                 setPagination((p) => ({ ...p, pageIndex: 0 }));
               }}
             >
-              <SelectTrigger size="sm" className="w-[160px]" aria-label={intl.formatMessage({ id: "sales_order.index.filter_status", defaultMessage: "Filter by status" })}>
+              <SelectTrigger size="sm" className="w-40" aria-label={intl.formatMessage({ id: "sales_order.index.filter_status", defaultMessage: "Filter by status" })}>
                 <SelectValue
                   placeholder={intl.formatMessage({
                     id: "sales_order.index.all_statuses",
@@ -528,7 +528,7 @@ export const SalesOrderIndexPage = () => {
                 setPagination((p) => ({ ...p, pageIndex: 0 }));
               }}
             >
-              <SelectTrigger size="sm" className="w-[140px]" aria-label={intl.formatMessage({ id: "sales_order.index.sort_by", defaultMessage: "Sort by" })}>
+              <SelectTrigger size="sm" className="w-35" aria-label={intl.formatMessage({ id: "sales_order.index.sort_by", defaultMessage: "Sort by" })}>
                 <SelectValue
                   placeholder={intl.formatMessage({
                     id: "sales_order.index.sort_by",

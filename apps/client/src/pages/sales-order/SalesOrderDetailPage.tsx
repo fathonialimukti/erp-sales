@@ -463,7 +463,7 @@ export const SalesOrderDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order">
               <UserRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "sales_order.detail.summary", defaultMessage: "Summary" })}
@@ -601,7 +601,7 @@ export const SalesOrderDetailPage = () => {
                     className={cn(
                       "flex size-8 items-center justify-center rounded-full border text-xs",
                       isCompleted && "border-emerald-500 bg-emerald-500 text-white",
-                      isCurrent && !isRejected && "border-[var(--module-order)] bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]",
+                      isCurrent && !isRejected && "border-module-order bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order",
                       isRejected && "border-destructive bg-destructive text-white",
                       !isCompleted && !isCurrent && !isRejected && "border-border text-muted-foreground",
                     )}
@@ -632,7 +632,7 @@ export const SalesOrderDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order">
               <Package className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "sales_order.detail.items", defaultMessage: "Items" })}
@@ -692,7 +692,7 @@ export const SalesOrderDetailPage = () => {
                   <tr key={item.id} className="border-b last:border-0">
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-[var(--module-sku)]">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-module-sku">
                           <Package className="size-4" aria-hidden />
                         </span>
                         <div className="min-w-0">
@@ -756,7 +756,7 @@ export const SalesOrderDetailPage = () => {
                   defaultMessage: "Grand total",
                 })}
               </span>
-              <span className="tabular-nums text-[var(--module-order)]">
+              <span className="tabular-nums text-module-order">
                 {formatCurrency(record.grandTotal ?? 0)}
               </span>
             </div>
@@ -768,7 +768,7 @@ export const SalesOrderDetailPage = () => {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order">
                 <StickyNote className="size-4" aria-hidden />
               </span>
               {intl.formatMessage({ id: "sales_order.detail.notes", defaultMessage: "Notes" })}
@@ -789,7 +789,7 @@ export const SalesOrderDetailPage = () => {
           onClick={() => setApprovalHistoryOpen((v) => !v)}
         >
           <span className="flex items-center gap-2 font-heading text-base font-semibold">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order">
               <CheckCircle2 className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({

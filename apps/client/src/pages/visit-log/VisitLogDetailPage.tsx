@@ -280,7 +280,7 @@ export const VisitLogDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-visit)_8%,transparent)] text-[var(--module-visit)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-visit)_8%,transparent)] text-module-visit">
               <ClipboardList className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "visit_log.detail.summary", defaultMessage: "Summary" })}
@@ -360,7 +360,7 @@ export const VisitLogDetailPage = () => {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order">
                 <ShoppingCart className="size-4" aria-hidden />
               </span>
               {intl.formatMessage({
@@ -378,7 +378,7 @@ export const VisitLogDetailPage = () => {
               onClick={() => navigate(`/sales-order/${visitLog.salesOrder!.id}`)}
               className="flex w-full cursor-pointer items-center gap-3 px-6 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-[var(--module-order)]">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order">
                 <ShoppingCart className="size-4" aria-hidden />
               </span>
               <span className="min-w-0 flex-1">

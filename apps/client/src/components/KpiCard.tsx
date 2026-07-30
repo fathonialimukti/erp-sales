@@ -53,7 +53,7 @@ export const KpiCard = ({
     <Card
       className={cn(
         "overflow-hidden border-border/70 shadow-sm",
-        !accent && "border-primary/10 bg-primary/[0.04]",
+        !accent && "border-primary/10 bg-primary/4",
         className,
       )}
       data-slot="kpi-card"

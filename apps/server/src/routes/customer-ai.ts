@@ -43,7 +43,7 @@ export async function customerAiChatHandler(req: Request, res: Response) {
         execute: ({ writer }) => {
             const result = streamText({
                 model: chatModel,
-                system: SYSTEM_PROMPT,
+                instructions: SYSTEM_PROMPT,
                 messages: modelMessages,
                 temperature: 0.3,
                 tools: customerAiTools,

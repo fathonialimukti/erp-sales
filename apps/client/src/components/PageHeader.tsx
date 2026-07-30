@@ -111,7 +111,7 @@ export const PageHeader = ({
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-0 left-0 w-[3px]",
+          "absolute inset-y-0 left-0 w-0.75",
           isModuleHeader ? "bg-white/40" : undefined,
         )}
         style={isModuleHeader ? undefined : { backgroundColor: railColor }}
@@ -200,7 +200,7 @@ export const PageHeader = ({
                 // mode and would render white-on-white). oklch(0.16…) ≈ the
                 // light-mode foreground black; hardcoded so the button reads
                 // the same in both light + dark mode. ~16:1 on white = AAA.
-                "[&_[data-slot=button][data-variant=default]]:bg-white [&_[data-slot=button][data-variant=default]]:!text-[oklch(0.16_0.02_260)] [&_[data-slot=button][data-variant=default]]:hover:bg-white/90 [&_[data-slot=button][data-variant=default]]:border-transparent",
+                "[&_[data-slot=button][data-variant=default]]:bg-white [&_[data-slot=button][data-variant=default]]:text-[oklch(0.16_0.02_260)]! [&_[data-slot=button][data-variant=default]]:hover:bg-white/90 [&_[data-slot=button][data-variant=default]]:border-transparent",
             )}
           >
             {actions}

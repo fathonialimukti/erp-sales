@@ -219,7 +219,7 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
       model: chatModel,
       tools,
       stopWhen: stepCountIs(8),
-      system,
+      instructions: system,
       prompt: promptParts.join('\n\n'),
       temperature: 0.3,
     });

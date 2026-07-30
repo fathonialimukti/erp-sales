@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { parse as parseCookie } from 'cookie';
+import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import {
     streamText,
@@ -176,7 +176,7 @@ export async function aiChatHandler(req: Request, res: Response) {
         execute: ({ writer }) => {
             const result = streamText({
                 model: chatModel,
-                system: buildSystemPrompt(userName, roleName, permissions, relevantContext),
+                instructions: buildSystemPrompt(userName, roleName, permissions, relevantContext),
                 messages: modelMessages,
                 temperature: 0,
                 // serverTools (searchKnowledge) include execute — run on server.
@@ -319,7 +319,7 @@ export async function aiSummarizeHandler(req: Request, res: Response) {
         execute: ({ writer }) => {
             const result = streamText({
                 model: chatModel,
-                system: SUMMARIZE_SYSTEM,
+                instructions: SUMMARIZE_SYSTEM,
                 prompt: `Page section: ${section}\n\nContext:\n${userText}`,
                 temperature: 0,
             });
@@ -353,7 +353,7 @@ export async function aiDraftHandler(req: Request, res: Response) {
         execute: ({ writer }) => {
             const result = streamText({
                 model: chatModel,
-                system: DRAFT_SYSTEM,
+                instructions: DRAFT_SYSTEM,
                 prompt: `Page section: ${section}\nDraft type: ${kind ?? 'followup'}\n\nContext:\n${userText}`,
                 temperature: 0.4,
             });

@@ -5,7 +5,7 @@ export const createCustomerContactSchema = z.object({
   outletId: z.string().optional().nullable(),
   name: z.string().min(1, 'Contact name is required'),
   title: z.string().optional(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  email: z.email('Invalid email').optional().or(z.literal('')),
   phone: z.string().optional(),
   isPrimary: z.boolean().default(false),
 });
@@ -16,7 +16,7 @@ export const updateCustomerContactSchema = z.object({
   outletId: z.string().optional().nullable(),
   name: z.string().min(1, 'Contact name is required'),
   title: z.string().optional(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  email: z.email('Invalid email').optional().or(z.literal('')),
   phone: z.string().optional(),
   isPrimary: z.boolean().default(false),
 });

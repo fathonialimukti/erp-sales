@@ -651,7 +651,7 @@ export const Dashboard = () => {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex h-[280px] flex-col items-center justify-center gap-1 text-center">
+              <div className="flex h-70 flex-col items-center justify-center gap-1 text-center">
                 <p className="text-sm font-medium text-foreground">
                   {intl.formatMessage({
                     id: "dashboard.chart.no_data",
@@ -737,7 +737,7 @@ export const Dashboard = () => {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex h-[280px] flex-col items-center justify-center gap-1 text-center">
+              <div className="flex h-70 flex-col items-center justify-center gap-1 text-center">
                 <p className="text-sm font-medium text-foreground">
                   {intl.formatMessage({
                     id: "dashboard.chart.no_data",
@@ -821,7 +821,7 @@ export const Dashboard = () => {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex h-[280px] flex-col items-center justify-center gap-1 text-center">
+              <div className="flex h-70 flex-col items-center justify-center gap-1 text-center">
                 <p className="text-sm font-medium text-foreground">
                   {intl.formatMessage({
                     id: "dashboard.chart.no_data",

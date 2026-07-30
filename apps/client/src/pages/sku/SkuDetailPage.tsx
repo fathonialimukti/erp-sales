@@ -151,7 +151,7 @@ export const SkuDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-[var(--module-sku)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-sku)_8%,transparent)] text-module-sku">
               <Package className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "sku.detail.summary", defaultMessage: "Summary" })}

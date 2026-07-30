@@ -1,0 +1,16 @@
+{
+  "files.readonlyInclude": {
+    "**/prisma/generated/**": true
+  },
+  "files.watcherExclude": {
+    "**/prisma/generated/**": true
+  },
+  "search.exclude": {
+    "**/prisma/generated/**": true
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.turbo": true,
+    "**/prisma/generated/schema.prisma": true
+  }
+}

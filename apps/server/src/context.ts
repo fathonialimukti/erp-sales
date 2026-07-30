@@ -1,5 +1,5 @@
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import { parse, serialize } from 'cookie';
+import { parseCookie, stringifySetCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { prisma, type DbClient } from './lib/prisma.js';
 import { parseLocaleCookie, ServerLocale, DEFAULT_LOCALE } from './lib/locale.js';
@@ -29,7 +29,7 @@ export type RequestContext = {
 const getTokenFromRequest = (req: CreateExpressContextOptions['req']) => {
     const cookieHeader = req.headers.cookie;
     if (cookieHeader) {
-        const cookies = parse(cookieHeader);
+        const cookies = parseCookie(cookieHeader);
         if (cookies.access_token) return cookies.access_token;
     }
 
@@ -64,12 +64,14 @@ export const createContext = ({ req, res }: CreateExpressContextOptions) => {
     const locale = parseLocaleCookie(req.headers.cookie ?? undefined) ?? DEFAULT_LOCALE;
 
     const cookieHeader = req.headers.cookie;
-    const cookies = cookieHeader ? parse(cookieHeader) : {};
+    const cookies = cookieHeader ? parseCookie(cookieHeader) : {};
     const csrfToken = cookies[CSRF_COOKIE_NAME] ?? generateCsrfToken();
 
     res.setHeader(
         'Set-Cookie',
-        serialize(CSRF_COOKIE_NAME, csrfToken, {
+        stringifySetCookie({
+            name: CSRF_COOKIE_NAME,
+            value: csrfToken,
             httpOnly: true,
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production',

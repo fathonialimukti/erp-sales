@@ -173,7 +173,7 @@ export const Topbar = () => {
 
       <div className="flex items-center gap-1.5 sm:gap-2">
         <div
-          className="hidden items-center gap-1.5 rounded-full border border-border bg-primary/[0.06] px-2.5 py-1.5 text-xs font-medium text-primary tabular-nums sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-full border border-border bg-primary/6 px-2.5 py-1.5 text-xs font-medium text-primary tabular-nums sm:inline-flex"
           aria-hidden
           title={intl.formatMessage({
             id: "common.time",

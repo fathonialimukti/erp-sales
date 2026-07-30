@@ -111,7 +111,7 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
         <section
           key={stage}
           className={cn(
-            "flex min-h-[280px] w-[290px] shrink-0 flex-col overflow-hidden rounded-xl border border-t-[3px] bg-card shadow-sm",
+            "flex min-h-70 w-72.5 shrink-0 flex-col overflow-hidden rounded-xl border border-t-[3px] bg-card shadow-sm",
             STAGE_ACCENT[stage],
           )}
           role="listitem"
@@ -124,7 +124,7 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
               </h3>
               <span
                 className={cn(
-                  "inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
+                  "inline-flex min-w-5.5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
                   STAGE_COUNT[stage],
                 )}
               >

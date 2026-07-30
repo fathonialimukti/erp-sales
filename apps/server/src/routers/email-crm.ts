@@ -285,7 +285,7 @@ export const emailCrmRouter = router({
 
       const { text } = await generateText({
         model: chatModel,
-        system,
+        instructions: system,
         prompt: promptParts.join('\n\n'),
       });
 

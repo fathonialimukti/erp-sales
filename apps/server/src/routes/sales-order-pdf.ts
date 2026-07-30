@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { parse as parseCookie } from 'cookie';
+import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { Prisma } from '../prisma/generated/client';
 import { prisma } from '../lib/prisma.js';

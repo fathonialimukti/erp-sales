@@ -258,7 +258,7 @@ export const Sidebar = () => {
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label={searchOpenLabel}
-            className="group relative flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border border-border bg-primary/[0.06] px-2.5 py-2 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
+            className="group relative flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border border-border bg-primary/6 px-2.5 py-2 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <Search className="size-4" aria-hidden />
@@ -318,7 +318,7 @@ export const Sidebar = () => {
                 className={cn(
                   "flex flex-col gap-0.5",
                   !isCollapsed &&
-                    "rounded-xl border border-border bg-primary/[0.03] p-1",
+                    "rounded-xl border border-border bg-primary/3 p-1",
                 )}
               >
                 {section.items.map((item) => {

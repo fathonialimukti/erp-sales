@@ -167,7 +167,7 @@ export const RoleDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-module-user">
               <Shield className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "roles.detail.summary", defaultMessage: "Summary" })}
@@ -212,7 +212,7 @@ export const RoleDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-module-user">
               <KeyRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "roles.detail.permissions", defaultMessage: "Permissions" })}
@@ -259,7 +259,7 @@ export const RoleDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-[var(--module-user)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-user)_8%,transparent)] text-module-user">
               <Users className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({

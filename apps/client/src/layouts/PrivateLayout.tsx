@@ -44,7 +44,7 @@ export const PrivateLayout = () => {
       <div
         className={cn(
           "flex min-h-screen min-w-0 flex-col gap-3 p-3 transition-[margin] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none",
-          sidebarOpen ? "ml-[calc(0.75rem+17rem)]" : "ml-[calc(0.75rem+5rem)]",
+          sidebarOpen ? "ml-71" : "ml-23",
         )}
       >
         <Topbar />

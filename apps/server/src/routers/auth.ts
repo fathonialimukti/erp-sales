@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { serialize } from 'cookie';
+import { stringifySetCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 import { verifyPassword } from '../lib/password.js';
@@ -15,7 +15,9 @@ const JWT_SECRET = getJwtSecret();
 const TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
 
 const createAuthCookie = (token: string, rememberMe?: boolean) =>
-    serialize('access_token', token, {
+    stringifySetCookie({
+        name: 'access_token',
+        value: token,
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
@@ -24,7 +26,9 @@ const createAuthCookie = (token: string, rememberMe?: boolean) =>
     });
 
 const clearAuthCookie = () =>
-    serialize('access_token', '', {
+    stringifySetCookie({
+        name: 'access_token',
+        value: '',
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',

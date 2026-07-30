@@ -279,8 +279,8 @@ export function DataTable<T>({
                     key={row.id}
                     className={cn(
                       "border-b border-border transition-colors",
-                      index % 2 === 1 && "bg-primary/[0.025]",
-                      "hover:bg-primary/[0.06]",
+                      index % 2 === 1 && "bg-primary/2.5",
+                      "hover:bg-primary/6",
                       onRowClick && "cursor-pointer",
                       selectedClass,
                     )}

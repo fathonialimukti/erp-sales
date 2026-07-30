@@ -154,7 +154,7 @@ export const OutletDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_8%,transparent)] text-[var(--module-outlet)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-outlet)_8%,transparent)] text-module-outlet">
               <Store className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "outlet.detail.summary", defaultMessage: "Summary" })}
@@ -213,7 +213,7 @@ export const OutletDetailPage = () => {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-heading text-base">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_8%,transparent)] text-[var(--module-customer)]">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_8%,transparent)] text-module-customer">
               <UserRound className="size-4" aria-hidden />
             </span>
             {intl.formatMessage({ id: "outlet.detail.contacts_title", defaultMessage: "Contacts" })}
@@ -241,7 +241,7 @@ export const OutletDetailPage = () => {
               {outlet.contacts?.map((contact) => (
                 <li key={contact.id}>
                   <div className="flex w-full items-center gap-3 px-6 py-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_8%,transparent)] text-[var(--module-customer)]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-customer)_8%,transparent)] text-module-customer">
                       <UserRound className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">

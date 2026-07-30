@@ -63,7 +63,7 @@ export const RouteErrorPage = () => {
               })}
             </p>
             <CardTitle className="font-heading text-xl">{title}</CardTitle>
-            <CardDescription className="whitespace-pre-wrap break-words">
+            <CardDescription className="whitespace-pre-wrap wrap-break-word">
               {detail}
             </CardDescription>
           </CardHeader>

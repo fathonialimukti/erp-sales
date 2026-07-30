@@ -197,7 +197,7 @@ export const PublicLayout = () => {
               >
                 <SelectTrigger
                   aria-label={t("login.language_label", "Language")}
-                  className="h-9 w-[9.5rem] bg-card"
+                  className="h-9 w-38 bg-card"
                 >
                   <SelectValue />
                 </SelectTrigger>
