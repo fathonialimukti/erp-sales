@@ -21,6 +21,7 @@ import { useToast } from "../../components/useToast";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { API_BASE_URL } from "@/lib/api-base";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -95,7 +96,7 @@ export const EventProposalDetailPage = () => {
     };
 
     try {
-      const res = await fetch("http://localhost:10022/api/ai/draft", {
+      const res = await fetch(`${API_BASE_URL}/api/ai/draft`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

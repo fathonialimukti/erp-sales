@@ -1,7 +1,7 @@
 ---
 name: "Code Reviewer"
 description: "Standalone code review and testing agent for this ERP monorepo. Use directly for simple quality tasks: review a diff, audit for bloat, check coverage, list session changes, or recommend commit/push. No orchestrator required. Hunts over-engineering with ponytail-review / ponytail-audit / ponytail-debt; never commits or pushes."
-tools: [vscode, execute, read, edit, search, web, browser, todo, ms-azuretools.vscode-containers, ms-python.python, Prisma.prisma, 'context7/*', 'prisma/*', 'prisma-local/*', 'chrome-devtools/*', 'playwright/*', 'shadcn/*', 'threejs-devtools/*', 'pylance-mcp-server/*']
+tools: [vscode, execute, agent,read, edit, search, web, browser, todo, ms-azuretools.vscode-containers, ms-python.python, Prisma.prisma, 'context7/*', 'prisma/*', 'prisma-local/*', 'chrome-devtools/*', 'playwright/*', 'shadcn/*', 'threejs-devtools/*', 'pylance-mcp-server/*']
 agents: ["Code Reviewer"]
 user-invocable: true
 ---

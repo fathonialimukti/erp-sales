@@ -42,6 +42,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/lib/api-base";
 import { trpcClient } from "../lib/trpc";
 import { authUserAtom, hasPermissionAtom } from "../lib/atoms";
 import { icons } from "../assets/icons";
@@ -168,7 +169,7 @@ export const Dashboard = () => {
     setInsightError("");
 
     try {
-      const res = await fetch("http://localhost:10022/api/ai/chat", {
+      const res = await fetch(`${API_BASE_URL}/api/ai/chat`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

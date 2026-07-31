@@ -99,10 +99,31 @@ async function resolveConversationId(
   }
 
   // Header threading: same sender without reply headers → NEW conversation
+  const subject = payload.subject?.trim();
+  const existing = subject
+    ? await prisma.emailConversation.findFirst({
+        where: { email, subject, status: 'OPEN' },
+        orderBy: { lastMessageAt: 'desc' },
+        select: { id: true },
+      })
+    : await prisma.emailConversation.findFirst({
+        where: { email, subject: null, status: 'OPEN' },
+        orderBy: { lastMessageAt: 'desc' },
+        select: { id: true },
+      });
+
+  if (existing) {
+    await prisma.emailConversation.update({
+      where: { id: existing.id },
+      data: { lastMessageAt: new Date() },
+    });
+    return existing.id;
+  }
+
   const created = await prisma.emailConversation.create({
     data: {
       email,
-      subject: payload.subject,
+      subject: subject || null,
       lastMessageAt: new Date(),
       customerId: linkedCustomerId,
     },

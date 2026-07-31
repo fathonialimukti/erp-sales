@@ -58,9 +58,11 @@
       />
     </noscript>
 
-    <!-- Preconnect for API -->
-    <link rel="preconnect" href="http://localhost:10022" />
-    <link rel="dns-prefetch" href="http://localhost:10022" />
+    <!-- Preconnect for API. %VITE_TRPC_URL% is substituted at build time by Vite.
+         Set in devcontainer; in bare local dev without the env var the token may
+         render literally, which is a no-op preconnect and does not break runtime. -->
+    <link rel="preconnect" href="%VITE_TRPC_URL%" />
+    <link rel="dns-prefetch" href="%VITE_TRPC_URL%" />
   </head>
 
   <body>

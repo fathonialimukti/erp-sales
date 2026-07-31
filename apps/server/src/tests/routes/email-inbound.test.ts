@@ -264,6 +264,110 @@ describe('processInboundEmail', () => {
     if ('skipped' in second) throw new Error('skip');
     expect(second.conversationId).toBe(first.conversationId);
   });
+
+  it('reuses OPEN conversation for same sender + same subject (no reply headers)', async () => {
+    const email = `subj-${randomUUID()}@example.com`;
+    const a = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Same topic',
+      text: 'Hello 1',
+      messageId: `<subj-a-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in a) throw new Error('skip');
+    createdConversationIds.push(a.conversationId);
+
+    const b = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Same topic',
+      text: 'Hello 2',
+      messageId: `<subj-b-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in b) throw new Error('skip');
+    createdConversationIds.push(b.conversationId);
+
+    expect(b.conversationId).toBe(a.conversationId);
+  });
+
+  it('reuses OPEN subjectless conversation for same sender (no subject, no reply headers)', async () => {
+    const email = `nosubj-${randomUUID()}@example.com`;
+    const a = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      text: 'No subject 1',
+      messageId: `<nosubj-a-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in a) throw new Error('skip');
+    createdConversationIds.push(a.conversationId);
+
+    const b = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      text: 'No subject 2',
+      messageId: `<nosubj-b-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in b) throw new Error('skip');
+    createdConversationIds.push(b.conversationId);
+
+    expect(b.conversationId).toBe(a.conversationId);
+  });
+
+  it('strips Re: prefix for subject lookup so replies thread onto original', async () => {
+    const email = `re-${randomUUID()}@example.com`;
+    const a = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Quote request',
+      text: 'Original',
+      messageId: `<re-a-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in a) throw new Error('skip');
+    createdConversationIds.push(a.conversationId);
+
+    const b = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Re: Quote request',
+      text: 'Reply without headers',
+      messageId: `<re-b-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in b) throw new Error('skip');
+    createdConversationIds.push(b.conversationId);
+
+    expect(b.conversationId).toBe(a.conversationId);
+
+    const conversation = await prisma.emailConversation.findUnique({
+      where: { id: a.conversationId },
+      select: { subject: true },
+    });
+    expect(conversation?.subject).toBe('Quote request');
+  });
+
+  it('creates NEW conversation when matching conversation is CLOSED', async () => {
+    const email = `closed-${randomUUID()}@example.com`;
+    const closed = await prisma.emailConversation.create({
+      data: {
+        email,
+        subject: 'Closed topic',
+        status: 'CLOSED',
+        lastMessageAt: new Date(),
+      },
+    });
+    createdConversationIds.push(closed.id);
+
+    const result = await processInboundEmail({
+      from: email,
+      to: 'info@aetherglo.com',
+      subject: 'Closed topic',
+      text: 'Should not thread onto closed',
+      messageId: `<closed-a-${randomUUID()}@example.com>`,
+    });
+    if ('skipped' in result) throw new Error('skip');
+    createdConversationIds.push(result.conversationId);
+
+    expect(result.conversationId).not.toBe(closed.id);
+  });
 });
 
 describe('emailInboundHandler', () => {

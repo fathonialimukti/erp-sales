@@ -2,6 +2,7 @@ import { Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { API_BASE_URL } from '@/lib/api-base';
 import { cn } from '@/lib/utils';
 import { useChat } from '@ai-sdk/react';
 import { useIntl } from 'react-intl';
@@ -420,7 +421,7 @@ export const AiAssistant = () => {
     // on the server side and implement consumeSseStream in the POST handler.
     resume: true,
     transport: new DefaultChatTransport({
-      api: 'http://localhost:10022/api/ai/chat',
+      api: `${API_BASE_URL}/api/ai/chat`,
       credentials: 'include',
       // Patches SSE stream to inject missing tool-input-available events from
       // local models that emit finishReason:"other" instead of "tool-calls".
@@ -431,7 +432,7 @@ export const AiAssistant = () => {
       }),
       // Point the resume GET request at our Express resume endpoint.
       prepareReconnectToStreamRequest: ({ id }) => ({
-        api: `http://localhost:10022/api/ai/chat/${id}/stream`,
+        api: `${API_BASE_URL}/api/ai/chat/${id}/stream`,
         credentials: 'include' as RequestCredentials,
       }),
     }),
@@ -527,7 +528,7 @@ export const AiAssistant = () => {
       setPendingToolCallsVersion(v => v + 1);
 
       // Call the server endpoint to execute the query
-      fetch('http://localhost:10022/api/ai/query', {
+      fetch(`${API_BASE_URL}/api/ai/query`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -562,7 +563,7 @@ export const AiAssistant = () => {
       pendingToolCallsRef.current.add(toolCallId);
       setPendingToolCallsVersion(v => v + 1);
 
-      fetch('http://localhost:10022/api/ai/summarize', {
+      fetch(`${API_BASE_URL}/api/ai/summarize`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -674,7 +675,7 @@ export const AiAssistant = () => {
     setSummarizing(true);
     try {
       const context = collectPageContext();
-      const res = await fetch('http://localhost:10022/api/ai/summarize', {
+      const res = await fetch(`${API_BASE_URL}/api/ai/summarize`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

@@ -314,8 +314,9 @@ const SignatureBlock = ({ label, name }: { label: string; name: string }) => (
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { SOIcon } from "./SalesOrderIcons";
+import { API_BASE_URL } from "@/lib/api-base";
 
-const PDF_BASE_URL = "http://localhost:10022";
+const PDF_BASE_URL = API_BASE_URL;
 
 interface SalesOrderPdfPreviewProps {
   orderId: string | null;

@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/lib/api-base";
 
 const ROUTE_ALIASES: Record<string, string> = {
   "/": "/dashboard",
@@ -410,14 +411,14 @@ const AiAdminChatPage = () => {
     messages: initialMessages,
     resume: true,
     transport: new DefaultChatTransport({
-      api: "http://localhost:10022/api/ai/admin/chat",
+      api: `${API_BASE_URL}/api/ai/admin/chat`,
       credentials: "include",
       fetch: createPatchedFetch(),
       prepareSendMessagesRequest: ({ id, messages: msgs }) => ({
         body: { id, messages: msgs },
       }),
       prepareReconnectToStreamRequest: ({ id }) => ({
-        api: `http://localhost:10022/api/ai/admin/chat/${id}/stream`,
+        api: `${API_BASE_URL}/api/ai/admin/chat/${id}/stream`,
         credentials: "include" as RequestCredentials,
       }),
     }),
@@ -505,7 +506,7 @@ const AiAdminChatPage = () => {
       pendingToolCallsRef.current.add(toolCallId);
       setPendingToolCallsVersion((v) => v + 1);
 
-      fetch("http://localhost:10022/api/ai/query", {
+      fetch(`${API_BASE_URL}/api/ai/query`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -554,7 +555,7 @@ const AiAdminChatPage = () => {
       pendingToolCallsRef.current.add(toolCallId);
       setPendingToolCallsVersion((v) => v + 1);
 
-      fetch("http://localhost:10022/api/ai/query", {
+      fetch(`${API_BASE_URL}/api/ai/query`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -590,7 +591,7 @@ const AiAdminChatPage = () => {
       pendingToolCallsRef.current.add(toolCallId);
       setPendingToolCallsVersion((v) => v + 1);
 
-      fetch("http://localhost:10022/api/ai/summarize", {
+      fetch(`${API_BASE_URL}/api/ai/summarize`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

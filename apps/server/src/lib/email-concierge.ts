@@ -76,13 +76,15 @@ export async function applyConciergeResult(
   const validated = validateConciergeResult(input.state);
   if (!validated.ok) return validated;
 
-  const subject =
-    validated.subject ??
-    (input.conversation.subject
-      ? /^re:\s/i.test(input.conversation.subject)
-        ? input.conversation.subject
-        : `Re: ${input.conversation.subject}`
-      : 'Re: your message');
+  // Subject must be stable across all outbounds in a conversation so email
+  // clients thread them as one chat. The AI-provided finalized.subject is
+  // intentionally ignored for the SMTP send; RFC 5322 threading is handled
+  // separately via the In-Reply-To / References headers below.
+  const subject = input.conversation.subject
+    ? /^re:\s/i.test(input.conversation.subject)
+      ? input.conversation.subject
+      : `Re: ${input.conversation.subject}`
+    : 'Re: your message';
 
   const inReplyTo = input.lastInboundMessageId ?? undefined;
   const references = [input.lastInboundReferences, input.lastInboundMessageId]

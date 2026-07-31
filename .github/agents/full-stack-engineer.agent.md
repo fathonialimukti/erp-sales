@@ -1,7 +1,7 @@
 ---
 name: "Full-Stack Engineer"
 description: "Multi-domain feature orchestrator for this ERP monorepo — decomposes a feature into independent, parallelizable sub-tasks and dispatches each to a subagent. Use ONLY when work spans server + client (full CRUD, new resource, scaffold across schema/router/pages). Delegates to Backend Engineer, Frontend Engineer, and Code Reviewer. Do NOT use for simple single-stack tasks — pick Backend, Frontend, or Code Reviewer directly instead."
-tools: [vscode, edit, read, agent, search, web, browser, todo]
+tools: [vscode, execute, read, agent, browser, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, edit, search, web, todo]
 agents: ["Backend Engineer", "Frontend Engineer", "Code Reviewer"]
 user-invocable: true
 ---
