@@ -18,8 +18,6 @@ RUN apt-get install -y \
 
 RUN curl -fsSL https://gh.io/copilot-install | bash
 
-RUN copilot --version
-
 RUN bun run init
 
 CMD ["bun", "run", "dev"]
