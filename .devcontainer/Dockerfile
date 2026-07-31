@@ -18,6 +18,6 @@ RUN apt-get install -y \
 
 RUN curl -fsSL https://gh.io/copilot-install | bash
 
-RUN bun run init
-
+# Project deps + "init" script require package.json/apps/server, which are only
+# available after the workspace mount at runtime — see devcontainer.json postCreateCommand.
 CMD ["bun", "run", "dev"]

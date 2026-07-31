@@ -14,7 +14,7 @@
     "VITE_TRPC_URL": "https://erp-sales-api.aetherglo.com",
     "COPILOT_PROVIDER_BASE_URL": "https://inference.poolside.ai/v1/chat/completions",
     "COPILOT_PROVIDER_API_KEY": "sky_UXu9nseA.vrrzsPz3YTTenRiNYeWXf4sGCozzSaLy",
-    "COPILOT_MODEL": "poolside/laguna-s-2.1",
+    "COPILOT_wMODEL": "poolside/laguna-s-2.1",
     "COPILOT_PROVIDER_MAX_PROMPT_TOKENS": "256000",
     "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS": "32768"
   },
@@ -41,5 +41,8 @@
         "sst-dev.opencode"
       ]
     }
-  }
+  },
+  // Install deps + generate Prisma client after the workspace is mounted.
+  // The Dockerfile can't do this at build time because package.json isn't present until runtime.
+  "postCreateCommand": "bun install && bun run init"
 }
