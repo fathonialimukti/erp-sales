@@ -14,13 +14,13 @@ user-invocable: true
 
 **Bottom line (all agents):** `.github/copilot-instructions.md`  
 **Skills:** `.agents/skills/` · MCP: `.vscode/mcp.json`  
-**Client stack:** Tailwind + shadcn Aurora — **Frontend Engineer owns UI craft** (do not implement UI here)
+**Client stack:** Tailwind + shadcn — **Frontend Engineer owns UI craft** (do not implement UI here)
 
 ### Design pointer (pass through — do not expand)
 When dispatching Frontend (or multi-domain with client pages), embed this block only — **never** paste the full design law into prompts:
 
 ```
-Design law (FROZEN): docs/design-system/aurora-commerce-design-law.md
+Design law (FROZEN): docs/design-system
 Tokens: apps/client/src/index.css
 Motion: apps/client/src/lib/motion.ts
 UI craft owner: Frontend Engineer + ui-ux-pro-max
@@ -164,7 +164,7 @@ i18n: <domain>.* in en.json + id.json
 Reference router: apps/server/src/routers/region.ts
 Reference pages: apps/client/src/pages/Region*.tsx
 Context pack: docs/plans/<feature>/CONTEXT.md
-Design law (FROZEN): docs/design-system/aurora-commerce-design-law.md
+Design law (FROZEN): docs/design-system/
 Tokens: apps/client/src/index.css
 Motion: apps/client/src/lib/motion.ts
 UI craft owner: Frontend Engineer + ui-ux-pro-max
