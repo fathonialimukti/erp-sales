@@ -600,7 +600,7 @@ export const SalesOrderDetailPage = () => {
                   <span
                     className={cn(
                       "flex size-8 items-center justify-center rounded-full border text-xs",
-                      isCompleted && "border-emerald-500 bg-emerald-500 text-white",
+                      isCompleted && "border-success bg-success text-white",
                       isCurrent && !isRejected && "border-module-order bg-[color-mix(in_srgb,var(--module-order)_8%,transparent)] text-module-order",
                       isRejected && "border-destructive bg-destructive text-white",
                       !isCompleted && !isCurrent && !isRejected && "border-border text-muted-foreground",

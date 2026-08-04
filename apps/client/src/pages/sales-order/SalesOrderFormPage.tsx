@@ -579,12 +579,12 @@ export const SalesOrderFormPage = () => {
       >
         {/* Validation Warnings */}
         {validationWarnings.length > 0 ? (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
-            <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5">
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-warning">
               <AlertTriangle className="size-3.5" />
               Validation Warnings
             </div>
-            <ul className="list-disc space-y-0.5 pl-4 text-xs text-amber-800 dark:text-amber-300">
+            <ul className="list-disc space-y-0.5 pl-4 text-xs text-warning">
               {validationWarnings.map((warning, idx) => (
                 <li key={idx}>{warning}</li>
               ))}
@@ -739,7 +739,7 @@ export const SalesOrderFormPage = () => {
                           </div>
                         )}
                         <input
-                          className={`flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs ${autoDiscounts[idx] ? "bg-emerald-500/5" : ""}`}
+                          className={`flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs ${autoDiscounts[idx] ? "bg-success/10" : ""}`}
                           type="number"
                           min={0}
                           value={String(item.discountPercent ?? "")}
@@ -765,7 +765,7 @@ export const SalesOrderFormPage = () => {
                         />
                         {autoDiscounts[idx] ? (
                           <span
-                            className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-emerald-600"
+                            className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-success"
                             title={`${autoDiscounts[idx].programName} - ${autoDiscounts[idx].discountPercent}%`}
                           >
                             <span>✓</span>

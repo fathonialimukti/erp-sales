@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useIntl } from "react-intl";
-import { Globe, LogIn, Menu, Sparkles } from "lucide-react";
+import { Globe, LogIn, Menu, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -130,13 +130,7 @@ export const PublicLayout = () => {
   };
 
   return (
-    <div
-      className="flex min-h-dvh flex-col bg-background text-foreground"
-      data-ai-context={JSON.stringify({
-        section: "public-layout",
-        path: location.pathname,
-      })}
-    >
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-100 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground"
@@ -157,8 +151,8 @@ export const PublicLayout = () => {
             to="/"
             className="group flex min-h-11 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 transition-transform group-hover:scale-[1.02]">
-              <Sparkles className="size-4" aria-hidden="true" />
+            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20 transition-transform group-hover:scale-[1.02]">
+              <Star className="size-4" aria-hidden="true" />
             </span>
             <span className="font-heading text-sm font-semibold tracking-tight sm:text-base">
               ERP Sales
@@ -346,7 +340,7 @@ export const PublicLayout = () => {
               <div className="max-w-sm space-y-3">
                 <div className="flex items-center gap-2.5">
                   <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20">
-                    <Sparkles className="size-4" aria-hidden="true" />
+                    <Star className="size-4" aria-hidden="true" />
                   </span>
                   <span className="font-heading text-sm font-semibold tracking-tight">
                     ERP Sales

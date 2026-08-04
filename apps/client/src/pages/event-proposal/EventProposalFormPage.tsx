@@ -120,7 +120,7 @@ export const EventProposalFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate("/eventProposal"), 1200);
+      setTimeout(() => navigate("/event-proposal"), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -140,7 +140,7 @@ export const EventProposalFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate(`/eventProposal/${id}`), 1200);
+      setTimeout(() => navigate(`/event-proposal/${id}`), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -180,7 +180,7 @@ export const EventProposalFormPage = () => {
     return (
       <section
         className="flex flex-col gap-3 pt-1 pb-6"
-        data-ai-context={JSON.stringify({ section: "eventProposal-form", loading: true })}
+        data-ai-context={JSON.stringify({ section: "event-proposal-form", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
         <Skeleton className="h-48 w-full" />
@@ -192,14 +192,14 @@ export const EventProposalFormPage = () => {
     <section
       className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
-        section: "eventProposal-form",
+        section: "event-proposal-form",
         isEdit,
         id: id ?? null,
       })}
     >
       <NavButtonGroup
         className="self-end"
-        onBack={() => navigate(isEdit && id ? `/eventProposal/${id}` : "/eventProposal")}
+        onBack={() => navigate(isEdit && id ? `/event-proposal/${id}` : "/event-proposal")}
       />
 
       <PageHeader

@@ -103,7 +103,7 @@ export const VisitLogFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate("/visitLog"), 1200);
+      setTimeout(() => navigate("/visit-log"), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -123,7 +123,7 @@ export const VisitLogFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate(`/visitLog/${id}`), 1200);
+      setTimeout(() => navigate(`/visit-log/${id}`), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -159,7 +159,7 @@ export const VisitLogFormPage = () => {
     return (
       <section
         className="flex flex-col gap-3 pt-1 pb-6"
-        data-ai-context={JSON.stringify({ section: "visitLog-form", loading: true })}
+        data-ai-context={JSON.stringify({ section: "visit-log-form", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
         <Skeleton className="h-48 w-full" />
@@ -171,14 +171,14 @@ export const VisitLogFormPage = () => {
     <section
       className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
-        section: "visitLog-form",
+        section: "visit-log-form",
         isEdit,
         id: id ?? null,
       })}
     >
       <NavButtonGroup
         className="self-end"
-        onBack={() => navigate(isEdit && id ? `/visitLog/${id}` : "/visitLog")}
+        onBack={() => navigate(isEdit && id ? `/visit-log/${id}` : "/visit-log")}
       />
 
       <PageHeader

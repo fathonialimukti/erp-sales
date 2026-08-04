@@ -10,6 +10,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
 import { EmptyState } from "../../components/EmptyState";
+import { useMeta } from "../../lib/useMeta";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "../../components/Pagination";
@@ -35,6 +36,11 @@ type ActivityLogRow = {
 export const ActivityLogsIndexPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
+
+  useMeta({
+    title: intl.formatMessage({ id: "activity_log.index.title", defaultMessage: "Activity Logs" }),
+    description: intl.formatMessage({ id: "activity_log.index.subtitle", defaultMessage: "Audit trail of all system actions." }),
+  });
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [searchInput, setSearchInput] = useState("");

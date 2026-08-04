@@ -120,7 +120,7 @@ export const ActionProgramFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate("/actionProgram"), 1200);
+      setTimeout(() => navigate("/action-program"), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -141,7 +141,7 @@ export const ActionProgramFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate(`/actionProgram/${id}`), 1200);
+      setTimeout(() => navigate(`/action-program/${id}`), 1200);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -177,7 +177,7 @@ export const ActionProgramFormPage = () => {
     return (
       <section
         className="flex flex-col gap-3 pt-1 pb-6"
-        data-ai-context={JSON.stringify({ section: "actionProgram-form", loading: true })}
+        data-ai-context={JSON.stringify({ section: "action-program-form", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
         <Skeleton className="h-48 w-full" />
@@ -189,14 +189,14 @@ export const ActionProgramFormPage = () => {
     <section
       className="flex flex-col gap-3 pt-1 pb-6"
       data-ai-context={JSON.stringify({
-        section: "actionProgram-form",
+        section: "action-program-form",
         isEdit,
         id: id ?? null,
       })}
     >
       <NavButtonGroup
         className="self-end"
-        onBack={() => navigate(isEdit && id ? `/actionProgram/${id}` : "/actionProgram")}
+        onBack={() => navigate(isEdit && id ? `/action-program/${id}` : "/action-program")}
       />
 
       <PageHeader

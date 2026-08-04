@@ -199,7 +199,7 @@ export const LoginPage = () => {
           </motion.div>
         </aside>
 
-        <div className="relative flex min-h-0 flex-col bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_55%)]">
+        <div className="relative flex min-h-0 flex-col bg-background">
           <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8">
             <motion.div className="w-full max-w-md" variants={pageEnter} {...enterProps}>
               <Card className="border-border bg-card shadow-sm">
@@ -377,7 +377,7 @@ export const LoginPage = () => {
                   </form>
                 </CardContent>
 
-                <CardFooter className="justify-center gap-2 border-t pt-6 text-xs text-muted-foreground">
+                <CardFooter className="justify-center gap-2 border-t pt-6 text-sm text-muted-foreground">
                   <ShieldCheck className="size-4 text-primary" />
                   <span>{intl.formatMessage({ id: "login.secure_note" })}</span>
                 </CardFooter>
@@ -385,7 +385,7 @@ export const LoginPage = () => {
             </motion.div>
           </div>
 
-          <div className="px-4 pb-6 text-center text-xs text-muted-foreground sm:px-8">
+          <div className="px-4 pb-6 text-center text-sm text-muted-foreground sm:px-8">
             {intl.formatMessage({ id: "login.copyright" }, { year: copyrightYear })}
           </div>
         </div>

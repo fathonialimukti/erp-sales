@@ -36,9 +36,9 @@ export const EventProposalIndexPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canCreate = hasPermission("eventProposal@create");
-  const canUpdate = hasPermission("eventProposal@update");
-  const canDelete = hasPermission("eventProposal@delete");
+  const canCreate = hasPermission("event-proposal@create");
+  const canUpdate = hasPermission("event-proposal@update");
+  const canDelete = hasPermission("event-proposal@delete");
   const toast = useToast();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -126,13 +126,13 @@ export const EventProposalIndexPage = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate(`/eventProposal/${row.original.id}`)}>
+                <DropdownMenuItem onClick={() => navigate(`/event-proposal/${row.original.id}`)}>
                   <Eye className="size-4" />
                   {intl.formatMessage({ id: "common.action.view", defaultMessage: "View" })}
                 </DropdownMenuItem>
                 {canUpdate ? (
                   <DropdownMenuItem
-                    onClick={() => navigate(`/eventProposal/${row.original.id}/edit`)}
+                    onClick={() => navigate(`/event-proposal/${row.original.id}/edit`)}
                   >
                     <Pencil className="size-4" />
                     {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
@@ -173,7 +173,7 @@ export const EventProposalIndexPage = () => {
       toast.success(
         intl.formatMessage({
           id: "event_proposal.index.delete_success",
-          defaultMessage: "Region deleted",
+          defaultMessage: "Event proposal deleted",
         }),
       );
     } catch (e) {
@@ -187,7 +187,7 @@ export const EventProposalIndexPage = () => {
     <section
       className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
-        section: "eventProposal-index",
+        section: "event-proposal-index",
         itemCount: totalRows,
         page: pagination.pageIndex + 1,
         search,
@@ -206,7 +206,7 @@ export const EventProposalIndexPage = () => {
         })}
         actions={
           canCreate ? (
-            <Button type="button" onClick={() => navigate("/eventProposal/create")}>
+            <Button type="button" onClick={() => navigate("/event-proposal/create")}>
               <Plus className="size-4" />
               {intl.formatMessage({
                 id: "event_proposal.index.create_button",
@@ -223,7 +223,7 @@ export const EventProposalIndexPage = () => {
         data={rows}
         isLoading={isLoading}
         isError={isError}
-        onRowClick={(row) => navigate(`/eventProposal/${row.id}`)}
+        onRowClick={(row) => navigate(`/event-proposal/${row.id}`)}
         toolbar={
           <FilterBar
             search={searchInput}
@@ -269,7 +269,7 @@ export const EventProposalIndexPage = () => {
             }
             action={
               canCreate && !search ? (
-                <Button type="button" onClick={() => navigate("/eventProposal/create")}>
+                <Button type="button" onClick={() => navigate("/event-proposal/create")}>
                   <Plus className="size-4" />
                   {intl.formatMessage({
                     id: "event_proposal.index.create_button",

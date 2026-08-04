@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Sparkles,
+  Star,
   User,
   Users,
   Warehouse,
@@ -456,39 +457,7 @@ export const LandingPage = () => {
   };
 
   return (
-    <div
-      className="flex flex-1 flex-col"
-      data-ai-context={JSON.stringify({
-        section: 'landing',
-        site: 'ERP Sales — Sales Management Platform',
-        description:
-          'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office. Includes AI-powered approval workflow, email-to-order automation, and real-time analytics.',
-        features: [
-          'Customer & Outlet Management',
-          'Sales Order Processing',
-          'Visit Logging & Field Tracking',
-          'Multi-level Approval Workflow with AI Review',
-          'Email-to-Order Automation',
-          'AI Chat Assistant with RAG',
-          'Real-time Analytics',
-          'Role-based Access Control',
-        ],
-        author: {
-          name: 'Fathoni',
-          type: 'Full-Stack Developer',
-          portfolio: 'https://fathoni.dev',
-          url: 'https://fathoni.dev',
-          expertise: ['ERP Systems', 'Custom CRM', 'Business Automation', 'TypeScript', 'React', 'tRPC', 'PostgreSQL', 'Prisma'],
-        },
-        techStack: ['TypeScript', 'React', 'tRPC', 'Prisma', 'PostgreSQL', 'n8n', 'Node.js', 'Tailwind CSS', 'Vite', 'Tauri'],
-        howItWorks: [
-          { step: 1, title: 'Define Territory', description: 'Create regions and areas for your sales territory.' },
-          { step: 2, title: 'Register Customers & Outlets', description: 'Add customer profiles and link their outlets.' },
-          { step: 3, title: 'Log Visits & Place Orders', description: 'Field teams log visits and create sales orders.' },
-          { step: 4, title: 'Review Approvals & Analytics', description: 'AI-assisted multi-level approval and KPI tracking.' },
-        ],
-      })}
-    >
+    <div className="flex flex-1 flex-col">
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8">
         <div
@@ -522,7 +491,7 @@ export const LandingPage = () => {
                 variant="secondary"
                 className="gap-1.5 px-3 py-1 text-xs font-semibold"
               >
-                <Sparkles className="size-3.5 text-primary" />
+                <Star className="size-3.5 text-primary" />
                 {t("landing.badge", "ERP SALES")}
               </Badge>
             </StaggerItem>
@@ -532,7 +501,7 @@ export const LandingPage = () => {
                 <span className="block text-foreground">
                   {t("landing.v2.hero_title_lead", "Sales Management,")}
                 </span>
-                <span className="mt-1 block bg-linear-to-r from-primary to-[color-mix(in_oklch,var(--primary)_55%,var(--foreground))] bg-clip-text text-transparent">
+                <span className="mt-1 block text-primary">
                   {t("landing.v2.hero_title_accent", "Reimagined")}
                 </span>
               </h1>
@@ -585,8 +554,7 @@ export const LandingPage = () => {
           </Stagger>
 
           <motion.div className="relative" variants={fadeIn} {...softEnter}>
-            <div className="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl" aria-hidden="true" />
-            <div className="relative rounded-2xl border border-border bg-card p-3 shadow-xl shadow-primary/10">
+            <div className="relative rounded-2xl border border-border bg-card p-3">
               <div className="mb-3 flex items-center justify-between px-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("landing.v2.command_stage", "Command stage")}
@@ -998,7 +966,7 @@ export const LandingPage = () => {
           <Card className="overflow-hidden border-border/80 shadow-sm">
             <CardContent className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[220px_1fr] lg:gap-10">
               <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-                <div className="flex size-20 items-center justify-center rounded-2xl bg-primary font-heading text-3xl font-bold text-primary-foreground shadow-lg shadow-primary/25">
+                <div className="flex size-20 items-center justify-center rounded-2xl bg-primary font-heading text-3xl font-bold text-primary-foreground">
                   F
                 </div>
                 <h3 className="mt-4 font-heading text-xl font-semibold">
@@ -1093,11 +1061,11 @@ export const LandingPage = () => {
       {/* Bottom CTA band */}
       <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <Card className="overflow-hidden border-primary/20 bg-linear-to-br from-primary/10 via-card to-card shadow-md">
+          <Card className="overflow-hidden border-primary/20 bg-card shadow-md">
             <CardContent className="flex flex-col items-start gap-6 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
               <div className="space-y-2">
                 <Badge variant="secondary" className="gap-1.5">
-                  <Sparkles className="size-3.5 text-primary" />
+                  <Star className="size-3.5 text-primary" />
                   {t("landing.v2.cta_badge", "Bold CRM")}
                 </Badge>
                 <h2 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">

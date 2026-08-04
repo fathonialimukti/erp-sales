@@ -36,9 +36,9 @@ export const ActionProgramIndexPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canCreate = hasPermission("actionProgram@create");
-  const canUpdate = hasPermission("actionProgram@update");
-  const canDelete = hasPermission("actionProgram@delete");
+  const canCreate = hasPermission("action-program@create");
+  const canUpdate = hasPermission("action-program@update");
+  const canDelete = hasPermission("action-program@delete");
   const toast = useToast();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -126,13 +126,13 @@ export const ActionProgramIndexPage = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate(`/actionProgram/${row.original.id}`)}>
+                <DropdownMenuItem onClick={() => navigate(`/action-program/${row.original.id}`)}>
                   <Eye className="size-4" />
                   {intl.formatMessage({ id: "common.action.view", defaultMessage: "View" })}
                 </DropdownMenuItem>
                 {canUpdate ? (
                   <DropdownMenuItem
-                    onClick={() => navigate(`/actionProgram/${row.original.id}/edit`)}
+                    onClick={() => navigate(`/action-program/${row.original.id}/edit`)}
                   >
                     <Pencil className="size-4" />
                     {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
@@ -173,7 +173,7 @@ export const ActionProgramIndexPage = () => {
       toast.success(
         intl.formatMessage({
           id: "action_program.index.delete_success",
-          defaultMessage: "Region deleted",
+          defaultMessage: "Action program deleted",
         }),
       );
     } catch (e) {
@@ -187,7 +187,7 @@ export const ActionProgramIndexPage = () => {
     <section
       className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
-        section: "actionProgram-index",
+        section: "action-program-index",
         itemCount: totalRows,
         page: pagination.pageIndex + 1,
         search,
@@ -206,7 +206,7 @@ export const ActionProgramIndexPage = () => {
         })}
         actions={
           canCreate ? (
-            <Button type="button" onClick={() => navigate("/actionProgram/create")}>
+            <Button type="button" onClick={() => navigate("/action-program/create")}>
               <Plus className="size-4" />
               {intl.formatMessage({
                 id: "action_program.index.create_button",
@@ -223,7 +223,7 @@ export const ActionProgramIndexPage = () => {
         data={rows}
         isLoading={isLoading}
         isError={isError}
-        onRowClick={(row) => navigate(`/actionProgram/${row.id}`)}
+        onRowClick={(row) => navigate(`/action-program/${row.id}`)}
         toolbar={
           <FilterBar
             search={searchInput}
@@ -269,7 +269,7 @@ export const ActionProgramIndexPage = () => {
             }
             action={
               canCreate && !search ? (
-                <Button type="button" onClick={() => navigate("/actionProgram/create")}>
+                <Button type="button" onClick={() => navigate("/action-program/create")}>
                   <Plus className="size-4" />
                   {intl.formatMessage({
                     id: "action_program.index.create_button",

@@ -45,9 +45,9 @@ export const VisitLogIndexPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canCreate = hasPermission("visitLog@create");
-  const canUpdate = hasPermission("visitLog@update");
-  const canDelete = hasPermission("visitLog@delete");
+  const canCreate = hasPermission("visit-log@create");
+  const canUpdate = hasPermission("visit-log@update");
+  const canDelete = hasPermission("visit-log@delete");
   const toast = useToast();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -171,12 +171,12 @@ export const VisitLogIndexPage = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/visitLog/${row.original.id}`)}>
+                  <DropdownMenuItem onClick={() => navigate(`/visit-log/${row.original.id}`)}>
                     <Eye className="size-4" />
                     {intl.formatMessage({ id: "common.action.view", defaultMessage: "View" })}
                   </DropdownMenuItem>
                   {canUpdate ? (
-                    <DropdownMenuItem onClick={() => navigate(`/visitLog/${row.original.id}/edit`)}>
+                    <DropdownMenuItem onClick={() => navigate(`/visit-log/${row.original.id}/edit`)}>
                       <Pencil className="size-4" />
                       {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
                     </DropdownMenuItem>
@@ -217,7 +217,7 @@ export const VisitLogIndexPage = () => {
       toast.success(
         intl.formatMessage({
           id: "visit_log.index.delete_success",
-          defaultMessage: "Region deleted",
+          defaultMessage: "Visit log deleted",
         }),
       );
     } catch (e) {
@@ -231,7 +231,7 @@ export const VisitLogIndexPage = () => {
     <section
       className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
-        section: "visitLog-index",
+        section: "visit-log-index",
         itemCount: totalRows,
         page: pagination.pageIndex + 1,
         search,
@@ -247,7 +247,7 @@ export const VisitLogIndexPage = () => {
         })}
         actions={
           canCreate ? (
-            <Button type="button" onClick={() => navigate("/visitLog/create")}>
+            <Button type="button" onClick={() => navigate("/visit-log/create")}>
               <Plus className="size-4" />
               {intl.formatMessage({
                 id: "visit_log.index.create_button",
@@ -264,7 +264,7 @@ export const VisitLogIndexPage = () => {
         data={rows}
         isLoading={isLoading}
         isError={isError}
-        onRowClick={(row) => navigate(`/visitLog/${row.id}`)}
+        onRowClick={(row) => navigate(`/visit-log/${row.id}`)}
         toolbar={
           <FilterBar
             search={searchInput}
@@ -309,7 +309,7 @@ export const VisitLogIndexPage = () => {
             }
             action={
               canCreate && !search ? (
-                <Button type="button" onClick={() => navigate("/visitLog/create")}>
+                <Button type="button" onClick={() => navigate("/visit-log/create")}>
                   <Plus className="size-4" />
                   {intl.formatMessage({
                     id: "visit_log.index.create_button",

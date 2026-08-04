@@ -67,8 +67,8 @@ export const VisitLogDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canUpdate = hasPermission("visitLog@update");
-  const canDelete = hasPermission("visitLog@delete");
+  const canUpdate = hasPermission("visit-log@update");
+  const canDelete = hasPermission("visit-log@delete");
   const toast = useToast();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -101,7 +101,9 @@ export const VisitLogDetailPage = () => {
     };
 
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_BASE_URL}/api/ai/draft`, {
+>>>>>>> eddcc6f (impeccable ai slop fix)
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -143,10 +145,10 @@ export const VisitLogDetailPage = () => {
       toast.success(
         intl.formatMessage({
           id: "visit_log.detail.delete_success",
-          defaultMessage: "Region deleted",
+          defaultMessage: "Visit log deleted",
         }),
       );
-      navigate("/visitLog");
+      navigate("/visit-log");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
     } finally {
@@ -185,7 +187,7 @@ export const VisitLogDetailPage = () => {
     return (
       <section
         className="flex flex-col gap-6 pt-2 pb-8"
-        data-ai-context={JSON.stringify({ section: "visitLog-detail", loading: true })}
+        data-ai-context={JSON.stringify({ section: "visit-log-detail", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
         <Skeleton className="h-40 w-full" />
@@ -198,15 +200,15 @@ export const VisitLogDetailPage = () => {
     return (
       <section
         className="flex flex-col gap-6 pt-2 pb-8"
-        data-ai-context={JSON.stringify({ section: "visitLog-detail", notFound: true })}
+        data-ai-context={JSON.stringify({ section: "visit-log-detail", notFound: true })}
       >
         <div className="flex flex-col gap-3">
-          <NavButtonGroup className="self-end" onBack={() => navigate("/visitLog")} />
+          <NavButtonGroup className="self-end" onBack={() => navigate("/visit-log")} />
           <PageHeader
             module="visit"
             title={intl.formatMessage({
               id: "visit_log.detail.not_found",
-              defaultMessage: "Region not found",
+              defaultMessage: "Visit log not found",
             })}
           />
         </div>
@@ -222,7 +224,7 @@ export const VisitLogDetailPage = () => {
     <section
       className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
-        section: "visitLog-detail",
+        section: "visit-log-detail",
         id: visitLog.id,
         name: title,
         outletId: visitLog.outlet?.id,
@@ -230,13 +232,13 @@ export const VisitLogDetailPage = () => {
       })}
     >
       <div className="flex flex-col gap-3">
-        <NavButtonGroup className="self-end" onBack={() => navigate("/visitLog")}>
+        <NavButtonGroup className="self-end" onBack={() => navigate("/visit-log")}>
           {canUpdate ? (
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => navigate(`/visitLog/${visitLog.id}/edit`)}
+              onClick={() => navigate(`/visit-log/${visitLog.id}/edit`)}
               className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
             >
               <Pencil className="size-3.5" aria-hidden />

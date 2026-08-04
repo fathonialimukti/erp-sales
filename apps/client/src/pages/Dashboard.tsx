@@ -169,7 +169,9 @@ export const Dashboard = () => {
     setInsightError("");
 
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_BASE_URL}/api/ai/chat`, {
+>>>>>>> eddcc6f (impeccable ai slop fix)
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -360,17 +362,7 @@ export const Dashboard = () => {
   const allowedActions = quickActions.filter((a) => hasPermission(a.permission));
 
   return (
-    <section
-      className="flex flex-col gap-6 pt-2 pb-8"
-      data-ai-context={JSON.stringify({
-        section: "dashboard",
-        greetingKey,
-        userName,
-        kpis: sales?.kpis,
-        topCustomers: sales?.topCustomers?.map((c) => c.name),
-        recentActivityCount: sales?.recentActivity?.length ?? 0,
-      })}
-    >
+    <section className="flex flex-col gap-6 pt-2 pb-8">
       <PageHeader
         eyebrow={todayLabel}
         title={`${greeting}, ${userName}`}
@@ -453,7 +445,7 @@ export const Dashboard = () => {
               </ResponsiveContainer>
             ) : (
               <div className="flex h-full items-center gap-2 text-sm text-muted-foreground">
-                <Sparkles className="size-4 opacity-60" aria-hidden />
+                <ClipboardList className="size-4" aria-hidden />
                 {intl.formatMessage({
                   id: "dashboard.chart.no_data",
                   defaultMessage: "No approved sales yet",
@@ -688,6 +680,7 @@ export const Dashboard = () => {
               })}
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             {isLoading ? (
               <Skeleton className="w-full rounded-xl" style={{ height: MAIN_CHART_HEIGHT }} />
@@ -849,7 +842,6 @@ export const Dashboard = () => {
             id: "dashboard.section.quick_actions",
             defaultMessage: "Quick actions",
           })}
-          data-ai-context={JSON.stringify({ section: "quick-actions", count: allowedActions.length })}
         >
           <div>
             <h2 className="font-heading text-base font-semibold">
@@ -910,7 +902,6 @@ export const Dashboard = () => {
             id: "dashboard.section_today",
             defaultMessage: "Today",
           })}
-          data-ai-context={JSON.stringify({ section: "today-agenda", count: todayAgenda.length })}
         >
           <CardHeader className="pb-2">
             <CardTitle className="font-heading text-base">
@@ -990,10 +981,7 @@ export const Dashboard = () => {
             id: "dashboard.section_activity",
             defaultMessage: "Recent activity",
           })}
-          data-ai-context={JSON.stringify({
-            section: "recent-activity",
-            count: sales?.recentActivity?.length ?? 0,
-          })}
+          data-ai-context={JSON.stringify({ section: "dashboard.recent-activity" })}
         >
           <CardHeader className="pb-2">
             <CardTitle className="font-heading text-base">

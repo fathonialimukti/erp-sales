@@ -44,8 +44,8 @@ export const ActionProgramDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
-  const canUpdate = hasPermission("actionProgram@update");
-  const canDelete = hasPermission("actionProgram@delete");
+  const canUpdate = hasPermission("action-program@update");
+  const canDelete = hasPermission("action-program@delete");
   const toast = useToast();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -69,10 +69,10 @@ export const ActionProgramDetailPage = () => {
       toast.success(
         intl.formatMessage({
           id: "action_program.detail.delete_success",
-          defaultMessage: "Region deleted",
+          defaultMessage: "Action program deleted",
         }),
       );
-      navigate("/actionProgram");
+      navigate("/action-program");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
     } finally {
@@ -84,7 +84,7 @@ export const ActionProgramDetailPage = () => {
     return (
       <section
         className="flex flex-col gap-6 pt-2 pb-8"
-        data-ai-context={JSON.stringify({ section: "actionProgram-detail", loading: true })}
+        data-ai-context={JSON.stringify({ section: "action-program-detail", loading: true })}
       >
         <Skeleton className="h-16 w-full max-w-xl" />
         <Skeleton className="h-40 w-full" />
@@ -97,15 +97,15 @@ export const ActionProgramDetailPage = () => {
     return (
       <section
         className="flex flex-col gap-6 pt-2 pb-8"
-        data-ai-context={JSON.stringify({ section: "actionProgram-detail", notFound: true })}
+        data-ai-context={JSON.stringify({ section: "action-program-detail", notFound: true })}
       >
         <div className="flex flex-col gap-3">
-          <NavButtonGroup className="self-end" onBack={() => navigate("/actionProgram")} />
+          <NavButtonGroup className="self-end" onBack={() => navigate("/action-program")} />
           <PageHeader
             module="planning"
             title={intl.formatMessage({
               id: "action_program.detail.not_found",
-              defaultMessage: "Region not found",
+              defaultMessage: "Action program not found",
             })}
           />
         </div>
@@ -117,20 +117,20 @@ export const ActionProgramDetailPage = () => {
     <section
       className="flex flex-col gap-6 pt-2 pb-8"
       data-ai-context={JSON.stringify({
-        section: "actionProgram-detail",
+        section: "action-program-detail",
         id: actionProgram.id,
         name: actionProgram.name,
         areaCount: actionProgram.outlets?.length ?? 0,
       })}
     >
       <div className="flex flex-col gap-3">
-        <NavButtonGroup className="self-end" onBack={() => navigate("/actionProgram")}>
+        <NavButtonGroup className="self-end" onBack={() => navigate("/action-program")}>
           {canUpdate ? (
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => navigate(`/actionProgram/${actionProgram.id}/edit`)}
+              onClick={() => navigate(`/action-program/${actionProgram.id}/edit`)}
               className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
             >
               <Pencil className="size-3.5" aria-hidden />

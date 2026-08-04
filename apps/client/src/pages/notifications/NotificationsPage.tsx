@@ -41,10 +41,10 @@ const formatDate = (iso: string) => {
 const typeTone = (type: string) => {
   switch (type) {
     case "WARNING":
-      return "bg-amber-500/10 text-amber-600";
+      return "bg-warning/10 text-warning";
     case "SUCCESS":
     case "APPROVAL":
-      return "bg-emerald-500/10 text-emerald-600";
+      return "bg-success/10 text-success";
     case "ERROR":
       return "bg-destructive/10 text-destructive";
     default:
