@@ -549,9 +549,9 @@ export const SalesOrderFormPage = () => {
       />
 
       <PageHeader
-        module="order"
-        eyebrow={intl.formatMessage({ id: "nav.sales", defaultMessage: "Sales" })}
-        title={
+          module="order"
+          eyebrow={intl.formatMessage({ id: "nav.sales", defaultMessage: "Sales" })}
+          title={
           isEdit
             ? intl.formatMessage({ id: "sales_order.form.title_edit", defaultMessage: "Edit sales order" })
             : intl.formatMessage({ id: "sales_order.form.title_create", defaultMessage: "Create sales order" })
@@ -986,7 +986,7 @@ export const SalesOrderFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>Saving your order…</DialogDescription>
             </div>
           ) : null}

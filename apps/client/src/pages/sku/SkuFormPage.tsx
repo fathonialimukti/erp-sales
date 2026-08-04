@@ -24,6 +24,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CreateSkuInput, UpdateSkuInput } from "@repo/schemas/sku";
 
 interface FormValues {
@@ -47,9 +54,6 @@ const defaults = (): FormValues => ({
   baseUnit: "pcs",
   status: "ACTIVE",
 });
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const SkuFormPage = () => {
   const intl = useIntl();
@@ -190,7 +194,7 @@ export const SkuFormPage = () => {
       />
 
       <PageHeader
-        module="sku"
+          module="sku"
           title={
             isEdit
               ? intl.formatMessage({ id: "sku.form.title_edit", defaultMessage: "Edit SKU" })
@@ -209,7 +213,7 @@ export const SkuFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -218,9 +222,9 @@ export const SkuFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "sku.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "sku.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="code">
@@ -300,24 +304,25 @@ export const SkuFormPage = () => {
                       defaultMessage: "Category",
                     })}
                   </Label>
-                  <select
-                    id="sku-category"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "sku.form.field_category_placeholder",
-                        defaultMessage: "Select category",
-                      })}
-                    </option>
-                    {(categories?.data ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="sku-category"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "sku.form.field_category", defaultMessage: "Category" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "sku.form.field_category_placeholder", defaultMessage: "Select category" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(categories?.data ?? []).map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -375,15 +380,22 @@ export const SkuFormPage = () => {
                     {intl.formatMessage({ id: "sku.form.field_status", defaultMessage: "Status" })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="sku-status"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                   >
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
-                  </select>
+                    <SelectTrigger
+                      id="sku-status"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "sku.form.field_status", defaultMessage: "Status" })}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                      <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -436,7 +448,7 @@ export const SkuFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

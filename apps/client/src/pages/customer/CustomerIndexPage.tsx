@@ -87,7 +87,7 @@ export const CustomerIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "customer.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-foreground">
+          <span className="font-mono text-xs text-muted-foreground">
             {row.original.code ?? "—"}
           </span>
         ),

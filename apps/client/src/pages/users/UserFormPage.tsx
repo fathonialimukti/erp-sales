@@ -22,6 +22,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type UserFormValues = {
   name: string;
@@ -40,9 +47,6 @@ type UserDetail = {
 };
 
 type ModalStage = "idle" | "loading" | "success" | "error";
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 const defaultFormValues = (): UserFormValues => ({
   name: "",
@@ -200,7 +204,7 @@ const InnerForm = ({
       />
 
       <PageHeader
-        module="user"
+          module="user"
           title={
             isEdit
               ? intl.formatMessage({ id: "users.form.title_edit", defaultMessage: "Edit user" })
@@ -222,7 +226,7 @@ const InnerForm = ({
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -345,26 +349,26 @@ const InnerForm = ({
                     {intl.formatMessage({ id: "users.form.role", defaultMessage: "Role" })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="user-role"
-                    className={selectClass}
+                  <Select
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
+                    onValueChange={(value) => field.handleChange(value)}
                     aria-invalid={field.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "users.form.select_role",
-                        defaultMessage: "Select a role…",
-                      })}
-                    </option>
-                    {roleOptions.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="user-role"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "users.form.role", defaultMessage: "Role" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "users.form.select_role", defaultMessage: "Select a role…" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roleOptions.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {field.state.meta.errors.map((error, i) => (
                     <p key={i} className="text-xs text-destructive">
                       {String(error)}
@@ -416,7 +420,7 @@ const InnerForm = ({
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>
@@ -482,7 +486,7 @@ const UserFormPage = () => {
           data-ai-context={JSON.stringify({ section: "user-form", error: true })}
         >
           <PageHeader
-        module="user"
+            module="user"
             title={error instanceof Error ? error.message : "Failed to load user."}
         />
         </section>
@@ -495,12 +499,12 @@ const UserFormPage = () => {
           data-ai-context={JSON.stringify({ section: "user-form", notFound: true })}
         >
           <PageHeader
-        module="user"
+            module="user"
             title={intl.formatMessage({
               id: "users.form.not_found",
               defaultMessage: "User not found.",
             })}
-        />
+          />
         </section>
       );
     }

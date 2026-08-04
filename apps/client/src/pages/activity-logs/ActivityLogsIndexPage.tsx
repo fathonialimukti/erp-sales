@@ -81,7 +81,7 @@ export const ActivityLogsIndexPage = () => {
           defaultMessage: "Timestamp",
         }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-foreground">
+          <span className="font-mono text-xs text-muted-foreground">
             {new Date(row.original.createdAt).toLocaleString("id-ID")}
           </span>
         ),
@@ -105,7 +105,7 @@ export const ActivityLogsIndexPage = () => {
             <p className="truncate text-sm font-medium text-foreground">
               {row.original.user.name ?? "Unknown"}
             </p>
-            <p className="truncate text-xs text-foreground">{row.original.user.email}</p>
+            <p className="truncate text-xs text-muted-foreground">{row.original.user.email}</p>
           </div>
         ),
       },
@@ -116,7 +116,7 @@ export const ActivityLogsIndexPage = () => {
           defaultMessage: "Resource",
         }),
         cell: ({ row }) => (
-          <span className="text-sm text-foreground">{row.original.resource}</span>
+          <span className="text-sm text-muted-foreground">{row.original.resource}</span>
         ),
       },
       {

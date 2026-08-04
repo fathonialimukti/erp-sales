@@ -698,7 +698,7 @@ export const SalesOrderDetailPage = () => {
                         <div className="min-w-0">
                           <p className="truncate font-medium text-foreground">{item.sku.name}</p>
                           {item.sku.code ? (
-                            <p className="font-mono text-xs text-foreground">{item.sku.code}</p>
+                            <p className="font-mono text-xs text-muted-foreground">{item.sku.code}</p>
                           ) : null}
                         </div>
                       </div>

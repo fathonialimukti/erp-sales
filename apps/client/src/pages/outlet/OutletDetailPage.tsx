@@ -248,7 +248,7 @@ export const OutletDetailPage = () => {
                       <span className="block truncate text-sm font-medium text-foreground">
                         {contact.name}
                       </span>
-                      <span className="block text-xs text-foreground">
+                      <span className="block text-xs text-muted-foreground">
                         {[contact.title, contact.phone, contact.email].filter(Boolean).join(" · ") ||
                           "—"}
                       </span>

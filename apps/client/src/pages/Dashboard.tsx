@@ -169,9 +169,7 @@ export const Dashboard = () => {
     setInsightError("");
 
     try {
-<<<<<<< HEAD
       const res = await fetch(`${API_BASE_URL}/api/ai/chat`, {
->>>>>>> eddcc6f (impeccable ai slop fix)
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -362,7 +360,17 @@ export const Dashboard = () => {
   const allowedActions = quickActions.filter((a) => hasPermission(a.permission));
 
   return (
-    <section className="flex flex-col gap-6 pt-2 pb-8">
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "dashboard",
+        greetingKey,
+        userName,
+        kpis: sales?.kpis,
+        topCustomers: sales?.topCustomers?.map((c) => c.name),
+        recentActivityCount: sales?.recentActivity?.length ?? 0,
+      })}
+    >
       <PageHeader
         eyebrow={todayLabel}
         title={`${greeting}, ${userName}`}
@@ -445,7 +453,7 @@ export const Dashboard = () => {
               </ResponsiveContainer>
             ) : (
               <div className="flex h-full items-center gap-2 text-sm text-muted-foreground">
-                <ClipboardList className="size-4" aria-hidden />
+                <Sparkles className="size-4 opacity-60" aria-hidden />
                 {intl.formatMessage({
                   id: "dashboard.chart.no_data",
                   defaultMessage: "No approved sales yet",
@@ -680,7 +688,6 @@ export const Dashboard = () => {
               })}
             </CardDescription>
           </CardHeader>
-
           <CardContent>
             {isLoading ? (
               <Skeleton className="w-full rounded-xl" style={{ height: MAIN_CHART_HEIGHT }} />
@@ -842,6 +849,7 @@ export const Dashboard = () => {
             id: "dashboard.section.quick_actions",
             defaultMessage: "Quick actions",
           })}
+          data-ai-context={JSON.stringify({ section: "quick-actions", count: allowedActions.length })}
         >
           <div>
             <h2 className="font-heading text-base font-semibold">
@@ -902,6 +910,7 @@ export const Dashboard = () => {
             id: "dashboard.section_today",
             defaultMessage: "Today",
           })}
+          data-ai-context={JSON.stringify({ section: "today-agenda", count: todayAgenda.length })}
         >
           <CardHeader className="pb-2">
             <CardTitle className="font-heading text-base">
@@ -981,7 +990,10 @@ export const Dashboard = () => {
             id: "dashboard.section_activity",
             defaultMessage: "Recent activity",
           })}
-          data-ai-context={JSON.stringify({ section: "dashboard.recent-activity" })}
+          data-ai-context={JSON.stringify({
+            section: "recent-activity",
+            count: sales?.recentActivity?.length ?? 0,
+          })}
         >
           <CardHeader className="pb-2">
             <CardTitle className="font-heading text-base">
@@ -1053,7 +1065,10 @@ export const Dashboard = () => {
         </Card>
       </div>
 
-      <Card className="shadow-sm">
+      <Card
+        className="shadow-sm"
+        data-ai-context={JSON.stringify({ section: "ai-insights", loading: insightLoading })}
+      >
         <CardHeader className="pb-2">
           <CardTitle className="font-heading text-base">
             {intl.formatMessage({
@@ -1061,6 +1076,12 @@ export const Dashboard = () => {
               defaultMessage: "AI Insights",
             })}
           </CardTitle>
+          <CardDescription>
+            {intl.formatMessage({
+              id: "dashboard.ai_insights_sub",
+              defaultMessage: "Ask about your sales data",
+            })}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
@@ -1100,12 +1121,60 @@ export const Dashboard = () => {
               {intl.formatMessage({ id: "common.loading", defaultMessage: "Loading…" })}
             </p>
           ) : null}
-          {insightError ? <p className="text-sm text-destructive">{insightError}</p> : null}
-          {insightResult ? (
-            <div className="max-w-none rounded-xl border bg-card p-4 text-foreground">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightResult}</ReactMarkdown>
-            </div>
+          {insightError ? (
+            <p className="text-sm text-destructive">{insightError}</p>
           ) : null}
+          {insightResult ? (
+            <div className="max-w-none break-words rounded-xl border bg-card p-4 text-foreground">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ node, ...props }) => (
+                    <p className="mb-2 last:mb-0" {...props} />
+                  ),
+                  ul: ({ node, ...props }) => (
+                    <ul className="mb-2 ml-5 list-disc" {...props} />
+                  ),
+                  ol: ({ node, ...props }) => (
+                    <ol className="mb-2 ml-5 list-decimal" {...props} />
+                  ),
+                  li: ({ node, ...props }) => (
+                    <li className="mb-0.5" {...props} />
+                  ),
+                  h1: ({ node, ...props }) => (
+                    <h1 className="font-heading mb-2 text-lg font-semibold" {...props} />
+                  ),
+                  h2: ({ node, ...props }) => (
+                    <h2 className="font-heading mb-2 text-base font-semibold" {...props} />
+                  ),
+                  h3: ({ node, ...props }) => (
+                    <h3 className="font-heading mb-1 text-sm font-semibold" {...props} />
+                  ),
+                  code: ({ node, ...props }) => (
+                    <code
+                      className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground"
+                      {...props}
+                    />
+                  ),
+                  pre: ({ node, ...props }) => (
+                    <pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs" {...props} />
+                  ),
+                }}
+              >
+                {insightResult}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <div className="flex h-32 flex-col items-center justify-center gap-2 text-center opacity-60">
+              <Sparkles className="size-5" aria-hidden />
+              <p className="text-sm text-muted-foreground">
+                {intl.formatMessage({
+                  id: "dashboard.ai_insights_empty",
+                  defaultMessage: "Select an insight prompt to get started",
+                })}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </section>

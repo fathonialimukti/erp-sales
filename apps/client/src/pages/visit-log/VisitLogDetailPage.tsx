@@ -101,9 +101,7 @@ export const VisitLogDetailPage = () => {
     };
 
     try {
-<<<<<<< HEAD
       const res = await fetch(`${API_BASE_URL}/api/ai/draft`, {
->>>>>>> eddcc6f (impeccable ai slop fix)
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

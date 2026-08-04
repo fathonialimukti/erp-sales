@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useIntl } from "react-intl";
-import { Globe, LogIn, Menu, Star } from "lucide-react";
+import { Globe, LogIn, Menu, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -130,7 +130,13 @@ export const PublicLayout = () => {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div
+      className="flex min-h-dvh flex-col bg-background text-foreground"
+      data-ai-context={JSON.stringify({
+        section: "public-layout",
+        path: location.pathname,
+      })}
+    >
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-100 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground"
@@ -146,13 +152,13 @@ export const PublicLayout = () => {
             : "border-transparent bg-background",
         )}
       >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             className="group flex min-h-11 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20 transition-transform group-hover:scale-[1.02]">
-              <Star className="size-4" aria-hidden="true" />
+            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 transition-transform group-hover:scale-[1.02]">
+              <Sparkles className="size-4" aria-hidden="true" />
             </span>
             <span className="font-heading text-sm font-semibold tracking-tight sm:text-base">
               ERP Sales
@@ -207,8 +213,8 @@ export const PublicLayout = () => {
 
             {!isLogin && (
               <Button
-                size="lg"
-                className="hidden min-h-11 px-4 sm:inline-flex"
+                size="default"
+                className="hidden h-7 px-3 sm:inline-flex"
                 onClick={() => navigate("/login")}
               >
                 <LogIn className="size-4" />
@@ -218,9 +224,9 @@ export const PublicLayout = () => {
 
             {isLogin && (
               <Button
-                size="lg"
+                size="default"
                 variant="outline"
-                className="hidden min-h-11 px-4 sm:inline-flex"
+                className="hidden h-9 px-3 sm:inline-flex"
                 onClick={() => navigate("/")}
               >
                 {t("landing.nav_home", "Home")}
@@ -335,12 +341,12 @@ export const PublicLayout = () => {
 
       {!isLogin && (
         <footer className="mt-auto border-t border-border bg-card px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mx-auto flex max-w-6xl flex-col gap-8">
+        <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-sm space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20">
-                    <Star className="size-4" aria-hidden="true" />
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25">
+                    <Sparkles className="size-4" aria-hidden="true" />
                   </span>
                   <span className="font-heading text-sm font-semibold tracking-tight">
                     ERP Sales

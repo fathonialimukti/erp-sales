@@ -102,7 +102,7 @@ export const UsersIndexPage = () => {
               <p className="truncate text-sm font-medium text-foreground">
                 {row.original.name ?? "—"}
               </p>
-              <p className="truncate text-xs text-foreground">{row.original.email}</p>
+              <p className="truncate text-xs text-muted-foreground">{row.original.email}</p>
             </div>
           </div>
         ),
@@ -111,7 +111,7 @@ export const UsersIndexPage = () => {
         id: "role",
         header: intl.formatMessage({ id: "users.index.header_role", defaultMessage: "Role" }),
         cell: ({ row }) => (
-          <span className="text-sm text-foreground">{row.original.role?.name ?? "—"}</span>
+          <span className="text-sm text-muted-foreground">{row.original.role?.name ?? "—"}</span>
         ),
       },
       {

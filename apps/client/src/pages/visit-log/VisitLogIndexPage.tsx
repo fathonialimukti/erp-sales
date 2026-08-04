@@ -113,7 +113,7 @@ export const VisitLogIndexPage = () => {
           id: "date",
           header: intl.formatMessage({ id: "visit_log.index.header_code", defaultMessage: "Date" }),
           cell: ({ row }) => (
-            <span className="font-mono text-xs text-foreground">
+            <span className="font-mono text-xs text-muted-foreground">
               {new Date(row.original.date).toLocaleDateString()}
             </span>
           ),
@@ -135,7 +135,7 @@ export const VisitLogIndexPage = () => {
             defaultMessage: "Outlet",
           }),
           cell: ({ row }) => (
-            <span className="text-foreground">{row.original.outlet?.name ?? "—"}</span>
+            <span className="text-muted-foreground">{row.original.outlet?.name ?? "—"}</span>
           ),
         },
         {

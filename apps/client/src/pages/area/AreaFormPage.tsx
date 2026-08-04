@@ -16,6 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -157,7 +164,7 @@ export const AreaFormPage = () => {
       />
 
       <PageHeader
-        module="area"
+          module="area"
           title={
             isEdit
               ? intl.formatMessage({ id: "area.form.title_edit", defaultMessage: "Edit area" })
@@ -176,7 +183,7 @@ export const AreaFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -185,9 +192,9 @@ export const AreaFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "area.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "area.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
@@ -200,25 +207,22 @@ export const AreaFormPage = () => {
                     {intl.formatMessage({ id: "area.form.field_region", defaultMessage: "Region" })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="area-region"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "area.form.field_region_placeholder",
-                        defaultMessage: "Select region",
-                      })}
-                    </option>
-                    {(regions?.data ?? []).map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="area-region" size="default" aria-label={intl.formatMessage({ id: "area.form.field_region", defaultMessage: "Region" })}>
+                      <SelectValue placeholder={intl.formatMessage({ id: "area.form.field_region_placeholder", defaultMessage: "Select region" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(regions?.data ?? []).map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -320,7 +324,7 @@ export const AreaFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

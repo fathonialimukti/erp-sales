@@ -219,7 +219,7 @@ export const RegionDetailPage = () => {
                         {area.name}
                       </span>
                       {area.code ? (
-                        <span className="block font-mono text-xs text-foreground">
+                        <span className="block font-mono text-xs text-muted-foreground">
                           {area.code}
                         </span>
                       ) : null}

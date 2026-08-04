@@ -87,7 +87,7 @@ export const OutletIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {
@@ -103,7 +103,7 @@ export const OutletIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_customer", defaultMessage: "Customer" }),
         cell: ({ row }) => (
-          <span className="text-sm text-foreground">{row.original.customerName || "—"}</span>
+          <span className="text-sm text-muted-foreground">{row.original.customerName || "—"}</span>
         ),
       },
       {
@@ -112,7 +112,7 @@ export const OutletIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "outlet.index.header_area", defaultMessage: "Area" }),
         cell: ({ row }) => (
-          <span className="text-sm text-foreground">{row.original.areaName || "—"}</span>
+          <span className="text-sm text-muted-foreground">{row.original.areaName || "—"}</span>
         ),
       },
       {

@@ -78,7 +78,7 @@ export const RegionIndexPage = () => {
         id: "code",
         header: intl.formatMessage({ id: "region.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {

@@ -160,7 +160,7 @@ export const RegionFormPage = () => {
       />
 
       <PageHeader
-        module="region"
+          module="region"
         title={
           isEdit
             ? intl.formatMessage({
@@ -301,7 +301,7 @@ export const RegionFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

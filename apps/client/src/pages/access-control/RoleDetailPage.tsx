@@ -290,7 +290,7 @@ export const RoleDetailPage = () => {
                       <span className="block truncate text-sm font-medium text-foreground">
                         {user.name}
                       </span>
-                      <span className="block truncate text-xs text-foreground">
+                      <span className="block truncate text-xs text-muted-foreground">
                         {user.email}
                       </span>
                     </span>

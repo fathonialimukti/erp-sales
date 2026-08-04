@@ -71,7 +71,7 @@ export const AreaIndexPage = () => {
         id: "code",
         header: intl.formatMessage({ id: "area.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {

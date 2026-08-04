@@ -88,7 +88,7 @@ export const RolesIndexPage = () => {
           defaultMessage: "Description",
         }),
         cell: ({ row }) => (
-          <span className="line-clamp-1 text-sm text-foreground">
+          <span className="line-clamp-1 text-sm text-muted-foreground">
             {row.original.description ?? "—"}
           </span>
         ),
@@ -97,7 +97,7 @@ export const RolesIndexPage = () => {
         id: "users",
         header: intl.formatMessage({ id: "roles.index.header_users", defaultMessage: "Users" }),
         cell: ({ row }) => (
-          <span className="tabular-nums text-foreground">
+          <span className="tabular-nums text-muted-foreground">
             {row.original._count.users > 0 ? row.original._count.users : "—"}
           </span>
         ),

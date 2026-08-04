@@ -512,7 +512,7 @@ export const SkuCategoryDetailPage = () => {
                         {sku.name}
                       </span>
                       {sku.code ? (
-                        <span className="block font-mono text-xs text-foreground">
+                        <span className="block font-mono text-xs text-muted-foreground">
                           {sku.code}
                         </span>
                       ) : null}

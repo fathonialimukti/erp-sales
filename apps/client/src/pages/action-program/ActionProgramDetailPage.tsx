@@ -240,7 +240,7 @@ export const ActionProgramDetailPage = () => {
                         {outlet.name}
                       </span>
                       {outlet.code ? (
-                        <span className="block font-mono text-xs text-foreground">
+                        <span className="block font-mono text-xs text-muted-foreground">
                           {outlet.code}
                         </span>
                       ) : null}

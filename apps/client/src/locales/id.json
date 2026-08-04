@@ -300,6 +300,8 @@
   "dashboard.ai_insight_at_risk": "Pesanan berisiko",
   "dashboard.ai_insight_sales_trend": "Tren penjualan",
   "dashboard.ai_insight_top_customers": "5 pelanggan teratas bulan ini",
+  "dashboard.ai_insights_empty": "Pilih prompt wawasan untuk memulai",
+  "dashboard.ai_insights_sub": "Tanyakan tentang data penjualan Anda",
   "dashboard.ai_insights_title": "Wawasan AI",
   "dashboard.chart.catalog_by_category": "Katalog per kategori",
   "dashboard.chart.catalog_by_category_sub": "Jumlah SKU per kategori — bulan ini",

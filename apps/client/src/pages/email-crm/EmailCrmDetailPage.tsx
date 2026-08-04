@@ -510,7 +510,7 @@ export const EmailCrmDetailPage = () => {
                         {msg.direction}
                         {msg.sendStatus ? ` · ${msg.sendStatus}` : ""}
                       </span>
-                      <span className="text-xs text-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {formatDateTime(msg.sentAt ?? msg.createdAt)}
                       </span>
                     </div>
@@ -662,7 +662,7 @@ export const EmailCrmDetailPage = () => {
                       <span className="block truncate text-sm font-medium text-foreground">
                         {order.documentNumber ?? order.id}
                       </span>
-                      <span className="block text-xs text-foreground">
+                      <span className="block text-xs text-muted-foreground">
                         {intl.formatMessage({
                           id: "emailCrm.detail.open_order",
                           defaultMessage: "Open order",

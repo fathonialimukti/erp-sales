@@ -457,7 +457,39 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div
+      className="flex flex-1 flex-col"
+      data-ai-context={JSON.stringify({
+        section: 'landing',
+        site: 'ERP Sales — Sales Management Platform',
+        description:
+          'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office. Includes AI-powered approval workflow, email-to-order automation, and real-time analytics.',
+        features: [
+          'Customer & Outlet Management',
+          'Sales Order Processing',
+          'Visit Logging & Field Tracking',
+          'Multi-level Approval Workflow with AI Review',
+          'Email-to-Order Automation',
+          'AI Chat Assistant with RAG',
+          'Real-time Analytics',
+          'Role-based Access Control',
+        ],
+        author: {
+          name: 'Fathoni',
+          type: 'Full-Stack Developer',
+          portfolio: 'https://fathoni.dev',
+          url: 'https://fathoni.dev',
+          expertise: ['ERP Systems', 'Custom CRM', 'Business Automation', 'TypeScript', 'React', 'tRPC', 'PostgreSQL', 'Prisma'],
+        },
+        techStack: ['TypeScript', 'React', 'tRPC', 'Prisma', 'PostgreSQL', 'n8n', 'Node.js', 'Tailwind CSS', 'Vite', 'Tauri'],
+        howItWorks: [
+          { step: 1, title: 'Define Territory', description: 'Create regions and areas for your sales territory.' },
+          { step: 2, title: 'Register Customers & Outlets', description: 'Add customer profiles and link their outlets.' },
+          { step: 3, title: 'Log Visits & Place Orders', description: 'Field teams log visits and create sales orders.' },
+          { step: 4, title: 'Review Approvals & Analytics', description: 'AI-assisted multi-level approval and KPI tracking.' },
+        ],
+      })}
+    >
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8">
         <div
@@ -484,7 +516,7 @@ export const LandingPage = () => {
           variant="b"
         />
 
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+        <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
           <Stagger className="space-y-6">
             <StaggerItem>
               <Badge
@@ -574,7 +606,7 @@ export const LandingPage = () => {
         aria-labelledby="stats-title"
         className="border-b border-border bg-muted px-4 py-12 sm:px-6 sm:py-14 lg:px-8"
       >
-        <div className="mx-auto max-w-6xl">
+        <div>
           <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
@@ -631,7 +663,7 @@ export const LandingPage = () => {
         aria-labelledby="features-title"
         className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="mx-auto max-w-6xl">
+        <div>
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.features_eyebrow", "Modules")}
@@ -691,7 +723,7 @@ export const LandingPage = () => {
         aria-labelledby="how-title"
         className="scroll-mt-20 border-y border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="mx-auto max-w-6xl">
+        <div>
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.how_it_works_eyebrow", "Workflow")}
@@ -741,8 +773,8 @@ export const LandingPage = () => {
         aria-labelledby="spotlight-title"
         className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="mx-auto max-w-6xl space-y-16">
-          <div className="mx-auto max-w-2xl text-center">
+        <div className="space-y-16">
+          <div className="max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.v2.spotlight_eyebrow", "Deep dives")}
             </p>
@@ -928,7 +960,7 @@ export const LandingPage = () => {
         aria-labelledby="faq-title"
         className="scroll-mt-20 border-y border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="mx-auto max-w-3xl">
+        <div>
           <div className="mb-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.faq_eyebrow", "FAQ")}
@@ -962,7 +994,7 @@ export const LandingPage = () => {
         aria-labelledby="about-title"
         className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="mx-auto max-w-6xl">
+        <div>
           <Card className="overflow-hidden border-border/80 shadow-sm">
             <CardContent className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[220px_1fr] lg:gap-10">
               <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
@@ -1018,7 +1050,7 @@ export const LandingPage = () => {
         aria-labelledby="contact-title"
         className="scroll-mt-20 border-t border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="mx-auto max-w-6xl">
+        <div>
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.contact_eyebrow", "Contact")}
@@ -1060,7 +1092,7 @@ export const LandingPage = () => {
 
       {/* Bottom CTA band */}
       <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="mx-auto max-w-6xl">
+        <div>
           <Card className="overflow-hidden border-primary/20 bg-card shadow-md">
             <CardContent className="flex flex-col items-start gap-6 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
               <div className="space-y-2">
@@ -1080,8 +1112,8 @@ export const LandingPage = () => {
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button
-                  size="lg"
-                  className="min-h-11 px-5"
+                  size="default"
+                  className="h-9 px-4"
                   onClick={() => navigate("/login")}
                 >
                   <LogIn className="size-4" />

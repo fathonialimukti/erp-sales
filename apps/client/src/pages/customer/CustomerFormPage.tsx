@@ -161,7 +161,7 @@ export const CustomerFormPage = () => {
       />
 
       <PageHeader
-        module="customer"
+          module="customer"
           title={
             isEdit
               ? intl.formatMessage({
@@ -186,7 +186,7 @@ export const CustomerFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -195,9 +195,9 @@ export const CustomerFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "customer.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "customer.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="code">
@@ -294,7 +294,7 @@ export const CustomerFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

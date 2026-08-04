@@ -164,7 +164,7 @@ export const SkuCategoryFormPage = () => {
       />
 
       <PageHeader
-        module="skuCategory"
+          module="skuCategory"
           title={
             isEdit
               ? intl.formatMessage({
@@ -189,7 +189,7 @@ export const SkuCategoryFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -198,9 +198,9 @@ export const SkuCategoryFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "sku_category.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "sku_category.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="code">
@@ -332,7 +332,7 @@ export const SkuCategoryFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

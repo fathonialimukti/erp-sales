@@ -25,6 +25,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type {
   CreateEventProposalInput,
   UpdateEventProposalInput,
@@ -59,9 +66,6 @@ const defaults = (): FormValues => ({
   proposedBudget: "",
   currency: "IDR",
 });
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const EventProposalFormPage = () => {
   const intl = useIntl();
@@ -203,7 +207,7 @@ export const EventProposalFormPage = () => {
       />
 
       <PageHeader
-        module="event"
+          module="event"
           title={
             isEdit
               ? intl.formatMessage({
@@ -228,7 +232,7 @@ export const EventProposalFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -237,9 +241,9 @@ export const EventProposalFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "event_proposal.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "event_proposal.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
@@ -417,25 +421,26 @@ export const EventProposalFormPage = () => {
                     })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="ep-area"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "event_proposal.form.field_area_placeholder",
-                        defaultMessage: "Select area",
-                      })}
-                    </option>
-                    {(areas?.data ?? []).map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="ep-area"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "event_proposal.form.field_area", defaultMessage: "Area" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "event_proposal.form.field_area_placeholder", defaultMessage: "Select area" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(areas?.data ?? []).map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -532,7 +537,7 @@ export const EventProposalFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

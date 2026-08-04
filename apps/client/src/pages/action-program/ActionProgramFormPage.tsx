@@ -12,6 +12,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { SelectSearch } from "../../components/SelectSearch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FormValues {
   name: string;
@@ -51,9 +59,6 @@ const defaults = (): FormValues => ({
   picId: "",
   outletIds: [],
 });
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const ActionProgramFormPage = () => {
   const intl = useIntl();
@@ -83,7 +88,7 @@ export const ActionProgramFormPage = () => {
     queryFn: () => trpcClient.user.list.query({ page: 1, limit: 100 }),
   });
 
-  const { data: outlets } = useQuery({
+  const { data: outlets, isLoading: outletsLoading } = useQuery({
     queryKey: ["outletOptions"],
     queryFn: () => trpcClient.outlet.list.query({ page: 1, limit: 100 }),
   });
@@ -200,7 +205,7 @@ export const ActionProgramFormPage = () => {
       />
 
       <PageHeader
-        module="planning"
+          module="planning"
           title={
             isEdit
               ? intl.formatMessage({
@@ -225,7 +230,7 @@ export const ActionProgramFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -234,9 +239,9 @@ export const ActionProgramFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "action_program.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "action_program.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
@@ -399,25 +404,26 @@ export const ActionProgramFormPage = () => {
                     })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="ap-area"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "action_program.form.field_area_placeholder",
-                        defaultMessage: "Select area",
-                      })}
-                    </option>
-                    {(areas?.data ?? []).map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="ap-area"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "action_program.form.field_area", defaultMessage: "Area" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "action_program.form.field_area_placeholder", defaultMessage: "Select area" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(areas?.data ?? []).map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -438,25 +444,26 @@ export const ActionProgramFormPage = () => {
                     })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="ap-pic"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "action_program.form.field_pic_placeholder",
-                        defaultMessage: "Select PIC",
-                      })}
-                    </option>
-                    {(users?.data ?? []).map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="ap-pic"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "action_program.form.field_pic", defaultMessage: "PIC" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "action_program.form.field_pic_placeholder", defaultMessage: "Select PIC" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(users?.data ?? []).map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -472,32 +479,22 @@ export const ActionProgramFormPage = () => {
             >
               {(f) => (
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor="ap-outlets">
-                    {intl.formatMessage({
-                      id: "action_program.form.field_outlets",
-                      defaultMessage: "Outlets",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
-                  <select
-                    id="ap-outlets"
-                    className={`${selectClass} min-h-28 py-2`}
+                  <SelectSearch
                     multiple
+                    label="Outlets"
+                    isRequired
+                    isInvalid={Boolean(f.state.meta.errors[0])}
+                    errorMessage={String(f.state.meta.errors[0] ?? "")}
                     value={f.state.value ?? []}
-                    onChange={(e) =>
-                      f.handleChange(Array.from(e.target.selectedOptions).map((o) => o.value))
-                    }
-                    aria-invalid={f.state.meta.errors.length > 0}
-                  >
-                    {(outlets?.data ?? []).map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name}
-                      </option>
-                    ))}
-                  </select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
+                    onChange={(v) => f.handleChange(v as string[])}
+                    sourceData={async () => outlets?.data ?? []}
+                    optionsKey="id"
+                    queryKeyBase="actionProgramOutletSelect"
+                    getOptionLabel={(o) => o.name}
+                    placeholder="Select outlets…"
+                    searchPlaceholder="Search outlets…"
+                    isLoading={outletsLoading}
+                  />
                 </div>
               )}
             </form.Field>
@@ -553,7 +550,7 @@ export const ActionProgramFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

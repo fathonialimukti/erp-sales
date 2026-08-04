@@ -178,7 +178,7 @@ export const UserDetailPage = () => {
               <p className="truncate text-base font-semibold text-foreground">
                 {record.name ?? "—"}
               </p>
-              <p className="truncate text-sm text-foreground">{record.email}</p>
+              <p className="truncate text-sm text-muted-foreground">{record.email}</p>
             </div>
           </div>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

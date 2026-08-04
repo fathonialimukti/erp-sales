@@ -79,7 +79,7 @@ export const EventProposalIndexPage = () => {
           defaultMessage: "Document",
         }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-foreground">
+          <span className="font-mono text-xs text-muted-foreground">
             {row.original.documentNumber ?? "—"}
           </span>
         ),

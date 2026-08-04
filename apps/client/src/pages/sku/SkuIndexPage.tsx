@@ -93,7 +93,7 @@ export const SkuIndexPage = () => {
         enableSorting: true,
         header: intl.formatMessage({ id: "sku.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-foreground">{row.original.code ?? "—"}</span>
+          <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
         ),
       },
       {

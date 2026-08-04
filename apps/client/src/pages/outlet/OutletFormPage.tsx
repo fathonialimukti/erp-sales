@@ -24,6 +24,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FormValues {
   code: string;
@@ -50,9 +57,6 @@ const defaults = (): FormValues => ({
   latitude: null,
   longitude: null,
 });
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const OutletFormPage = () => {
   const intl = useIntl();
@@ -205,7 +209,7 @@ export const OutletFormPage = () => {
       />
 
       <PageHeader
-        module="outlet"
+          module="outlet"
           title={
             isEdit
               ? intl.formatMessage({ id: "outlet.form.title_edit", defaultMessage: "Edit outlet" })
@@ -224,7 +228,7 @@ export const OutletFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -233,9 +237,9 @@ export const OutletFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "outlet.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "outlet.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
@@ -251,25 +255,26 @@ export const OutletFormPage = () => {
                     })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="outlet-customer"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "outlet.form.select_customer",
-                        defaultMessage: "Select customer",
-                      })}
-                    </option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="outlet-customer"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "outlet.form.field_customer", defaultMessage: "Customer" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "outlet.form.select_customer", defaultMessage: "Select customer" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -287,25 +292,26 @@ export const OutletFormPage = () => {
                     {intl.formatMessage({ id: "outlet.form.field_area", defaultMessage: "Area" })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="outlet-area"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "outlet.form.select_area",
-                        defaultMessage: "Select area",
-                      })}
-                    </option>
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="outlet-area"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "outlet.form.field_area", defaultMessage: "Area" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "outlet.form.select_area", defaultMessage: "Select area" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {areas.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -473,7 +479,7 @@ export const OutletFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

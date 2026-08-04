@@ -221,7 +221,7 @@ export const AreaDetailPage = () => {
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-foreground">{outlet.name}</span>
                       {outlet.code ? (
-                        <span className="block font-mono text-xs text-foreground">{outlet.code}</span>
+                        <span className="block font-mono text-xs text-muted-foreground">{outlet.code}</span>
                       ) : null}
                     </span>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />

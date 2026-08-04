@@ -96,9 +96,7 @@ export const EventProposalDetailPage = () => {
     };
 
     try {
-<<<<<<< HEAD
       const res = await fetch(`${API_BASE_URL}/api/ai/draft`, {
->>>>>>> eddcc6f (impeccable ai slop fix)
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -335,7 +333,7 @@ export const EventProposalDetailPage = () => {
                         {row.sku.name}
                       </span>
                       {row.sku.code ? (
-                        <span className="block font-mono text-xs text-foreground">
+                        <span className="block font-mono text-xs text-muted-foreground">
                           {row.sku.code}
                         </span>
                       ) : null}

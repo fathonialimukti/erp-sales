@@ -24,6 +24,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FormValues {
   email: string;
@@ -76,9 +83,6 @@ const parseTags = (raw: string) =>
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 interface InnerFormProps {
   initialValues: FormValues;
@@ -213,7 +217,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
       />
 
       <PageHeader
-        module="email"
+          module="email"
           title={
             isEdit
               ? intl.formatMessage({
@@ -238,7 +242,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -247,9 +251,9 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
       >
         <FormSection
           title={intl.formatMessage({
-                id: "emailCrm.form.section_basic",
-                defaultMessage: "Conversation",
-              })}
+            id: "emailCrm.form.section_basic",
+            defaultMessage: "Conversation",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
@@ -311,18 +315,25 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
                   <Label htmlFor="email-crm-status">
                     {intl.formatMessage({ id: "emailCrm.form.status", defaultMessage: "Status" })}
                   </Label>
-                  <select
-                    id="email-crm-status"
-                    className={selectClass}
+                  <Select
                     value={f.state.value}
-                    onChange={(e) => f.handleChange(e.target.value as FormValues["status"])}
+                    onValueChange={(value) => f.handleChange(value as FormValues["status"])}
                   >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="email-crm-status"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "emailCrm.form.status", defaultMessage: "Status" })}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -336,18 +347,25 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
                       defaultMessage: "Priority",
                     })}
                   </Label>
-                  <select
-                    id="email-crm-priority"
-                    className={selectClass}
+                  <Select
                     value={f.state.value}
-                    onChange={(e) => f.handleChange(e.target.value as FormValues["priority"])}
+                    onValueChange={(value) => f.handleChange(value as FormValues["priority"])}
                   >
-                    {PRIORITY_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="email-crm-priority"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "emailCrm.form.priority", defaultMessage: "Priority" })}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORITY_OPTIONS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -361,25 +379,29 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
                       defaultMessage: "Customer",
                     })}
                   </Label>
-                  <select
-                    id="email-crm-customer"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "emailCrm.form.select_customer",
-                        defaultMessage: "No customer linked",
-                      })}
-                    </option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                        {c.code ? ` (${c.code})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="email-crm-customer"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "emailCrm.form.customer", defaultMessage: "Customer" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "emailCrm.form.select_customer", defaultMessage: "No customer linked" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">
+                        {intl.formatMessage({ id: "emailCrm.form.select_customer", defaultMessage: "No customer linked" })}
+                      </SelectItem>
+                      {customers.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                          {c.code ? ` (${c.code})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -451,7 +473,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>
@@ -523,7 +545,7 @@ export const EmailCrmFormPage = () => {
         data-ai-context={JSON.stringify({ section: "email-crm-form", notFound: true })}
       >
         <PageHeader
-        module="email"
+          module="email"
           title={intl.formatMessage({
             id: "emailCrm.form.not_found",
             defaultMessage: "Conversation not found.",

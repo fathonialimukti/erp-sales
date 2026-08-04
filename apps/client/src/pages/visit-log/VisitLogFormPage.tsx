@@ -25,6 +25,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FormValues {
   salesmanId: string;
@@ -43,9 +50,6 @@ const defaults = (): FormValues => ({
   purpose: "",
   notes: "",
 });
-
-const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const VisitLogFormPage = () => {
   const intl = useIntl();
@@ -182,7 +186,7 @@ export const VisitLogFormPage = () => {
       />
 
       <PageHeader
-        module="visit"
+          module="visit"
           title={
             isEdit
               ? intl.formatMessage({
@@ -207,7 +211,7 @@ export const VisitLogFormPage = () => {
           }
         />
 
-        <form
+      <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
@@ -216,9 +220,9 @@ export const VisitLogFormPage = () => {
       >
         <FormSection
           title={intl.formatMessage({
-                id: "visit_log.form.section_basic",
-                defaultMessage: "Basic information",
-              })}
+            id: "visit_log.form.section_basic",
+            defaultMessage: "Basic information",
+          })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
@@ -234,25 +238,26 @@ export const VisitLogFormPage = () => {
                     })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="visit-salesman"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "visitLog.form.field_salesman_placeholder",
-                        defaultMessage: "Select salesman",
-                      })}
-                    </option>
-                    {(salesmen?.data ?? []).map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="visit-salesman"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "visitLog.form.field_salesman", defaultMessage: "Salesman" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "visitLog.form.field_salesman_placeholder", defaultMessage: "Select salesman" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(salesmen?.data ?? []).map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -273,25 +278,26 @@ export const VisitLogFormPage = () => {
                     })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <select
-                    id="visit-outlet"
-                    className={selectClass}
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
-                    <option value="">
-                      {intl.formatMessage({
-                        id: "visitLog.form.field_outlet_placeholder",
-                        defaultMessage: "Select outlet",
-                      })}
-                    </option>
-                    {(outlets?.data ?? []).map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="visit-outlet"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "visitLog.form.field_outlet", defaultMessage: "Outlet" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "visitLog.form.field_outlet_placeholder", defaultMessage: "Select outlet" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(outlets?.data ?? []).map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -418,7 +424,7 @@ export const VisitLogFormPage = () => {
         <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+              <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
               <DialogDescription>
                 {intl.formatMessage({ id: "common.loading", defaultMessage: "Saving…" })}
               </DialogDescription>

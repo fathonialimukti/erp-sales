@@ -300,6 +300,8 @@
   "dashboard.ai_insight_at_risk": "At-risk orders",
   "dashboard.ai_insight_sales_trend": "Sales trend",
   "dashboard.ai_insight_top_customers": "Top 5 customers this month",
+  "dashboard.ai_insights_empty": "Select an insight prompt to get started",
+  "dashboard.ai_insights_sub": "Ask about your sales data",
   "dashboard.ai_insights_title": "AI Insights",
   "dashboard.chart.catalog_by_category": "Catalog by category",
   "dashboard.chart.catalog_by_category_sub": "SKU count per category — this month",

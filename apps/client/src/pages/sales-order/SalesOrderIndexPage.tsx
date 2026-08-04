@@ -250,7 +250,7 @@ export const SalesOrderIndexPage = () => {
             <p className="truncate font-mono text-xs font-semibold text-foreground">
               {row.original.documentNumber ?? row.original.id.slice(0, 8)}
             </p>
-            <p className="text-[11px] text-foreground tabular-nums">
+            <p className="text-[11px] text-muted-foreground tabular-nums">
               {formatDate(row.original.date)}
             </p>
           </div>
@@ -269,7 +269,7 @@ export const SalesOrderIndexPage = () => {
               {row.original.customer.name}
             </p>
             {row.original.outlet ? (
-              <p className="truncate text-xs text-foreground">
+              <p className="truncate text-xs text-muted-foreground">
                 {row.original.outlet.name}
               </p>
             ) : null}
@@ -284,7 +284,7 @@ export const SalesOrderIndexPage = () => {
           defaultMessage: "Area",
         }),
         cell: ({ row }) => (
-          <span className="text-sm text-foreground">{row.original.area.name}</span>
+          <span className="text-sm text-muted-foreground">{row.original.area.name}</span>
         ),
       },
       {
@@ -295,7 +295,7 @@ export const SalesOrderIndexPage = () => {
           defaultMessage: "Items",
         }),
         cell: ({ row }) => (
-          <span className="text-xs font-medium tabular-nums text-foreground">
+          <span className="text-xs font-medium tabular-nums text-muted-foreground">
             {row.original._count.items}
           </span>
         ),
@@ -318,7 +318,7 @@ export const SalesOrderIndexPage = () => {
               {formatCurrency(row.original.grandTotal)}
             </span>
           ) : (
-            <span className="block text-right text-foreground">—</span>
+            <span className="block text-right text-muted-foreground">—</span>
           ),
       },
       {
