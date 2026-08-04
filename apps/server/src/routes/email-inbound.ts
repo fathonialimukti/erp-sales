@@ -25,7 +25,7 @@ export async function emailInboundHandler(req: Request, res: Response) {
   console.log('✅ Server - payload validated successfully');
 
   try {
-    console.log('🔄 Server - calling processInboundEmail with conversationId:', parsed.data.conversationId);
+    console.log('🔄 Server - calling processInboundEmail for messageId:', parsed.data.messageId);
     const result = await processInboundEmail(parsed.data);
     console.log('✅ Server - processInboundEmail completed', result);
 
