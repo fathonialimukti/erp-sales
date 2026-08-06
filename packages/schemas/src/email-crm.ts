@@ -3,11 +3,13 @@ import { createListInputSchema } from './common';
 
 export const emailConversationStatusSchema = z.enum(['OPEN', 'PENDING', 'RESOLVED', 'SPAM']);
 export const emailConversationPrioritySchema = z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
+export const emailConversationAgentStatusSchema = z.enum(['IDLE', 'RUNNING', 'SENT', 'FAILED']);
 export const emailMessageDirectionSchema = z.enum(['INBOUND', 'OUTBOUND']);
 
 export const emailCrmListInputSchema = createListInputSchema({
   status: emailConversationStatusSchema.optional(),
   priority: emailConversationPrioritySchema.optional(),
+  agentStatus: emailConversationAgentStatusSchema.optional(),
   customerId: z.string().optional(),
 });
 

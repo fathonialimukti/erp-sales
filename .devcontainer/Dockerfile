@@ -15,5 +15,3 @@ RUN apt-get install -y \
     openssh-server \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://gh.io/copilot-install | bash

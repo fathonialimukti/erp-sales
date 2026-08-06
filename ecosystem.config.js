@@ -6,7 +6,7 @@ module.exports = {
       script: 'bun',
       args: 'run start',
       interpreter: 'none',
-      env: { NODE_ENV: 'production' },
+      env: { NODE_ENV: 'production', CORS_ORIGIN: 'https://erp-sales.aetherglo.com' },
     },
     {
       name: 'erp-client',

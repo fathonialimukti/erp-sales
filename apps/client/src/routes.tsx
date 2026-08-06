@@ -62,6 +62,7 @@ const AiAdminChatPage = lazy(() => import('./pages/ai-admin/AiAdminChatPage'));
 const EmailCrmIndexPage = lazyNamed(() => import('./pages/email-crm/EmailCrmIndexPage'), 'EmailCrmIndexPage');
 const EmailCrmDetailPage = lazyNamed(() => import('./pages/email-crm/EmailCrmDetailPage'), 'EmailCrmDetailPage');
 const EmailCrmFormPage = lazyNamed(() => import('./pages/email-crm/EmailCrmFormPage'), 'EmailCrmFormPage');
+const EmailCrmAgentFailuresPage = lazyNamed(() => import('./pages/email-crm/EmailCrmAgentFailuresPage'), 'EmailCrmAgentFailuresPage');
 const KnowledgeBaseIndexPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseIndexPage'), 'KnowledgeBaseIndexPage');
 const KnowledgeBaseDetailPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseDetailPage'), 'KnowledgeBaseDetailPage');
 const KnowledgeBaseFormPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseFormPage'), 'KnowledgeBaseFormPage');
@@ -172,6 +173,7 @@ export const router = createBrowserRouter([
           { path: 'create', element: <EmailCrmFormPage /> },
           { path: ':id', element: <EmailCrmDetailPage /> },
           { path: ':id/edit', element: <EmailCrmFormPage /> },
+          { path: 'agent-failures', element: <EmailCrmAgentFailuresPage /> },
         ],
       },
       {

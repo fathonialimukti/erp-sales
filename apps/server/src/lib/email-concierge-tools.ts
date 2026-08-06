@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import * as z from 'zod';
 import { findBestDiscount } from './action-program-discount.js';
+import { searchKnowledgeChunks, formatKnowledgeHits } from './rag.js';
 import { prisma } from './prisma.js';
 
 export type ConciergeFinalizedReply = {
@@ -294,9 +295,32 @@ export function createEmailConciergeTools(ctx: {
       },
     }),
 
+    searchEmailRules: tool({
+      description:
+        'MANDATORY — call this FIRST before drafting any email reply. Loads the current voice, AI-slop ban list, structural rules, internal secrecy rules, and before/after examples from the knowledge base. You MUST call this at least once per reply. The rules from this call OVERRIDE any defaults.',
+      inputSchema: z.object({
+        topics: z
+          .array(z.enum(['voice', 'banned-phrases', 'structural', 'examples', 'secrecy', 'all']))
+          .default(['all'])
+          .describe('Which rule sections to load. Default "all" loads everything.'),
+      }),
+      execute: async ({ topics }) => {
+        const query = topics.includes('all') || topics.length === 0
+          ? 'email agent rules voice anti-slop banned phrases structural patterns secrecy examples'
+          : topics.join(' ');
+        const hits = await searchKnowledgeChunks(query, 5);
+        const formatted = formatKnowledgeHits(hits);
+        return {
+          rulesLoaded: true,
+          topics: topics.includes('all') ? ['all'] : topics,
+          rules: formatted || 'No email rules found in knowledge base. Apply strict defaults: no bullet points, no passive voice, no AI slop phrases, no internal secrets.',
+        };
+      },
+    }),
+
     finalizeCustomerReply: tool({
       description:
-        'REQUIRED before any customer email is sent. Provide the final HTML reply body. Free-form agent text is never emailed.',
+        'REQUIRED before any customer email is sent. Provide the final HTML reply body. Free-form agent text is never emailed. But BEFORE calling this, you MUST call searchEmailRules at least once to load the current voice, anti-slop, and secrecy rules.',
       inputSchema: z.object({
         htmlBody: z.string().min(1).describe('Final HTML email body for the customer'),
         textBody: z.string().optional().describe('Optional plain-text fallback'),

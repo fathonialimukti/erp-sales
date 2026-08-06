@@ -24,6 +24,13 @@ Shared floor for every agent and chat. **Domain detail does not live here** — 
 
 Do **not** stuff frontend UI law or Prisma patterns into this file — specialists own those.
 
+## Agent Rules (Model-Agnostic)
+
+- The system will automatically pick the correct specialist agent when the user mentions a feature, page, router, or asks something like "fix this", "update the backend", "make this change", etc.
+- You will see the agent name displayed (e.g. **Backend Engineer** or **Frontend Engineer**).
+- **Never implement code yourself.** The main model must always dispatch the right agent first.
+- If you see the main model directly writing code to the chat without an agent name, he is not following the agent guidelines.
+
 ## Code floor (everywhere)
 
 - Match existing architecture; shortest **correct** wiring; no premature abstraction
@@ -48,21 +55,5 @@ packages/schemas/            Shared Zod (@repo/schemas)
 .github/copilot-instructions.md  This bottom line
 docs/design-system/    Aurora Commerce design law (UI authority)
 ```
-
-Do **not** recreate `.claude/skills/` or `agent/skills/` mirrors for Copilot.
-
-## Commands (shared)
-
-| Scope | Command |
-|-------|---------|
-| Dev / build / types | `bun run dev` · `bun run build` · `bun run check-types` |
-| DB (server pkg) | `bun run db:migrate` · `db:seed` · `db:studio` · `db:push` |
-| Tests | `bun run test` · `bunx vitest run <path>` |
-
-## Skills layout
-
-- Real skills: `.agents/skills/` only  
-- Domain module notes (when present): `apps/server/src/routers/*/CLAUDE.md`  
-- Never invent a second design system or second agent tree
 
 When in doubt: **simplest solution that matches architecture**, and for UI, **do not ship unfinished gray shells**.
