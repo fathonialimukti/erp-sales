@@ -33,6 +33,15 @@ async function nextSalesOrderDocumentNumber() {
 }
 
 async function resolveSystemUserId(): Promise<string | { error: string }> {
+  // 1. Dedicated AI system user (preferred — clean audit trail)
+  const aiEmail = process.env.AI_SYSTEM_EMAIL ?? 'ai-system@mail.com';
+  const aiUser = await prisma.user.findUnique({
+    where: { email: aiEmail },
+    select: { id: true },
+  });
+  if (aiUser) return aiUser.id;
+
+  // 2. Explicit SYSTEM_USER_ID env var
   const systemUserId = process.env.SYSTEM_USER_ID;
   if (systemUserId) {
     const systemUser = await prisma.user.findUnique({
@@ -42,8 +51,10 @@ async function resolveSystemUserId(): Promise<string | { error: string }> {
     if (!systemUser) return { error: 'SYSTEM_USER_ID configured but user not found' };
     return systemUser.id;
   }
+
+  // 3. Fallback: any user with System Admin role
   const adminUser = await prisma.user.findFirst({
-    where: { role: { name: 'admin' } },
+    where: { role: { name: 'System Admin' } },
     select: { id: true },
   });
   if (!adminUser) return { error: 'No system user available to create order' };
@@ -320,7 +331,7 @@ export function createEmailConciergeTools(ctx: {
 
     finalizeCustomerReply: tool({
       description:
-        'REQUIRED before any customer email is sent. Provide the final HTML reply body. Free-form agent text is never emailed. But BEFORE calling this, you MUST call searchEmailRules at least once to load the current voice, anti-slop, and secrecy rules.',
+        'REQUIRED — this MUST be your LAST tool call. Provide the final HTML reply body. Free-form agent text is never emailed. Ending the run without calling this fails the run (missing_finalize) and the customer receives nothing. Before calling this, you MUST call searchEmailRules at least once to load the current voice, anti-slop, and secrecy rules.',
       inputSchema: z.object({
         htmlBody: z.string().min(1).describe('Final HTML email body for the customer'),
         textBody: z.string().optional().describe('Optional plain-text fallback'),

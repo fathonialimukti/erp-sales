@@ -117,25 +117,35 @@ export const customerAiTools = {
                 return { error: 'Outlet does not belong to this customer' };
             }
 
-            // Use dedicated system user for AI-created orders
-            // Falls back to first admin if SYSTEM_USER_ID not configured
-            const systemUserId = process.env.SYSTEM_USER_ID;
+            // Resolve system user for AI-created orders:
+            // 1. Dedicated AI system user (preferred — clean audit trail)
+            // 2. Explicit SYSTEM_USER_ID env var
+            // 3. Fallback: any user with System Admin role
             let createdById: string;
-            
-            if (systemUserId) {
-                const systemUser = await prisma.user.findUnique({
-                    where: { id: systemUserId },
-                    select: { id: true },
-                });
-                if (!systemUser) return { error: 'SYSTEM_USER_ID configured but user not found' };
-                createdById = systemUser.id;
+            const aiEmail = process.env.AI_SYSTEM_EMAIL ?? 'ai-system@mail.com';
+            const aiUser = await prisma.user.findUnique({
+                where: { email: aiEmail },
+                select: { id: true },
+            });
+            if (aiUser) {
+                createdById = aiUser.id;
             } else {
-                const adminUser = await prisma.user.findFirst({
-                    where: { role: { name: 'admin' } },
-                    select: { id: true },
-                });
-                if (!adminUser) return { error: 'No system user available to create order' };
-                createdById = adminUser.id;
+                const systemUserId = process.env.SYSTEM_USER_ID;
+                if (systemUserId) {
+                    const systemUser = await prisma.user.findUnique({
+                        where: { id: systemUserId },
+                        select: { id: true },
+                    });
+                    if (!systemUser) return { error: 'SYSTEM_USER_ID configured but user not found' };
+                    createdById = systemUser.id;
+                } else {
+                    const adminUser = await prisma.user.findFirst({
+                        where: { role: { name: 'System Admin' } },
+                        select: { id: true },
+                    });
+                    if (!adminUser) return { error: 'No system user available to create order' };
+                    createdById = adminUser.id;
+                }
             }
 
             // Generate document number: SO-YYYYMMDD-XXXX

@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "crypto";
 import { hashSync } from "bcrypt";
 import { faker } from "@faker-js/faker";
 import { prisma } from "../lib/prisma.js";
@@ -239,6 +240,29 @@ async function seedUsers(roleIds: Record<string, string>) {
       },
     });
     console.log("✓ Integration user created");
+  }
+
+  console.log("Ensuring AI system user exists...");
+  const aiEmail = process.env.AI_SYSTEM_EMAIL ?? "ai-system@mail.com";
+
+  const existingAi = await prisma.user.findUnique({ where: { email: aiEmail } });
+  if (existingAi) {
+    await prisma.user.update({
+      where: { id: existingAi.id },
+      data: { name: "AI System", roleId: roleIds["System Admin"] },
+    });
+    console.log("✓ AI system user updated");
+  } else {
+    // Random password — this user never logs in, it's an audit-trail marker only
+    const aiUser = await prisma.user.create({
+      data: {
+        email: aiEmail,
+        name: "AI System",
+        password: hashSync(randomUUID(), 10),
+        roleId: roleIds["System Admin"],
+      },
+    });
+    console.log(`✓ AI system user created (id: ${aiUser.id})`);
   }
 }
 
