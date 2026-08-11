@@ -8,6 +8,8 @@ import { trpcClient } from "../../lib/trpc";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -210,6 +212,19 @@ const InnerForm = ({
     }));
   };
 
+  useAiFillForm({
+    name: (v: unknown) => setFormState((prev) => ({ ...prev, name: String(v) })),
+    description: (v: unknown) => setFormState((prev) => ({ ...prev, description: String(v) })),
+    permissions: (v: unknown) => {
+      if (Array.isArray(v)) {
+        setFormState((prev) => ({
+          ...prev,
+          permissions: v.map((p) => String(p)),
+        }));
+      }
+    },
+  });
+
   return (
     <section
       className="flex flex-col gap-3 pt-1 pb-6"
@@ -390,6 +405,13 @@ const InnerForm = ({
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="access-control-form"
+            context={{ isEdit, id: roleId ?? null }}
+            options={{
+              permissionList: allPermissions.map((p) => ({ name: p.name, description: p.description })),
+            }}
+          />
           <Button size="sm" className="h-8 gap-1.5 px-2.5" type="submit" disabled={isPending || Boolean(nameError)}>
               {isPending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />

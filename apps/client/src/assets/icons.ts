@@ -37,6 +37,7 @@ import navActivity from "./icons/nav-activity.svg";
 import navNotifications from "./icons/nav-notifications.svg";
 import navKnowledge from "./icons/nav-knowledge.svg";
 import navAi from "./icons/nav-ai.svg";
+import navSettings from "./icons/nav-settings.svg";
 
 /* ── UI controls ── */
 import uiSearch from "./icons/ui-search.svg";
@@ -140,6 +141,7 @@ export const icons = {
   navNotifications,
   navKnowledge,
   navAi,
+  navSettings,
 
   /* UI controls */
   uiSearch,

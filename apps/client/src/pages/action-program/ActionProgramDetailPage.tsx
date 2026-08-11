@@ -11,6 +11,7 @@ import { useToast } from "../../components/useToast";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiSummarizeButton } from "../../components/AiSummarizeButton";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -125,6 +126,11 @@ export const ActionProgramDetailPage = () => {
     >
       <div className="flex flex-col gap-3">
         <NavButtonGroup className="self-end" onBack={() => navigate("/action-program")}>
+          <AiSummarizeButton
+            module="action-program"
+            id={actionProgram.id}
+            context={{ name: actionProgram.name, outletCount: actionProgram.outlets?.length ?? 0 }}
+          />
           {canUpdate ? (
             <Button
               type="button"

@@ -18,6 +18,7 @@ import { notificationRouter } from './routers/notification.js';
 import { reportingRouter } from './routers/reporting.js';
 import { emailCrmRouter } from './routers/email-crm.js';
 import { knowledgeBaseRouter } from './routers/knowledge-base.js';
+import { settingsRouter, userSettingsRouter } from './routers/settings.js';
 
 export const appRouter = router({
     hello: publicProcedure.query(() => ({ message: 'Hello World' })),
@@ -40,6 +41,8 @@ export const appRouter = router({
     reporting: reportingRouter,
     emailCrm: emailCrmRouter,
     knowledgeBase: knowledgeBaseRouter,
+    settings: settingsRouter,
+    userSettings: userSettingsRouter,
 });
 
 export type AppRouter = typeof appRouter;

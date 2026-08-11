@@ -10,6 +10,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ImageUploadField } from "../../components/ImageUploadField";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -178,6 +180,13 @@ const InnerForm = ({
         });
       }
     },
+  });
+
+  useAiFillForm({
+    name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
+    email: (v: unknown) => form.setFieldValue("email" as never, String(v) as never),
+    password: (v: unknown) => form.setFieldValue("password" as never, String(v) as never),
+    roleId: (v: unknown) => form.setFieldValue("roleId" as never, String(v) as never),
   });
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -398,6 +407,13 @@ const InnerForm = ({
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="user-form"
+            context={{ isEdit, id: userId ?? null }}
+            options={{
+              roleList: roleOptions.map((r) => ({ id: r.id, name: r.name })),
+            }}
+          />
           <Button size="sm" className="h-8 gap-1.5 px-2.5" type="submit" disabled={isPending}>
               {isPending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />

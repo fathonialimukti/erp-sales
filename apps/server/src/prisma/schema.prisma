@@ -679,3 +679,26 @@ model KnowledgeChunk {
   @@index([source])
   @@map("knowledge_chunks")
 }
+
+// =============================================
+// SETTINGS
+// =============================================
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedBy String?  @map("updated_by")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
+model UserSetting {
+  userId    String   @map("user_id")
+  key       String
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([userId, key])
+  @@map("user_settings")
+}

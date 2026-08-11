@@ -12,6 +12,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,6 +95,16 @@ export const SkuFormPage = () => {
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    code: (v: unknown) => form.setFieldValue("code" as never, String(v) as never),
+    name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
+    description: (v: unknown) => form.setFieldValue("description" as never, String(v) as never),
+    categoryId: (v: unknown) => form.setFieldValue("categoryId" as never, String(v) as never),
+    basePrice: (v: unknown) => form.setFieldValue("basePrice" as never, String(v) as never),
+    baseUnit: (v: unknown) => form.setFieldValue("baseUnit" as never, String(v) as never),
+    status: (v: unknown) => form.setFieldValue("status" as never, String(v) as never),
   });
 
   useEffect(() => {
@@ -403,6 +415,15 @@ export const SkuFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="sku-form"
+            context={{ isEdit, id: id ?? null }}
+            options={{
+              categoryList: (categories?.data ?? []).map((c) => ({ id: c.id, name: c.name })),
+              baseUnitList: ["pcs", "box", "pack", "kg", "liter", "unit"].map((u) => ({ value: u })),
+              statusList: ["ACTIVE", "INACTIVE"].map((s) => ({ value: s })),
+            }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

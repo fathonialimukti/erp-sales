@@ -128,11 +128,12 @@ export async function searchKnowledgeChunksFts(
 export async function searchKnowledgeChunksVector(
   query: string,
   limit = 5,
-  threshold = getEmbeddingSimilarityThreshold(),
+  threshold?: number,
 ): Promise<KnowledgeHit[]> {
-  if (!query.trim() || !isEmbeddingConfigured()) return [];
+  if (!query.trim() || !(await isEmbeddingConfigured(prisma))) return [];
 
-  const embedding = await generateEmbedding(query);
+  const effectiveThreshold = threshold ?? (await getEmbeddingSimilarityThreshold(prisma));
+  const embedding = await generateEmbedding(prisma, query);
   const vectorLiteral = toPgVectorLiteral(embedding);
 
   const chunks = await prisma.$queryRawUnsafe<
@@ -156,7 +157,7 @@ export async function searchKnowledgeChunksVector(
      ORDER BY embedding <=> $1::vector
      LIMIT $3`,
     vectorLiteral,
-    threshold,
+    effectiveThreshold,
     limit,
   );
 
@@ -184,7 +185,7 @@ export async function searchKnowledgeChunks(
   let vectorHits: KnowledgeHit[] = [];
   let mode: KnowledgeSearchMode = 'fts';
 
-  if (isEmbeddingConfigured()) {
+  if (await isEmbeddingConfigured(prisma)) {
     try {
       const embeddedCount = await countNonNullEmbeddings();
       if (embeddedCount > 0) {

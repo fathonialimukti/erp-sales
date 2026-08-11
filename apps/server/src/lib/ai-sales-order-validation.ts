@@ -1,6 +1,6 @@
 import { generateText, Output } from 'ai';
 import * as z from 'zod';
-import { chatModel } from './ai-provider.js';
+import { getChatModel } from './ai-provider.js';
 import { prisma } from './prisma.js';
 import { retrieveRelevantChunks } from './rag.js';
 
@@ -149,7 +149,7 @@ ${idx + 1}. ${item.sku.name} (${item.sku.code ?? 'N/A'})
 Provide your validation analysis in the required JSON format.`;
 
   const { output } = await generateText({
-    model: chatModel,
+    model: await getChatModel(prisma),
     instructions: systemPrompt,
     prompt: userPrompt,
     output: Output.object({

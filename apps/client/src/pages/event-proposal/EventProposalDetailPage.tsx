@@ -22,6 +22,7 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { API_BASE_URL } from "@/lib/api-base";
+import { AiSummarizeButton } from "../../components/AiSummarizeButton";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -194,6 +195,11 @@ export const EventProposalDetailPage = () => {
     >
       <div className="flex flex-col gap-3">
         <NavButtonGroup className="self-end" onBack={() => navigate("/event-proposal")}>
+          <AiSummarizeButton
+            module="event-proposal"
+            id={eventProposal.id}
+            context={{ name: eventProposal.name, skuCount: eventProposal.skus?.length ?? 0 }}
+          />
           {canUpdate ? (
             <Button
               type="button"

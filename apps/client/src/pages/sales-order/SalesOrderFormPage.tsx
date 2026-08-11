@@ -1,12 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useAtomValue } from "jotai";
 import type { inferProcedureInput } from "@trpc/server";
-import { AlertTriangle, Loader2, Plus, Save, Send, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2 } from "lucide-react";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -17,6 +17,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { FormSection } from "@/components/FormSection";
 import { SelectSearch } from "../../components/SelectSearch";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
+import { AiFillButton } from '@/components/AiFillButton';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,6 +170,8 @@ export const SalesOrderFormPage = () => {
   const hasPermission = useAtomValue(hasPermissionAtom);
   const canPropose = hasPermission("sales-order@propose");
   const isEdit = Boolean(id);
+  const [searchParams] = useSearchParams();
+  const visitLogId = searchParams.get("visitLogId");
 
   // Modal state machine:
   //   idle                — no modal
@@ -592,6 +595,25 @@ export const SalesOrderFormPage = () => {
           </div>
         ) : null}
 
+        {/* Prefilled from visit log banner */}
+        {visitLogId ? (
+          <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <Sparkles className="size-3.5" />
+              {intl.formatMessage({
+                id: "sales_order.form.prefilled_from_visit",
+                defaultMessage: "Order prefilled from visit log",
+              })}
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {intl.formatMessage({
+                id: "sales_order.form.prefilled_from_visit_hint",
+                defaultMessage: "Review the extracted items below, then save or propose.",
+              })}
+            </p>
+          </div>
+        ) : null}
+
         <FormSection
           title="Outlet & Location"
           description="Select outlet to auto-fill customer and area"
@@ -870,6 +892,16 @@ export const SalesOrderFormPage = () => {
         </FormSection>
 
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="sales-order-form"
+            context={{ isEdit, id: id ?? null, ...formValues }}
+            options={{
+              outletList: outletList.map((o) => ({ id: o.id, name: o.name })),
+              skuList: skuList.map((s) => ({ id: s.id, name: s.name, code: s.code })),
+              currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
+              paymentTermsList: ["COD", "NET 7", "NET 14", "NET 30", "NET 60"].map((t) => ({ value: t })),
+            }}
+          />
           <Button
             type="button"
             variant="outline"

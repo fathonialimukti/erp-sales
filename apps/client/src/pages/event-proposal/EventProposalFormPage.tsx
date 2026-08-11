@@ -12,6 +12,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,6 +111,20 @@ export const EventProposalFormPage = () => {
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
+    eventType: (v: unknown) => form.setFieldValue("eventType" as never, String(v) as never),
+    description: (v: unknown) => form.setFieldValue("description" as never, String(v) as never),
+    venue: (v: unknown) => form.setFieldValue("venue" as never, String(v) as never),
+    eventDate: (v: unknown) => form.setFieldValue("eventDate" as never, String(v) as never),
+    eventEndDate: (v: unknown) => form.setFieldValue("eventEndDate" as never, String(v) as never),
+    organizerName: (v: unknown) => form.setFieldValue("organizerName" as never, String(v) as never),
+    organizerContact: (v: unknown) => form.setFieldValue("organizerContact" as never, String(v) as never),
+    areaId: (v: unknown) => form.setFieldValue("areaId" as never, String(v) as never),
+    proposedBudget: (v: unknown) => form.setFieldValue("proposedBudget" as never, String(v) as never),
+    currency: (v: unknown) => form.setFieldValue("currency" as never, String(v) as never),
   });
 
   // ponytail: keep original seed-via-defaultValues only (detail query gates render via isLoading)
@@ -489,6 +505,14 @@ export const EventProposalFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="event-proposal-form"
+            context={{ isEdit, id: id ?? null }}
+            options={{
+              areaList: ((areas?.data ?? []) as { id: string; name: string }[]).map((a) => ({ id: a.id, name: a.name })),
+              currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
+            }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

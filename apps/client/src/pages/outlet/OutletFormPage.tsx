@@ -12,6 +12,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,6 +110,18 @@ export const OutletFormPage = () => {
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    code: (v: unknown) => form.setFieldValue("code" as never, String(v) as never),
+    name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
+    customerId: (v: unknown) => form.setFieldValue("customerId" as never, String(v) as never),
+    areaId: (v: unknown) => form.setFieldValue("areaId" as never, String(v) as never),
+    address: (v: unknown) => form.setFieldValue("address" as never, String(v) as never),
+    contactName: (v: unknown) => form.setFieldValue("contactName" as never, String(v) as never),
+    contactPhone: (v: unknown) => form.setFieldValue("contactPhone" as never, String(v) as never),
+    latitude: (v: unknown) => form.setFieldValue("latitude" as never, Number(v) as never),
+    longitude: (v: unknown) => form.setFieldValue("longitude" as never, Number(v) as never),
   });
 
   useEffect(() => {
@@ -434,6 +448,14 @@ export const OutletFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="outlet-form"
+            context={{ isEdit, id: id ?? null }}
+            options={{
+              customerList: customers.map((c) => ({ id: c.id, name: c.name })),
+              areaList: areas.map((a) => ({ id: a.id, name: a.name })),
+            }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

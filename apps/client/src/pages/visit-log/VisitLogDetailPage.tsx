@@ -25,6 +25,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { API_BASE_URL } from "@/lib/api-base";
 import { StatusChip } from "../../components/StatusChip";
+import { AiSummarizeButton } from "../../components/AiSummarizeButton";
+import { AiVisitOrderButton } from "../../components/AiVisitOrderButton";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -231,6 +233,20 @@ export const VisitLogDetailPage = () => {
     >
       <div className="flex flex-col gap-3">
         <NavButtonGroup className="self-end" onBack={() => navigate("/visit-log")}>
+          <AiVisitOrderButton
+            visitLogId={visitLog.id}
+            outletName={visitLog.outlet?.name}
+          />
+          <AiSummarizeButton
+            module="visit-log"
+            id={visitLog.id}
+            context={{
+              outlet: visitLog.outlet?.name,
+              customer: visitLog.outlet?.customer?.name,
+              date: visitLog.date,
+              approvalStatus: visitLog.approvalStatus,
+            }}
+          />
           {canUpdate ? (
             <Button
               type="button"

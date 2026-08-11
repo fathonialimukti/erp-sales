@@ -12,6 +12,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,6 +94,14 @@ export const VisitLogFormPage = () => {
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    salesmanId: (v: unknown) => form.setFieldValue("salesmanId" as never, String(v) as never),
+    outletId: (v: unknown) => form.setFieldValue("outletId" as never, String(v) as never),
+    date: (v: unknown) => form.setFieldValue("date" as never, String(v) as never),
+    purpose: (v: unknown) => form.setFieldValue("purpose" as never, String(v) as never),
+    notes: (v: unknown) => form.setFieldValue("notes" as never, String(v) as never),
   });
 
   // ponytail: keep original seed-via-defaultValues only (detail query gates render via isLoading)
@@ -379,6 +389,14 @@ export const VisitLogFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="visit-log-form"
+            context={{ isEdit, id: id ?? null }}
+            options={{
+              salesmanList: ((salesmen?.data ?? []) as { id: string; name: string | null }[]).map((u) => ({ id: u.id, name: u.name ?? "" })),
+              outletList: ((outlets?.data ?? []) as { id: string; name: string }[]).map((o) => ({ id: o.id, name: o.name })),
+            }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

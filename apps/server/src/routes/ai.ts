@@ -8,7 +8,7 @@ import {
     convertToModelMessages,
     stepCountIs,
 } from 'ai';
-import { chatModel } from '../lib/ai-provider.js';
+import { getChatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
@@ -173,9 +173,9 @@ export async function aiChatHandler(req: Request, res: Response) {
     const modelMessages = await convertToModelMessages(trimmedMessages as any);
 
     const stream = createUIMessageStream({
-        execute: ({ writer }) => {
+        execute: async ({ writer }) => {
             const result = streamText({
-                model: chatModel,
+                model: await getChatModel(prisma),
                 instructions: buildSystemPrompt(userName, roleName, permissions, relevantContext),
                 messages: modelMessages,
                 temperature: 0,
@@ -316,9 +316,9 @@ export async function aiSummarizeHandler(req: Request, res: Response) {
     const relevantContext = await retrieveRelevantChunks(userText);
 
     const stream = createUIMessageStream({
-        execute: ({ writer }) => {
+        execute: async ({ writer }) => {
             const result = streamText({
-                model: chatModel,
+                model: await getChatModel(prisma),
                 instructions: SUMMARIZE_SYSTEM,
                 prompt: `Page section: ${section}\n\nContext:\n${userText}`,
                 temperature: 0,
@@ -350,9 +350,9 @@ export async function aiDraftHandler(req: Request, res: Response) {
 
     const userText = contextJson ?? '';
     const stream = createUIMessageStream({
-        execute: ({ writer }) => {
+        execute: async ({ writer }) => {
             const result = streamText({
-                model: chatModel,
+                model: await getChatModel(prisma),
                 instructions: DRAFT_SYSTEM,
                 prompt: `Page section: ${section}\nDraft type: ${kind ?? 'followup'}\n\nContext:\n${userText}`,
                 temperature: 0.4,

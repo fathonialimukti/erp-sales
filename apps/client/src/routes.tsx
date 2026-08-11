@@ -66,6 +66,8 @@ const EmailCrmAgentFailuresPage = lazyNamed(() => import('./pages/email-crm/Emai
 const KnowledgeBaseIndexPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseIndexPage'), 'KnowledgeBaseIndexPage');
 const KnowledgeBaseDetailPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseDetailPage'), 'KnowledgeBaseDetailPage');
 const KnowledgeBaseFormPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseFormPage'), 'KnowledgeBaseFormPage');
+const SettingsPage = lazyNamed(() => import('./pages/settings/SettingsPage'), 'SettingsPage');
+const AppSettingsPage = lazyNamed(() => import('./pages/settings/AppSettingsPage'), 'AppSettingsPage');
 
 export const router = createBrowserRouter([
   {
@@ -243,6 +245,13 @@ export const router = createBrowserRouter([
       {
         path: 'ai-admin',
         element: <AiAdminChatPage />,
+      },
+      {
+        path: 'settings',
+        children: [
+          { index: true, element: <SettingsPage /> },
+          { path: 'app', element: <AppSettingsPage /> },
+        ],
       },
       {
         path: '*',

@@ -15,6 +15,7 @@ export type ModuleKey =
   | "ai"
   | "region"
   | "area"
+  | "settings"
   | (string & {});
 
 const KNOWN_MODULES = new Set([
@@ -33,6 +34,7 @@ const KNOWN_MODULES = new Set([
   "ai",
   "region",
   "area",
+  "settings",
 ]);
 
 /** CSS color value for a known module accent, e.g. `var(--module-customer)`. */

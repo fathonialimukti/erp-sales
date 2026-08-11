@@ -12,6 +12,9 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { AiKbWriter } from "@/components/AiKbWriter";
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +64,12 @@ export const KnowledgeBaseFormPage = () => {
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    title: (v: unknown) => form.setFieldValue("title" as never, String(v) as never),
+    content: (v: unknown) => form.setFieldValue("content" as never, String(v) as never),
+    source: (v: unknown) => form.setFieldValue("source" as never, String(v) as never),
   });
 
   useEffect(() => {
@@ -296,6 +305,11 @@ export const KnowledgeBaseFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiKbWriter />
+          <AiFillButton
+            section="knowledge-base-form"
+            context={{ isEdit, id: id ?? null }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

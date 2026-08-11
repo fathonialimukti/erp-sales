@@ -22,6 +22,7 @@ import {
   printReport,
   type ExportColumn,
 } from "../../../components/reports/useReportExport";
+import { AiReportNarrate } from "../../../components/AiReportNarrate";
 import type { ReportFilterValue } from "../../../components/reports/ReportFilters";
 import { Button } from "@/components/ui/button";
 import {
@@ -126,6 +127,18 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
   return (
     <div className="flex flex-col gap-5 print-area" ref={printRef}>
       <div className="no-print flex justify-end gap-2">
+        <AiReportNarrate
+          reportType="collection"
+          filters={filters}
+          summary={{
+            outstandingTotal: data?.outstandingTotal,
+            collectedTotal: data?.collectedTotal,
+            collectionRatePercent: data?.collectionRatePercent,
+            totalBilled: data?.totalBilled,
+            aging,
+            byCustomer,
+          }}
+        />
         <Button type="button" variant="outline" size="sm" onClick={onExport}>
           <Download className="size-4" aria-hidden />
           {intl.formatMessage({

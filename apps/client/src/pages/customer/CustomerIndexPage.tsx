@@ -16,6 +16,7 @@ import { DataTable } from "../../components/DataTable";
 import { EmptyState } from "../../components/EmptyState";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
+import { AiDuplicateCheck } from "../../components/AiDuplicateCheck";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "../../components/Pagination";
 import {
@@ -213,15 +214,18 @@ export const CustomerIndexPage = () => {
           defaultMessage: "Manage geographical customers and their areas.",
         })}
         actions={
-          canCreate ? (
-            <Button type="button" onClick={() => navigate("/customer/create")}>
-              <Plus className="size-4" />
-              {intl.formatMessage({
-                id: "customer.index.create_button",
-                defaultMessage: "New customer",
-              })}
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <AiDuplicateCheck dataset="customer" />
+            {canCreate ? (
+              <Button type="button" onClick={() => navigate("/customer/create")}>
+                <Plus className="size-4" />
+                {intl.formatMessage({
+                  id: "customer.index.create_button",
+                  defaultMessage: "New customer",
+                })}
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

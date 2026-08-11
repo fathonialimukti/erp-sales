@@ -129,13 +129,13 @@ async function ingest() {
         USING GIN (to_tsvector('english', title || ' ' || content))
     `;
 
-  if (isEmbeddingConfigured()) {
+  if (await isEmbeddingConfigured(prisma)) {
     const newRows = await prisma.knowledgeChunk.findMany({
       where: { source: { in: markdownSources } },
       select: { id: true, title: true, content: true },
     });
     console.log(`Embedding ${newRows.length} markdown chunk(s)…`);
-    const { attempted, succeeded } = await embedKnowledgeChunksBestEffort(newRows);
+    const { attempted, succeeded } = await embedKnowledgeChunksBestEffort(prisma, newRows);
     console.log(`  embeddings: ${succeeded}/${attempted} succeeded`);
 
     const hnswOk = await ensureKnowledgeEmbeddingHnswIndex();

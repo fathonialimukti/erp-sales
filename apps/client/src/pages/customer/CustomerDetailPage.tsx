@@ -12,6 +12,8 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
+import { AiSummarizeButton } from "../../components/AiSummarizeButton";
+import { AiCustomerBrief } from "../../components/AiCustomerBrief";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -109,6 +111,12 @@ export const CustomerDetailPage = () => {
     >
       <div className="flex flex-col gap-3">
         <NavButtonGroup className="self-end" onBack={() => navigate("/customer")}>
+          <AiCustomerBrief customerId={customer.id} name={customer.name} />
+          <AiSummarizeButton
+            module="customer"
+            id={customer.id}
+            context={{ name: customer.name, code: customer.code, outletCount: customer.outlets?.length ?? 0 }}
+          />
           {canUpdate ? (
             <Button
               type="button"

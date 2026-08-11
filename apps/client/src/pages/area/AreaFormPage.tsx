@@ -12,6 +12,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,6 +74,12 @@ export const AreaFormPage = () => {
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    regionId: (v: unknown) => form.setFieldValue("regionId" as never, String(v) as never),
+    code: (v: unknown) => form.setFieldValue("code" as never, String(v) as never),
+    name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
   });
 
   useEffect(() => {
@@ -279,6 +287,13 @@ export const AreaFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="area-form"
+            context={{ isEdit, id: id ?? null }}
+            options={{
+              regionList: (regions?.data ?? []).map((r) => ({ id: r.id, name: r.name })),
+            }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

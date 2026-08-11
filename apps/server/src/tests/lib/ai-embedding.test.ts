@@ -5,6 +5,7 @@ import {
   isEmbeddingConfigured,
   toPgVectorLiteral,
 } from '../../lib/ai-embedding.js';
+import { prisma } from '../../lib/prisma.js';
 
 const ENV_KEYS = [
   'EMBEDDING_BASE_URL',
@@ -35,34 +36,34 @@ describe('isEmbeddingConfigured', () => {
     restoreEnv();
   });
 
-  it('is false when base URL or model missing', () => {
+  it('is false when base URL or model missing', async () => {
     stashEnv();
     delete process.env.EMBEDDING_BASE_URL;
     delete process.env.EMBEDDING_MODEL;
-    expect(isEmbeddingConfigured()).toBe(false);
+    expect(await isEmbeddingConfigured(prisma)).toBe(false);
 
     process.env.EMBEDDING_BASE_URL = 'https://embed.example/v1';
     delete process.env.EMBEDDING_MODEL;
-    expect(isEmbeddingConfigured()).toBe(false);
+    expect(await isEmbeddingConfigured(prisma)).toBe(false);
 
     delete process.env.EMBEDDING_BASE_URL;
     process.env.EMBEDDING_MODEL = 'text-embedding-3-small';
-    expect(isEmbeddingConfigured()).toBe(false);
+    expect(await isEmbeddingConfigured(prisma)).toBe(false);
   });
 
-  it('is true when base URL and model are set (API key optional)', () => {
+  it('is true when base URL and model are set (API key optional)', async () => {
     stashEnv();
     process.env.EMBEDDING_BASE_URL = 'https://embed.example/v1';
     process.env.EMBEDDING_MODEL = 'text-embedding-3-small';
     delete process.env.EMBEDDING_API_KEY;
-    expect(isEmbeddingConfigured()).toBe(true);
+    expect(await isEmbeddingConfigured(prisma)).toBe(true);
   });
 
-  it('trims whitespace and ignores empty values', () => {
+  it('trims whitespace and ignores empty values', async () => {
     stashEnv();
     process.env.EMBEDDING_BASE_URL = '   ';
     process.env.EMBEDDING_MODEL = 'text-embedding-3-small';
-    expect(isEmbeddingConfigured()).toBe(false);
+    expect(await isEmbeddingConfigured(prisma)).toBe(false);
   });
 });
 
@@ -71,22 +72,22 @@ describe('embedding env helpers', () => {
     restoreEnv();
   });
 
-  it('defaults dimensions to 1536', () => {
+  it('defaults dimensions to 1536', async () => {
     stashEnv();
     delete process.env.EMBEDDING_DIMENSIONS;
-    expect(getEmbeddingDimensions()).toBe(1536);
+    expect(await getEmbeddingDimensions(prisma)).toBe(1536);
   });
 
-  it('locks dimensions to 1536 even when EMBEDDING_DIMENSIONS differs', () => {
+  it('locks dimensions to 1536 even when EMBEDDING_DIMENSIONS differs', async () => {
     stashEnv();
     process.env.EMBEDDING_DIMENSIONS = '768';
-    expect(getEmbeddingDimensions()).toBe(1536);
+    expect(await getEmbeddingDimensions(prisma)).toBe(1536);
   });
 
-  it('parses similarity threshold', () => {
+  it('parses similarity threshold', async () => {
     stashEnv();
     process.env.EMBEDDING_SIMILARITY_THRESHOLD = '0.42';
-    expect(getEmbeddingSimilarityThreshold()).toBe(0.42);
+    expect(await getEmbeddingSimilarityThreshold(prisma)).toBe(0.42);
   });
 
   it('formats pgvector literals', () => {

@@ -1,8 +1,13 @@
 import { tool } from 'ai';
 import * as z from 'zod';
 import { findBestDiscount } from './action-program-discount.js';
-import { searchKnowledgeChunks, formatKnowledgeHits } from './rag.js';
+import {
+  searchKnowledgeChunks,
+  formatKnowledgeHits,
+  toKnowledgeSearchHits,
+} from './rag.js';
 import { prisma } from './prisma.js';
+import { getSettingValue } from './settings-service.js';
 
 export type ConciergeFinalizedReply = {
   subject?: string;
@@ -34,21 +39,21 @@ async function nextSalesOrderDocumentNumber() {
 
 async function resolveSystemUserId(): Promise<string | { error: string }> {
   // 1. Dedicated AI system user (preferred — clean audit trail)
-  const aiEmail = process.env.AI_SYSTEM_EMAIL ?? 'ai-system@mail.com';
+  const aiEmail = String(await getSettingValue(prisma, 'system.aiSystemEmail'));
   const aiUser = await prisma.user.findUnique({
     where: { email: aiEmail },
     select: { id: true },
   });
   if (aiUser) return aiUser.id;
 
-  // 2. Explicit SYSTEM_USER_ID env var
-  const systemUserId = process.env.SYSTEM_USER_ID;
+  // 2. Explicit system.systemUserId setting (env fallback SYSTEM_USER_ID)
+  const systemUserId = String(await getSettingValue(prisma, 'system.systemUserId'));
   if (systemUserId) {
     const systemUser = await prisma.user.findUnique({
       where: { id: systemUserId },
       select: { id: true },
     });
-    if (!systemUser) return { error: 'SYSTEM_USER_ID configured but user not found' };
+    if (!systemUser) return { error: 'system.systemUserId configured but user not found' };
     return systemUser.id;
   }
 
@@ -302,6 +307,34 @@ export function createEmailConciergeTools(ctx: {
           status: order.approvalStatus,
           itemCount: order.items.length,
           total: order.grandTotal,
+        };
+      },
+    }),
+
+    searchKnowledge: tool({
+      description:
+        'Search the ERP knowledge base for customer questions about products, company info, processes, or anything that might be documented (e.g. "topan"). ' +
+        'Returns ranked hits with title, source, and snippet. Use this for general knowledge; keep searchEmailRules for voice/anti-slop/secrecy rules.',
+      inputSchema: z.object({
+        query: z
+          .string()
+          .min(1)
+          .describe('Natural language or keyword search over the knowledge base (e.g. "topan", "payment terms", "delivery process")'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(10)
+          .default(5)
+          .optional()
+          .describe('Max knowledge hits to return (1-10, default 5)'),
+      }),
+      execute: async ({ query, limit }) => {
+        const hits = await searchKnowledgeChunks(query, limit ?? 5);
+        const searchHits = toKnowledgeSearchHits(hits);
+        return {
+          hits: searchHits,
+          count: searchHits.length,
         };
       },
     }),

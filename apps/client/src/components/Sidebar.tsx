@@ -81,6 +81,7 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   // geo master data — module tokens + PageHeader MODULE_ICON exist for these keys
   "/region": "region",
   "/area": "area",
+  "/settings": "settings",
 };
 
 export const Sidebar = () => {
@@ -170,6 +171,8 @@ export const Sidebar = () => {
             "/notifications",
             "/knowledge-base",
             "/ai-admin",
+            "/settings",
+            "/settings/app",
           ].includes(l.href),
         ),
       },

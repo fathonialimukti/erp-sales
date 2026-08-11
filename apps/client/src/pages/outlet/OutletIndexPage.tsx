@@ -15,6 +15,7 @@ import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
 import { EmptyState } from "../../components/EmptyState";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiDuplicateCheck } from "../../components/AiDuplicateCheck";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "../../components/Pagination";
 import {
@@ -207,15 +208,18 @@ export const OutletIndexPage = () => {
           defaultMessage: "Manage outlets and their locations.",
         })}
         actions={
-          canCreate ? (
-            <Button type="button" onClick={() => navigate("/outlet/create")}>
-              <Plus className="size-4" />
-              {intl.formatMessage({
-                id: "outlet.index.create_button",
-                defaultMessage: "New outlet",
-              })}
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <AiDuplicateCheck dataset="outlet" />
+            {canCreate ? (
+              <Button type="button" onClick={() => navigate("/outlet/create")}>
+                <Plus className="size-4" />
+                {intl.formatMessage({
+                  id: "outlet.index.create_button",
+                  defaultMessage: "New outlet",
+                })}
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

@@ -56,7 +56,7 @@ export const knowledgeBaseRouter = router({
       });
 
       // Best-effort hybrid RAG embedding — never fail the mutation.
-      void embedKnowledgeChunkBestEffort(created.id, created.title, created.content);
+      void embedKnowledgeChunkBestEffort(ctx.db, created.id, created.title, created.content);
 
       return created;
     }),
@@ -96,7 +96,7 @@ export const knowledgeBaseRouter = router({
           );
         }
         // Best-effort re-embed — never fail the mutation.
-        void embedKnowledgeChunkBestEffort(updated.id, updated.title, updated.content);
+        void embedKnowledgeChunkBestEffort(ctx.db, updated.id, updated.title, updated.content);
       }
 
       return updated;

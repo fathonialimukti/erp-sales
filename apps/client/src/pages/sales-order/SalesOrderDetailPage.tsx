@@ -27,6 +27,8 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
+import { AiSummarizeButton } from "../../components/AiSummarizeButton";
+import { AiRejectionFixButton } from "../../components/AiRejectionFixButton";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { trpcClient } from "../../lib/trpc";
 import { useToast } from "../../components/useToast";
@@ -458,6 +460,21 @@ export const SalesOrderDetailPage = () => {
             </Button>
           </>
         ) : null}
+        {record.approvalStatus === "REJECTED" ? (
+          <AiRejectionFixButton salesOrderId={record.id} />
+        ) : null}
+        <AiSummarizeButton
+          module="sales-order"
+          id={record.id}
+          context={{
+            documentNumber: record.documentNumber,
+            customer: record.customer?.name,
+            outlet: record.outlet?.name,
+            approvalStatus: record.approvalStatus,
+            grandTotal: record.grandTotal,
+            itemCount: record.items.length,
+          }}
+        />
       </div>
 
       <Card className="shadow-sm">

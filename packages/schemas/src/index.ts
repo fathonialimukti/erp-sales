@@ -11,6 +11,7 @@ export * from './outlet';
 export * from './region';
 export * from './report';
 export * from './sales-order';
+export * from './settings';
 export * from './sku-category';
 export * from './sku';
 export * from './user';

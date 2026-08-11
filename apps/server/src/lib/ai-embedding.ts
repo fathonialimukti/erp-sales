@@ -1,6 +1,8 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { embed, embedMany } from 'ai';
 import { prisma } from './prisma.js';
+import { getSettingValue } from './settings-service.js';
+import type { DbClient } from './prisma.js';
 
 /** Locked to match `knowledge_chunks.embedding vector(1536)` (phase 2). */
 export const EMBEDDING_COLUMN_DIMENSIONS = 1536;
@@ -9,25 +11,23 @@ const EMBED_BATCH_SIZE = 32;
 
 let warnedDimensionMismatch = false;
 
-function trimEnv(value: string | undefined): string {
-  return value?.trim() ?? '';
+/** True when embedding base URL + model are set (API key optional). */
+export async function isEmbeddingConfigured(db: DbClient): Promise<boolean> {
+  const baseUrl = String(await getSettingValue(db, 'embedding.baseUrl')).trim();
+  const model = String(await getSettingValue(db, 'embedding.model')).trim();
+  return Boolean(baseUrl && model);
 }
 
-/** True when EMBEDDING_BASE_URL + EMBEDDING_MODEL are set (API key optional). */
-export function isEmbeddingConfigured(): boolean {
-  return Boolean(trimEnv(process.env.EMBEDDING_BASE_URL) && trimEnv(process.env.EMBEDDING_MODEL));
-}
-
-export function getEmbeddingModelId(): string {
-  return trimEnv(process.env.EMBEDDING_MODEL);
+export async function getEmbeddingModelId(db: DbClient): Promise<string> {
+  return String(await getSettingValue(db, 'embedding.model')).trim();
 }
 
 /**
  * Always 1536 to match the pgvector column.
- * If EMBEDDING_DIMENSIONS is set to another value, warn once and still use 1536.
+ * If the configured dimensions differ, warn once and still use 1536.
  */
-export function getEmbeddingDimensions(): number {
-  const raw = trimEnv(process.env.EMBEDDING_DIMENSIONS);
+export async function getEmbeddingDimensions(db: DbClient): Promise<number> {
+  const raw = String(await getSettingValue(db, 'embedding.dimensions')).trim();
   if (!raw) return EMBEDDING_COLUMN_DIMENSIONS;
 
   const n = Number(raw);
@@ -35,14 +35,14 @@ export function getEmbeddingDimensions(): number {
   if (parsed !== EMBEDDING_COLUMN_DIMENSIONS && !warnedDimensionMismatch) {
     warnedDimensionMismatch = true;
     console.warn(
-      `[embedding] EMBEDDING_DIMENSIONS=${raw} ignored; knowledge_chunks.embedding is fixed at vector(${EMBEDDING_COLUMN_DIMENSIONS}). Using ${EMBEDDING_COLUMN_DIMENSIONS}.`,
+      `[embedding] configured dimensions=${raw} ignored; knowledge_chunks.embedding is fixed at vector(${EMBEDDING_COLUMN_DIMENSIONS}). Using ${EMBEDDING_COLUMN_DIMENSIONS}.`,
     );
   }
   return EMBEDDING_COLUMN_DIMENSIONS;
 }
 
-export function getEmbeddingSimilarityThreshold(): number {
-  const raw = trimEnv(process.env.EMBEDDING_SIMILARITY_THRESHOLD);
+export async function getEmbeddingSimilarityThreshold(db: DbClient): Promise<number> {
+  const raw = String(await getSettingValue(db, 'embedding.similarityThreshold')).trim();
   if (!raw) return DEFAULT_SIMILARITY_THRESHOLD;
   const n = Number(raw);
   return Number.isFinite(n) ? n : DEFAULT_SIMILARITY_THRESHOLD;
@@ -56,29 +56,29 @@ export function buildEmbedText(title: string, content: string): string {
   return `${title}\n\n${content}`.trim();
 }
 
-function requireEmbeddingConfig(): {
+async function requireEmbeddingConfig(db: DbClient): Promise<{
   baseURL: string;
   apiKey: string;
   modelId: string;
   dimensions: number;
-} {
-  const baseURL = trimEnv(process.env.EMBEDDING_BASE_URL).replace(/\/$/, '');
-  const modelId = getEmbeddingModelId();
+}> {
+  const baseURL = String(await getSettingValue(db, 'embedding.baseUrl')).trim().replace(/\/$/, '');
+  const modelId = await getEmbeddingModelId(db);
   if (!baseURL || !modelId) {
     throw new Error(
-      'Embedding not configured. Set EMBEDDING_BASE_URL and EMBEDDING_MODEL.',
+      'Embedding not configured. Set embedding.baseUrl and embedding.model (or EMBEDDING_BASE_URL / EMBEDDING_MODEL).',
     );
   }
   return {
     baseURL,
-    apiKey: trimEnv(process.env.EMBEDDING_API_KEY) || 'not-set',
+    apiKey: String(await getSettingValue(db, 'embedding.apiKey')).trim() || 'not-set',
     modelId,
-    dimensions: getEmbeddingDimensions(),
+    dimensions: await getEmbeddingDimensions(db),
   };
 }
 
-function getEmbeddingModel() {
-  const { baseURL, apiKey, modelId } = requireEmbeddingConfig();
+async function getEmbeddingModel(db: DbClient) {
+  const { baseURL, apiKey, modelId } = await requireEmbeddingConfig(db);
   const provider = createOpenAICompatible({
     name: 'embedding',
     baseURL,
@@ -95,15 +95,15 @@ function providerOptionsForDimensions(dimensions: number) {
 }
 
 /** Generate a single embedding vector. Throws if unconfigured or the provider fails. */
-export async function generateEmbedding(text: string): Promise<number[]> {
+export async function generateEmbedding(db: DbClient, text: string): Promise<number[]> {
   const value = text.trim();
   if (!value) {
     throw new Error('generateEmbedding: text is empty');
   }
 
-  const { dimensions } = requireEmbeddingConfig();
+  const { dimensions } = await requireEmbeddingConfig(db);
   const result = await embed({
-    model: getEmbeddingModel(),
+    model: await getEmbeddingModel(db),
     value,
     providerOptions: providerOptionsForDimensions(dimensions),
   });
@@ -115,15 +115,15 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 /** Batch embeddings in provider-friendly chunks. Throws on failure. */
-export async function generateEmbeddings(values: string[]): Promise<number[][]> {
+export async function generateEmbeddings(db: DbClient, values: string[]): Promise<number[][]> {
   const cleaned = values.map((v) => v.trim());
   if (cleaned.some((v) => !v)) {
     throw new Error('generateEmbeddings: empty value in batch');
   }
   if (cleaned.length === 0) return [];
 
-  const { dimensions } = requireEmbeddingConfig();
-  const model = getEmbeddingModel();
+  const { dimensions } = await requireEmbeddingConfig(db);
+  const model = await getEmbeddingModel(db);
   const out: number[][] = [];
 
   for (let i = 0; i < cleaned.length; i += EMBED_BATCH_SIZE) {
@@ -153,7 +153,7 @@ export async function generateEmbeddings(values: string[]): Promise<number[][]> 
 export async function upsertChunkEmbedding(
   id: string,
   embedding: number[],
-  model: string = getEmbeddingModelId(),
+  model?: string,
 ): Promise<void> {
   if (!id) throw new Error('upsertChunkEmbedding: id required');
   if (!embedding.length) throw new Error('upsertChunkEmbedding: empty embedding');
@@ -171,7 +171,7 @@ export async function upsertChunkEmbedding(
          embedding_updated_at = NOW()
      WHERE id = $3`,
     vectorLiteral,
-    model || getEmbeddingModelId() || 'unknown',
+    model || 'unknown',
     id,
   );
 }
@@ -197,14 +197,16 @@ export async function clearChunkEmbedding(id: string): Promise<void> {
  * Never throws — logs and returns false on failure / unconfigured.
  */
 export async function embedKnowledgeChunkBestEffort(
+  db: DbClient,
   id: string,
   title: string,
   content: string,
 ): Promise<boolean> {
-  if (!isEmbeddingConfigured()) return false;
+  if (!(await isEmbeddingConfigured(db))) return false;
   try {
-    const embedding = await generateEmbedding(buildEmbedText(title, content));
-    await upsertChunkEmbedding(id, embedding);
+    const embedding = await generateEmbedding(db, buildEmbedText(title, content));
+    const modelId = await getEmbeddingModelId(db);
+    await upsertChunkEmbedding(id, embedding, modelId);
     return true;
   } catch (err) {
     console.warn(
@@ -217,19 +219,21 @@ export async function embedKnowledgeChunkBestEffort(
 
 /** Best-effort batch embed for many rows (ingest). Returns success count. */
 export async function embedKnowledgeChunksBestEffort(
+  db: DbClient,
   rows: Array<{ id: string; title: string; content: string }>,
 ): Promise<{ attempted: number; succeeded: number }> {
-  if (!isEmbeddingConfigured() || rows.length === 0) {
+  if (!(await isEmbeddingConfigured(db)) || rows.length === 0) {
     return { attempted: 0, succeeded: 0 };
   }
 
   let succeeded = 0;
-  const modelId = getEmbeddingModelId();
+  const modelId = await getEmbeddingModelId(db);
 
   for (let i = 0; i < rows.length; i += EMBED_BATCH_SIZE) {
     const batch = rows.slice(i, i + EMBED_BATCH_SIZE);
     try {
       const embeddings = await generateEmbeddings(
+        db,
         batch.map((r) => buildEmbedText(r.title, r.content)),
       );
       for (let j = 0; j < batch.length; j++) {

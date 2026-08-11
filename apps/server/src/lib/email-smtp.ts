@@ -1,12 +1,14 @@
 import { randomUUID } from 'crypto';
 import nodemailer from 'nodemailer';
+import { getSecretValue, getSettingValue } from './settings-service.js';
+import { prisma } from './prisma.js';
 
-export function createSmtpTransport() {
-  const host = process.env.SMTP_HOST ?? 'smtp-relay.brevo.com';
-  const port = Number(process.env.SMTP_PORT ?? 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!user || !pass) throw new Error('SMTP_USER/SMTP_PASS not configured');
+export async function createSmtpTransport() {
+  const host = String(await getSettingValue(prisma, 'smtp.host'));
+  const port = Number(await getSettingValue(prisma, 'smtp.port'));
+  const user = String(await getSettingValue(prisma, 'smtp.user'));
+  const pass = await getSecretValue(prisma, 'smtp.pass');
+  if (!user || !pass) throw new Error('SMTP user/pass not configured');
   return nodemailer.createTransport({
     host,
     port,
@@ -15,7 +17,7 @@ export function createSmtpTransport() {
   });
 }
 
-export function generateMessageId(domain = process.env.SMTP_DOMAIN ?? 'aetherglo.com') {
+export function generateMessageId(domain = 'aetherglo.com') {
   return `<${randomUUID()}@${domain}>`;
 }
 
@@ -27,9 +29,10 @@ export async function sendSmtpEmail(input: {
   inReplyTo?: string;
   references?: string;
 }): Promise<{ messageId: string }> {
-  const from = process.env.SMTP_FROM ?? 'AetherGlo Sales <info@aetherglo.com>';
-  const messageId = generateMessageId();
-  const transport = createSmtpTransport();
+  const from = String(await getSettingValue(prisma, 'smtp.from'));
+  const domain = String(await getSettingValue(prisma, 'smtp.domain'));
+  const messageId = generateMessageId(domain);
+  const transport = await createSmtpTransport();
   await transport.sendMail({
     from,
     to: input.to,

@@ -6,8 +6,9 @@ import {
     convertToModelMessages,
     stepCountIs,
 } from 'ai';
-import { chatModel } from '../lib/ai-provider.js';
+import { getChatModel } from '../lib/ai-provider.js';
 import { customerAiTools } from '../lib/customer-ai-tools.js';
+import { prisma } from '../lib/prisma.js';
 
 const SYSTEM_PROMPT = `You are a friendly B2B customer service assistant for an ERP sales platform.
 
@@ -40,9 +41,9 @@ export async function customerAiChatHandler(req: Request, res: Response) {
     const modelMessages = await convertToModelMessages(messages as any);
 
     const stream = createUIMessageStream({
-        execute: ({ writer }) => {
+        execute: async ({ writer }) => {
             const result = streamText({
-                model: chatModel,
+                model: await getChatModel(prisma),
                 instructions: SYSTEM_PROMPT,
                 messages: modelMessages,
                 temperature: 0.3,

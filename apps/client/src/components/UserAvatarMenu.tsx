@@ -54,7 +54,7 @@ export const UserAvatarMenu = ({
   };
 
   const handleSettings = () => {
-    navigate("/users");
+    navigate("/settings");
   };
 
   const handleLogout = async () => {

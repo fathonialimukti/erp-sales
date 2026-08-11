@@ -12,6 +12,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,6 +120,18 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    email: (v: unknown) => form.setFieldValue("email" as never, String(v) as never),
+    subject: (v: unknown) => form.setFieldValue("subject" as never, String(v) as never),
+    status: (v: unknown) => form.setFieldValue("status" as never, String(v) as never),
+    priority: (v: unknown) => form.setFieldValue("priority" as never, String(v) as never),
+    tags: (v: unknown) => {
+      if (Array.isArray(v)) form.setFieldValue("tags" as never, v.join(", ") as never);
+      else if (typeof v === "string") form.setFieldValue("tags" as never, v as never);
+    },
+    customerId: (v: unknown) => form.setFieldValue("customerId" as never, String(v) as never),
   });
 
   const createMutation = useMutation({
@@ -428,6 +442,15 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="email-crm-form"
+            context={{ isEdit, id: conversationId ?? null }}
+            options={{
+              customerList: customers.map((c) => ({ id: c.id, name: c.name })),
+              statusList: STATUS_OPTIONS.map((s) => ({ value: s })),
+              priorityList: PRIORITY_OPTIONS.map((p) => ({ value: p })),
+            }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

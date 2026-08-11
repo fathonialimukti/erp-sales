@@ -2,8 +2,9 @@ import type { Request, Response } from 'express';
 import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { generateObject } from 'ai';
-import { chatModel } from '../lib/ai-provider.js';
+import { getChatModel } from '../lib/ai-provider.js';
 import { getJwtSecret } from '../lib/jwt-secret.js';
+import { prisma } from '../lib/prisma.js';
 import { createSalesOrderSchema } from '@repo/schemas/sales-order';
 
 const JWT_SECRET = getJwtSecret();
@@ -53,7 +54,7 @@ export async function aiExtractSalesOrderHandler(req: Request, res: Response) {
 
     try {
         const { object } = await generateObject({
-            model: chatModel,
+            model: await getChatModel(prisma),
             instructions: EXTRACT_SYSTEM,
             prompt: text,
             schema: createSalesOrderSchema,

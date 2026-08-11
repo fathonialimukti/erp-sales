@@ -12,7 +12,7 @@ import {
   updateEmailConversationSchema,
 } from '@repo/schemas/email-crm';
 import { logActivity } from '../lib/activity-log.js';
-import { chatModel } from '../lib/ai-provider.js';
+import { getChatModel } from '../lib/ai-provider.js';
 import { enqueueEmailConcierge } from '../lib/email-concierge.js';
 import {
   htmlToText,
@@ -310,7 +310,7 @@ export const emailCrmRouter = router({
       ].filter(Boolean);
 
       const { text } = await generateText({
-        model: chatModel,
+        model: await getChatModel(ctx.db),
         instructions: system,
         prompt: promptParts.join('\n\n'),
         temperature: 0.7,

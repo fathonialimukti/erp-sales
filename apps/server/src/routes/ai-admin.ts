@@ -10,7 +10,7 @@ import {
     tool,
 } from 'ai';
 import * as z from 'zod';
-import { chatModel } from '../lib/ai-provider.js';
+import { getChatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { prisma } from '../lib/prisma.js';
@@ -381,9 +381,9 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
     const modelMessages = await convertToModelMessages(trimmedMessages as any);
 
     const stream = createUIMessageStream({
-        execute: ({ writer }) => {
+        execute: async ({ writer }) => {
             const result = streamText({
-                model: chatModel,
+                model: await getChatModel(prisma),
                 instructions: buildAdminSystemPrompt(userName, roleName, userPermissions, relevantContext),
                 messages: modelMessages,
                 temperature: 0,

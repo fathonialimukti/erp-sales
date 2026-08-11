@@ -12,6 +12,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "../../components/FormField";
@@ -59,6 +61,11 @@ export const RegionFormPage = () => {
     onSubmit: async () => {
       setModalStage("confirm");
     },
+  });
+
+  useAiFillForm({
+    code: (v: unknown) => form.setFieldValue("code" as never, String(v) as never),
+    name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
   });
 
   useEffect(() => {
@@ -256,6 +263,10 @@ export const RegionFormPage = () => {
         </FormSection>
 
         <div className="flex items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="region-form"
+            context={{ isEdit, id: id ?? null }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5 font-semibold"

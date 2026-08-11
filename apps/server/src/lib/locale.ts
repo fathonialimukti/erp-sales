@@ -41,6 +41,10 @@ const messages: Record<ServerLocale, Record<string, string>> = {
     'user.notFound': 'User not found',
     'user.emailExists': 'Email already exists',
     'user.cannotDeleteLastAdmin': 'Cannot delete the last system admin',
+
+    // Settings
+    'settings.updated': 'App settings updated',
+    'userSettings.updated': 'Settings updated',
   },
   id: {
     // Auth
@@ -75,6 +79,10 @@ const messages: Record<ServerLocale, Record<string, string>> = {
     'user.notFound': 'User tidak ditemukan',
     'user.emailExists': 'Email sudah ada',
     'user.cannotDeleteLastAdmin': 'Tidak dapat menghapus admin sistem terakhir',
+
+    // Settings
+    'settings.updated': 'Pengaturan aplikasi diperbarui',
+    'userSettings.updated': 'Pengaturan diperbarui',
   },
 };
 

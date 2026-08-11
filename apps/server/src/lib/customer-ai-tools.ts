@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import * as z from 'zod';
 import { prisma } from './prisma.js';
+import { getSettingValue } from './settings-service.js';
 
 /**
  * Customer AI tools — public endpoint for B2B self-service.
@@ -119,10 +120,10 @@ export const customerAiTools = {
 
             // Resolve system user for AI-created orders:
             // 1. Dedicated AI system user (preferred — clean audit trail)
-            // 2. Explicit SYSTEM_USER_ID env var
+            // 2. Explicit system.systemUserId setting (env fallback SYSTEM_USER_ID)
             // 3. Fallback: any user with System Admin role
             let createdById: string;
-            const aiEmail = process.env.AI_SYSTEM_EMAIL ?? 'ai-system@mail.com';
+            const aiEmail = String(await getSettingValue(prisma, 'system.aiSystemEmail'));
             const aiUser = await prisma.user.findUnique({
                 where: { email: aiEmail },
                 select: { id: true },
@@ -130,13 +131,13 @@ export const customerAiTools = {
             if (aiUser) {
                 createdById = aiUser.id;
             } else {
-                const systemUserId = process.env.SYSTEM_USER_ID;
+                const systemUserId = String(await getSettingValue(prisma, 'system.systemUserId'));
                 if (systemUserId) {
                     const systemUser = await prisma.user.findUnique({
                         where: { id: systemUserId },
                         select: { id: true },
                     });
-                    if (!systemUser) return { error: 'SYSTEM_USER_ID configured but user not found' };
+                    if (!systemUser) return { error: 'system.systemUserId configured but user not found' };
                     createdById = systemUser.id;
                 } else {
                     const adminUser = await prisma.user.findFirst({

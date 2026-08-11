@@ -13,6 +13,8 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SelectSearch } from "../../components/SelectSearch";
+import { AiFillButton } from '@/components/AiFillButton';
+import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,6 +111,20 @@ export const ActionProgramFormPage = () => {
       : defaults()) as FormValues,
     onSubmit: async () => {
       setModalStage("confirm");
+    },
+  });
+
+  useAiFillForm({
+    name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
+    type: (v: unknown) => form.setFieldValue("type" as never, String(v) as never),
+    description: (v: unknown) => form.setFieldValue("description" as never, String(v) as never),
+    startDate: (v: unknown) => form.setFieldValue("startDate" as never, String(v) as never),
+    endDate: (v: unknown) => form.setFieldValue("endDate" as never, String(v) as never),
+    budgetCurrency: (v: unknown) => form.setFieldValue("budgetCurrency" as never, String(v) as never),
+    areaId: (v: unknown) => form.setFieldValue("areaId" as never, String(v) as never),
+    picId: (v: unknown) => form.setFieldValue("picId" as never, String(v) as never),
+    outletIds: (v: unknown) => {
+      if (Array.isArray(v)) form.setFieldValue("outletIds" as never, v as never);
     },
   });
 
@@ -502,6 +518,16 @@ export const ActionProgramFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+          <AiFillButton
+            section="action-program-form"
+            context={{ isEdit, id: id ?? null }}
+            options={{
+              areaList: ((areas?.data ?? []) as { id: string; name: string }[]).map((a) => ({ id: a.id, name: a.name })),
+              picList: ((users?.data ?? []) as { id: string; name: string | null }[]).map((u) => ({ id: u.id, name: u.name ?? "" })),
+              outletList: ((outlets?.data ?? []) as { id: string; name: string }[]).map((o) => ({ id: o.id, name: o.name })),
+              currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
+            }}
+          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

@@ -1,0 +1,46 @@
+import { logActivity } from '../lib/activity-log.js';
+import { getMessage } from '../lib/locale.js';
+import { getAppSettings, getUserSettings, setAppSettings, setUserSettings } from '../lib/settings-service.js';
+import { hasPermission, protectedProcedure, router } from '../trpc.js';
+import { appSettingsSchema, userSettingsSchema } from '@repo/schemas/settings';
+
+export const settingsRouter = router({
+  get: protectedProcedure
+    .use(hasPermission('settings@read'))
+    .query(async ({ ctx }) => {
+      // Service already masks secrets (ai.apiKey / smtp.pass -> { hasValue }).
+      return getAppSettings(ctx.db);
+    }),
+
+  update: protectedProcedure
+    .use(hasPermission('settings@update'))
+    .input(appSettingsSchema)
+    .mutation(async ({ input, ctx }) => {
+      await setAppSettings(ctx.db, input, ctx.user.userId);
+
+      await logActivity(ctx.db, {
+        action: 'UPDATE',
+        userId: ctx.user.userId,
+        resource: 'settings',
+        resourceId: 'app',
+        message: getMessage(ctx.locale, 'settings.updated'),
+      });
+
+      return { success: true };
+    }),
+});
+
+export const userSettingsRouter = router({
+  get: protectedProcedure.query(async ({ ctx }) => {
+    // Self-scoped — always the logged-in user, no permission required.
+    return getUserSettings(ctx.db, ctx.user.userId);
+  }),
+
+  update: protectedProcedure
+    .input(userSettingsSchema)
+    .mutation(async ({ input, ctx }) => {
+      await setUserSettings(ctx.db, ctx.user.userId, input);
+
+      return { success: true };
+    }),
+});
