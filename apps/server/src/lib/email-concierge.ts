@@ -193,7 +193,7 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
 
   // Effective agent identity + thread cap from DB settings (env fallback).
   const maxThreadChars = Number(await getSettingValue(prisma, 'emailAgent.maxThreadChars')) || MAX_THREAD_CHARS;
-  const agentName = String(await getSettingValue(prisma, 'emailAgent.name')) || EMAIL_AGENT_NAME;
+  const agentName = EMAIL_AGENT_NAME;
   const agentTitle = String(await getSettingValue(prisma, 'emailAgent.title')) || EMAIL_AGENT_TITLE;
   const agentCompany = String(await getSettingValue(prisma, 'emailAgent.company')) || EMAIL_AGENT_COMPANY;
 

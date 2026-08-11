@@ -253,6 +253,17 @@ export const ActionProgramFormPage = () => {
           form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="action-program-form"
+          context={{ isEdit, id: id ?? null }}
+          options={{
+            areaList: ((areas?.data ?? []) as { id: string; name: string }[]).map((a) => ({ id: a.id, name: a.name })),
+            picList: ((users?.data ?? []) as { id: string; name: string | null }[]).map((u) => ({ id: u.id, name: u.name ?? "" })),
+            outletList: ((outlets?.data ?? []) as { id: string; name: string }[]).map((o) => ({ id: o.id, name: o.name })),
+            currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({
             id: "action_program.form.section_basic",
@@ -518,16 +529,6 @@ export const ActionProgramFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="action-program-form"
-            context={{ isEdit, id: id ?? null }}
-            options={{
-              areaList: ((areas?.data ?? []) as { id: string; name: string }[]).map((a) => ({ id: a.id, name: a.name })),
-              picList: ((users?.data ?? []) as { id: string; name: string | null }[]).map((u) => ({ id: u.id, name: u.name ?? "" })),
-              outletList: ((outlets?.data ?? []) as { id: string; name: string }[]).map((o) => ({ id: o.id, name: o.name })),
-              currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
-            }}
-          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

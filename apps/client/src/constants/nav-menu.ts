@@ -164,7 +164,7 @@ export const NAV_MENU: NavMenuItem[] = [
       {
         name: "nav.settings_app",
         icon: icons.navSettings,
-        href: "/settings/app",
+        href: "/settings/app-settings",
         permission: "settings@read",
       },
     ],

@@ -228,6 +228,15 @@ export const VisitLogFormPage = () => {
           form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="visit-log-form"
+          context={{ isEdit, id: id ?? null }}
+          options={{
+            salesmanList: ((salesmen?.data ?? []) as { id: string; name: string | null }[]).map((u) => ({ id: u.id, name: u.name ?? "" })),
+            outletList: ((outlets?.data ?? []) as { id: string; name: string }[]).map((o) => ({ id: o.id, name: o.name })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({
             id: "visit_log.form.section_basic",
@@ -389,14 +398,6 @@ export const VisitLogFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="visit-log-form"
-            context={{ isEdit, id: id ?? null }}
-            options={{
-              salesmanList: ((salesmen?.data ?? []) as { id: string; name: string | null }[]).map((u) => ({ id: u.id, name: u.name ?? "" })),
-              outletList: ((outlets?.data ?? []) as { id: string; name: string }[]).map((o) => ({ id: o.id, name: o.name })),
-            }}
-          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

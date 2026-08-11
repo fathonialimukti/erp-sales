@@ -172,7 +172,7 @@ export const Sidebar = () => {
             "/knowledge-base",
             "/ai-admin",
             "/settings",
-            "/settings/app",
+            "/settings/app-settings",
           ].includes(l.href),
         ),
       },

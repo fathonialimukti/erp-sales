@@ -54,6 +54,10 @@ const PERMISSIONS = [
   // AI Admin
   { name: "ai-admin@access", description: "Access AI system administrator assistant with full read-write database access" },
 
+  // Settings
+  { name: "settings@read", description: "Read app settings" },
+  { name: "settings@update", description: "Update app settings" },
+
   // Knowledge Base
   { name: "knowledge-base@read", description: "Read knowledge base entries" },
   { name: "knowledge-base@create", description: "Create knowledge base entries" },

@@ -580,6 +580,20 @@ export const SalesOrderFormPage = () => {
           form.handleSubmit();
         }}
       >
+        {/* AI Fill */}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <AiFillButton
+            section="sales-order-form"
+            context={{ isEdit, id: id ?? null, ...formValues }}
+            options={{
+              outletList: outletList.map((o) => ({ id: o.id, name: o.name })),
+              skuList: skuList.map((s) => ({ id: s.id, name: s.name, code: s.code })),
+              currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
+              paymentTermsList: ["COD", "NET 7", "NET 14", "NET 30", "NET 60"].map((t) => ({ value: t })),
+            }}
+          />
+        </div>
+
         {/* Validation Warnings */}
         {validationWarnings.length > 0 ? (
           <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5">
@@ -650,7 +664,7 @@ export const SalesOrderFormPage = () => {
                   optionsKey="id"
                   queryKeyBase="outletSelect"
                   getOptionLabel={(o) => o.name}
-                  getOptionDescription={(o) => `${o.customerName} • ${o.areaName}`}
+                  getOptionDescription={(o) => o.areaName}
                   placeholder="Select outlet…"
                   searchPlaceholder="Search outlets…"
                   isLoading={outletsLoading}
@@ -892,16 +906,6 @@ export const SalesOrderFormPage = () => {
         </FormSection>
 
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="sales-order-form"
-            context={{ isEdit, id: id ?? null, ...formValues }}
-            options={{
-              outletList: outletList.map((o) => ({ id: o.id, name: o.name })),
-              skuList: skuList.map((s) => ({ id: s.id, name: s.name, code: s.code })),
-              currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
-              paymentTermsList: ["COD", "NET 7", "NET 14", "NET 30", "NET 60"].map((t) => ({ value: t })),
-            }}
-          />
           <Button
             type="button"
             variant="outline"

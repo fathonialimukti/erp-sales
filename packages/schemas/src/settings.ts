@@ -7,13 +7,6 @@ export const appSettingsSchema = z.object({
     apiKey: z.string().optional(), // write-only: empty = keep existing
     model: z.string().optional(),
   }),
-  embedding: z.object({
-    baseUrl: z.string().url().optional(),
-    apiKey: z.string().optional(), // write-only
-    model: z.string().optional(),
-    dimensions: z.number().int().positive().optional(),
-    similarityThreshold: z.number().min(0).max(1).optional(),
-  }),
   smtp: z.object({
     host: z.string().optional(),
     port: z.number().int().min(1).max(65535).optional(),
@@ -23,7 +16,6 @@ export const appSettingsSchema = z.object({
     domain: z.string().optional(),
   }),
   emailAgent: z.object({
-    name: z.string().optional(),
     title: z.string().optional(),
     company: z.string().optional(),
     maxThreadChars: z.number().int().positive().optional(),

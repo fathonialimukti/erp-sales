@@ -243,6 +243,14 @@ const InnerForm = ({
           void form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="user-form"
+          context={{ isEdit, id: userId ?? null }}
+          options={{
+            roleList: roleOptions.map((r) => ({ id: r.id, name: r.name })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({ id: "users.form.identity", defaultMessage: "Identity" })}
           description={intl.formatMessage({
@@ -407,13 +415,6 @@ const InnerForm = ({
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="user-form"
-            context={{ isEdit, id: userId ?? null }}
-            options={{
-              roleList: roleOptions.map((r) => ({ id: r.id, name: r.name })),
-            }}
-          />
           <Button size="sm" className="h-8 gap-1.5 px-2.5" type="submit" disabled={isPending}>
               {isPending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />

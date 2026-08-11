@@ -39,9 +39,7 @@ function authUserId(req: Request, res: Response): string | null {
     return null;
 }
 
-const formFillSchema = z.object({
-    fields: z.record(z.string(), z.unknown()),
-});
+const formFillSchema = z.record(z.string(), z.unknown());
 
 const FORM_FILL_SYSTEM = `You are a form-fill assistant for a Sales ERP system used by a B2B sales team.
 You help a salesperson complete an ERP form quickly and accurately.
@@ -58,7 +56,7 @@ Rules:
 - For select fields, use one of the exact option values provided.
 - Fill sensible defaults for empty fields based on the instruction and business context.
 - Never fabricate ids that do not exist in the provided options.
-- Return "fields" as a JSON object; omit any empty/unset fields.`;
+- Return the fields as a flat JSON object (no wrapper). Omit any empty/unset fields.`;
 
 export async function aiFormFillHandler(req: Request, res: Response) {
     const userId = authUserId(req, res);
@@ -94,7 +92,7 @@ export async function aiFormFillHandler(req: Request, res: Response) {
             schema: formFillSchema,
             temperature: 0.2,
         });
-        res.json(object);
+        res.json({ fields: object });
     } catch (error) {
         res.status(500).json({
             error: 'AI fill failed',

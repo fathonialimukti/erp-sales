@@ -263,6 +263,14 @@ const InnerForm = ({
         />
 
         <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
+        <AiFillButton
+          section="access-control-form"
+          context={{ isEdit, id: roleId ?? null }}
+          options={{
+            permissionList: allPermissions.map((p) => ({ name: p.name, description: p.description })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({ id: "roles.form.identity", defaultMessage: "Identity" })}
         >
@@ -405,13 +413,6 @@ const InnerForm = ({
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="access-control-form"
-            context={{ isEdit, id: roleId ?? null }}
-            options={{
-              permissionList: allPermissions.map((p) => ({ name: p.name, description: p.description })),
-            }}
-          />
           <Button size="sm" className="h-8 gap-1.5 px-2.5" type="submit" disabled={isPending || Boolean(nameError)}>
               {isPending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />

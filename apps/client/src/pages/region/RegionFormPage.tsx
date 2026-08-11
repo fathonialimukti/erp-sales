@@ -199,6 +199,11 @@ export const RegionFormPage = () => {
           form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="region-form"
+          context={{ isEdit, id: id ?? null }}
+        />
+
         <FormSection
           title={intl.formatMessage({
             id: "region.form.section_basic",
@@ -263,10 +268,6 @@ export const RegionFormPage = () => {
         </FormSection>
 
         <div className="flex items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="region-form"
-            context={{ isEdit, id: id ?? null }}
-          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5 font-semibold"

@@ -143,7 +143,19 @@ export const SelectSearch = <
   });
 
   const isLoading = propIsLoading ?? queryLoading;
-  const options = useMemo(() => data ?? [], [data]);
+  const options = useMemo(() => {
+    const raw = data ?? [];
+    const seen = new Set<string>();
+    const unique: TOption[] = [];
+    for (const opt of raw) {
+      const id = optionId(opt, optionsKey);
+      if (!seen.has(id)) {
+        seen.add(id);
+        unique.push(opt);
+      }
+    }
+    return unique;
+  }, [data, optionsKey]);
 
   const renderLabel = (option: TOption) =>
     getOptionLabel

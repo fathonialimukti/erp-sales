@@ -15,7 +15,6 @@ import type { AppSettings } from '@repo/schemas/settings';
 // fields are optional), so build a full patch and override the fields under test.
 const fullAppPatch = (overrides: Partial<AppSettings> = {}): AppSettings => ({
   ai: {},
-  embedding: {},
   smtp: {},
   emailAgent: {},
   system: {},
@@ -175,14 +174,11 @@ describe('settings router (app settings)', () => {
   it('returns masked secrets, never plaintext', async () => {
     // Seed secrets via env fallback so no DB row is needed.
     setEnv('AI_API_KEY', 'super-secret-key');
-    setEnv('EMBEDDING_API_KEY', 'embedding-secret-key');
 
     const settings = await caller.settings.get();
     expect(settings.ai.apiKey).toEqual({ hasValue: true });
     expect(settings.smtp.pass).toMatchObject({ hasValue: expect.any(Boolean) });
-    expect(settings.embedding.apiKey).toEqual({ hasValue: true });
     expect(JSON.stringify(settings)).not.toContain('super-secret-key');
-    expect(JSON.stringify(settings)).not.toContain('embedding-secret-key');
   });
 
   it('requires settings@update for writes', async () => {

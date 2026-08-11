@@ -6,7 +6,6 @@ import { motion, useReducedMotion } from "motion/react";
 import {
   AlertCircle,
   Bot,
-  Boxes,
   Building2,
   Loader2,
   Mail,
@@ -70,13 +69,6 @@ interface FormValues {
     model: string;
     apiKey: string; // write-only: empty = keep existing
   };
-  embedding: {
-    baseUrl: string;
-    model: string;
-    apiKey: string; // write-only
-    dimensions: number;
-    similarityThreshold: number;
-  };
   smtp: {
     host: string;
     port: number;
@@ -86,7 +78,6 @@ interface FormValues {
     domain: string;
   };
   emailAgent: {
-    name: string;
     title: string;
     company: string;
     maxThreadChars: number;
@@ -122,13 +113,6 @@ const toFormValues = (s: MaskedSettings): FormValues => ({
     model: s.ai?.model ?? "",
     apiKey: "",
   },
-  embedding: {
-    baseUrl: s.embedding?.baseUrl ?? "",
-    model: s.embedding?.model ?? "",
-    apiKey: "",
-    dimensions: s.embedding?.dimensions ?? 1536,
-    similarityThreshold: s.embedding?.similarityThreshold ?? 0.5,
-  },
   smtp: {
     host: s.smtp?.host ?? "",
     port: s.smtp?.port ?? 587,
@@ -138,7 +122,6 @@ const toFormValues = (s: MaskedSettings): FormValues => ({
     domain: s.smtp?.domain ?? "",
   },
   emailAgent: {
-    name: s.emailAgent?.name ?? "",
     title: s.emailAgent?.title ?? "",
     company: s.emailAgent?.company ?? "",
     maxThreadChars: s.emailAgent?.maxThreadChars ?? 12000,
@@ -157,13 +140,6 @@ const buildPatch = (values: FormValues): AppSettings => ({
     baseUrl: values.ai.baseUrl,
     model: values.ai.model,
     ...(values.ai.apiKey ? { apiKey: values.ai.apiKey } : {}),
-  },
-  embedding: {
-    baseUrl: values.embedding.baseUrl,
-    model: values.embedding.model,
-    dimensions: values.embedding.dimensions,
-    similarityThreshold: values.embedding.similarityThreshold,
-    ...(values.embedding.apiKey ? { apiKey: values.embedding.apiKey } : {}),
   },
   smtp: {
     host: values.smtp.host,
@@ -357,7 +333,6 @@ export const AppSettingsPage = () => {
   // Secrets are write-only: show a masked placeholder when a value exists.
   const aiKeySet = Boolean(data?.ai?.apiKey?.hasValue);
   const smtpPassSet = Boolean(data?.smtp?.pass?.hasValue);
-  const embeddingKeySet = Boolean(data?.embedding?.apiKey?.hasValue);
 
   if (!canRead) {
     return (
@@ -627,85 +602,6 @@ export const AppSettingsPage = () => {
           </div>
         </SectionCard>
 
-        {/* Embeddings */}
-        <SectionCard
-          icon={Boxes}
-          title={intl.formatMessage({
-            id: "settings.app.section_embedding",
-            defaultMessage: "Embeddings",
-          })}
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <TextField
-              id="embedding-base-url"
-              label={intl.formatMessage({
-                id: "settings.app.field_embedding_base_url",
-                defaultMessage: "Base URL",
-              })}
-              type="url"
-              className="sm:col-span-2"
-              value={form.embedding.baseUrl}
-              onChange={(v) => update("embedding", "baseUrl", v)}
-            />
-            <TextField
-              id="embedding-model"
-              label={intl.formatMessage({
-                id: "settings.app.field_embedding_model",
-                defaultMessage: "Model",
-              })}
-              value={form.embedding.model}
-              onChange={(v) => update("embedding", "model", v)}
-            />
-            <TextField
-              id="embedding-api-key"
-              label={intl.formatMessage({
-                id: "settings.app.field_embedding_api_key",
-                defaultMessage: "API key",
-              })}
-              type="password"
-              value={form.embedding.apiKey}
-              placeholder={embeddingKeySet ? "••••••" : ""}
-              hint={secretHint}
-              onChange={(v) => update("embedding", "apiKey", v)}
-            />
-            <NumberField
-              id="embedding-dimensions"
-              label={intl.formatMessage({
-                id: "settings.app.field_embedding_dimensions",
-                defaultMessage: "Dimensions",
-              })}
-              value={form.embedding.dimensions}
-              min={1}
-              max={8192}
-              onChange={(v) => update("embedding", "dimensions", v)}
-            />
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="embedding-threshold">
-                  {intl.formatMessage({
-                    id: "settings.app.field_embedding_threshold",
-                    defaultMessage: "Similarity threshold",
-                  })}
-                </Label>
-                <span className="text-xs font-semibold text-muted-foreground tabular-nums">
-                  {form.embedding.similarityThreshold.toFixed(2)}
-                </span>
-              </div>
-              <Slider
-                id="embedding-threshold"
-                min={0}
-                max={1}
-                step={0.05}
-                value={[form.embedding.similarityThreshold]}
-                disabled={!canUpdate}
-                onValueChange={(v) =>
-                  update("embedding", "similarityThreshold", v[0] ?? 0.5)
-                }
-              />
-            </div>
-          </div>
-        </SectionCard>
-
         {/* Outbound email (SMTP) */}
         <SectionCard
           icon={Mail}
@@ -768,12 +664,6 @@ export const AppSettingsPage = () => {
           })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <TextField
-              id="agent-name"
-              label={intl.formatMessage({ id: "settings.app.field_agent_name", defaultMessage: "Name" })}
-              value={form.emailAgent.name}
-              onChange={(v) => update("emailAgent", "name", v)}
-            />
             <TextField
               id="agent-title"
               label={intl.formatMessage({ id: "settings.app.field_agent_title", defaultMessage: "Title" })}

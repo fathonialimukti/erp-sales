@@ -249,6 +249,15 @@ export const OutletFormPage = () => {
           form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="outlet-form"
+          context={{ isEdit, id: id ?? null }}
+          options={{
+            customerList: customers.map((c) => ({ id: c.id, name: c.name })),
+            areaList: areas.map((a) => ({ id: a.id, name: a.name })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({
             id: "outlet.form.section_basic",
@@ -448,14 +457,6 @@ export const OutletFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="outlet-form"
-            context={{ isEdit, id: id ?? null }}
-            options={{
-              customerList: customers.map((c) => ({ id: c.id, name: c.name })),
-              areaList: areas.map((a) => ({ id: a.id, name: a.name })),
-            }}
-          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

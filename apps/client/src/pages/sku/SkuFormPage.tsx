@@ -232,6 +232,16 @@ export const SkuFormPage = () => {
           form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="sku-form"
+          context={{ isEdit, id: id ?? null }}
+          options={{
+            categoryList: (categories?.data ?? []).map((c) => ({ id: c.id, name: c.name })),
+            baseUnitList: ["pcs", "box", "pack", "kg", "liter", "unit"].map((u) => ({ value: u })),
+            statusList: ["ACTIVE", "INACTIVE"].map((s) => ({ value: s })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({
             id: "sku.form.section_basic",
@@ -415,15 +425,6 @@ export const SkuFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="sku-form"
-            context={{ isEdit, id: id ?? null }}
-            options={{
-              categoryList: (categories?.data ?? []).map((c) => ({ id: c.id, name: c.name })),
-              baseUnitList: ["pcs", "box", "pack", "kg", "liter", "unit"].map((u) => ({ value: u })),
-              statusList: ["ACTIVE", "INACTIVE"].map((s) => ({ value: s })),
-            }}
-          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

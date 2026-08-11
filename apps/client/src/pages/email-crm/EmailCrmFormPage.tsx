@@ -263,6 +263,16 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
           form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="email-crm-form"
+          context={{ isEdit, id: conversationId ?? null }}
+          options={{
+            customerList: customers.map((c) => ({ id: c.id, name: c.name })),
+            statusList: STATUS_OPTIONS.map((s) => ({ value: s })),
+            priorityList: PRIORITY_OPTIONS.map((p) => ({ value: p })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({
             id: "emailCrm.form.section_basic",
@@ -442,15 +452,6 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="email-crm-form"
-            context={{ isEdit, id: conversationId ?? null }}
-            options={{
-              customerList: customers.map((c) => ({ id: c.id, name: c.name })),
-              statusList: STATUS_OPTIONS.map((s) => ({ value: s })),
-              priorityList: PRIORITY_OPTIONS.map((p) => ({ value: p })),
-            }}
-          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

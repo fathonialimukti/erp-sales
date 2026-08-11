@@ -10,11 +10,8 @@ import type { AppSettings, UserSettings } from '@repo/schemas/settings';
  * Router-facing shape for app settings: secret fields are masked to
  * `{ hasValue: boolean }` so real values never leave the server.
  */
-export type MaskedAppSettings = Omit<AppSettings, 'ai' | 'embedding' | 'smtp'> & {
+export type MaskedAppSettings = Omit<AppSettings, 'ai' | 'smtp'> & {
   ai: Omit<NonNullable<AppSettings['ai']>, 'apiKey'> & { apiKey: { hasValue: boolean } };
-  embedding: Omit<NonNullable<AppSettings['embedding']>, 'apiKey'> & {
-    apiKey: { hasValue: boolean };
-  };
   smtp: Omit<NonNullable<AppSettings['smtp']>, 'pass'> & { pass: { hasValue: boolean } };
 };
 
@@ -32,18 +29,12 @@ const APP_SETTING_FALLBACKS: Record<string, EnvFallback> = {
   'ai.baseUrl': { env: 'AI_BASE_URL', default: 'http://localhost:20128/v1' },
   'ai.apiKey': { env: 'AI_API_KEY', default: '' },
   'ai.model': { env: 'AI_MODEL', default: 'chatbot' },
-  'embedding.baseUrl': { env: 'EMBEDDING_BASE_URL', default: '' },
-  'embedding.apiKey': { env: 'EMBEDDING_API_KEY', default: '' },
-  'embedding.model': { env: 'EMBEDDING_MODEL', default: '' },
-  'embedding.dimensions': { env: 'EMBEDDING_DIMENSIONS', default: 1536 },
-  'embedding.similarityThreshold': { env: 'EMBEDDING_SIMILARITY_THRESHOLD', default: 0.5 },
   'smtp.host': { env: 'SMTP_HOST', default: 'smtp-relay.brevo.com' },
   'smtp.port': { env: 'SMTP_PORT', default: 587 },
   'smtp.user': { env: 'SMTP_USER', default: '' },
   'smtp.pass': { env: 'SMTP_PASS', default: '' },
   'smtp.from': { env: 'SMTP_FROM', default: 'AetherGlo Sales <info@aetherglo.com>' },
   'smtp.domain': { env: 'SMTP_DOMAIN', default: 'aetherglo.com' },
-  'emailAgent.name': { env: 'EMAIL_AGENT_NAME', default: 'Andi' },
   'emailAgent.title': { env: 'EMAIL_AGENT_TITLE', default: 'Sales Representative' },
   'emailAgent.company': { env: 'EMAIL_AGENT_COMPANY', default: 'AetherGlo' },
   'emailAgent.maxThreadChars': { env: 'EMAIL_CONCIERGE_MAX_THREAD_CHARS', default: 12000 },
@@ -72,7 +63,7 @@ const GENERAL_DEFAULTS: Record<string, unknown> = {
 };
 
 /** Secret keys that are never returned in plaintext. */
-const SECRET_KEYS = new Set(['ai.apiKey', 'embedding.apiKey', 'smtp.pass']);
+const SECRET_KEYS = new Set(['ai.apiKey', 'smtp.pass']);
 
 // --- Cache (30s TTL) ---
 
@@ -171,13 +162,6 @@ export async function getAppSettings(db: DbClient): Promise<MaskedAppSettings> {
       apiKey: secret('ai.apiKey'),
       model: read('ai.model') as string,
     },
-    embedding: {
-      baseUrl: read('embedding.baseUrl') as string,
-      apiKey: secret('embedding.apiKey'),
-      model: read('embedding.model') as string,
-      dimensions: read('embedding.dimensions') as number,
-      similarityThreshold: read('embedding.similarityThreshold') as number,
-    },
     smtp: {
       host: read('smtp.host') as string,
       port: read('smtp.port') as number,
@@ -187,7 +171,6 @@ export async function getAppSettings(db: DbClient): Promise<MaskedAppSettings> {
       domain: read('smtp.domain') as string,
     },
     emailAgent: {
-      name: read('emailAgent.name') as string,
       title: read('emailAgent.title') as string,
       company: read('emailAgent.company') as string,
       maxThreadChars: read('emailAgent.maxThreadChars') as number,

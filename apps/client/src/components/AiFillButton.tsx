@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useSetAtom } from "jotai";
-import { Loader2, Sparkles, Wand2, X } from "lucide-react";
+import { AlertTriangle, Loader2, Sparkles, Wand2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/lib/api-base";
@@ -75,25 +75,36 @@ export function AiFillButton({ section, options, context }: AiFillButtonProps) {
   };
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5"
-      >
-        {open ? <X className="size-3.5" aria-hidden /> : <Wand2 className="size-3.5" aria-hidden />}
-        {intl.formatMessage({ id: "ai.fill", defaultMessage: "AI Fill" })}
-      </Button>
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <span className="flex size-5 items-center justify-center rounded-md bg-module-ai/12 text-module-ai">
+            <Sparkles className="size-3.5" aria-hidden />
+          </span>
+          {intl.formatMessage({
+            id: "ai.fill.assistant",
+            defaultMessage: "AI Assistant",
+          })}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setOpen((v) => !v)}
+          className="gap-1.5"
+        >
+          {open ? <X className="size-3.5" aria-hidden /> : <Wand2 className="size-3.5" aria-hidden />}
+          {intl.formatMessage({ id: "ai.fill", defaultMessage: "AI Fill" })}
+        </Button>
+      </div>
 
       {open && (
-        <div className="w-full max-w-md rounded-xl border border-border bg-muted/60 p-3 shadow-sm">
-          <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Sparkles className="size-3.5 text-primary" aria-hidden />
+        <div className="w-full rounded-xl border border-module-ai/30 bg-module-ai/4 p-3 shadow-sm">
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <Sparkles className="size-3.5 text-module-ai" aria-hidden />
             {intl.formatMessage({
               id: "ai.fill.suggest_label",
-              defaultMessage: "AI Suggest",
+              defaultMessage: "Describe what to fill",
             })}
           </div>
           <Textarea
@@ -104,10 +115,21 @@ export function AiFillButton({ section, options, context }: AiFillButtonProps) {
               id: "ai.fill.placeholder",
               defaultMessage: "Describe what to fill, e.g. create a region for Jakarta…",
             })}
-            className="min-h-18 resize-y text-sm"
+            className="min-h-20 resize-y bg-background text-sm"
           />
-          {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
-          <div className="mt-2 flex justify-end gap-2">
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {intl.formatMessage({
+              id: "ai.fill.hint",
+              defaultMessage: "Tip: mention field names or values for better results.",
+            })}
+          </p>
+          {error && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-destructive">
+              <AlertTriangle className="size-3.5" aria-hidden />
+              {error}
+            </p>
+          )}
+          <div className="mt-3 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="ghost"

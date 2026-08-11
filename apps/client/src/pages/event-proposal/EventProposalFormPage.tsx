@@ -255,6 +255,15 @@ export const EventProposalFormPage = () => {
           form.handleSubmit();
         }}
       >
+        <AiFillButton
+          section="event-proposal-form"
+          context={{ isEdit, id: id ?? null }}
+          options={{
+            areaList: ((areas?.data ?? []) as { id: string; name: string }[]).map((a) => ({ id: a.id, name: a.name })),
+            currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
+          }}
+        />
+
         <FormSection
           title={intl.formatMessage({
             id: "event_proposal.form.section_basic",
@@ -505,14 +514,6 @@ export const EventProposalFormPage = () => {
         </FormSection>
       
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
-          <AiFillButton
-            section="event-proposal-form"
-            context={{ isEdit, id: id ?? null }}
-            options={{
-              areaList: ((areas?.data ?? []) as { id: string; name: string }[]).map((a) => ({ id: a.id, name: a.name })),
-              currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
-            }}
-          />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

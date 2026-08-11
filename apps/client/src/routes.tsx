@@ -250,7 +250,7 @@ export const router = createBrowserRouter([
         path: 'settings',
         children: [
           { index: true, element: <SettingsPage /> },
-          { path: 'app', element: <AppSettingsPage /> },
+          { path: 'app-settings', element: <AppSettingsPage /> },
         ],
       },
       {

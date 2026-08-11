@@ -4,7 +4,7 @@
  * and replaces ONLY rows whose `source` matches those markdown basenames.
  * UI-created knowledge rows (other sources) are preserved.
  *
- * When EMBEDDING_BASE_URL + EMBEDDING_MODEL are set, batch-embeds new chunks.
+ * When the AI provider (AI_BASE_URL + AI_MODEL) is configured, batch-embeds new chunks.
  * Otherwise leaves embedding NULL (FTS-only hybrid fallback).
  *
  * Usage: bun src/scripts/ingest-knowledge.ts
@@ -142,7 +142,7 @@ async function ingest() {
     console.log(hnswOk ? '  ✓ HNSW cosine index ready' : '  ⚠ HNSW index skipped');
   } else {
     console.log(
-      'EMBEDDING_BASE_URL / EMBEDDING_MODEL not set — skipping embeddings (FTS-only).',
+      'AI provider (AI_BASE_URL / AI_MODEL) not configured — skipping embeddings (FTS-only).',
     );
   }
 

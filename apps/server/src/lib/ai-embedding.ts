@@ -1,7 +1,7 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { embed, embedMany } from 'ai';
 import { prisma } from './prisma.js';
-import { getSettingValue } from './settings-service.js';
+import { getSecretValue, getSettingValue } from './settings-service.js';
 import type { DbClient } from './prisma.js';
 
 /** Locked to match `knowledge_chunks.embedding vector(1536)` (phase 2). */
@@ -11,31 +11,26 @@ const EMBED_BATCH_SIZE = 32;
 
 let warnedDimensionMismatch = false;
 
-/** True when embedding base URL + model are set (API key optional). */
+/** True when AI provider base URL + model are set (API key optional). */
 export async function isEmbeddingConfigured(db: DbClient): Promise<boolean> {
-  const baseUrl = String(await getSettingValue(db, 'embedding.baseUrl')).trim();
-  const model = String(await getSettingValue(db, 'embedding.model')).trim();
+  const baseUrl = String(await getSettingValue(db, 'ai.baseUrl')).trim();
+  const model = String(await getSettingValue(db, 'ai.model')).trim();
   return Boolean(baseUrl && model);
 }
 
 export async function getEmbeddingModelId(db: DbClient): Promise<string> {
-  return String(await getSettingValue(db, 'embedding.model')).trim();
+  return String(await getSettingValue(db, 'ai.model')).trim();
 }
 
 /**
- * Always 1536 to match the pgvector column.
- * If the configured dimensions differ, warn once and still use 1536.
+ * Always 1536 to match the pgvector column. The embedding provider is the AI
+ * provider (`ai.*`); dimensions are locked to the column and cannot be tuned.
  */
-export async function getEmbeddingDimensions(db: DbClient): Promise<number> {
-  const raw = String(await getSettingValue(db, 'embedding.dimensions')).trim();
-  if (!raw) return EMBEDDING_COLUMN_DIMENSIONS;
-
-  const n = Number(raw);
-  const parsed = Number.isFinite(n) && n > 0 ? Math.trunc(n) : EMBEDDING_COLUMN_DIMENSIONS;
-  if (parsed !== EMBEDDING_COLUMN_DIMENSIONS && !warnedDimensionMismatch) {
+export async function getEmbeddingDimensions(_db: DbClient): Promise<number> {
+  if (!warnedDimensionMismatch) {
     warnedDimensionMismatch = true;
     console.warn(
-      `[embedding] configured dimensions=${raw} ignored; knowledge_chunks.embedding is fixed at vector(${EMBEDDING_COLUMN_DIMENSIONS}). Using ${EMBEDDING_COLUMN_DIMENSIONS}.`,
+      `[embedding] knowledge_chunks.embedding is fixed at vector(${EMBEDDING_COLUMN_DIMENSIONS}). Using ${EMBEDDING_COLUMN_DIMENSIONS}.`,
     );
   }
   return EMBEDDING_COLUMN_DIMENSIONS;
@@ -62,16 +57,16 @@ async function requireEmbeddingConfig(db: DbClient): Promise<{
   modelId: string;
   dimensions: number;
 }> {
-  const baseURL = String(await getSettingValue(db, 'embedding.baseUrl')).trim().replace(/\/$/, '');
+  const baseURL = String(await getSettingValue(db, 'ai.baseUrl')).trim().replace(/\/$/, '');
   const modelId = await getEmbeddingModelId(db);
   if (!baseURL || !modelId) {
     throw new Error(
-      'Embedding not configured. Set embedding.baseUrl and embedding.model (or EMBEDDING_BASE_URL / EMBEDDING_MODEL).',
+      'Embedding not configured. Set ai.baseUrl and ai.model (or AI_BASE_URL / AI_MODEL) in the AI provider settings.',
     );
   }
   return {
     baseURL,
-    apiKey: String(await getSettingValue(db, 'embedding.apiKey')).trim() || 'not-set',
+    apiKey: (await getSecretValue(db, 'ai.apiKey')).trim() || 'not-set',
     modelId,
     dimensions: await getEmbeddingDimensions(db),
   };
