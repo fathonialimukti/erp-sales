@@ -15,7 +15,7 @@
  */
 
 /* ── Brand ── */
-import brandLogo from "./icons/brand-logo.svg";
+import brandLogo from "./icons/brand-logo.png";
 
 /* ── Navigation (sidebar Family A tiles) ── */
 import navDashboard from "./icons/nav-dashboard.svg";

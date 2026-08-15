@@ -6,7 +6,6 @@ import { useAtomValue } from "jotai";
 import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowRight,
-  Building2,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -22,6 +21,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+import brandLogo from "@/assets/icons/brand-logo.png";
 import {
   getMotionProps,
   pageEnter,
@@ -96,9 +96,11 @@ export const LoginPage = () => {
             {...enterProps}
           >
             <motion.div className="flex items-center gap-3" variants={staggerItem}>
-              <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <Building2 className="size-5" />
-              </div>
+              <img
+                src={brandLogo}
+                alt="ERP Sales"
+                className="size-11 rounded-xl object-contain"
+              />
               <span className="font-heading text-lg font-bold tracking-tight">
                 ERP Sales
               </span>

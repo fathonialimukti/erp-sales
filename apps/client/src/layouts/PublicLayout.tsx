@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useIntl } from "react-intl";
-import { Globe, LogIn, Menu, Sparkles } from "lucide-react";
+import { Globe, LogIn, Menu } from "lucide-react";
+
+import brandLogo from "@/assets/icons/brand-logo.png";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -157,9 +159,11 @@ export const PublicLayout = () => {
             to="/"
             className="group flex min-h-11 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 transition-transform group-hover:scale-[1.02]">
-              <Sparkles className="size-4" aria-hidden="true" />
-            </span>
+            <img
+              src={brandLogo}
+              alt="ERP Sales"
+              className="size-9 rounded-xl object-contain shadow-sm shadow-primary/25 transition-transform group-hover:scale-[1.02]"
+            />
             <span className="font-heading text-sm font-semibold tracking-tight sm:text-base">
               ERP Sales
             </span>
@@ -226,7 +230,7 @@ export const PublicLayout = () => {
               <Button
                 size="default"
                 variant="outline"
-                className="hidden h-9 px-3 sm:inline-flex"
+                className="hidden h-7 px-3 sm:inline-flex"
                 onClick={() => navigate("/")}
               >
                 {t("landing.nav_home", "Home")}
@@ -343,11 +347,12 @@ export const PublicLayout = () => {
         <footer className="mt-auto border-t border-border bg-card px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-              <div className="max-w-sm space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25">
-                    <Sparkles className="size-4" aria-hidden="true" />
-                  </span>
+              <div className="flex items-center gap-2.5">
+                  <img
+                    src={brandLogo}
+                    alt="ERP Sales"
+                    className="size-9 rounded-xl object-contain shadow-sm shadow-primary/25"
+                  />
                   <span className="font-heading text-sm font-semibold tracking-tight">
                     ERP Sales
                   </span>
@@ -385,7 +390,6 @@ export const PublicLayout = () => {
                   ),
                 )}
               </nav>
-            </div>
 
             <Separator />
 
