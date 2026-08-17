@@ -42,13 +42,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { trpcClient } from "../../../lib/trpc";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 const formatCompact = (value: number) =>
   new Intl.NumberFormat("id-ID", {
     notation: "compact",
@@ -83,6 +78,7 @@ interface SalesReportProps {
 
 export const SalesReport = ({ filters }: SalesReportProps) => {
   const intl = useIntl();
+  const { currencyCode } = useGeneralSettings();
   const printRef = useRef<HTMLDivElement>(null);
   const [dimension, setDimension] = useState<
     "region" | "area" | "outlet" | "customer" | "sku"
@@ -125,7 +121,7 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
         defaultMessage: "Revenue",
       }),
       align: "right",
-      render: (r) => formatCurrency(Number(r.revenue)),
+      render: (r) => formatCurrency(Number(r.revenue), currencyCode),
     },
     {
       key: "orders",
@@ -217,7 +213,7 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
                 id: "report.kpi.revenue",
                 defaultMessage: "Revenue (approved)",
               })}
-              value={formatCurrency(summary?.revenue ?? 0)}
+              value={formatCurrency(summary?.revenue ?? 0, currencyCode)}
               delta={summary?.deltaPercent ?? null}
             />
             <ReportKpiCard
@@ -232,7 +228,7 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
                 id: "report.kpi.aov",
                 defaultMessage: "Avg order value",
               })}
-              value={formatCurrency(summary?.aov ?? 0)}
+              value={formatCurrency(summary?.aov ?? 0, currencyCode)}
             />
             <ReportKpiCard
               label={intl.formatMessage({
@@ -289,7 +285,7 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
                   />
                   <Tooltip
                     contentStyle={chartTooltipStyle}
-                    formatter={(v) => formatCurrency(Number(v))}
+                    formatter={(v) => formatCurrency(Number(v), currencyCode)}
                   />
                   <Area
                     type="monotone"
@@ -367,7 +363,7 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
                   />
                   <Tooltip
                     contentStyle={chartTooltipStyle}
-                    formatter={(v) => formatCurrency(Number(v))}
+                    formatter={(v) => formatCurrency(Number(v), currencyCode)}
                   />
                   <Bar
                     dataKey="revenue"

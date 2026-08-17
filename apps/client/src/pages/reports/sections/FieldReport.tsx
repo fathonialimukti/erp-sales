@@ -33,13 +33,8 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpcClient } from "../../../lib/trpc";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 const formatNumber = (value: number) =>
   new Intl.NumberFormat("id-ID").format(value);
 
@@ -66,6 +61,7 @@ interface FieldReportProps {
 
 export const FieldReport = ({ filters }: FieldReportProps) => {
   const intl = useIntl();
+  const { currencyCode } = useGeneralSettings();
   const printRef = useRef<HTMLDivElement>(null);
 
   const query = useQuery({
@@ -110,7 +106,7 @@ export const FieldReport = ({ filters }: FieldReportProps) => {
         defaultMessage: "Revenue",
       }),
       align: "right",
-      render: (r) => formatCurrency(Number(r.revenue)),
+      render: (r) => formatCurrency(Number(r.revenue), currencyCode),
     },
   ];
 
@@ -241,7 +237,7 @@ export const FieldReport = ({ filters }: FieldReportProps) => {
                   />
                   <Tooltip
                     contentStyle={chartTooltipStyle}
-                    formatter={(v) => formatCurrency(Number(v))}
+                    formatter={(v) => formatCurrency(Number(v), currencyCode)}
                   />
                   <Bar
                     dataKey="revenue"

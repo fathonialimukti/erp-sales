@@ -172,8 +172,25 @@ export async function upsertChunkEmbedding(
 }
 
 /**
+ * Set `knowledge_chunks.embedding_status` via raw SQL (column is Unsupported in Prisma Client).
+ * Status values: `pending | done | failed | none`.
+ */
+export async function setChunkEmbeddingStatus(
+  id: string,
+  status: 'pending' | 'done' | 'failed' | 'none',
+): Promise<void> {
+  if (!id) throw new Error('setChunkEmbeddingStatus: id required');
+  await prisma.$executeRawUnsafe(
+    `UPDATE knowledge_chunks SET embedding_status = $1 WHERE id = $2`,
+    status,
+    id,
+  );
+}
+
+/**
  * Clear embedding so hybrid vector path cannot rank stale content after a title/content edit.
- * Uses raw SQL (Prisma Unsupported vector).
+ * Uses raw SQL (Prisma Unsupported vector). Also resets `embedding_status` to `none` so the
+ * stale vector AND status are cleared together.
  */
 export async function clearChunkEmbedding(id: string): Promise<void> {
   if (!id) throw new Error('clearChunkEmbedding: id required');
@@ -181,7 +198,8 @@ export async function clearChunkEmbedding(id: string): Promise<void> {
     `UPDATE knowledge_chunks
      SET embedding = NULL,
          embedding_model = NULL,
-         embedding_updated_at = NULL
+         embedding_updated_at = NULL,
+         embedding_status = 'none'
      WHERE id = $1`,
     id,
   );
@@ -197,17 +215,31 @@ export async function embedKnowledgeChunkBestEffort(
   title: string,
   content: string,
 ): Promise<boolean> {
-  if (!(await isEmbeddingConfigured(db))) return false;
+  if (!(await isEmbeddingConfigured(db))) {
+    try {
+      await setChunkEmbeddingStatus(id, 'none');
+    } catch {
+      /* best-effort: never throw out of this function */
+    }
+    return false;
+  }
   try {
+    await setChunkEmbeddingStatus(id, 'pending');
     const embedding = await generateEmbedding(db, buildEmbedText(title, content));
     const modelId = await getEmbeddingModelId(db);
     await upsertChunkEmbedding(id, embedding, modelId);
+    await setChunkEmbeddingStatus(id, 'done');
     return true;
   } catch (err) {
     console.warn(
       `[embedding] failed for knowledge chunk ${id}:`,
       err instanceof Error ? err.message : err,
     );
+    try {
+      await setChunkEmbeddingStatus(id, 'failed');
+    } catch {
+      /* best-effort: do not disrupt original error logging */
+    }
     return false;
   }
 }
@@ -235,13 +267,20 @@ export async function embedKnowledgeChunksBestEffort(
         const row = batch[j]!;
         const emb = embeddings[j]!;
         try {
+          await setChunkEmbeddingStatus(row.id, 'pending');
           await upsertChunkEmbedding(row.id, emb, modelId);
+          await setChunkEmbeddingStatus(row.id, 'done');
           succeeded += 1;
         } catch (err) {
           console.warn(
             `[embedding] persist failed for ${row.id}:`,
             err instanceof Error ? err.message : err,
           );
+          try {
+            await setChunkEmbeddingStatus(row.id, 'failed');
+          } catch {
+            /* best-effort: never throw out of this function */
+          }
         }
       }
     } catch (err) {
@@ -249,6 +288,13 @@ export async function embedKnowledgeChunksBestEffort(
         `[embedding] batch failed (${batch.length} rows):`,
         err instanceof Error ? err.message : err,
       );
+      for (const row of batch) {
+        try {
+          await setChunkEmbeddingStatus(row.id, 'failed');
+        } catch {
+          /* best-effort: never throw out of this function */
+        }
+      }
     }
   }
 

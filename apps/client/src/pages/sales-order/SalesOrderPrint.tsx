@@ -46,10 +46,10 @@ export interface SalesOrderPrintRecord {
 
 export const printOrder = () => window.print();
 
-const formatCurrency = (v: number) =>
-  new Intl.NumberFormat("id-ID", {
+const formatCurrency = (v: number, currency: string) =>
+  new Intl.NumberFormat(currency === "IDR" ? "id-ID" : "en-US", {
     style: "currency",
-    currency: "IDR",
+    currency,
     maximumFractionDigits: 0,
   }).format(v);
 
@@ -196,7 +196,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                   {it.quantity} {it.sku.baseUnit}
                 </td>
                 <td className="so-print__td so-print__td--num">
-                  {formatCurrency(it.unitPrice)}
+                  {formatCurrency(it.unitPrice, record.currency)}
                 </td>
                 <td className="so-print__td so-print__td--num">
                   {it.discountPercent ?? 0}%
@@ -205,7 +205,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                   {it.taxPercent ?? 0}%
                 </td>
                 <td className="so-print__td so-print__td--num so-print__td--strong">
-                  {formatCurrency(it.lineTotal)}
+                  {formatCurrency(it.lineTotal, record.currency)}
                 </td>
               </tr>
             ))}
@@ -216,7 +216,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                 {t("sales_order.print.totals_subtotal", "Subtotal")}
               </td>
               <td className="so-print__total-value">
-                {formatCurrency(record.subtotal ?? 0)}
+                {formatCurrency(record.subtotal ?? 0, record.currency)}
               </td>
             </tr>
             <tr>
@@ -224,7 +224,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                 {t("sales_order.print.totals_discount", "Discount")}
               </td>
               <td className="so-print__total-value">
-                −{formatCurrency(record.discountTotal ?? 0)}
+                −{formatCurrency(record.discountTotal ?? 0, record.currency)}
               </td>
             </tr>
             <tr>
@@ -232,7 +232,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                 {t("sales_order.print.totals_tax", "Tax")}
               </td>
               <td className="so-print__total-value">
-                {formatCurrency(record.taxTotal ?? 0)}
+                {formatCurrency(record.taxTotal ?? 0, record.currency)}
               </td>
             </tr>
             <tr className="so-print__grand">
@@ -240,7 +240,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                 {t("sales_order.print.totals_grand", "Grand total")}
               </td>
               <td className="so-print__total-value so-print__total-value--grand">
-                {formatCurrency(record.grandTotal ?? 0)}
+                {formatCurrency(record.grandTotal ?? 0, record.currency)}
               </td>
             </tr>
           </tfoot>

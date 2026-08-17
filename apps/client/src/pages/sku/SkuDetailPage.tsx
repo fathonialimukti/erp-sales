@@ -7,6 +7,8 @@ import { Package, Pencil, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { useToast } from "../../components/useToast";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
@@ -27,13 +29,6 @@ type SkuDetail = {
   description: string | null;
 };
 
-const formatCurrency = (v: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(v);
-
 export const SkuDetailPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -43,6 +38,7 @@ export const SkuDetailPage = () => {
   const canUpdate = hasPermission("sku@update");
   const canDelete = hasPermission("sku@delete");
   const toast = useToast();
+  const { currencyCode } = useGeneralSettings();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -182,7 +178,7 @@ export const SkuDetailPage = () => {
                 {intl.formatMessage({ id: "sku.detail.price_label", defaultMessage: "Base price" })}
               </dt>
               <dd className="text-sm font-normal tabular-nums text-foreground">
-                {sku.basePrice != null ? formatCurrency(sku.basePrice) : "—"}
+                {sku.basePrice != null ? formatCurrency(sku.basePrice, currencyCode) : "—"}
               </dd>
             </div>
             <div className="space-y-1">

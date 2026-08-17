@@ -30,7 +30,7 @@ export const createSalesOrderSchema = z.object({
   documentNumber: z.string().optional(),
   date: z.string().optional(),
   outletId: z.string().min(1, 'Outlet is required'),
-  currency: z.string().default('IDR'),
+  currency: z.string().default('USD'),
   paymentTerms: z.string().optional(),
   expectedDeliveryDate: z.string().optional(),
   notes: z.string().optional(),

@@ -100,7 +100,7 @@ const emptyItem = (): LineItem => ({
 const defaults = (): FormValues => ({
   documentNumber: "",
   outletId: "",
-  currency: "IDR",
+  currency: "USD",
   paymentTerms: "",
   date: new Date().toISOString().slice(0, 10),
   expectedDeliveryDate: "",
@@ -155,8 +155,12 @@ const fromDetail = (d: DetailData): FormValues => ({
   })),
 });
 
-const formatCurrency = (v: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(v);
+const formatCurrency = (v: number, currency: string) =>
+  new Intl.NumberFormat(currency === "IDR" ? "id-ID" : "en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(v);
 
 /* ----------------------------------------------------------------
  * Page
@@ -839,7 +843,7 @@ export const SalesOrderFormPage = () => {
                           </div>
                         )}
                         <div className="flex h-8 items-center rounded-md border border-input bg-card px-2.5 text-sm font-semibold tabular-nums">
-                          {formatCurrency(item.lineTotal)}
+                          {formatCurrency(item.lineTotal, form.state.values.currency)}
                         </div>
                       </div>
                       <button
@@ -865,7 +869,7 @@ export const SalesOrderFormPage = () => {
                   <div className="rounded-md border border-border/70 bg-card px-3 py-2 text-right">
                     <p className="text-[11px] text-muted-foreground">Grand total</p>
                     <p className="text-base font-semibold tabular-nums text-module-order">
-                      {formatCurrency(totals.grandTotal)}
+                      {formatCurrency(totals.grandTotal, form.state.values.currency)}
                     </p>
                   </div>
                 );

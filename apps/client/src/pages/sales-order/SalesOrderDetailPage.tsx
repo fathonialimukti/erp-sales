@@ -31,6 +31,8 @@ import { AiSummarizeButton } from "../../components/AiSummarizeButton";
 import { AiRejectionFixButton } from "../../components/AiRejectionFixButton";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { trpcClient } from "../../lib/trpc";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { useToast } from "../../components/useToast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -93,13 +95,6 @@ interface SalesOrderDetail {
   createdAt: string;
 }
 
-const formatCurrency = (v: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(v);
-
 const Field = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
   <div className="space-y-1">
     <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
@@ -126,6 +121,7 @@ export const SalesOrderDetailPage = () => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [validateModalOpen, setValidateModalOpen] = useState(false);
   const [proposeModalOpen, setProposeModalOpen] = useState(false);
+  const { currencyCode } = useGeneralSettings();
   const [proposeMessage, setProposeMessage] = useState("");
   const [decisionMessage, setDecisionMessage] = useState("");
   const [pdfPreviewId, setPdfPreviewId] = useState<string | null>(null);
@@ -139,6 +135,7 @@ export const SalesOrderDetailPage = () => {
     queryFn: () => trpcClient.salesOrder.detail.query({ id: id ?? "" }),
   });
   const record = data as SalesOrderDetail | undefined;
+  const recordCurrency = record?.currency || currencyCode;
 
   const proposeMutation = useMutation({
     mutationFn: (payload: { id: string; message?: string }) =>
@@ -725,7 +722,7 @@ export const SalesOrderDetailPage = () => {
                       <span className="text-foreground">{item.sku.baseUnit}</span>
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">
-                      {formatCurrency(item.unitPrice)}
+                      {formatCurrency(item.unitPrice, recordCurrency)}
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums text-foreground">
                       {item.discountPercent ?? 0}%
@@ -734,7 +731,7 @@ export const SalesOrderDetailPage = () => {
                       {item.taxPercent ?? 0}%
                     </td>
                     <td className="px-6 py-3 text-right font-semibold tabular-nums">
-                      {formatCurrency(item.lineTotal)}
+                      {formatCurrency(item.lineTotal, recordCurrency)}
                     </td>
                   </tr>
                 ))}
@@ -749,7 +746,7 @@ export const SalesOrderDetailPage = () => {
                   defaultMessage: "Subtotal",
                 })}
               </span>
-              <span className="tabular-nums">{formatCurrency(record.subtotal ?? 0)}</span>
+              <span className="tabular-nums">{formatCurrency(record.subtotal ?? 0, recordCurrency)}</span>
             </div>
             <div className="flex justify-between text-sm font-semibold">
               <span className="text-muted-foreground">
@@ -758,13 +755,13 @@ export const SalesOrderDetailPage = () => {
                   defaultMessage: "Discount",
                 })}
               </span>
-              <span className="tabular-nums">−{formatCurrency(record.discountTotal ?? 0)}</span>
+              <span className="tabular-nums">−{formatCurrency(record.discountTotal ?? 0, recordCurrency)}</span>
             </div>
             <div className="flex justify-between text-sm font-semibold">
               <span className="text-muted-foreground">
                 {intl.formatMessage({ id: "sales_order.detail.tax_total", defaultMessage: "Tax" })}
               </span>
-              <span className="tabular-nums">{formatCurrency(record.taxTotal ?? 0)}</span>
+              <span className="tabular-nums">{formatCurrency(record.taxTotal ?? 0, recordCurrency)}</span>
             </div>
             <div className="flex justify-between border-t pt-2 text-base font-semibold">
               <span>
@@ -774,7 +771,7 @@ export const SalesOrderDetailPage = () => {
                 })}
               </span>
               <span className="tabular-nums text-module-order">
-                {formatCurrency(record.grandTotal ?? 0)}
+                {formatCurrency(record.grandTotal ?? 0, recordCurrency)}
               </span>
             </div>
           </div>

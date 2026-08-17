@@ -29,7 +29,7 @@ Rules:
 - For items, infer skuId only if an explicit SKU code is present; otherwise leave skuId undefined and put the product name in a notes field.
 - quantity and unitPrice must be positive numbers when present.
 - Compute lineTotal = quantity * unitPrice when both are present; otherwise leave undefined.
-- currency defaults to "IDR" when not specified.
+- currency defaults to "USD" when not specified.
 - Do NOT invent customerId/outletId ULIDs — leave them undefined unless the text contains an explicit ID.
 - Return only the structured object; do not add fields not in the schema.`;
 

@@ -3,6 +3,7 @@ import { logActivity } from '../lib/activity-log.js';
 import {
   clearChunkEmbedding,
   embedKnowledgeChunkBestEffort,
+  setChunkEmbeddingStatus,
 } from '../lib/ai-embedding.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
@@ -55,6 +56,8 @@ export const knowledgeBaseRouter = router({
         detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
       });
 
+      // Mark pending before fire-and-forget embed — never fail the mutation.
+      try { await setChunkEmbeddingStatus(created.id, 'pending'); } catch (e) { console.warn('[embedding] set pending failed:', e); }
       // Best-effort hybrid RAG embedding — never fail the mutation.
       void embedKnowledgeChunkBestEffort(ctx.db, created.id, created.title, created.content);
 
@@ -95,6 +98,8 @@ export const knowledgeBaseRouter = router({
             err instanceof Error ? err.message : err,
           );
         }
+        // Mark pending before fire-and-forget re-embed — never fail the mutation.
+        try { await setChunkEmbeddingStatus(updated.id, 'pending'); } catch (e) { console.warn('[embedding] set pending failed:', e); }
         // Best-effort re-embed — never fail the mutation.
         void embedKnowledgeChunkBestEffort(ctx.db, updated.id, updated.title, updated.content);
       }

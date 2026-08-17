@@ -22,20 +22,18 @@ model User {
   crmArea  Area?   @relation(fields: [areaId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   role     Role?   @relation(fields: [roleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
- 
-
   notificationsReceived Notification[] @relation("notification_recipient")
   notificationsCreated  Notification[] @relation("notification_created_by")
   activityLogs          ActivityLog[]
 
   // CRM relations
-  visitLogs            VisitLog[]
-  approvedVisits       VisitLog[]        @relation("visit_approved_by")
-  createdSalesOrders   SalesOrder[]      @relation("so_created_by")
-  approvedSalesOrders  SalesOrder[]      @relation("so_approved_by")
-  picActionPrograms    ActionProgram[]   @relation("action_program_pic")
-  createdActionPrograms ActionProgram[]  @relation("ap_created_by")
-  createdEventProposals EventProposal[]  @relation("ep_created_by")
+  visitLogs             VisitLog[]
+  approvedVisits        VisitLog[]      @relation("visit_approved_by")
+  createdSalesOrders    SalesOrder[]    @relation("so_created_by")
+  approvedSalesOrders   SalesOrder[]    @relation("so_approved_by")
+  picActionPrograms     ActionProgram[] @relation("action_program_pic")
+  createdActionPrograms ActionProgram[] @relation("ap_created_by")
+  createdEventProposals EventProposal[] @relation("ep_created_by")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -144,20 +142,20 @@ model SkuCategory {
 }
 
 model Sku {
-  id            String       @id @default(ulid()) @map("id")
-  code          String?      @unique @map("code")
-  name          String       @map("name")
-  description   String?      @map("description")
-  photo         String?      @map("photo")
-  categoryId    String?      @map("category_id")
-  category      SkuCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  basePrice     Decimal?     @map("base_price")
-  baseUnit      String       @default("pcs") @map("base_unit")
-  status        String       @default("ACTIVE") @map("status")
+  id          String       @id @default(ulid()) @map("id")
+  code        String?      @unique @map("code")
+  name        String       @map("name")
+  description String?      @map("description")
+  photo       String?      @map("photo")
+  categoryId  String?      @map("category_id")
+  category    SkuCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  basePrice   Decimal?     @map("base_price")
+  baseUnit    String       @default("pcs") @map("base_unit")
+  status      String       @default("ACTIVE") @map("status")
 
-  salesOrderItems       SalesOrderItem[]
-  actionProgramSkus     ActionProgramSku[]
-  eventProposalSkus     EventProposalSku[]
+  salesOrderItems   SalesOrderItem[]
+  actionProgramSkus ActionProgramSku[]
+  eventProposalSkus EventProposalSku[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -165,7 +163,6 @@ model Sku {
   @@index([categoryId])
   @@map("skus")
 }
-
 
 // =============================================
 // NOTIFICATION & ACTIVITY LOG
@@ -228,57 +225,57 @@ model Region {
 }
 
 model Area {
-  id                String              @id @default(ulid()) @map("id")
-  regionId          String              @map("region_id")
-  region            Region              @relation(fields: [regionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  code              String?             @unique @map("code")
-  name              String              @map("name")
-  salesmen          User[]
-  outlets           Outlet[]
-  actionPrograms    ActionProgram[]
-  eventProposals    EventProposal[]
-  salesOrders       SalesOrder[]
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
+  id             String          @id @default(ulid()) @map("id")
+  regionId       String          @map("region_id")
+  region         Region          @relation(fields: [regionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  code           String?         @unique @map("code")
+  name           String          @map("name")
+  salesmen       User[]
+  outlets        Outlet[]
+  actionPrograms ActionProgram[]
+  eventProposals EventProposal[]
+  salesOrders    SalesOrder[]
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
 
   @@index([regionId])
   @@map("crm_areas")
 }
 
 model Customer {
-  id             String              @id @default(ulid()) @map("id")
-  code           String?             @unique @map("code")
-  name           String              @map("name")
-  taxId          String?             @map("tax_id")
-  paymentTerms   String?             @map("payment_terms")
-  creditLimit    Decimal?            @map("credit_limit")
-  status         String              @default("ACTIVE") @map("status")
-  billingAddress String?             @map("billing_address")
-  notes          String?             @map("notes")
-  outlets        Outlet[]
-  contacts       CustomerContact[]
-  salesOrders    SalesOrder[]
-  payments       Payment[]
+  id                 String              @id @default(ulid()) @map("id")
+  code               String?             @unique @map("code")
+  name               String              @map("name")
+  taxId              String?             @map("tax_id")
+  paymentTerms       String?             @map("payment_terms")
+  creditLimit        Decimal?            @map("credit_limit")
+  status             String              @default("ACTIVE") @map("status")
+  billingAddress     String?             @map("billing_address")
+  notes              String?             @map("notes")
+  outlets            Outlet[]
+  contacts           CustomerContact[]
+  salesOrders        SalesOrder[]
+  payments           Payment[]
   emailConversations EmailConversation[]
-  createdAt      DateTime            @default(now()) @map("created_at")
-  updatedAt      DateTime            @updatedAt @map("updated_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
 
   @@map("crm_customers")
 }
 
 model CustomerContact {
-  id         String    @id @default(ulid()) @map("id")
-  customerId String    @map("customer_id")
-  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  outletId   String?   @map("outlet_id")
-  outlet     Outlet?   @relation(fields: [outletId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  name       String    @map("name")
-  title      String?   @map("title")
-  email      String?   @map("email")
-  phone      String?   @map("phone")
-  isPrimary  Boolean   @default(false) @map("is_primary")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id         String   @id @default(ulid()) @map("id")
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  outletId   String?  @map("outlet_id")
+  outlet     Outlet?  @relation(fields: [outletId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  name       String   @map("name")
+  title      String?  @map("title")
+  email      String?  @map("email")
+  phone      String?  @map("phone")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([customerId])
   @@index([outletId])
@@ -286,25 +283,25 @@ model CustomerContact {
 }
 
 model Outlet {
-  id           String     @id @default(ulid()) @map("id")
-  customerId   String     @map("customer_id")
-  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  areaId       String     @map("area_id")
-  area         Area       @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  code         String?    @unique @map("code")
-  name         String     @map("name")
-  address      String?    @map("address")
-  contactName  String?    @map("contact_name")
-  contactPhone String?    @map("contact_phone")
-  latitude     Float?     @map("latitude")
-  longitude    Float?     @map("longitude")
-  status       String     @default("ACTIVE") @map("status")
-  contacts     CustomerContact[]
-  visitLogs    VisitLog[]
-  salesOrders  SalesOrder[]
+  id                   String                @id @default(ulid()) @map("id")
+  customerId           String                @map("customer_id")
+  customer             Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  areaId               String                @map("area_id")
+  area                 Area                  @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  code                 String?               @unique @map("code")
+  name                 String                @map("name")
+  address              String?               @map("address")
+  contactName          String?               @map("contact_name")
+  contactPhone         String?               @map("contact_phone")
+  latitude             Float?                @map("latitude")
+  longitude            Float?                @map("longitude")
+  status               String                @default("ACTIVE") @map("status")
+  contacts             CustomerContact[]
+  visitLogs            VisitLog[]
+  salesOrders          SalesOrder[]
   actionProgramOutlets ActionProgramOutlet[]
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
 
   @@index([customerId])
   @@index([areaId])
@@ -312,20 +309,20 @@ model Outlet {
 }
 
 model VisitLog {
-  id             String         @id @default(ulid()) @map("id")
-  salesmanId     String         @map("salesman_id")
-  salesman       User           @relation(fields: [salesmanId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  outletId       String         @map("outlet_id")
-  outlet         Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  date           DateTime       @map("date") @db.Date
-  checkInAt      DateTime?      @map("check_in_at")
-  checkOutAt     DateTime?      @map("check_out_at")
-  purpose        String?        @map("purpose")
-  notes          String?        @map("notes")
-  photos         Json?          @map("photos")
-  feedback       String?        @map("feedback")
-  salesOrderId   String?        @map("sales_order_id")
-  salesOrder     SalesOrder?    @relation(fields: [salesOrderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  id           String      @id @default(ulid()) @map("id")
+  salesmanId   String      @map("salesman_id")
+  salesman     User        @relation(fields: [salesmanId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  outletId     String      @map("outlet_id")
+  outlet       Outlet      @relation(fields: [outletId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  date         DateTime    @map("date") @db.Date
+  checkInAt    DateTime?   @map("check_in_at")
+  checkOutAt   DateTime?   @map("check_out_at")
+  purpose      String?     @map("purpose")
+  notes        String?     @map("notes")
+  photos       Json?       @map("photos")
+  feedback     String?     @map("feedback")
+  salesOrderId String?     @map("sales_order_id")
+  salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   approvalStatus ApprovalStatus @default(DRAFT) @map("approval_status")
   submittedAt    DateTime?      @map("submitted_at")
@@ -333,8 +330,8 @@ model VisitLog {
   approvedBy     User?          @relation("visit_approved_by", fields: [approvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
   approvedAt     DateTime?      @map("approved_at")
 
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([salesmanId, date])
   @@index([outletId, date])
@@ -343,43 +340,43 @@ model VisitLog {
 }
 
 model SalesOrder {
-  id                    String         @id @default(ulid()) @map("id")
-  documentNumber        String?        @unique @map("document_number")
-  date                  DateTime       @default(now()) @map("date") @db.Date
-  customerId            String?        @map("customer_id")
-  customer              Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  outletId              String         @map("outlet_id")
-  outlet                Outlet         @relation(fields: [outletId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  areaId                String         @map("area_id")
-  area                  Area           @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  currency              String         @default("IDR") @map("currency")
-  paymentTerms          String?        @map("payment_terms")
-  expectedDeliveryDate  DateTime?      @map("expected_delivery_date") @db.Date
-  notes                 String?        @map("notes")
-  source                String         @default("MANUAL") @map("source")
-  emailConversationId   String?        @map("email_conversation_id")
-  emailConversation     EmailConversation? @relation(fields: [emailConversationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  id                   String             @id @default(ulid()) @map("id")
+  documentNumber       String?            @unique @map("document_number")
+  date                 DateTime           @default(now()) @map("date") @db.Date
+  customerId           String             @map("customer_id")
+  customer             Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  outletId             String             @map("outlet_id")
+  outlet               Outlet             @relation(fields: [outletId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  areaId               String             @map("area_id")
+  area                 Area               @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  currency             String             @default("IDR") @map("currency")
+  paymentTerms         String?            @map("payment_terms")
+  expectedDeliveryDate DateTime?          @map("expected_delivery_date") @db.Date
+  notes                String?            @map("notes")
+  source               String             @default("MANUAL") @map("source")
+  emailConversationId  String?            @map("email_conversation_id")
+  emailConversation    EmailConversation? @relation(fields: [emailConversationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  approvalStatus        ApprovalStatus @default(DRAFT) @map("approval_status")
-  createdById           String         @map("created_by_id")
-  createdBy             User           @relation("so_created_by", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  proposedAt            DateTime?      @map("proposed_at")
-  approvedById          String?        @map("approved_by_id")
-  approvedBy            User?          @relation("so_approved_by", fields: [approvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  approvedAt            DateTime?      @map("approved_at")
-  approvalHistory       Json?          @map("approval_history")
+  approvalStatus  ApprovalStatus @default(DRAFT) @map("approval_status")
+  createdById     String         @map("created_by_id")
+  createdBy       User           @relation("so_created_by", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  proposedAt      DateTime?      @map("proposed_at")
+  approvedById    String?        @map("approved_by_id")
+  approvedBy      User?          @relation("so_approved_by", fields: [approvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  approvedAt      DateTime?      @map("approved_at")
+  approvalHistory Json?          @map("approval_history")
 
-  items                 SalesOrderItem[]
-  visitLogs             VisitLog[]
-  payments              Payment[]
+  items     SalesOrderItem[]
+  visitLogs VisitLog[]
+  payments  Payment[]
 
-  subtotal              Decimal?       @map("subtotal")
-  discountTotal         Decimal?       @map("discount_total")
-  taxTotal              Decimal?       @map("tax_total")
-  grandTotal            Decimal?       @map("grand_total")
+  subtotal      Decimal? @map("subtotal")
+  discountTotal Decimal? @map("discount_total")
+  taxTotal      Decimal? @map("tax_total")
+  grandTotal    Decimal? @map("grand_total")
 
-  createdAt             DateTime       @default(now()) @map("created_at")
-  updatedAt             DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([customerId])
   @@index([outletId])
@@ -395,23 +392,23 @@ model SalesOrder {
 }
 
 model EmailConversation {
-  id             String    @id @default(ulid()) @map("id")
-  email          String    @map("email")
-  subject        String?   @map("subject")
-  status         String    @default("OPEN") @map("status")
-  priority       String    @default("NORMAL") @map("priority")
-  sentiment      String?   @map("sentiment")
-  tags           Json?     @map("tags")
-  lastMessageAt  DateTime? @map("last_message_at")
-  customerId     String?   @map("customer_id")
-  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  agentStatus    String    @default("IDLE") @map("agent_status")
-  agentError     String?   @map("agent_error") @db.Text
-  lastOutboundAt DateTime? @map("last_outbound_at")
+  id             String         @id @default(ulid()) @map("id")
+  email          String         @map("email")
+  subject        String?        @map("subject")
+  status         String         @default("OPEN") @map("status")
+  priority       String         @default("NORMAL") @map("priority")
+  sentiment      String?        @map("sentiment")
+  tags           Json?          @map("tags")
+  lastMessageAt  DateTime?      @map("last_message_at")
+  customerId     String?        @map("customer_id")
+  customer       Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  agentStatus    String         @default("IDLE") @map("agent_status")
+  agentError     String?        @map("agent_error") @db.Text
+  lastOutboundAt DateTime?      @map("last_outbound_at")
   messages       EmailMessage[]
   salesOrders    SalesOrder[]
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
   @@index([email])
   @@index([customerId])
@@ -459,17 +456,17 @@ model SalesOrderItem {
 }
 
 model Payment {
-  id             String   @id @default(ulid()) @map("id")
-  salesOrderId   String   @map("sales_order_id")
-  salesOrder     SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  customerId     String   @map("customer_id")
-  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  date           DateTime @default(now()) @map("date") @db.Date
-  amount         Decimal  @map("amount")
-  method         String?  @map("method")
-  reference      String?  @map("reference")
-  notes          String?  @map("notes")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id           String     @id @default(ulid()) @map("id")
+  salesOrderId String     @map("sales_order_id")
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  customerId   String     @map("customer_id")
+  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  date         DateTime   @default(now()) @map("date") @db.Date
+  amount       Decimal    @map("amount")
+  method       String?    @map("method")
+  reference    String?    @map("reference")
+  notes        String?    @map("notes")
+  createdAt    DateTime   @default(now()) @map("created_at")
 
   @@index([salesOrderId])
   @@index([customerId])
@@ -482,45 +479,46 @@ enum ActionProgramType {
   FREE_ITEM
   REBATE
   LOYALTY
+  DISPLAY_RENTAL
 }
 
 model ActionProgram {
-  id                         String            @id @default(ulid()) @map("id")
-  documentNumber             String?           @unique @map("document_number")
-  name                       String            @map("name")
-  type                       ActionProgramType @map("type")
-  description                String?           @map("description")
-  files                      Json?             @map("files")
-  startDate                  DateTime          @map("start_date") @db.Date
-  endDate                    DateTime          @map("end_date") @db.Date
-  budgetAmount               Decimal?          @map("budget_amount")
-  budgetCurrency             String            @default("IDR") @map("budget_currency")
-  rules                      Json              @map("rules")
-  areaId                     String            @map("area_id")
-  area                       Area              @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  picId                      String            @map("pic_id")
-  pic                        User              @relation("action_program_pic", fields: [picId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id             String            @id @default(ulid()) @map("id")
+  documentNumber String?           @unique @map("document_number")
+  name           String            @map("name")
+  type           ActionProgramType @map("type")
+  description    String?           @map("description")
+  files          Json?             @map("files")
+  startDate      DateTime          @map("start_date") @db.Date
+  endDate        DateTime          @map("end_date") @db.Date
+  budgetAmount   Decimal?          @map("budget_amount")
+  budgetCurrency String            @default("IDR") @map("budget_currency")
+  rules          Json              @map("rules")
+  areaId         String            @map("area_id")
+  area           Area              @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  picId          String            @map("pic_id")
+  pic            User              @relation("action_program_pic", fields: [picId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  approvalStatus             ApprovalStatus    @default(DRAFT) @map("approval_status")
-  createdById                String            @map("created_by_id")
-  createdBy                  User              @relation("ap_created_by", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  areaManagerApprovedById    String?           @map("area_manager_approved_by_id")
-  areaManagerApprovedAt      DateTime?         @map("area_manager_approved_at")
-  regionManagerApprovedById  String?           @map("region_manager_approved_by_id")
-  regionManagerApprovedAt    DateTime?         @map("region_manager_approved_at")
-  financeManagerApprovedById String?           @map("finance_manager_approved_by_id")
-  financeManagerApprovedAt   DateTime?         @map("finance_manager_approved_at")
-  directorApprovedById       String?           @map("director_approved_by_id")
-  directorApprovedAt         DateTime?         @map("director_approved_at")
-  approvalHistory            Json?             @map("approval_history")
+  approvalStatus             ApprovalStatus @default(DRAFT) @map("approval_status")
+  createdById                String         @map("created_by_id")
+  createdBy                  User           @relation("ap_created_by", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  areaManagerApprovedById    String?        @map("area_manager_approved_by_id")
+  areaManagerApprovedAt      DateTime?      @map("area_manager_approved_at")
+  regionManagerApprovedById  String?        @map("region_manager_approved_by_id")
+  regionManagerApprovedAt    DateTime?      @map("region_manager_approved_at")
+  financeManagerApprovedById String?        @map("finance_manager_approved_by_id")
+  financeManagerApprovedAt   DateTime?      @map("finance_manager_approved_at")
+  directorApprovedById       String?        @map("director_approved_by_id")
+  directorApprovedAt         DateTime?      @map("director_approved_at")
+  approvalHistory            Json?          @map("approval_history")
 
-  outlets                    ActionProgramOutlet[]
-  skus                       ActionProgramSku[]
-  items                      ActionProgramItem[]
-  payments                   ActionProgramPayment[]
+  outlets  ActionProgramOutlet[]
+  skus     ActionProgramSku[]
+  items    ActionProgramItem[]
+  payments ActionProgramPayment[]
 
-  createdAt                  DateTime          @default(now()) @map("created_at")
-  updatedAt                  DateTime          @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([areaId])
   @@index([picId])
@@ -590,22 +588,22 @@ model ActionProgramItem {
 }
 
 model EventProposal {
-  id                         String         @id @default(ulid()) @map("id")
-  documentNumber             String?        @unique @map("document_number")
-  name                       String         @map("name")
-  eventType                  String?        @map("event_type")
-  description                String?        @map("description")
-  files                      Json?          @map("files")
-  venue                      String?        @map("venue")
-  eventDate                  DateTime       @map("event_date") @db.Date
-  eventEndDate               DateTime?      @map("event_end_date") @db.Date
-  organizerName              String?        @map("organizer_name")
-  organizerContact           String?        @map("organizer_contact")
-  areaId                     String         @map("area_id")
-  area                       Area           @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  observationDays            Int            @default(90) @map("observation_days")
-  proposedBudget             Decimal?       @map("proposed_budget")
-  currency                   String         @default("IDR") @map("currency")
+  id               String    @id @default(ulid()) @map("id")
+  documentNumber   String?   @unique @map("document_number")
+  name             String    @map("name")
+  eventType        String?   @map("event_type")
+  description      String?   @map("description")
+  files            Json?     @map("files")
+  venue            String?   @map("venue")
+  eventDate        DateTime  @map("event_date") @db.Date
+  eventEndDate     DateTime? @map("event_end_date") @db.Date
+  organizerName    String?   @map("organizer_name")
+  organizerContact String?   @map("organizer_contact")
+  areaId           String    @map("area_id")
+  area             Area      @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  observationDays  Int       @default(90) @map("observation_days")
+  proposedBudget   Decimal?  @map("proposed_budget")
+  currency         String    @default("IDR") @map("currency")
 
   approvalStatus             ApprovalStatus @default(DRAFT) @map("approval_status")
   createdById                String         @map("created_by_id")
@@ -620,11 +618,11 @@ model EventProposal {
   directorApprovedAt         DateTime?      @map("director_approved_at")
   approvalHistory            Json?          @map("approval_history")
 
-  skus                       EventProposalSku[]
-  payments                   EventProposalPayment[]
+  skus     EventProposalSku[]
+  payments EventProposalPayment[]
 
-  createdAt                  DateTime       @default(now()) @map("created_at")
-  updatedAt                  DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([areaId])
   @@index([createdById])
@@ -664,17 +662,18 @@ model EventProposalPayment {
 }
 
 model KnowledgeChunk {
-  id                 String                       @id @default(ulid()) @map("id")
-  source             String                       @map("source")
-  title              String                       @map("title")
-  content            String                       @map("content")
+  id                 String                 @id @default(ulid()) @map("id")
+  source             String                 @map("source")
+  title              String                 @map("title")
+  content            String                 @map("content")
   /// Hybrid RAG vector (pgvector). Written via raw SQL when EMBEDDING_* is configured.
   /// Prisma Unsupported — use ai-embedding upsertChunkEmbedding for writes.
-  embedding          Unsupported("vector")?       @map("embedding")
-  embeddingModel     String?                      @map("embedding_model")
-  embeddingUpdatedAt DateTime?                    @map("embedding_updated_at")
-  createdAt          DateTime                     @default(now()) @map("created_at")
-  updatedAt          DateTime                     @updatedAt @map("updated_at")
+  embedding          Unsupported("vector")? @map("embedding")
+  embeddingModel     String?                @map("embedding_model")
+  embeddingUpdatedAt DateTime?              @map("embedding_updated_at")
+  embeddingStatus    String                 @default("none") @map("embedding_status")
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
 
   @@index([source])
   @@map("knowledge_chunks")

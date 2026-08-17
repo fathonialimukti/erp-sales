@@ -26,6 +26,8 @@ import { icons } from "@/assets/icons";
 import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
 import { hasPermissionAtom, searchOpenAtom } from "@/lib/atoms";
 import { trpcClient } from "@/lib/trpc";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { cn } from "@/lib/utils";
 
 type SearchResultKind = "page" | "customer" | "sku" | "sales-order" | "action";
@@ -66,13 +68,6 @@ const flattenLeaves = (items: NavMenuItem[]): NavLeaf[] => {
 
 const normalize = (s: string) => s.toLowerCase().trim();
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
-
 const KIND_TINT: Record<SearchResultKind, string> = {
   page: "bg-primary/10 text-primary",
   action: "bg-muted text-muted-foreground",
@@ -87,6 +82,7 @@ export const SearchPalette = () => {
   const hasPermission = useAtomValue(hasPermissionAtom);
   const [open, setOpen] = useAtom(searchOpenAtom);
   const [query, setQuery] = useState("");
+  const { currencyCode } = useGeneralSettings();
 
   const navPages = useMemo<SearchResult[]>(() => {
     const leaves = flattenLeaves(NAV_MENU).filter(
@@ -295,7 +291,7 @@ export const SearchPalette = () => {
       id: so.id,
       href: `/sales-order/${so.id}`,
       label: so.documentNumber ?? so.id,
-      hint: `${so.customer?.name ?? "—"} · ${formatCurrency(Number(so.grandTotal ?? 0))}`,
+      hint: `${so.customer?.name ?? "—"} · ${formatCurrency(Number(so.grandTotal ?? 0), currencyCode)}`,
     }));
 
     return [

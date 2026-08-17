@@ -33,13 +33,8 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpcClient } from "../../../lib/trpc";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 
 const chartColors = {
   primary: "var(--chart-4)",
@@ -64,6 +59,7 @@ interface CollectionReportProps {
 
 export const CollectionReport = ({ filters }: CollectionReportProps) => {
   const intl = useIntl();
+  const { currencyCode } = useGeneralSettings();
   const printRef = useRef<HTMLDivElement>(null);
 
   const query = useQuery({
@@ -91,7 +87,7 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
         defaultMessage: "Outstanding",
       }),
       align: "right",
-      render: (r) => formatCurrency(Number(r.outstanding)),
+      render: (r) => formatCurrency(Number(r.outstanding), currencyCode),
     },
     {
       key: "collected",
@@ -100,7 +96,7 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
         defaultMessage: "Collected",
       }),
       align: "right",
-      render: (r) => formatCurrency(Number(r.collected)),
+      render: (r) => formatCurrency(Number(r.collected), currencyCode),
     },
   ];
 
@@ -165,14 +161,14 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
                 id: "report.kpi.outstanding",
                 defaultMessage: "Outstanding AR",
               })}
-              value={formatCurrency(data?.outstandingTotal ?? 0)}
+              value={formatCurrency(data?.outstandingTotal ?? 0, currencyCode)}
             />
             <ReportKpiCard
               label={intl.formatMessage({
                 id: "report.kpi.collected",
                 defaultMessage: "Collected",
               })}
-              value={formatCurrency(data?.collectedTotal ?? 0)}
+              value={formatCurrency(data?.collectedTotal ?? 0, currencyCode)}
             />
             <ReportKpiCard
               label={intl.formatMessage({
@@ -186,7 +182,7 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
                 id: "report.kpi.revenue",
                 defaultMessage: "Revenue (approved)",
               })}
-              value={formatCurrency(data?.totalBilled ?? 0)}
+              value={formatCurrency(data?.totalBilled ?? 0, currencyCode)}
             />
           </div>
 
@@ -215,14 +211,14 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
                     stroke={chartColors.grid}
                   />
                   <YAxis
-                    tickFormatter={(v: number) => formatCurrency(v)}
+                    tickFormatter={(v: number) => formatCurrency(v, currencyCode)}
                     tick={{ fontSize: 11, fill: chartColors.axis }}
                     width={80}
                     stroke={chartColors.grid}
                   />
                   <Tooltip
                     contentStyle={chartTooltipStyle}
-                    formatter={(v) => formatCurrency(Number(v))}
+                    formatter={(v) => formatCurrency(Number(v), currencyCode)}
                   />
                   <Bar
                     dataKey="amount"

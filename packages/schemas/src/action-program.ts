@@ -46,7 +46,7 @@ export const createActionProgramSchema = z.object({
   description: z.string().optional(),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
-  budgetCurrency: z.string().default('IDR'),
+  budgetCurrency: z.string().default('USD'),
   rules: z.any().optional(),
   areaId: z.string().min(1, 'Area is required'),
   picId: z.string().min(1, 'PIC is required'),

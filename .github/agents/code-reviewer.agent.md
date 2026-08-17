@@ -23,7 +23,9 @@ tools:
     "threejs-devtools/*",
     "pylance-mcp-server/*",
   ]
+model: "Tencent Hy3"
 user-invocable: true
+---
 ---
 
 # Code Reviewer (ERP)

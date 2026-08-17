@@ -60,10 +60,27 @@ const SLATE_900 = '#0f172a';
 const SURFACE = '#F1F5F9';
 const SURFACE_SOFT = '#F8FAFC';
 
-const formatCurrency = (v: number) =>
-    new Intl.NumberFormat('id-ID', {
+const localeForCurrency = (currency: string): string => {
+    switch (currency.toUpperCase()) {
+        case 'USD':
+            return 'en-US';
+        case 'IDR':
+            return 'id-ID';
+        case 'PHP':
+            return 'en-PH';
+        case 'SGD':
+            return 'en-SG';
+        case 'MYR':
+            return 'ms-MY';
+        default:
+            return 'en-US';
+    }
+};
+
+const formatCurrency = (v: number, currency: string) =>
+    new Intl.NumberFormat(localeForCurrency(currency), {
         style: 'currency',
-        currency: 'IDR',
+        currency,
         maximumFractionDigits: 0,
     }).format(v);
 
@@ -314,10 +331,10 @@ const drawItemsTable = (doc: PDFKit.PDFDocument, r: SalesOrderPdfRecord) => {
             });
         };
         numText(2, `${it.quantity} ${it.sku.baseUnit}`);
-        numText(3, formatCurrency(it.unitPrice));
+        numText(3, formatCurrency(it.unitPrice, r.currency));
         numText(4, `${it.discountPercent ?? 0}%`);
         numText(5, `${it.taxPercent ?? 0}%`);
-        numText(6, formatCurrency(it.lineTotal), true);
+        numText(6, formatCurrency(it.lineTotal, r.currency), true);
 
         doc.y = rowY + rowHeight;
     });
@@ -337,10 +354,10 @@ const drawTotals = (doc: PDFKit.PDFDocument, r: SalesOrderPdfRecord) => {
     const rowHeight = 18;
 
     const rows: { label: string; value: string; strong?: boolean }[] = [
-        { label: 'Subtotal', value: formatCurrency(r.subtotal ?? 0) },
-        { label: 'Discount', value: `−${formatCurrency(r.discountTotal ?? 0)}` },
-        { label: 'Tax', value: formatCurrency(r.taxTotal ?? 0) },
-        { label: 'Grand Total', value: formatCurrency(r.grandTotal ?? 0), strong: true },
+        { label: 'Subtotal', value: formatCurrency(r.subtotal ?? 0, r.currency) },
+        { label: 'Discount', value: `−${formatCurrency(r.discountTotal ?? 0, r.currency)}` },
+        { label: 'Tax', value: formatCurrency(r.taxTotal ?? 0, r.currency) },
+        { label: 'Grand Total', value: formatCurrency(r.grandTotal ?? 0, r.currency), strong: true },
     ];
 
     rows.forEach((row, i) => {

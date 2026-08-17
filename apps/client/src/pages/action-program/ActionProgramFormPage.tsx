@@ -56,7 +56,7 @@ const defaults = (): FormValues => ({
   description: "",
   startDate: "",
   endDate: "",
-  budgetCurrency: "IDR",
+  budgetCurrency: "USD",
   areaId: "",
   picId: "",
   outletIds: [],

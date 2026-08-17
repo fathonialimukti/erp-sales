@@ -55,6 +55,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import {
   SalesOrderPrint,
   printOrder,
@@ -88,13 +90,6 @@ const readStoredView = (): IndexView => {
   }
 };
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
-
 const formatDate = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
@@ -122,6 +117,7 @@ export const SalesOrderIndexPage = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+  const { currencyCode } = useGeneralSettings();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -266,7 +262,7 @@ export const SalesOrderIndexPage = () => {
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
-              {row.original.customer.name}
+              {row.original.customer?.name ?? "—"}
             </p>
             {row.original.outlet ? (
               <p className="truncate text-xs text-muted-foreground">
@@ -315,7 +311,7 @@ export const SalesOrderIndexPage = () => {
         cell: ({ row }) =>
           row.original.grandTotal ? (
             <span className="block text-right font-medium tabular-nums text-foreground">
-              {formatCurrency(row.original.grandTotal)}
+              {formatCurrency(row.original.grandTotal, currencyCode)}
             </span>
           ) : (
             <span className="block text-right text-muted-foreground">—</span>

@@ -8,6 +8,8 @@ import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
@@ -33,13 +35,6 @@ type SkuRow = {
   _count: { salesOrderItems: number };
 };
 
-const formatCurrency = (v: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(v);
-
 export const SkuIndexPage = () => {
   const intl = useIntl();
 
@@ -55,6 +50,7 @@ export const SkuIndexPage = () => {
   const canUpdate = hasPermission("sku@update");
   const canDelete = hasPermission("sku@delete");
   const toast = useToast();
+  const { currencyCode } = useGeneralSettings();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [searchInput, setSearchInput] = useState("");
@@ -110,7 +106,7 @@ export const SkuIndexPage = () => {
         header: intl.formatMessage({ id: "sku.index.header_price", defaultMessage: "Price" }),
         cell: ({ row }) => (
           <span className="block text-right tabular-nums text-foreground">
-            {row.original.basePrice != null ? formatCurrency(row.original.basePrice) : "—"}
+            {row.original.basePrice != null ? formatCurrency(row.original.basePrice, currencyCode) : "—"}
           </span>
         ),
       },

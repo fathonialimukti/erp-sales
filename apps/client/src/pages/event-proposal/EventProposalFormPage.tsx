@@ -66,7 +66,7 @@ const defaults = (): FormValues => ({
   organizerContact: "",
   areaId: "",
   proposedBudget: "",
-  currency: "IDR",
+  currency: "USD",
 });
 
 export const EventProposalFormPage = () => {

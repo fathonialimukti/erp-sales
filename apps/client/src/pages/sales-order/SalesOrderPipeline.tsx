@@ -4,6 +4,8 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { StatusChip } from "../../components/StatusChip";
 import { fadeIn, getMotionProps } from "@/lib/motion";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { cn } from "@/lib/utils";
 
 export type PipelineOrder = {
@@ -43,13 +45,6 @@ const toStage = (status: string): StageKey => {
   return "DRAFT";
 };
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
-
 const formatDate = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
@@ -65,6 +60,7 @@ interface SalesOrderPipelineProps {
 export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) => {
   const intl = useIntl();
   const reduced = useReducedMotion();
+  const { currencyCode } = useGeneralSettings();
 
   const stageLabel = (stage: StageKey) => {
     switch (stage) {
@@ -139,7 +135,7 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
                 },
                 {
                   count: list.length,
-                  total: formatCurrency(sum),
+                  total: formatCurrency(sum, currencyCode),
                 },
               )}
             </span>
@@ -165,12 +161,12 @@ export const SalesOrderPipeline = ({ items, onOpen }: SalesOrderPipelineProps) =
                     {row.documentNumber ?? row.id.slice(0, 8)}
                   </span>
                   <span className="truncate text-xs text-foreground">
-                    {row.customer.name}
+                    {row.customer?.name ?? "—"}
                     {row.outlet ? ` · ${row.outlet.name}` : ""}
                   </span>
                   {row.grandTotal != null && row.grandTotal > 0 ? (
                     <span className="text-sm font-semibold tabular-nums text-foreground">
-                      {formatCurrency(row.grandTotal)}
+                      {formatCurrency(row.grandTotal, currencyCode)}
                     </span>
                   ) : (
                     <span className="text-sm font-semibold text-foreground">—</span>

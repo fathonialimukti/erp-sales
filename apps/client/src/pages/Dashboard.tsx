@@ -43,6 +43,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/api-base";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { trpcClient } from "../lib/trpc";
 import { authUserAtom, hasPermissionAtom } from "../lib/atoms";
 import { icons } from "../assets/icons";
@@ -103,13 +105,6 @@ const chartTooltipStyle = {
 
 const MAIN_CHART_HEIGHT = 280;
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
-
 const formatCompact = (value: number) =>
   new Intl.NumberFormat("id-ID", {
     notation: "compact",
@@ -152,6 +147,7 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const hasPermission = useAtomValue(hasPermissionAtom);
   const authUser = useAtomValue(authUserAtom);
+  const { currencyCode } = useGeneralSettings();
 
   useMeta({
     title: 'Dashboard',
@@ -398,7 +394,7 @@ export const Dashboard = () => {
                 {isLoading || !sales ? (
                   <Skeleton className="h-10 w-56" />
                 ) : (
-                  formatCurrency(sales.kpis.monthRevenue)
+                  formatCurrency(sales.kpis.monthRevenue, currencyCode)
                 )}
               </div>
               {sales?.kpis.prevMonthRevenue ? (
@@ -585,7 +581,7 @@ export const Dashboard = () => {
                     />
                     <Tooltip
                       contentStyle={chartTooltipStyle}
-                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                      formatter={(value) => [formatCurrency(Number(value), currencyCode), "Revenue"]}
                     />
                     <Area
                       type="monotone"
@@ -645,7 +641,7 @@ export const Dashboard = () => {
                     />
                     <Tooltip
                       contentStyle={chartTooltipStyle}
-                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                      formatter={(value) => [formatCurrency(Number(value), currencyCode), "Revenue"]}
                     />
                     <Bar dataKey="total" fill={chartColors.secondary} radius={[0, 6, 6, 0]} />
                   </BarChart>
@@ -717,7 +713,7 @@ export const Dashboard = () => {
                     />
                     <Tooltip
                       contentStyle={chartTooltipStyle}
-                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                      formatter={(value) => [formatCurrency(Number(value), currencyCode), "Revenue"]}
                     />
                     <Bar
                       dataKey="revenue"

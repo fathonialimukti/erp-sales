@@ -60,7 +60,7 @@ describe('sales order CRUD + approval', () => {
     const created = await caller.salesOrder.create({
       outletId,
       items: [{ skuId, quantity: 2, unitPrice: 10000, lineTotal: 20000, discountPercent: 0, taxPercent: 0 }],
-      currency: 'IDR',
+      currency: 'USD',
       subtotal: 20000, grandTotal: 20000, discountTotal: 0, taxTotal: 0,
     });
     expect(created.id).toBeDefined();

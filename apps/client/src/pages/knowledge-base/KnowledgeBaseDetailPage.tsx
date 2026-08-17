@@ -14,7 +14,10 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+
+type EmbeddingStatus = "pending" | "done" | "failed" | "none";
 
 type KnowledgeBaseDetail = {
   id: string;
@@ -23,6 +26,9 @@ type KnowledgeBaseDetail = {
   source: string;
   createdAt: string;
   updatedAt: string;
+  embeddingStatus: EmbeddingStatus;
+  embeddingUpdatedAt: string | null;
+  embeddingModel: string | null;
 };
 
 export const KnowledgeBaseDetailPage = () => {
@@ -42,6 +48,10 @@ export const KnowledgeBaseDetailPage = () => {
     queryKey: ["knowledgeBaseDetail", id],
     enabled: Boolean(id),
     queryFn: () => trpcClient.knowledgeBase.detail.query({ id: id ?? "" }),
+    refetchInterval: (query) => {
+      const status = (query.state.data as KnowledgeBaseDetail | undefined)?.embeddingStatus;
+      return status === "pending" ? 2000 : false;
+    },
   });
 
   const entry = data as KnowledgeBaseDetail | undefined;
@@ -166,8 +176,60 @@ export const KnowledgeBaseDetailPage = () => {
                   defaultMessage: "Source",
                 })}
               </dt>
-              <dd>
+              <dd className="flex items-center gap-2">
                 <Badge variant="secondary">{entry.source}</Badge>
+                {entry.embeddingStatus === "pending" ? (
+                  <div className="flex items-center gap-2">
+                    <Progress
+                      value={50}
+                      className="h-1.5 w-20"
+                      aria-label={intl.formatMessage({
+                        id: "knowledgeBase.detail.embedding_in_progress",
+                        defaultMessage: "Embedding…",
+                      })}
+                    />
+                    <Badge
+                      variant="outline"
+                      className="border-transparent bg-muted text-muted-foreground"
+                    >
+                      {intl.formatMessage({
+                        id: "knowledgeBase.detail.embedding_in_progress",
+                        defaultMessage: "Embedding…",
+                      })}
+                    </Badge>
+                  </div>
+                ) : entry.embeddingStatus === "done" ? (
+                  <Badge
+                    variant="outline"
+                    title={entry.embeddingModel ?? undefined}
+                    className="border-transparent bg-success/15 text-success"
+                  >
+                    {intl.formatMessage({
+                      id: "knowledgeBase.detail.embedding_embedded",
+                      defaultMessage: "Embedded",
+                    })}
+                  </Badge>
+                ) : entry.embeddingStatus === "failed" ? (
+                  <Badge
+                    variant="outline"
+                    className="border-transparent bg-destructive/10 text-destructive"
+                  >
+                    {intl.formatMessage({
+                      id: "knowledgeBase.detail.embedding_failed",
+                      defaultMessage: "Embedding failed",
+                    })}
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="border-transparent bg-muted text-muted-foreground"
+                  >
+                    {intl.formatMessage({
+                      id: "knowledgeBase.detail.embedding_none",
+                      defaultMessage: "Not embedded",
+                    })}
+                  </Badge>
+                )}
               </dd>
             </div>
             <div className="space-y-1">

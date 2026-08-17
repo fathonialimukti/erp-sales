@@ -39,7 +39,7 @@ export const createEventProposalSchema = z.object({
   areaId: z.string().min(1, 'Area is required'),
   observationDays: z.number().int().default(90),
   proposedBudget: z.number().positive().optional().nullable(),
-  currency: z.string().default('IDR'),
+  currency: z.string().default('USD'),
   skus: z.array(eventProposalSkuInputSchema).optional().default([]),
   payments: z.array(eventProposalPaymentSchema).optional().default([]),
 });

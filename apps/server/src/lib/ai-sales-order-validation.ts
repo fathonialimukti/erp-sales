@@ -77,7 +77,7 @@ Analyze the following aspects based on the order data provided:
 
 ### 5. Order Value Validation
 - Grand total must be > 0
-- Very small orders (< 100,000 IDR) for B2B are suspicious
+- Very small orders (< 100 USD) for B2B are suspicious
 
 ### 6. Temporal Validation
 - Order date should not be more than 30 days in the future
@@ -90,7 +90,7 @@ Start with 100 points and DEDUCT:
 - Price is 0 or negative: -25 points
 - Quantity is 0 or negative: -25 points
 - Discount > 50% without justification: -15 points
-- Very small order (< 100K IDR): -10 points
+- Very small order (< 100 USD): -10 points
 - Future date > 30 days: -15 points
 
 ## RISK LEVEL THRESHOLDS

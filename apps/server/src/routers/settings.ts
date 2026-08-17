@@ -5,6 +5,18 @@ import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import { appSettingsSchema, userSettingsSchema } from '@repo/schemas/settings';
 
 export const settingsRouter = router({
+  // Permission-free: any authenticated user can read non-sensitive display
+  // settings (currency, fiscal year, page size). No ai/smtp/emailAgent/system/company.
+  public: protectedProcedure.query(async ({ ctx }) => {
+    const settings = await getAppSettings(ctx.db);
+    return {
+      currencyCode: settings.general.currencyCode,
+      currencySymbol: settings.general.currencySymbol,
+      fiscalYearStartMonth: settings.general.fiscalYearStartMonth,
+      defaultPageSize: settings.general.defaultPageSize,
+    };
+  }),
+
   get: protectedProcedure
     .use(hasPermission('settings@read'))
     .query(async ({ ctx }) => {

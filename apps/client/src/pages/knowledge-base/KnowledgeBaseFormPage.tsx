@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -8,6 +8,7 @@ import { Loader2, Save } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +52,16 @@ export const KnowledgeBaseFormPage = () => {
   const isEdit = Boolean(id);
   const [modalStage, setModalStage] = useState<ModalStage>("idle");
   const [resultMessage, setResultMessage] = useState("");
+  // Tracks the id whose embedding status we are polling after a successful save.
+  // Null = not polling. Set on mutation success; cleared on terminal status / navigation.
+  const [pollingId, setPollingId] = useState<string | null>(null);
+  // Wall-clock timestamp when polling started; used to enforce the 30s ceiling
+  // (dataUpdatedAt resets on every refetch, so it can't be used for the timeout).
+  const pollingStartedAtRef = useRef<number | null>(null);
+  // Ticks to force the terminal-status effect to re-evaluate the timeout when status
+  // stays `pending` past 30s (otherwise the effect would never re-run).
+  const [pollingTick, setPollingTick] = useState(0);
+  const toast = useToast();
 
   const { data, isLoading } = useQuery({
     queryKey: ["knowledgeBaseDetail", id],
@@ -83,7 +95,7 @@ export const KnowledgeBaseFormPage = () => {
 
   const createMutation = useMutation({
     mutationFn: (d: FormValues) => trpcClient.knowledgeBase.create.mutate(d),
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["knowledgeBaseList"] });
       setResultMessage(
         intl.formatMessage({
@@ -92,7 +104,9 @@ export const KnowledgeBaseFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate("/knowledge-base"), 1200);
+      // Begin polling the created entry's embedding status instead of navigating away.
+      pollingStartedAtRef.current = Date.now();
+      setPollingId(created.id);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
@@ -103,7 +117,7 @@ export const KnowledgeBaseFormPage = () => {
   const updateMutation = useMutation({
     mutationFn: (d: FormValues & { currentId: string }) =>
       trpcClient.knowledgeBase.update.mutate(d),
-    onSuccess: () => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ["knowledgeBaseList"] });
       queryClient.invalidateQueries({ queryKey: ["knowledgeBaseDetail", id] });
       setResultMessage(
@@ -113,13 +127,83 @@ export const KnowledgeBaseFormPage = () => {
         }),
       );
       setModalStage("success");
-      setTimeout(() => navigate(`/knowledge-base/${id}`), 1200);
+      // Begin polling the updated entry's embedding status instead of navigating away.
+      pollingStartedAtRef.current = Date.now();
+      setPollingId(updated.id);
     },
     onError: (e) => {
       setResultMessage(e instanceof Error ? e.message : "Failed");
       setModalStage("error");
     },
   });
+
+  // Poll the saved entry's embedding status while it is `pending`.
+  // refetchInterval stops automatically once status leaves `pending` (returns false).
+  // The 30s ceiling (15 polls × 2s) is enforced in the terminal-status effect below
+  // using a wall-clock timestamp, since dataUpdatedAt resets on every refetch.
+  const pollingQuery = useQuery({
+    queryKey: ["knowledgeBaseDetail", pollingId],
+    enabled: Boolean(pollingId),
+    queryFn: () => trpcClient.knowledgeBase.detail.query({ id: pollingId ?? "" }),
+    refetchInterval: (query) => {
+      const status = query.state.data?.embeddingStatus;
+      // Keep polling only while pending; stop on done/failed/none or when data is absent.
+      return status === "pending" ? 2000 : false;
+    },
+    refetchIntervalInBackground: true,
+  });
+
+  // React to terminal embedding statuses (or polling timeout) — toast + navigate once.
+  useEffect(() => {
+    if (!pollingId) return;
+    const status = pollingQuery.data?.embeddingStatus;
+    const startedAt = pollingStartedAtRef.current;
+    const timedOut = startedAt !== null && Date.now() - startedAt > 30_000;
+
+    if (status === "done") {
+      const targetId = pollingId;
+      setPollingId(null);
+      pollingStartedAtRef.current = null;
+      toast.success(
+        intl.formatMessage({
+          id: "knowledgeBase.form.embedding_done",
+          defaultMessage: "Embedded",
+        }),
+      );
+      navigate(`/knowledge-base/${targetId}`);
+    } else if (status === "failed") {
+      const targetId = pollingId;
+      setPollingId(null);
+      pollingStartedAtRef.current = null;
+      toast.warning(
+        intl.formatMessage({
+          id: "knowledgeBase.form.embedding_failed",
+          defaultMessage: "Embedding failed — entry saved",
+        }),
+      );
+      navigate(`/knowledge-base/${targetId}`);
+    } else if (status === "none" || timedOut) {
+      const targetId = pollingId;
+      setPollingId(null);
+      pollingStartedAtRef.current = null;
+      toast.warning(
+        intl.formatMessage({
+          id: "knowledgeBase.form.embedding_skipped",
+          defaultMessage: "Embedding skipped — entry saved",
+        }),
+      );
+      navigate(`/knowledge-base/${targetId}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pollingId, pollingQuery.data?.embeddingStatus, pollingTick]);
+
+  // Force a re-check of the timeout when polling is active. Without this, if status
+  // stays `pending` for 30s the effect above never re-runs and the user is stuck.
+  useEffect(() => {
+    if (!pollingId) return;
+    const timer = setTimeout(() => setPollingTick((t) => t + 1), 30_500);
+    return () => clearTimeout(timer);
+  }, [pollingId]);
 
   const runSave = () => {
     setModalStage("loading");
@@ -356,7 +440,7 @@ export const KnowledgeBaseFormPage = () => {
           if (!open && modalStage !== "loading") setModalStage("idle");
         }}
       >
-        <DialogContent showCloseButton={modalStage !== "loading"} className="sm:max-w-md">
+        <DialogContent showCloseButton={modalStage !== "loading" && !pollingId} className="sm:max-w-md">
           {modalStage === "loading" ? (
             <div className="flex flex-col items-center gap-3 py-4">
               <Loader2 className="size-8 animate-spin text-foreground" aria-hidden />
@@ -374,6 +458,17 @@ export const KnowledgeBaseFormPage = () => {
                 })}
               </DialogTitle>
               <DialogDescription>{resultMessage}</DialogDescription>
+              {pollingId ? (
+                <div className="flex flex-col gap-2 pt-2" data-ai-context={JSON.stringify({ section: "knowledge-base-form", polling: true })}>
+                  <Progress value={100} className="animate-pulse" aria-label={intl.formatMessage({ id: "knowledgeBase.form.embedding_in_progress", defaultMessage: "Embedding…" })} />
+                  <p className="text-xs text-muted-foreground">
+                    {intl.formatMessage({
+                      id: "knowledgeBase.form.embedding_in_progress",
+                      defaultMessage: "Embedding…",
+                    })}
+                  </p>
+                </div>
+              ) : null}
             </DialogHeader>
           ) : null}
           {modalStage === "error" ? (

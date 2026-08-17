@@ -33,13 +33,8 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpcClient } from "../../../lib/trpc";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 const formatNumber = (value: number) =>
   new Intl.NumberFormat("id-ID").format(value);
 
@@ -66,6 +61,7 @@ interface PromoReportProps {
 
 export const PromoReport = ({ filters }: PromoReportProps) => {
   const intl = useIntl();
+  const { currencyCode } = useGeneralSettings();
   const printRef = useRef<HTMLDivElement>(null);
 
   const roiQuery = useQuery({
@@ -104,7 +100,7 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
         defaultMessage: "Budget",
       }),
       align: "right",
-      render: (r) => formatCurrency(Number(r.budget)),
+      render: (r) => formatCurrency(Number(r.budget), currencyCode),
     },
     {
       key: "cost",
@@ -113,7 +109,7 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
         defaultMessage: "Cost",
       }),
       align: "right",
-      render: (r) => formatCurrency(Number(r.cost)),
+      render: (r) => formatCurrency(Number(r.cost), currencyCode),
     },
     {
       key: "revenue",
@@ -122,7 +118,7 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
         defaultMessage: "Revenue",
       }),
       align: "right",
-      render: (r) => formatCurrency(Number(r.revenue)),
+      render: (r) => formatCurrency(Number(r.revenue), currencyCode),
     },
     {
       key: "roi",

@@ -4,7 +4,7 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { Eye, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -25,7 +25,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type KnowledgeBaseRow = { id: string; title: string; source: string; content: string };
+type KnowledgeBaseRow = {
+  id: string;
+  title: string;
+  source: string;
+  content: string;
+  embeddingStatus: "pending" | "done" | "failed" | "none";
+  embeddingUpdatedAt: string | null;
+  embeddingModel: string | null;
+};
 
 export const KnowledgeBaseIndexPage = () => {
   const intl = useIntl();
@@ -60,6 +68,12 @@ export const KnowledgeBaseIndexPage = () => {
         limit: pagination.pageSize,
         search: search || undefined,
       }),
+    refetchInterval: (query) => {
+      const rows = query.state.data?.data;
+      return Array.isArray(rows) && rows.some((r) => r?.embeddingStatus === "pending")
+        ? 5000
+        : false;
+    },
   });
 
   const rows = (data?.data ?? []) as KnowledgeBaseRow[];
@@ -98,6 +112,65 @@ export const KnowledgeBaseIndexPage = () => {
             {row.original.content.length > 100 ? "…" : ""}
           </span>
         ),
+      },
+      {
+        id: "embedding",
+        header: intl.formatMessage({
+          id: "knowledgeBase.index.header_embedding",
+          defaultMessage: "Embedding",
+        }),
+        cell: ({ row }) => {
+          const status = row.original.embeddingStatus;
+          if (status === "pending") {
+            return (
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" />
+                {intl.formatMessage({
+                  id: "knowledgeBase.index.embedding_in_progress",
+                  defaultMessage: "Embedding…",
+                })}
+              </span>
+            );
+          }
+          if (status === "failed") {
+            return (
+              <Badge
+                variant="outline"
+                className="border-transparent bg-destructive/10 text-destructive"
+              >
+                {intl.formatMessage({
+                  id: "knowledgeBase.index.embedding_failed",
+                  defaultMessage: "Failed",
+                })}
+              </Badge>
+            );
+          }
+          if (status === "done") {
+            return (
+              <Badge
+                variant="outline"
+                title={row.original.embeddingModel ?? undefined}
+                className="border-transparent bg-success/15 text-success"
+              >
+                {intl.formatMessage({
+                  id: "knowledgeBase.detail.embedding_embedded",
+                  defaultMessage: "Embedded",
+                })}
+              </Badge>
+            );
+          }
+          return (
+            <Badge
+              variant="outline"
+              className="border-transparent bg-muted text-muted-foreground"
+            >
+              {intl.formatMessage({
+                id: "knowledgeBase.detail.embedding_none",
+                defaultMessage: "Not embedded",
+              })}
+            </Badge>
+          );
+        },
       },
       {
         id: "actions",

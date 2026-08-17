@@ -16,6 +16,7 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
+model: "GLM 5.2 Combo"
 user-invocable: true
 ---
 

@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "db:all": "bun prisma generate && bun prisma db push --force-reset && bun prisma db seed && bun src/scripts/ingest-knowledge.ts",
+    "seed:ph": "bun src/prisma/seed/index.ts",
     "ai:ingest": "bun src/scripts/ingest-knowledge.ts",
     "ai:devtools": "bunx @ai-sdk/devtools"
   },

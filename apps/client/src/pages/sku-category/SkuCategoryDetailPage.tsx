@@ -41,6 +41,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "@/lib/format";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 
 type SkuCategoryDetail = {
   id: string;
@@ -68,13 +70,6 @@ const chartTooltipStyle = {
   color: "var(--foreground)",
 } as const;
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
-
 const formatCompact = (value: number) =>
   new Intl.NumberFormat("id-ID", {
     notation: "compact",
@@ -98,6 +93,7 @@ export const SkuCategoryDetailPage = () => {
   const canUpdate = hasPermission("skuCategory@update");
   const canDelete = hasPermission("skuCategory@delete");
   const toast = useToast();
+  const { currencyCode } = useGeneralSettings();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -302,7 +298,7 @@ export const SkuCategoryDetailPage = () => {
               statsLoading ? (
                 <Skeleton className="h-7 w-24" />
               ) : (
-                formatCurrency(stats?.catalogValue ?? 0)
+                formatCurrency(stats?.catalogValue ?? 0, currencyCode)
               )
             }
           />
@@ -320,7 +316,7 @@ export const SkuCategoryDetailPage = () => {
               statsLoading ? (
                 <Skeleton className="h-7 w-24" />
               ) : (
-                formatCurrency(stats?.monthRevenue ?? 0)
+                formatCurrency(stats?.monthRevenue ?? 0, currencyCode)
               )
             }
           />
@@ -374,7 +370,7 @@ export const SkuCategoryDetailPage = () => {
                     />
                     <Tooltip
                       contentStyle={chartTooltipStyle}
-                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                      formatter={(value) => [formatCurrency(Number(value), currencyCode), "Revenue"]}
                     />
                     <Area
                       type="monotone"
@@ -446,7 +442,7 @@ export const SkuCategoryDetailPage = () => {
                     />
                     <Tooltip
                       contentStyle={chartTooltipStyle}
-                      formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+                      formatter={(value) => [formatCurrency(Number(value), currencyCode), "Revenue"]}
                     />
                     <Bar dataKey="revenue" fill={chartColors.secondary} radius={[0, 6, 6, 0]} />
                   </BarChart>

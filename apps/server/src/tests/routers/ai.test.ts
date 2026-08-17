@@ -60,11 +60,11 @@ describe('createSalesOrderSchema (extraction target)', () => {
         expect(parsed.success).toBe(false);
     });
 
-    it('defaults currency to IDR when omitted', () => {
+    it('defaults currency to USD when omitted', () => {
         const parsed = createSalesOrderSchema.parse({
             outletId: '01ABC',
             items: [{ skuId: '01SKU', quantity: 1, unitPrice: 500, lineTotal: 500 }],
         });
-        expect(parsed.currency).toBe('IDR');
+        expect(parsed.currency).toBe('USD');
     });
 });
