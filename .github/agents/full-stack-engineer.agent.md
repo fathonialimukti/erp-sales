@@ -3,7 +3,7 @@ name: "Full-Stack Engineer"
 description: "Multi-domain feature orchestrator for this ERP monorepo — decomposes a feature into independent, parallelizable sub-tasks and dispatches each to a subagent. Use ONLY when work spans server + client (full CRUD, new resource, scaffold across schema/router/pages). Delegates to Backend Engineer, Frontend Engineer, and Code Reviewer. Do NOT use for simple single-stack tasks — pick Backend, Frontend, or Code Reviewer directly instead."
 tools: [vscode, execute, read, agent, browser, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, edit, search, web, todo]
 agents: ["Backend Engineer", "Frontend Engineer", "Code Reviewer"]
-model: "DeepSeek V4 Flash 0731 (MAX)"
+model: "Poolside Laguna S 2.1"
 user-invocable: true
 ---
 

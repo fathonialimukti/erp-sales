@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { motion, useReducedMotion } from "motion/react";
@@ -29,6 +30,8 @@ import {
   User,
   Users,
   Warehouse,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 
 import { Stagger, StaggerItem } from "../components/motion/Stagger";
@@ -51,13 +54,47 @@ import {
 } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { MermaidDiagram } from "../components/MermaidDiagram";
 import {
   DecorBlob,
   HeroDashboard,
   ApprovalFlow,
   EmailToOrderFlow,
   AiWorkflow,
+  RagArchitecture,
 } from "./landing/LandingSections";
+
+const RAG_MERMAID_CHART = `flowchart LR
+    subgraph WritePath["📝 Path 1: Pushing Knowledge"]
+        direction TB
+        KB["Knowledge Base Frontend"] -->|"create / update"| R["Knowledge-Base Router"]
+        R -->|"set pending"| E["ai-embedding.ts"]
+        E -->|"generateEmbedding()"| V["pgvector"]
+        E -->|"upsertChunkEmbedding()"| V
+        V -->|"status = done"| Done["✅ Embedded"]
+    end
+
+    subgraph ReadPath["💬 Path 2: Chatbot Retrieval"]
+        direction TB
+        Q["User Question"] -->|"query"| H["rag.ts"]
+        H -->|"hybrid search"| V2["pgvector"]
+        V2 -->|"vector similarity"| R1["searchKnowledgeChunksVector()"]
+        V2 -->|"full-text"| R2["searchKnowledgeChunksFts()"]
+        R1 -->|"merge"| M["mergeKnowledgeHits()"]
+        R2 -->|"merge"| M
+        M -->|"format"| F["formatKnowledgeHits()"]
+        F -->|"inject"| AI["AI Assistant"]
+        AI -->|"answer"| A["Response to User"]
+    end
+
+    V -. "Retrieve vectors" .-> V2
+`;
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const CONTACT = {
   email: "mailto:fathoni@example.com",
@@ -288,6 +325,15 @@ export const LandingPage = () => {
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const softEnter = getMotionProps(reducedMotion);
+  const [ragDiagramOpen, setRagDiagramOpen] = useState(false);
+  const [ragZoom, setRagZoom] = useState(1);
+  const RAG_ZOOM_MIN = 0.5;
+  const RAG_ZOOM_MAX = 3;
+  const RAG_ZOOM_STEP = 0.25;
+
+  const handleRagZoomIn = () => setRagZoom((z) => Math.min(z + RAG_ZOOM_STEP, RAG_ZOOM_MAX));
+  const handleRagZoomOut = () => setRagZoom((z) => Math.max(z - RAG_ZOOM_STEP, RAG_ZOOM_MIN));
+  const handleRagZoomReset = () => setRagZoom(1);
 
   const t = (id: string, fallback: string) =>
     intl.formatMessage({ id, defaultMessage: fallback });
@@ -601,62 +647,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* Stats / proof */}
-      <section
-        aria-labelledby="stats-title"
-        className="border-b border-border bg-muted px-4 py-12 sm:px-6 sm:py-14 lg:px-8"
-      >
-        <div>
-          <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                {t("landing.v2.stats_eyebrow", "Proof points")}
-              </p>
-              <h2
-                id="stats-title"
-                className="mt-1 font-heading text-2xl font-bold tracking-tight sm:text-3xl"
-              >
-                {t("landing.v2.stats_title", "Numbers that matter")}
-              </h2>
-            </div>
-            <figure className="max-w-md rounded-xl border border-border bg-card p-4 shadow-sm">
-              <Quote className="mb-2 size-4 text-primary" aria-hidden="true" />
-              <blockquote className="text-sm leading-relaxed text-foreground">
-                {t(
-                  "landing.v2.social_quote",
-                  "Field and back-office finally share one operating system — orders, visits, and approvals stay connected.",
-                )}
-              </blockquote>
-              <figcaption className="mt-2 text-xs text-muted-foreground">
-                {t("landing.v2.social_role", "Sales Ops Lead · Demo narrative")}
-              </figcaption>
-            </figure>
-          </div>
-
-          <Stagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {STATS.map((stat) => (
-              <StaggerItem key={stat.key}>
-                <Card className="h-full border-border/80 transition-shadow hover:shadow-md">
-                  <CardContent className="flex items-start gap-3 p-5">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <stat.icon className="size-4" />
-                    </span>
-                    <div>
-                      <div className="font-heading text-2xl font-semibold tabular-nums tracking-tight">
-                        {t(stat.valueId, "—")}
-                      </div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">
-                        {t(stat.labelId, stat.key)}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </StaggerItem>
-            ))}
-          </Stagger>
-        </div>
-      </section>
-
       {/* Features bento */}
       <section
         id="features"
@@ -953,6 +943,115 @@ export const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* RAG Architecture */}
+      <section
+        id="rag-architecture"
+        aria-labelledby="rag-title"
+        className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+      >
+        <div>
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              {t("landing.rag_eyebrow", "AI Knowledge")}
+            </p>
+            <h2
+              id="rag-title"
+              className="mt-2 font-heading text-3xl font-bold tracking-tight"
+            >
+              {t("landing.rag_title", "How the AI learns from your business")}
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              {t(
+                "landing.rag_subtitle",
+                "Your team adds documents. The AI reads and understands them. Then it answers questions using YOUR information — not guesses.",
+              )}
+            </p>
+          </div>
+          <RagArchitecture className="w-full" />
+          <div className="mx-auto mt-8 max-w-2xl">
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                {
+                  icon: "📄",
+                  titleId: "landing.rag_step_1_title",
+                  descId: "landing.rag_step_1_desc",
+                  title: "Add your docs",
+                  desc: "Policies, FAQs, product info — the AI reads them all.",
+                },
+                {
+                  icon: "🧠",
+                  titleId: "landing.rag_step_2_title",
+                  descId: "landing.rag_step_2_desc",
+                  title: "AI understands",
+                  desc: "It learns the meaning behind your words, not just keywords.",
+                },
+                {
+                  icon: "💬",
+                  titleId: "landing.rag_step_3_title",
+                  descId: "landing.rag_step_3_desc",
+                  title: "Ask anything",
+                  desc: "Get accurate answers sourced from your own documents.",
+                },
+              ].map((step) => (
+                <div
+                  key={step.titleId}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/50 p-4 text-center"
+                >
+                  <span className="text-2xl" aria-hidden="true">
+                    {step.icon}
+                  </span>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t(step.titleId, step.title)}
+                  </h3>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {t(step.descId, step.desc)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRagDiagramOpen(true)}
+              className="gap-1.5"
+            >
+              <ZoomIn className="size-3.5" />
+              {t("landing.rag_view_detailed", "View detailed diagram")}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* RAG Technical Diagram Popup */}
+      <Dialog open={ragDiagramOpen} onOpenChange={(open) => { setRagDiagramOpen(open); if (!open) setRagZoom(1); }}>
+        <DialogContent className="!max-w-7xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-4">
+              <span>{t("landing.rag_diagram_title", "RAG Architecture — Technical View")}</span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon-sm" onClick={handleRagZoomOut} disabled={ragZoom <= RAG_ZOOM_MIN} aria-label="Zoom out">
+                  <ZoomOut className="size-4" />
+                </Button>
+                <span className="min-w-12 text-center text-xs tabular-nums text-muted-foreground">{Math.round(ragZoom * 100)}%</span>
+                <Button variant="ghost" size="icon-sm" onClick={handleRagZoomIn} disabled={ragZoom >= RAG_ZOOM_MAX} aria-label="Zoom in">
+                  <ZoomIn className="size-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleRagZoomReset} disabled={ragZoom === 1}>
+                  {t("landing.rag_zoom_reset", "Reset")}
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-auto rounded-lg border border-border bg-muted/50 p-4" style={{ maxHeight: 'calc(90vh - 120px)' }}>
+            <div style={{ transform: `scale(${ragZoom})`, transformOrigin: 'top left', transition: 'transform 0.2s ease', minWidth: '900px' }}>
+              <MermaidDiagram chart={RAG_MERMAID_CHART} className="w-full" />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* FAQ */}
       <section

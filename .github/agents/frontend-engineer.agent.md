@@ -16,7 +16,7 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
-model: "GLM 5.2 Combo"
+model: "LongCat 2.0"
 user-invocable: true
 ---
 
