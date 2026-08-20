@@ -16,11 +16,7 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
-<<<<<<< HEAD
-model: "LongCat 2.0"
-=======
 model: ["Muse Spark 1.2 Contributor (customendpoint)"]
->>>>>>> fa706aa (add budgeting module with hard-block budget tracking, type/vendor master data, and sales-order discount linking)
 user-invocable: true
 ---
 

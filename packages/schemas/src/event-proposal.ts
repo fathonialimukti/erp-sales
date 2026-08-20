@@ -68,13 +68,8 @@ export const createEventProposalSchema = z.object({
   organizerContact: z.string().optional(),
   areaId: z.string().min(1, 'Area is required'),
   observationDays: z.number().int().default(90),
-<<<<<<< HEAD
-  proposedBudget: z.number().positive().optional().nullable(),
   currency: z.string().default('USD'),
-=======
-  currency: z.string().default('IDR'),
   budgetLineId: z.string().optional(),
->>>>>>> fa706aa (add budgeting module with hard-block budget tracking, type/vendor master data, and sales-order discount linking)
   skus: z.array(eventProposalSkuInputSchema).optional().default([]),
   miscItems: z.array(eventMiscItemInputSchema).optional().default([]),
   vendors: z.array(eventVendorInputSchema).optional().default([]),

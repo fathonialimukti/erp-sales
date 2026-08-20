@@ -19,13 +19,8 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
-<<<<<<< HEAD
-model: "Tencent Hy3"
-=======
 model: ["Tencent Hy3 (customendpoint)"]
->>>>>>> fa706aa (add budgeting module with hard-block budget tracking, type/vendor master data, and sales-order discount linking)
 user-invocable: true
----
 ---
 
 # Code Reviewer (ERP)
