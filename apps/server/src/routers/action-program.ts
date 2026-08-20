@@ -9,7 +9,7 @@ import * as z from 'zod';
 import { updateActionProgramSchema, actionProgramIdSchema, actionProgramListInputSchema } from '@repo/schemas/action-program';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
 import { validateActionProgram } from '../lib/ai-validation.js';
-import type { ActionProgramType } from '../prisma/generated/client';
+import { assertBudgetCapacity, assertPaymentWithinBudget, computeActionProgramPlannedCost } from '../lib/budget-calc.js';
 
 export const actionProgramRouter = router({
   list: protectedProcedure
@@ -22,7 +22,7 @@ export const actionProgramRouter = router({
       const where: Record<string, unknown> = { ...searchWhere };
       if (input?.areaId) where.areaId = input.areaId;
       if (input?.approvalStatus) where.approvalStatus = input.approvalStatus;
-      if (input?.type) where.type = input.type;
+      if (input?.actionTypeId) where.actionTypeId = input.actionTypeId;
 
       const [data, total] = await Promise.all([
         prisma.actionProgram.findMany({
@@ -33,6 +33,7 @@ export const actionProgramRouter = router({
           include: {
             area: { select: { id: true, name: true } },
             pic: { select: { id: true, name: true } },
+            actionType: { select: { id: true, code: true, name: true } },
             _count: { select: { outlets: true, skus: true } },
           },
         }),
@@ -52,6 +53,7 @@ export const actionProgramRouter = router({
           area: { select: { id: true, name: true } },
           pic: { select: { id: true, name: true } },
           createdBy: { select: { id: true, name: true } },
+          actionType: { select: { id: true, code: true, name: true } },
           outlets: { include: { outlet: { select: { id: true, name: true, code: true } } } },
           skus: { include: { sku: { select: { id: true, name: true, code: true } } } },
           items: true,
@@ -66,13 +68,25 @@ export const actionProgramRouter = router({
     .use(hasPermission('action-program@create'))
     .input(createActionProgramSchema)
     .mutation(async ({ input, ctx }) => {
-      const { outletIds, skus, items, payments, startDate, endDate, ...header } = input;
+      const { outlets, skus, items, payments, startDate, endDate, ...header } = input;
+      const plannedCost = computeActionProgramPlannedCost({ outlets, items, skus });
 
       const created = await prisma.$transaction(async (tx) => {
+        if (header.budgetLineId) {
+          await assertBudgetCapacity(tx, { lineId: header.budgetLineId, areaId: header.areaId, plannedCost });
+          // Hard block: nested payments must also fit the line's remaining budget
+          if (payments.length > 0) {
+            await assertPaymentWithinBudget(tx, {
+              lineId: header.budgetLineId,
+              paymentAmount: payments.reduce((acc, p) => acc + p.amount, 0),
+            });
+          }
+        }
+
         const program = await tx.actionProgram.create({
           data: {
             ...header,
-            type: header.type as ActionProgramType,
+            plannedCost,
             startDate: new Date(startDate),
             endDate: new Date(endDate),
             createdById: ctx.user.userId,
@@ -80,9 +94,14 @@ export const actionProgramRouter = router({
           },
         });
 
-        // Connect outlets
+        // Connect outlets with per-outlet explanation and cost
         await tx.actionProgramOutlet.createMany({
-          data: outletIds.map((outletId) => ({ actionProgramId: program.id, outletId })),
+          data: outlets.map((outlet) => ({
+            actionProgramId: program.id,
+            outletId: outlet.outletId,
+            explanation: outlet.explanation ?? null,
+            cost: outlet.cost,
+          })),
         });
 
         // Create SKUs with pricing details
@@ -147,17 +166,40 @@ export const actionProgramRouter = router({
     .use(hasPermission('action-program@update'))
     .input(updateActionProgramSchema)
     .mutation(async ({ input, ctx }) => {
-      const { currentId, outletIds, skus, items, payments, startDate, endDate, ...header } = input;
+      const { currentId, outlets, skus, items, payments, startDate, endDate, ...header } = input;
       const existing = await prisma.actionProgram.findUnique({ where: { id: currentId } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Action program not found.' });
       if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT programs can be edited.' });
 
+      const plannedCost = computeActionProgramPlannedCost({ outlets, items, skus });
+
       const updated = await prisma.$transaction(async (tx) => {
+        if (header.budgetLineId) {
+          await assertBudgetCapacity(tx, {
+            lineId: header.budgetLineId,
+            areaId: header.areaId,
+            plannedCost,
+            excludeId: currentId,
+          });
+          if (payments.length > 0) {
+            // Update replaces payments — exclude the old ones from spent to avoid a double count
+            const existingPayments = await tx.actionProgramPayment.findMany({
+              where: { actionProgramId: currentId },
+              select: { amount: true },
+            });
+            await assertPaymentWithinBudget(tx, {
+              lineId: header.budgetLineId,
+              paymentAmount: payments.reduce((acc, p) => acc + p.amount, 0),
+              excludePaymentAmount: existingPayments.reduce((acc, p) => acc + Number(p.amount), 0),
+            });
+          }
+        }
+
         const program = await tx.actionProgram.update({
           where: { id: currentId },
           data: {
             ...header,
-            type: header.type as ActionProgramType,
+            plannedCost,
             startDate: new Date(startDate),
             endDate: new Date(endDate),
             rules: (header.rules ?? {}) as any,
@@ -167,7 +209,12 @@ export const actionProgramRouter = router({
         // Replace outlets
         await tx.actionProgramOutlet.deleteMany({ where: { actionProgramId: currentId } });
         await tx.actionProgramOutlet.createMany({
-          data: outletIds.map((outletId) => ({ actionProgramId: program.id, outletId })),
+          data: outlets.map((outlet) => ({
+            actionProgramId: program.id,
+            outletId: outlet.outletId,
+            explanation: outlet.explanation ?? null,
+            cost: outlet.cost,
+          })),
         });
 
         // Replace SKUs

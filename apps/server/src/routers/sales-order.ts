@@ -111,6 +111,24 @@ export const salesOrderRouter = router({
       });
       if (!outlet) throw new TRPCError({ code: 'NOT_FOUND', message: 'Outlet not found.' });
 
+      // Validate optional action-program link: approved + active on order date + outlet covered
+      if (header.actionProgramId) {
+        const program = await prisma.actionProgram.findUnique({
+          where: { id: header.actionProgramId },
+          select: { approvalStatus: true, startDate: true, endDate: true },
+        });
+        if (!program) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Action program not found.' });
+        if (program.approvalStatus !== 'APPROVED') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Action program is not approved.' });
+        const orderDate = date ? new Date(date) : new Date();
+        if (orderDate < program.startDate || orderDate > program.endDate) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Action program is not active on the order date.' });
+        }
+        const outletInProgram = await prisma.actionProgramOutlet.findUnique({
+          where: { actionProgramId_outletId: { actionProgramId: header.actionProgramId, outletId: header.outletId } },
+        });
+        if (!outletInProgram) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Outlet is not part of the action program.' });
+      }
+
       // Auto-generate document number if not provided
       let documentNumber = header.documentNumber;
       if (!documentNumber) {
@@ -195,6 +213,24 @@ export const salesOrderRouter = router({
         select: { customerId: true, areaId: true },
       });
       if (!outlet) throw new TRPCError({ code: 'NOT_FOUND', message: 'Outlet not found.' });
+
+      // Validate optional action-program link: approved + active on order date + outlet covered
+      if (header.actionProgramId) {
+        const program = await prisma.actionProgram.findUnique({
+          where: { id: header.actionProgramId },
+          select: { approvalStatus: true, startDate: true, endDate: true },
+        });
+        if (!program) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Action program not found.' });
+        if (program.approvalStatus !== 'APPROVED') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Action program is not approved.' });
+        const orderDate = date ? new Date(date) : new Date();
+        if (orderDate < program.startDate || orderDate > program.endDate) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Action program is not active on the order date.' });
+        }
+        const outletInProgram = await prisma.actionProgramOutlet.findUnique({
+          where: { actionProgramId_outletId: { actionProgramId: header.actionProgramId, outletId: header.outletId } },
+        });
+        if (!outletInProgram) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Outlet is not part of the action program.' });
+      }
 
       const updated = await prisma.$transaction(async (tx) => {
         const order = await tx.salesOrder.update({
@@ -307,6 +343,32 @@ export const salesOrderRouter = router({
     .query(async ({ input }) => {
       const discount = await findBestDiscount(input.skuId, input.outletId, new Date(input.date));
       return discount;
+    }),
+
+  suggestDiscounts: protectedProcedure
+    .use(hasPermission('sales-order@read'))
+    .input(z.object({
+      outletId: z.string(),
+      date: z.string(),
+      skuIds: z.array(z.string()),
+    }))
+    .query(async ({ input }) => {
+      const entries = await Promise.all(
+        input.skuIds.map(async (skuId) => {
+          const discount = await findBestDiscount(skuId, input.outletId, new Date(input.date));
+          return [
+            skuId,
+            discount
+              ? {
+                  discountPercent: discount.discountPercent,
+                  actionProgramId: discount.actionProgramId,
+                  actionProgramName: discount.actionProgramName,
+                }
+              : null,
+          ] as const;
+        }),
+      );
+      return Object.fromEntries(entries);
     }),
 
   propose: protectedProcedure

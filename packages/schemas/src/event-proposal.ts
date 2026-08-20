@@ -25,11 +25,41 @@ export const eventProposalSkuInputSchema = z.object({
   notes: z.string().optional(),
 });
 
+// --- Misc item sub-record (custom free-form lines) ---
+export const eventMiscItemInputSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'Item name is required'),
+  category: z.string().optional(),
+  quantity: z.number().positive('Quantity must be positive'),
+  price: z.number().nonnegative('Price must be non-negative'),
+  total: z.number().nonnegative('Total must be non-negative'),
+  notes: z.string().optional(),
+});
+
+// --- Vendor payment sub-record ---
+export const eventVendorPaymentInputSchema = z.object({
+  amount: z.number().positive('Amount must be positive'),
+  paymentDate: z.string().min(1, 'Payment date is required'),
+  method: z.string().optional(),
+  reference: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+// --- Vendor sub-record (vendor + optional payments) ---
+export const eventVendorInputSchema = z.object({
+  id: z.string().optional(),
+  vendorId: z.string().min(1, 'Vendor is required'),
+  scope: z.string().optional(),
+  amount: z.number().nonnegative('Amount must be non-negative'),
+  notes: z.string().optional(),
+  payments: z.array(eventVendorPaymentInputSchema).optional().default([]),
+});
+
 // --- Create ---
 export const createEventProposalSchema = z.object({
   documentNumber: z.string().optional(),
   name: z.string().min(1, 'Event name is required'),
-  eventType: z.string().optional(),
+  eventTypeId: z.string().optional(),
   description: z.string().optional(),
   venue: z.string().optional(),
   eventDate: z.string().min(1, 'Event date is required'),
@@ -38,9 +68,11 @@ export const createEventProposalSchema = z.object({
   organizerContact: z.string().optional(),
   areaId: z.string().min(1, 'Area is required'),
   observationDays: z.number().int().default(90),
-  proposedBudget: z.number().positive().optional().nullable(),
   currency: z.string().default('USD'),
+  budgetLineId: z.string().optional(),
   skus: z.array(eventProposalSkuInputSchema).optional().default([]),
+  miscItems: z.array(eventMiscItemInputSchema).optional().default([]),
+  vendors: z.array(eventVendorInputSchema).optional().default([]),
   payments: z.array(eventProposalPaymentSchema).optional().default([]),
 });
 
@@ -49,7 +81,7 @@ export const updateEventProposalSchema = z.object({
   currentId: z.string(),
   documentNumber: z.string().optional(),
   name: z.string().min(1, 'Event name is required'),
-  eventType: z.string().optional(),
+  eventTypeId: z.string().optional(),
   description: z.string().optional(),
   venue: z.string().optional(),
   eventDate: z.string().min(1, 'Event date is required'),
@@ -58,9 +90,11 @@ export const updateEventProposalSchema = z.object({
   organizerContact: z.string().optional(),
   areaId: z.string().min(1, 'Area is required'),
   observationDays: z.number().int().default(90),
-  proposedBudget: z.number().positive().optional().nullable(),
   currency: z.string(),
+  budgetLineId: z.string().optional(),
   skus: z.array(eventProposalSkuInputSchema).optional().default([]),
+  miscItems: z.array(eventMiscItemInputSchema).optional().default([]),
+  vendors: z.array(eventVendorInputSchema).optional().default([]),
   payments: z.array(eventProposalPaymentSchema).optional().default([]),
 });
 
@@ -70,6 +104,9 @@ export const eventProposalIdSchema = z.object({
 
 export type EventProposalPaymentInput = z.infer<typeof eventProposalPaymentSchema>;
 export type EventProposalSkuInput = z.infer<typeof eventProposalSkuInputSchema>;
+export type EventMiscItemInput = z.infer<typeof eventMiscItemInputSchema>;
+export type EventVendorPaymentInput = z.infer<typeof eventVendorPaymentInputSchema>;
+export type EventVendorInput = z.infer<typeof eventVendorInputSchema>;
 export type CreateEventProposalInput = z.infer<typeof createEventProposalSchema>;
 export type UpdateEventProposalInput = z.infer<typeof updateEventProposalSchema>;
 export type EventProposalIdInput = z.infer<typeof eventProposalIdSchema>;

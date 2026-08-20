@@ -19,6 +19,13 @@ import { reportingRouter } from './routers/reporting.js';
 import { emailCrmRouter } from './routers/email-crm.js';
 import { knowledgeBaseRouter } from './routers/knowledge-base.js';
 import { settingsRouter, userSettingsRouter } from './routers/settings.js';
+import { budgetTypeRouter } from './routers/budget-type.js';
+import { budgetPeriodRouter } from './routers/budget-period.js';
+import { budgetLineRouter } from './routers/budget-line.js';
+import { budgetRouter } from './routers/budget.js';
+import { actionTypeRouter } from './routers/action-type.js';
+import { eventTypeRouter } from './routers/event-type.js';
+import { vendorRouter } from './routers/vendor.js';
 
 export const appRouter = router({
     hello: publicProcedure.query(() => ({ message: 'Hello World' })),
@@ -43,6 +50,13 @@ export const appRouter = router({
     knowledgeBase: knowledgeBaseRouter,
     settings: settingsRouter,
     userSettings: userSettingsRouter,
+    budgetType: budgetTypeRouter,
+    budgetPeriod: budgetPeriodRouter,
+    budgetLine: budgetLineRouter,
+    budget: budgetRouter,
+    actionType: actionTypeRouter,
+    eventType: eventTypeRouter,
+    vendor: vendorRouter,
 });
 
 export type AppRouter = typeof appRouter;

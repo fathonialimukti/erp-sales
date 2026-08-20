@@ -16,7 +16,7 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
-model: "LongCat 2.0"
+model: ["Muse Spark 1.2 Contributor (customendpoint)"]
 user-invocable: true
 ---
 

@@ -127,6 +127,48 @@ const PERMISSIONS = [
   { name: "email-crm@create", description: "Create email CRM conversations" },
   { name: "email-crm@update", description: "Update email CRM conversations and messages" },
   { name: "email-crm@delete", description: "Delete email CRM conversations" },
+
+  // Budget
+  { name: "budget@read", description: "Read budgets" },
+  { name: "budget@create", description: "Create budgets" },
+  { name: "budget@update", description: "Update budgets" },
+  { name: "budget@delete", description: "Delete budgets" },
+
+  // Budget Type
+  { name: "budget-type@read", description: "Read budget types" },
+  { name: "budget-type@create", description: "Create budget types" },
+  { name: "budget-type@update", description: "Update budget types" },
+  { name: "budget-type@delete", description: "Delete budget types" },
+
+  // Budget Period
+  { name: "budget-period@read", description: "Read budget periods" },
+  { name: "budget-period@create", description: "Create budget periods" },
+  { name: "budget-period@update", description: "Update budget periods" },
+  { name: "budget-period@delete", description: "Delete budget periods" },
+
+  // Budget Line
+  { name: "budget-line@read", description: "Read budget lines" },
+  { name: "budget-line@create", description: "Create budget lines" },
+  { name: "budget-line@update", description: "Update budget lines" },
+  { name: "budget-line@delete", description: "Delete budget lines" },
+
+  // Action Type
+  { name: "action-type@read", description: "Read action types" },
+  { name: "action-type@create", description: "Create action types" },
+  { name: "action-type@update", description: "Update action types" },
+  { name: "action-type@delete", description: "Delete action types" },
+
+  // Event Type
+  { name: "event-type@read", description: "Read event types" },
+  { name: "event-type@create", description: "Create event types" },
+  { name: "event-type@update", description: "Update event types" },
+  { name: "event-type@delete", description: "Delete event types" },
+
+  // Vendor
+  { name: "vendor@read", description: "Read vendors" },
+  { name: "vendor@create", description: "Create vendors" },
+  { name: "vendor@update", description: "Update vendors" },
+  { name: "vendor@delete", description: "Delete vendors" },
 ];
 
 const ROLES = [
@@ -384,6 +426,138 @@ async function seedCrmData() {
 }
 
 // =============================================
+// BUDGETING MASTER DATA
+// =============================================
+
+async function seedBudgetingData() {
+  console.log("\n🌱 Seeding budgeting data...");
+
+  // Master data is upserted by unique code (idempotent). actionTypes/eventTypes
+  // are referenced by existing action programs / event proposals with Restrict
+  // FKs — never delete them, only upsert.
+  const budgetTypes = await Promise.all(
+    [
+      { code: "TRADE_PROMO", name: "Trade Promotion", description: "Trade promotion activities" },
+      { code: "EVENT", name: "Event", description: "Event activities" },
+      { code: "DISPLAY_RENTAL", name: "Display Rental", description: "Display rental activities" },
+      { code: "CONSUMER_PROMO", name: "Consumer Promotion", description: "Consumer promotion activities" },
+    ].map((t) =>
+      prisma.budgetType.upsert({
+        where: { code: t.code },
+        update: { name: t.name, description: t.description },
+        create: t,
+      }),
+    ),
+  );
+
+  const budgetPeriods = await Promise.all(
+    [
+      { code: "2026-Q1", name: "Q1 2026", startDate: new Date("2026-01-01"), endDate: new Date("2026-03-31") },
+      { code: "2026-Q2", name: "Q2 2026", startDate: new Date("2026-04-01"), endDate: new Date("2026-06-30") },
+      { code: "2026-H1", name: "H1 2026", startDate: new Date("2026-01-01"), endDate: new Date("2026-06-30") },
+      { code: "2026", name: "FY 2026", startDate: new Date("2026-01-01"), endDate: new Date("2026-12-31") },
+    ].map((p) =>
+      prisma.budgetPeriod.upsert({
+        where: { code: p.code },
+        update: { name: p.name, startDate: p.startDate, endDate: p.endDate },
+        create: { ...p, status: "OPEN" },
+      }),
+    ),
+  );
+
+  const actionTypes = await Promise.all(
+    [
+      { code: "CASHIER", name: "Cashier" },
+      { code: "END_GONDOLA", name: "End Gondola" },
+      { code: "SPECIAL_DISPLAY", name: "Special Display" },
+      { code: "DISCOUNT", name: "Discount" },
+      { code: "BUNDLE", name: "Bundle" },
+      { code: "FREE_ITEM", name: "Free Item" },
+      { code: "REBATE", name: "Rebate" },
+      { code: "LOYALTY", name: "Loyalty" },
+      { code: "DISPLAY_RENTAL", name: "Display Rental" },
+    ].map((t) =>
+      prisma.actionType.upsert({
+        where: { code: t.code },
+        update: { name: t.name },
+        create: t,
+      }),
+    ),
+  );
+
+  const eventTypes = await Promise.all(
+    [
+      { code: "GRAND_OPENING", name: "Grand Opening" },
+      { code: "SAMPLING", name: "Sampling" },
+      { code: "BAZAAR", name: "Bazaar" },
+      { code: "PRODUCT_LAUNCH", name: "Product Launch" },
+      { code: "SPONSORSHIP", name: "Sponsorship" },
+    ].map((t) =>
+      prisma.eventType.upsert({
+        where: { code: t.code },
+        update: { name: t.name },
+        create: t,
+      }),
+    ),
+  );
+
+  const vendors = await Promise.all(
+    [
+      { code: "ORG-001", name: "Event Organizer Pro", category: "ORGANIZER", status: "ACTIVE" },
+      { code: "POS-001", name: "POS Material Supply", category: "POS_MATERIAL", status: "ACTIVE" },
+      { code: "CAT-001", name: "Catering Nusantara", category: "CATERING", status: "ACTIVE" },
+    ].map((v) =>
+      prisma.vendor.upsert({
+        where: { code: v.code },
+        update: { name: v.name, category: v.category, status: v.status },
+        create: v,
+      }),
+    ),
+  );
+
+  // Budget lines: no Restrict FKs point at them (budgetLineId FKs are SetNull),
+  // so wipe + recreate fresh for a deterministic idempotent seed.
+  await prisma.budgetLine.deleteMany({});
+
+  const regions = await prisma.region.findMany({ where: { code: { in: ["JKT", "BDG", "SBY"] } } });
+  const areas = await prisma.area.findMany({ where: { code: { in: ["JKT-UT", "JKT-SL", "BDG-TM"] } } });
+  const regionIdByCode = new Map(regions.map((r) => [r.code, r.id]));
+  const areaIdByCode = new Map(areas.map((a) => [a.code, a.id]));
+
+  const lineData = [
+    { budgetTypeCode: "TRADE_PROMO", periodCode: "2026-Q1", scope: "AREA", areaCode: "JKT-UT", amount: 250_000_000 },
+    { budgetTypeCode: "TRADE_PROMO", periodCode: "2026-Q1", scope: "AREA", areaCode: "JKT-SL", amount: 200_000_000 },
+    { budgetTypeCode: "TRADE_PROMO", periodCode: "2026-Q1", scope: "REGION", regionCode: "JKT", amount: 800_000_000 },
+    { budgetTypeCode: "EVENT", periodCode: "2026-Q1", scope: "AREA", areaCode: "BDG-TM", amount: 150_000_000 },
+    { budgetTypeCode: "DISPLAY_RENTAL", periodCode: "2026-H1", scope: "REGION", regionCode: "BDG", amount: 100_000_000 },
+    { budgetTypeCode: "CONSUMER_PROMO", periodCode: "2026", scope: "REGION", regionCode: "SBY", amount: 300_000_000 },
+  ];
+
+  let lineCount = 0;
+  for (const line of lineData) {
+    const budgetType = budgetTypes.find((t) => t.code === line.budgetTypeCode);
+    const period = budgetPeriods.find((p) => p.code === line.periodCode);
+    if (!budgetType || !period) throw new Error(`Budget line references missing master data: ${JSON.stringify(line)}`);
+    await prisma.budgetLine.create({
+      data: {
+        budgetTypeId: budgetType.id,
+        periodId: period.id,
+        scope: line.scope,
+        regionId: line.regionCode ? (regionIdByCode.get(line.regionCode) ?? null) : null,
+        areaId: line.areaCode ? (areaIdByCode.get(line.areaCode) ?? null) : null,
+        amount: line.amount,
+        currency: "IDR",
+      },
+    });
+    lineCount++;
+  }
+
+  console.log(
+    `✓ Budgeting: ${budgetTypes.length} budget types, ${budgetPeriods.length} periods, ${lineCount} budget lines, ${actionTypes.length} action types, ${eventTypes.length} event types, ${vendors.length} vendors`,
+  );
+}
+
+// =============================================
 // MAIN
 // =============================================
 
@@ -396,6 +570,7 @@ async function main() {
 
     faker.seed(FAKER_SEED);
     await seedCrmData();
+    await seedBudgetingData();
 
     console.log("\n🎉 Database seeding completed successfully!");
   } catch (error) {

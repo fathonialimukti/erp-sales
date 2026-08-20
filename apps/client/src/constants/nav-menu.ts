@@ -111,6 +111,54 @@ export const NAV_MENU: NavMenuItem[] = [
     ],
   },
   {
+    name: "nav.budgeting",
+    icon: icons.navPlanning,
+    children: [
+      {
+        name: "nav.budget",
+        icon: icons.navPlanning,
+        href: "/budget",
+        permission: "budget-line@read",
+      },
+      {
+        name: "nav.budget_type",
+        icon: icons.navPlanning,
+        href: "/budget-type",
+        permission: "budget-type@read",
+      },
+      {
+        name: "nav.budget_period",
+        icon: icons.navPlanning,
+        href: "/budget-period",
+        permission: "budget-period@read",
+      },
+      {
+        name: "nav.budget_line",
+        icon: icons.navPlanning,
+        href: "/budget-line",
+        permission: "budget-line@read",
+      },
+      {
+        name: "nav.action_type",
+        icon: icons.navPlanning,
+        href: "/action-type",
+        permission: "action-type@read",
+      },
+      {
+        name: "nav.event_type",
+        icon: icons.navEvent,
+        href: "/event-type",
+        permission: "event-type@read",
+      },
+      {
+        name: "nav.vendor",
+        icon: icons.navOutlet,
+        href: "/vendor",
+        permission: "vendor@read",
+      },
+    ],
+  },
+  {
     name: "nav.system",
     icon: icons.navUsers,
     children: [

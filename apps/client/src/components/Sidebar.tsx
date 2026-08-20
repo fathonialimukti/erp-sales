@@ -70,6 +70,13 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   "/sku-category": "sku",
   "/action-program": "planning",
   "/event-proposal": "event",
+  "/budget": "budget",
+  "/budget-type": "budget",
+  "/budget-period": "budget",
+  "/budget-line": "budget",
+  "/action-type": "planning",
+  "/event-type": "event",
+  "/vendor": "outlet",
   "/users": "user",
   "/access-control": "user",
   "/activity-logs": "user",
@@ -155,6 +162,24 @@ export const Sidebar = () => {
         }),
         items: visible.filter((l) =>
           ["/action-program", "/event-proposal"].includes(l.href),
+        ),
+      },
+      {
+        id: "budgeting",
+        name: intl.formatMessage({
+          id: "nav.section.budgeting",
+          defaultMessage: "Budgeting",
+        }),
+        items: visible.filter((l) =>
+          [
+            "/budget",
+            "/budget-type",
+            "/budget-period",
+            "/budget-line",
+            "/action-type",
+            "/event-type",
+            "/vendor",
+          ].includes(l.href),
         ),
       },
       {

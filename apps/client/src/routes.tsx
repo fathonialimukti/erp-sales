@@ -68,6 +68,27 @@ const KnowledgeBaseDetailPage = lazyNamed(() => import('./pages/knowledge-base/K
 const KnowledgeBaseFormPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseFormPage'), 'KnowledgeBaseFormPage');
 const SettingsPage = lazyNamed(() => import('./pages/settings/SettingsPage'), 'SettingsPage');
 const AppSettingsPage = lazyNamed(() => import('./pages/settings/AppSettingsPage'), 'AppSettingsPage');
+const BudgetTypeIndexPage = lazyNamed(() => import('./pages/budget-type/BudgetTypeIndexPage'), 'BudgetTypeIndexPage');
+const BudgetTypeDetailPage = lazyNamed(() => import('./pages/budget-type/BudgetTypeDetailPage'), 'BudgetTypeDetailPage');
+const BudgetTypeFormPage = lazyNamed(() => import('./pages/budget-type/BudgetTypeFormPage'), 'BudgetTypeFormPage');
+const BudgetIndexPage = lazyNamed(() => import('./pages/budget/BudgetIndexPage'), 'BudgetIndexPage');
+const BudgetDetailPage = lazyNamed(() => import('./pages/budget/BudgetDetailPage'), 'BudgetDetailPage');
+const BudgetFormPage = lazyNamed(() => import('./pages/budget/BudgetFormPage'), 'BudgetFormPage');
+const BudgetPeriodIndexPage = lazyNamed(() => import('./pages/budget-period/BudgetPeriodIndexPage'), 'BudgetPeriodIndexPage');
+const BudgetPeriodDetailPage = lazyNamed(() => import('./pages/budget-period/BudgetPeriodDetailPage'), 'BudgetPeriodDetailPage');
+const BudgetPeriodFormPage = lazyNamed(() => import('./pages/budget-period/BudgetPeriodFormPage'), 'BudgetPeriodFormPage');
+const BudgetLineIndexPage = lazyNamed(() => import('./pages/budget-line/BudgetLineIndexPage'), 'BudgetLineIndexPage');
+const BudgetLineDetailPage = lazyNamed(() => import('./pages/budget-line/BudgetLineDetailPage'), 'BudgetLineDetailPage');
+const BudgetLineFormPage = lazyNamed(() => import('./pages/budget-line/BudgetLineFormPage'), 'BudgetLineFormPage');
+const ActionTypeIndexPage = lazyNamed(() => import('./pages/action-type/ActionTypeIndexPage'), 'ActionTypeIndexPage');
+const ActionTypeDetailPage = lazyNamed(() => import('./pages/action-type/ActionTypeDetailPage'), 'ActionTypeDetailPage');
+const ActionTypeFormPage = lazyNamed(() => import('./pages/action-type/ActionTypeFormPage'), 'ActionTypeFormPage');
+const EventTypeIndexPage = lazyNamed(() => import('./pages/event-type/EventTypeIndexPage'), 'EventTypeIndexPage');
+const EventTypeDetailPage = lazyNamed(() => import('./pages/event-type/EventTypeDetailPage'), 'EventTypeDetailPage');
+const EventTypeFormPage = lazyNamed(() => import('./pages/event-type/EventTypeFormPage'), 'EventTypeFormPage');
+const VendorIndexPage = lazyNamed(() => import('./pages/vendor/VendorIndexPage'), 'VendorIndexPage');
+const VendorDetailPage = lazyNamed(() => import('./pages/vendor/VendorDetailPage'), 'VendorDetailPage');
+const VendorFormPage = lazyNamed(() => import('./pages/vendor/VendorFormPage'), 'VendorFormPage');
 
 export const router = createBrowserRouter([
   {
@@ -202,6 +223,69 @@ export const router = createBrowserRouter([
           { path: 'create', element: <EventProposalFormPage /> },
           { path: ':id', element: <EventProposalDetailPage /> },
           { path: ':id/edit', element: <EventProposalFormPage /> },
+        ],
+      },
+      {
+        path: 'budget-type',
+        children: [
+          { index: true, element: <BudgetTypeIndexPage /> },
+          { path: 'create', element: <BudgetTypeFormPage /> },
+          { path: ':id', element: <BudgetTypeDetailPage /> },
+          { path: ':id/edit', element: <BudgetTypeFormPage /> },
+        ],
+      },
+      {
+        path: 'budget',
+        children: [
+          { index: true, element: <BudgetIndexPage /> },
+          { path: 'create', element: <BudgetFormPage /> },
+          { path: ':id', element: <BudgetDetailPage /> },
+          { path: ':id/edit', element: <BudgetFormPage /> },
+        ],
+      },
+      {
+        path: 'budget-period',
+        children: [
+          { index: true, element: <BudgetPeriodIndexPage /> },
+          { path: 'create', element: <BudgetPeriodFormPage /> },
+          { path: ':id', element: <BudgetPeriodDetailPage /> },
+          { path: ':id/edit', element: <BudgetPeriodFormPage /> },
+        ],
+      },
+      {
+        path: 'budget-line',
+        children: [
+          { index: true, element: <BudgetLineIndexPage /> },
+          { path: 'create', element: <BudgetLineFormPage /> },
+          { path: ':id', element: <BudgetLineDetailPage /> },
+          { path: ':id/edit', element: <BudgetLineFormPage /> },
+        ],
+      },
+      {
+        path: 'action-type',
+        children: [
+          { index: true, element: <ActionTypeIndexPage /> },
+          { path: 'create', element: <ActionTypeFormPage /> },
+          { path: ':id', element: <ActionTypeDetailPage /> },
+          { path: ':id/edit', element: <ActionTypeFormPage /> },
+        ],
+      },
+      {
+        path: 'event-type',
+        children: [
+          { index: true, element: <EventTypeIndexPage /> },
+          { path: 'create', element: <EventTypeFormPage /> },
+          { path: ':id', element: <EventTypeDetailPage /> },
+          { path: ':id/edit', element: <EventTypeFormPage /> },
+        ],
+      },
+      {
+        path: 'vendor',
+        children: [
+          { index: true, element: <VendorIndexPage /> },
+          { path: 'create', element: <VendorFormPage /> },
+          { path: ':id', element: <VendorDetailPage /> },
+          { path: ':id/edit', element: <VendorFormPage /> },
         ],
       },
       {

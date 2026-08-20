@@ -4,7 +4,6 @@ import type { ServerLocale } from './locale.js';
 import { hashPassword } from './password.js';
 import { getMessage } from './locale.js';
 import { TRPCError } from '@trpc/server';
-import type { ActionProgramType } from '../prisma/generated/client';
 
 // ponytail: inline what the user router needs; no speculative abstractions
 

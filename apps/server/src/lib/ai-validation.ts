@@ -108,7 +108,7 @@ export async function validateActionProgram(programId: string): Promise<Validati
   });
 
   // Check budget
-  if (!program.budgetAmount || program.budgetAmount.toNumber() <= 0) {
+  if (!program.plannedCost || program.plannedCost.toNumber() <= 0) {
     issues.push('Budget amount must be greater than 0');
   }
 
@@ -148,7 +148,7 @@ export async function validateEventProposal(proposalId: string): Promise<Validat
   }
 
   // Check budget
-  if (!proposal.proposedBudget || proposal.proposedBudget.toNumber() <= 0) {
+  if (!proposal.plannedCost || proposal.plannedCost.toNumber() <= 0) {
     issues.push('Proposed budget must be greater than 0');
   }
 

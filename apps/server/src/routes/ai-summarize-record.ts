@@ -164,6 +164,7 @@ async function buildActionProgramContext(id: string): Promise<string> {
             area: { select: { name: true } },
             pic: { select: { name: true } },
             createdBy: { select: { name: true } },
+            actionType: { select: { name: true } },
             outlets: { include: { outlet: { select: { name: true } } } },
             skus: { include: { sku: { select: { name: true } } } },
             items: true,
@@ -174,9 +175,9 @@ async function buildActionProgramContext(id: string): Promise<string> {
     const totalPayment = record.payments.reduce((sum, p) => sum + Number(p.amount), 0);
     return [
         `Action program ${record.name} (${record.documentNumber ?? record.id})`,
-        `Type: ${record.type} | Area: ${record.area.name} | PIC: ${record.pic.name}`,
+        `Type: ${record.actionType?.name ?? '-'} | Area: ${record.area.name} | PIC: ${record.pic.name}`,
         `Period: ${fmtDate(record.startDate)} → ${fmtDate(record.endDate)}`,
-        `Budget: ${fmtMoney(record.budgetAmount)} (${record.budgetCurrency}) | Payments: ${fmtMoney(totalPayment)} across ${record.payments.length} payment(s)`,
+        `Budget: ${fmtMoney(record.plannedCost)} (${record.budgetCurrency}) | Payments: ${fmtMoney(totalPayment)} across ${record.payments.length} payment(s)`,
         record.description ? `Description: ${record.description}` : null,
         `Outlets (${record.outlets.length}: ${record.outlets.map((o) => o.outlet.name).join(', ')})`,
         `SKUs (${record.skus.length}: ${record.skus.map((s) => s.sku.name).join(', ')})`,
@@ -195,6 +196,7 @@ async function buildEventProposalContext(id: string): Promise<string> {
         include: {
             area: { select: { name: true } },
             createdBy: { select: { name: true } },
+            eventType: { select: { name: true } },
             skus: { include: { sku: { select: { name: true } } } },
             payments: { orderBy: { paymentDate: 'asc' } },
         },
@@ -203,10 +205,10 @@ async function buildEventProposalContext(id: string): Promise<string> {
     const totalPayment = record.payments.reduce((sum, p) => sum + Number(p.amount), 0);
     return [
         `Event proposal ${record.name} (${record.documentNumber ?? record.id})`,
-        `Event type: ${record.eventType ?? '-'} | Venue: ${record.venue ?? '-'} | Area: ${record.area.name}`,
+        `Event type: ${record.eventType?.name ?? '-'} | Venue: ${record.venue ?? '-'} | Area: ${record.area.name}`,
         `Event dates: ${fmtDate(record.eventDate)}${record.eventEndDate ? ` → ${fmtDate(record.eventEndDate)}` : ''}`,
         `Organizer: ${record.organizerName ?? '-'} (${record.organizerContact ?? '-'})`,
-        `Proposed budget: ${fmtMoney(record.proposedBudget)} (${record.currency}) | Payments: ${fmtMoney(totalPayment)} across ${record.payments.length} payment(s)`,
+        `Proposed budget: ${fmtMoney(record.plannedCost)} (${record.currency}) | Payments: ${fmtMoney(totalPayment)} across ${record.payments.length} payment(s)`,
         record.description ? `Description: ${record.description}` : null,
         `SKUs (${record.skus.length}: ${record.skus.map((s) => s.sku.name).join(', ')})`,
         `Approval status: ${record.approvalStatus}`,

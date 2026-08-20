@@ -4,7 +4,7 @@ import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -36,30 +36,38 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface OutletRow {
+  outletId: string;
+  explanation: string;
+  cost: number;
+}
+
 interface FormValues {
   name: string;
-  type: string;
+  actionTypeId: string;
   description: string;
   startDate: string;
   endDate: string;
   budgetCurrency: string;
   areaId: string;
   picId: string;
-  outletIds: string[];
+  outlets: OutletRow[];
+  budgetLineId: string;
 }
 
 type ModalStage = "idle" | "confirm" | "loading" | "success" | "error";
 
 const defaults = (): FormValues => ({
   name: "",
-  type: "",
+  actionTypeId: "",
   description: "",
   startDate: "",
   endDate: "",
   budgetCurrency: "USD",
   areaId: "",
   picId: "",
-  outletIds: [],
+  outlets: [{ outletId: "", explanation: "", cost: 0 }],
+  budgetLineId: "",
 });
 
 export const ActionProgramFormPage = () => {
@@ -95,18 +103,24 @@ export const ActionProgramFormPage = () => {
     queryFn: () => trpcClient.outlet.list.query({ page: 1, limit: 100 }),
   });
 
+  const { data: actionTypes } = useQuery({
+    queryKey: ["actionTypeOptions"],
+    queryFn: () => trpcClient.actionType.list.query({ page: 1, limit: 100 }),
+  });
+
   const form = useForm({
     defaultValues: (isEdit && data
       ? {
           name: data.name,
-          type: data.type,
+          actionTypeId: data.actionTypeId ?? "",
           description: data.description ?? "",
           startDate: data.startDate,
           endDate: data.endDate,
           budgetCurrency: data.budgetCurrency,
           areaId: data.areaId,
           picId: data.picId,
-          outletIds: data.outlets?.map((o) => o.outletId) ?? [],
+          outlets: data.outlets?.map((o) => ({ outletId: o.outletId, explanation: o.explanation ?? "", cost: o.cost ?? 0 })) ?? [{ outletId: "", explanation: "", cost: 0 }],
+          budgetLineId: data.budgetLineId ?? "",
         }
       : defaults()) as FormValues,
     onSubmit: async () => {
@@ -116,22 +130,40 @@ export const ActionProgramFormPage = () => {
 
   useAiFillForm({
     name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
-    type: (v: unknown) => form.setFieldValue("type" as never, String(v) as never),
+    actionTypeId: (v: unknown) => form.setFieldValue("actionTypeId" as never, String(v) as never),
     description: (v: unknown) => form.setFieldValue("description" as never, String(v) as never),
     startDate: (v: unknown) => form.setFieldValue("startDate" as never, String(v) as never),
     endDate: (v: unknown) => form.setFieldValue("endDate" as never, String(v) as never),
     budgetCurrency: (v: unknown) => form.setFieldValue("budgetCurrency" as never, String(v) as never),
     areaId: (v: unknown) => form.setFieldValue("areaId" as never, String(v) as never),
     picId: (v: unknown) => form.setFieldValue("picId" as never, String(v) as never),
-    outletIds: (v: unknown) => {
-      if (Array.isArray(v)) form.setFieldValue("outletIds" as never, v as never);
+    outlets: (v: unknown) => {
+      if (Array.isArray(v)) form.setFieldValue("outlets" as never, v as never);
     },
+    budgetLineId: (v: unknown) => form.setFieldValue("budgetLineId" as never, String(v) as never),
+  });
+
+  const { data: budgetLines } = useQuery({
+    queryKey: ["budgetLineOptions", form.state.values.areaId],
+    enabled: Boolean(form.state.values.areaId),
+    queryFn: () => trpcClient.budgetLine.list.query({ page: 1, limit: 100, areaId: form.state.values.areaId || undefined }),
   });
 
   // ponytail: keep original seed-via-defaultValues only (detail query gates render via isLoading)
 
   const createMutation = useMutation({
-    mutationFn: (d: FormValues) => trpcClient.actionProgram.create.mutate(d),
+    mutationFn: (d: FormValues) => trpcClient.actionProgram.create.mutate({
+      name: d.name,
+      actionTypeId: d.actionTypeId,
+      description: d.description || undefined,
+      startDate: d.startDate,
+      endDate: d.endDate,
+      budgetCurrency: d.budgetCurrency,
+      areaId: d.areaId,
+      picId: d.picId,
+      outlets: d.outlets,
+      budgetLineId: d.budgetLineId || undefined,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["actionProgramList"] });
       setResultMessage(
@@ -151,7 +183,19 @@ export const ActionProgramFormPage = () => {
 
   const updateMutation = useMutation({
     mutationFn: (d: FormValues & { currentId: string }) =>
-      trpcClient.actionProgram.update.mutate(d),
+      trpcClient.actionProgram.update.mutate({
+        currentId: d.currentId,
+        name: d.name,
+        actionTypeId: d.actionTypeId,
+        description: d.description || undefined,
+        startDate: d.startDate,
+        endDate: d.endDate,
+        budgetCurrency: d.budgetCurrency,
+        areaId: d.areaId,
+        picId: d.picId,
+        outlets: d.outlets,
+        budgetLineId: d.budgetLineId || undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["actionProgramList"] });
       queryClient.invalidateQueries({ queryKey: ["actionProgramDetail", id] });
@@ -260,6 +304,8 @@ export const ActionProgramFormPage = () => {
             areaList: ((areas?.data ?? []) as { id: string; name: string }[]).map((a) => ({ id: a.id, name: a.name })),
             picList: ((users?.data ?? []) as { id: string; name: string | null }[]).map((u) => ({ id: u.id, name: u.name ?? "" })),
             outletList: ((outlets?.data ?? []) as { id: string; name: string }[]).map((o) => ({ id: o.id, name: o.name })),
+            actionTypeList: ((actionTypes?.data ?? []) as { id: string; code: string; name: string }[]).map((at) => ({ id: at.id, code: at.code, name: at.name })),
+            budgetLineList: ((budgetLines?.data ?? []) as { id: string; budgetType: { name: string } | null; period: { name: string } | null; scope: string; summary: { remaining: number } | null }[]).map((bl) => ({ id: bl.id, budgetType: bl.budgetType, period: bl.period, scope: bl.scope, remaining: bl.summary?.remaining ?? 0 })),
             currencyList: ["IDR", "USD", "SGD", "MYR"].map((c) => ({ value: c })),
           }}
         />
@@ -298,28 +344,38 @@ export const ActionProgramFormPage = () => {
             </form.Field>
 
             <form.Field
-              name="type"
+              name="actionTypeId"
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="ap-type">
+                  <Label htmlFor="ap-actionTypeId">
                     {intl.formatMessage({
                       id: "action_program.form.field_type",
                       defaultMessage: "Type",
                     })}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="ap-type"
+                  <Select
                     value={f.state.value ?? ""}
-                    onChange={(e) => f.handleChange(e.target.value)}
-                    placeholder={intl.formatMessage({
-                      id: "action_program.form.field_type_placeholder",
-                      defaultMessage: "e.g. PROMO",
-                    })}
+                    onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
-                  />
+                  >
+                    <SelectTrigger
+                      id="ap-actionTypeId"
+                      size="default"
+                      aria-label={intl.formatMessage({ id: "action_program.form.field_type", defaultMessage: "Type" })}
+                    >
+                      <SelectValue placeholder={intl.formatMessage({ id: "action_program.form.field_type_placeholder", defaultMessage: "Select action type" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(actionTypes?.data ?? []).map((at) => (
+                        <SelectItem key={at.id} value={at.id}>
+                          {at.code} - {at.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {f.state.meta.errors.length > 0 ? (
                     <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
                   ) : null}
@@ -499,29 +555,112 @@ export const ActionProgramFormPage = () => {
             </form.Field>
 
             <form.Field
-              name="outletIds"
+              name="outlets"
               validators={{
                 onChange: ({ value }) => (value.length === 0 ? "Required" : undefined),
               }}
             >
+              {(f) => {
+                const rows = (f.state.value ?? []) as OutletRow[];
+                const updateRow = (idx: number, field: keyof OutletRow, val: string | number) => {
+                  const next = rows.map((r, i) => (i === idx ? { ...r, [field]: val } : r));
+                  f.handleChange(next);
+                };
+                const addRow = () => f.handleChange([...rows, { outletId: "", explanation: "", cost: 0 }]);
+                const removeRow = (idx: number) => {
+                  const next = rows.filter((_, i) => i !== idx);
+                  f.handleChange(next.length > 0 ? next : [{ outletId: "", explanation: "", cost: 0 }]);
+                };
+                return (
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <Label>
+                      Outlets
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="space-y-2">
+                      {rows.map((row, idx) => (
+                        <div key={idx} className="grid grid-cols-[1fr_1fr_0.7fr_auto] items-end gap-2 rounded-md border border-border/70 bg-card p-2">
+                          <div className="flex flex-col gap-1">
+                            {idx === 0 && <span className="text-[11px] font-medium text-muted-foreground">Outlet</span>}
+                            <Select
+                              value={row.outletId}
+                              onValueChange={(v) => updateRow(idx, "outletId", v)}
+                            >
+                              <SelectTrigger size="default">
+                                <SelectValue placeholder="Select outlet…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(outlets?.data ?? []).map((o) => (
+                                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {idx === 0 && <span className="text-[11px] font-medium text-muted-foreground">Explanation</span>}
+                            <Input
+                              value={row.explanation}
+                              onChange={(e) => updateRow(idx, "explanation", e.target.value)}
+                              placeholder="Explanation…"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {idx === 0 && <span className="text-[11px] font-medium text-muted-foreground">Cost</span>}
+                            <Input
+                              type="number"
+                              min={0}
+                              value={String(row.cost)}
+                              onChange={(e) => updateRow(idx, "cost", Number(e.target.value) || 0)}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="inline-flex size-8 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+                            aria-label="Remove outlet"
+                            onClick={() => removeRow(idx)}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="h-7 w-fit gap-1" onClick={addRow}>
+                      <Plus className="size-3.5" />
+                      Add outlet
+                    </Button>
+                    {f.state.meta.errors.length > 0 ? (
+                      <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                    ) : null}
+                  </div>
+                );
+              }}
+            </form.Field>
+
+            <form.Field name="budgetLineId">
               {(f) => (
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <SelectSearch
-                    multiple
-                    label="Outlets"
-                    isRequired
-                    isInvalid={Boolean(f.state.meta.errors[0])}
-                    errorMessage={String(f.state.meta.errors[0] ?? "")}
-                    value={f.state.value ?? []}
-                    onChange={(v) => f.handleChange(v as string[])}
-                    sourceData={async () => outlets?.data ?? []}
-                    optionsKey="id"
-                    queryKeyBase="actionProgramOutletSelect"
-                    getOptionLabel={(o) => o.name}
-                    placeholder="Select outlets…"
-                    searchPlaceholder="Search outlets…"
-                    isLoading={outletsLoading}
-                  />
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="ap-budgetLine">
+                    Budget Line
+                  </Label>
+                  <Select
+                    value={f.state.value ?? ""}
+                    onValueChange={(value) => f.handleChange(value)}
+                  >
+                    <SelectTrigger
+                      id="ap-budgetLine"
+                      size="default"
+                      aria-label="Budget Line"
+                    >
+                      <SelectValue placeholder="Select budget line…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(budgetLines?.data ?? []).map((bl) => (
+                        <SelectItem key={bl.id} value={bl.id}>
+                          {bl.budgetType?.name} / {bl.period?.name} / {bl.scope} / remaining {bl.summary?.remaining ?? 0}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>

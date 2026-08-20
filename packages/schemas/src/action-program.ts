@@ -4,7 +4,7 @@ import { createListInputSchema } from './common';
 export const actionProgramListInputSchema = createListInputSchema({
   areaId: z.string().optional(),
   approvalStatus: z.string().optional(),
-  type: z.string().optional(),
+  actionTypeId: z.string().optional(),
 });
 
 // --- Payment sub-record ---
@@ -29,6 +29,13 @@ export const actionProgramSkuInputSchema = z.object({
   notes: z.string().optional(),
 });
 
+// --- Outlet sub-record (outlets with per-outlet explanation and cost) ---
+export const actionProgramOutletInputSchema = z.object({
+  outletId: z.string().min(1, 'Outlet is required'),
+  explanation: z.string().optional(),
+  cost: z.number().nonnegative('Cost must be non-negative').default(0),
+});
+
 // --- Item sub-record (non-SKU items like banners, materials) ---
 export const actionProgramItemInputSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
@@ -42,15 +49,16 @@ export const actionProgramItemInputSchema = z.object({
 export const createActionProgramSchema = z.object({
   documentNumber: z.string().optional(),
   name: z.string().min(1, 'Program name is required'),
-  type: z.string().min(1, 'Program type is required'),
+  actionTypeId: z.string().min(1, 'Action type is required'),
   description: z.string().optional(),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   budgetCurrency: z.string().default('USD'),
+  budgetLineId: z.string().optional(),
   rules: z.any().optional(),
   areaId: z.string().min(1, 'Area is required'),
   picId: z.string().min(1, 'PIC is required'),
-  outletIds: z.array(z.string()).min(1, 'At least one outlet is required'),
+  outlets: z.array(actionProgramOutletInputSchema).min(1, 'At least one outlet is required'),
   skus: z.array(actionProgramSkuInputSchema).optional().default([]),
   items: z.array(actionProgramItemInputSchema).optional().default([]),
   payments: z.array(actionProgramPaymentSchema).optional().default([]),
@@ -61,15 +69,16 @@ export const updateActionProgramSchema = z.object({
   currentId: z.string(),
   documentNumber: z.string().optional(),
   name: z.string().min(1, 'Program name is required'),
-  type: z.string().min(1, 'Program type is required'),
+  actionTypeId: z.string().min(1, 'Action type is required'),
   description: z.string().optional(),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   budgetCurrency: z.string(),
+  budgetLineId: z.string().optional(),
   rules: z.any().optional(),
   areaId: z.string().min(1, 'Area is required'),
   picId: z.string().min(1, 'PIC is required'),
-  outletIds: z.array(z.string()).min(1, 'At least one outlet is required'),
+  outlets: z.array(actionProgramOutletInputSchema).min(1, 'At least one outlet is required'),
   skus: z.array(actionProgramSkuInputSchema).optional().default([]),
   items: z.array(actionProgramItemInputSchema).optional().default([]),
   payments: z.array(actionProgramPaymentSchema).optional().default([]),
@@ -81,6 +90,7 @@ export const actionProgramIdSchema = z.object({
 
 export type ActionProgramPaymentInput = z.infer<typeof actionProgramPaymentSchema>;
 export type ActionProgramSkuInput = z.infer<typeof actionProgramSkuInputSchema>;
+export type ActionProgramOutletInput = z.infer<typeof actionProgramOutletInputSchema>;
 export type ActionProgramItemInput = z.infer<typeof actionProgramItemInputSchema>;
 export type CreateActionProgramInput = z.infer<typeof createActionProgramSchema>;
 export type UpdateActionProgramInput = z.infer<typeof updateActionProgramSchema>;

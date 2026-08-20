@@ -59,10 +59,11 @@ describe('event-proposal router', () => {
   it('creates, reads, and deletes an event proposal', async () => {
     const created = await caller.eventProposal.create({
       name: `Test Proposal ${randomUUID()}`,
-      eventType: 'ROADSHOW',
       eventDate: new Date().toISOString(),
       areaId,
       skus: [],
+      miscItems: [],
+      vendors: [],
       payments: [],
     });
     expect(created.id).toBeTruthy();

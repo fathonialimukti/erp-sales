@@ -17,6 +17,7 @@ let regionId: string;
 let areaId: string;
 let customerId: string;
 let outletId: string;
+let actionTypeId: string;
 const createdProgramIds: string[] = [];
 
 beforeAll(async () => {
@@ -24,6 +25,7 @@ beforeAll(async () => {
     'action-program@read', 'action-program@create', 'action-program@update', 'action-program@delete',
     'region@read', 'region@create', 'area@read', 'area@create',
     'customer@read', 'customer@create', 'outlet@read', 'outlet@create',
+    'action-type@create',
   ]);
   actorRoleId = role.id;
   const actor = await seedTestUser({
@@ -48,6 +50,9 @@ beforeAll(async () => {
   areaId = (await caller.area.create({ name: `AP Test Area ${randomUUID()}`, regionId })).id;
   customerId = (await caller.customer.create({ name: `AP Test Customer ${randomUUID()}` })).id;
   outletId = (await caller.outlet.create({ name: `AP Test Outlet ${randomUUID()}`, customerId, areaId })).id;
+  // Reuse a seeded DISCOUNT action type when present (unique code)
+  const existingType = await prisma.actionType.findUnique({ where: { code: 'DISCOUNT' } });
+  actionTypeId = existingType?.id ?? (await caller.actionType.create({ code: 'DISCOUNT', name: 'Test Discount' })).id;
 });
 
 afterAll(async () => {
@@ -74,12 +79,12 @@ describe('action-program router', () => {
   it('creates, reads, and deletes an action program', async () => {
     const created = await caller.actionProgram.create({
       name: `Test Program ${randomUUID()}`,
-      type: 'DISCOUNT',
+      actionTypeId,
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 86_400_000).toISOString(),
       areaId,
       picId: picUserId,
-      outletIds: [outletId],
+      outlets: [{ outletId, cost: 0 }],
       skus: [],
       items: [],
       payments: [],

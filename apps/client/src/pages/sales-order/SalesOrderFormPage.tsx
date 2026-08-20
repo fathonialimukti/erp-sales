@@ -337,6 +337,10 @@ export const SalesOrderFormPage = () => {
         notes: it.notes,
       }));
       const totals = recalcTotals(items);
+      // Collect actionProgramIds from auto-applied discounts.
+      const actionProgramIds = Object.values(autoDiscounts)
+        .map((d) => d.actionProgramId)
+        .filter(Boolean);
       const payload = {
         ...values,
         source: 'MANUAL',
@@ -344,6 +348,7 @@ export const SalesOrderFormPage = () => {
         ...totals,
         outletId: values.outletId || null,
         expectedDeliveryDate: values.expectedDeliveryDate || undefined,
+        actionProgramId: actionProgramIds[0] || undefined,
       };
       if (isEdit && id) {
         updateMutation.mutate({ currentId: id, ...payload } as never);
@@ -406,8 +411,53 @@ export const SalesOrderFormPage = () => {
   };
 
   // Track which line items have auto-filled discounts (by index).
-  // Keyed by item index → { programName, discountPercent }.
-  const [autoDiscounts, setAutoDiscounts] = useState<Record<number, { programName: string; discountPercent: number }>>({});
+  // Keyed by item index → { programName, discountPercent, actionProgramId }.
+  const [autoDiscounts, setAutoDiscounts] = useState<Record<number, { programName: string; discountPercent: number; actionProgramId: string }>>({});
+
+  // Batch discount lookup: debounced when outlet+date+items present.
+  useEffect(() => {
+    const fv = form.state.values as FormValues;
+    const outletId = fv.outletId;
+    const orderDate = fv.expectedDeliveryDate || fv.date;
+    const skuIds = (fv.items ?? []).map((it) => it.skuId).filter(Boolean);
+    if (!outletId || !orderDate || skuIds.length === 0) return;
+    const handle = setTimeout(() => {
+      trpcClient.salesOrder.suggestDiscounts
+        .query({ outletId, date: orderDate, skuIds })
+        .then((results) => {
+          const items = ((form.state.values as FormValues).items ?? []) as LineItem[];
+          const updated = items.map((it, i) => {
+            const suggestion = results[it.skuId];
+            if (suggestion && typeof suggestion.discountPercent === "number") {
+              const lineSub = it.quantity * it.unitPrice;
+              const newLineTotal = Math.round(
+                lineSub * (1 - suggestion.discountPercent / 100) * (1 + (it.taxPercent ?? 0) / 100),
+              );
+              return { ...it, discountPercent: suggestion.discountPercent, lineTotal: newLineTotal };
+            }
+            return it;
+          });
+          form.setFieldValue("items" as never, updated as never);
+          const totals = recalcTotals(updated);
+          form.setFieldValue("subtotal" as never, totals.subtotal as never);
+          form.setFieldValue("discountTotal" as never, totals.discountTotal as never);
+          form.setFieldValue("taxTotal" as never, totals.taxTotal as never);
+          form.setFieldValue("grandTotal" as never, totals.grandTotal as never);
+          const discounts: typeof autoDiscounts = {};
+          updated.forEach((it, i) => {
+            const suggestion = results[it.skuId];
+            if (suggestion) {
+              discounts[i] = { programName: suggestion.actionProgramName, discountPercent: suggestion.discountPercent, actionProgramId: suggestion.actionProgramId };
+            }
+          });
+          setAutoDiscounts(discounts);
+        })
+        .catch(() => {
+          setAutoDiscounts({});
+        });
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [form.state.values.outletId, form.state.values.expectedDeliveryDate, form.state.values.date, form.state.values.items]);
 
   const handleItemChange = useCallback(
     (idx: number, field: keyof LineItem, val: LineItem[keyof LineItem]) => {
@@ -416,47 +466,6 @@ export const SalesOrderFormPage = () => {
       if (field === "skuId") {
         const sku = skuList.find((s) => s.id === val);
         if (sku?.basePrice) next[idx]!.unitPrice = Number(sku.basePrice);
-
-        // Look up the best discount from Action Programs.
-        const fv = form.state.values as FormValues;
-        const outletId = fv.outletId;
-        const orderDate = fv.expectedDeliveryDate || new Date().toISOString().slice(0, 10);
-        if (outletId && val) {
-          trpcClient.salesOrder.lookupDiscount
-            .query({ skuId: val as string, outletId, date: orderDate })
-            .then((discount) => {
-              if (discount && typeof discount.discountPercent === "number") {
-                // Apply the auto-filled discount.
-                const items = ((form.state.values as FormValues).items ?? []) as LineItem[];
-                const updated = items.map((it, i) => {
-                  if (i !== idx) return it;
-                  const lineSub = it.quantity * it.unitPrice;
-                  const newLineTotal = Math.round(
-                    lineSub * (1 - discount.discountPercent / 100) * (1 + (it.taxPercent ?? 0) / 100),
-                  );
-                  return { ...it, discountPercent: discount.discountPercent, lineTotal: newLineTotal };
-                });
-                form.setFieldValue("items" as never, updated as never);
-                const totals = recalcTotals(updated);
-                form.setFieldValue("subtotal" as never, totals.subtotal as never);
-                form.setFieldValue("discountTotal" as never, totals.discountTotal as never);
-                form.setFieldValue("taxTotal" as never, totals.taxTotal as never);
-                form.setFieldValue("grandTotal" as never, totals.grandTotal as never);
-                setAutoDiscounts((prev) => ({
-                  ...prev,
-                  [idx]: { programName: discount.actionProgramName, discountPercent: discount.discountPercent },
-                }));
-              }
-            })
-            .catch(() => {
-              // Discount lookup failed — leave the field editable.
-              setAutoDiscounts((prev) => {
-                const next = { ...prev };
-                delete next[idx];
-                return next;
-              });
-            });
-        }
       }
       const it = next[idx]!;
       next[idx] = {
@@ -472,7 +481,7 @@ export const SalesOrderFormPage = () => {
       form.setFieldValue("taxTotal" as never, totals.taxTotal as never);
       form.setFieldValue("grandTotal" as never, totals.grandTotal as never);
     },
-    [form, itemsVal, skuList],
+    [form, skuList],
   );
 
   if (isEdit && isLoading) {
@@ -790,7 +799,6 @@ export const SalesOrderFormPage = () => {
                               e.target.value ? Number(e.target.value) : null,
                             )
                           }
-                          readOnly={Boolean(autoDiscounts[idx])}
                           title={
                             autoDiscounts[idx]
                               ? intl.formatMessage(

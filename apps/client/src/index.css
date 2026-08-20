@@ -63,6 +63,7 @@
     --color-module-ai: var(--module-ai);
     --color-module-region: var(--module-region);
     --color-module-area: var(--module-area);
+    --color-module-budget: var(--module-budget);
     --color-module-settings: var(--module-settings);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
@@ -133,6 +134,7 @@
     --module-ai: oklch(0.45 0.2 300);
     --module-region: oklch(0.46 0.2 220);
     --module-area: oklch(0.45 0.2 190);
+    --module-budget: oklch(0.46 0.2 260);
     --module-settings: oklch(0.46 0.19 320);
 }
 
@@ -190,6 +192,7 @@
     --module-email: oklch(0.52 0.2 210);
     --module-region: oklch(0.52 0.2 220);
     --module-area: oklch(0.52 0.2 190);
+    --module-budget: oklch(0.52 0.2 260);
     --module-knowledge: oklch(0.52 0.2 140);
     --module-ai: oklch(0.54 0.2 300);
     --module-settings: oklch(0.52 0.19 320);

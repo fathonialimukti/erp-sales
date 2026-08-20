@@ -11,8 +11,6 @@ tools:
     web,
     browser,
     todo,
-    ms-azuretools.vscode-containers,
-    ms-python.python,
     Prisma.prisma,
     "context7/*",
     "prisma/*",
@@ -20,12 +18,9 @@ tools:
     "chrome-devtools/*",
     "playwright/*",
     "shadcn/*",
-    "threejs-devtools/*",
-    "pylance-mcp-server/*",
   ]
-model: "Tencent Hy3"
+model: ["Tencent Hy3 (customendpoint)"]
 user-invocable: true
----
 ---
 
 # Code Reviewer (ERP)

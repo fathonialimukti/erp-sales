@@ -39,6 +39,7 @@ export const createSalesOrderSchema = z.object({
   discountTotal: z.number().optional().nullable(),
   taxTotal: z.number().optional().nullable(),
   grandTotal: z.number().optional().nullable(),
+  actionProgramId: z.string().optional(),
   items: z.array(salesOrderItemSchema).min(1, 'At least one item is required'),
 });
 
@@ -56,6 +57,7 @@ export const updateSalesOrderSchema = z.object({
   discountTotal: z.number().optional().nullable(),
   taxTotal: z.number().optional().nullable(),
   grandTotal: z.number().optional().nullable(),
+  actionProgramId: z.string().optional(),
   items: z.array(salesOrderItemSchema).min(1, 'At least one item is required'),
 });
 

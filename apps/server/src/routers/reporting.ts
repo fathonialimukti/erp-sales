@@ -479,8 +479,8 @@ export const reportingRouter = router({
           select: {
             id: true,
             name: true,
-            type: true,
-            budgetAmount: true,
+            actionTypeId: true,
+            plannedCost: true,
             areaId: true,
             startDate: true,
             endDate: true,
@@ -492,7 +492,7 @@ export const reportingRouter = router({
           select: {
             id: true,
             name: true,
-            proposedBudget: true,
+            plannedCost: true,
             areaId: true,
             eventDate: true,
             eventEndDate: true,
@@ -520,7 +520,7 @@ export const reportingRouter = router({
 
       const mapProgram = async (p: (typeof programs)[number]) => {
         const cost = p.payments.reduce((s, pay) => s + toNumber(pay.amount), 0);
-        const budget = toNumber(p.budgetAmount);
+        const budget = toNumber(p.plannedCost);
         const from = new Date(p.startDate);
         const to = p.endDate ? new Date(p.endDate) : new Date(p.startDate);
         const revenue = await linkedRevenue(p.areaId, from, to);
@@ -529,7 +529,7 @@ export const reportingRouter = router({
           id: p.id,
           name: p.name,
           kind: 'action_program',
-          type: p.type,
+          type: p.actionTypeId,
           budget,
           cost,
           revenue,
@@ -539,7 +539,7 @@ export const reportingRouter = router({
 
       const mapProposal = async (p: (typeof proposals)[number]) => {
         const cost = p.payments.reduce((s, pay) => s + toNumber(pay.amount), 0);
-        const budget = toNumber(p.proposedBudget);
+        const budget = toNumber(p.plannedCost);
         const from = new Date(p.eventDate);
         const to = p.eventEndDate ? new Date(p.eventEndDate) : new Date(p.eventDate);
         const revenue = await linkedRevenue(p.areaId, from, to);

@@ -15,6 +15,7 @@ export type ModuleKey =
   | "ai"
   | "region"
   | "area"
+  | "budget"
   | "settings"
   | (string & {});
 
@@ -34,6 +35,7 @@ const KNOWN_MODULES = new Set([
   "ai",
   "region",
   "area",
+  "budget",
   "settings",
 ]);
 

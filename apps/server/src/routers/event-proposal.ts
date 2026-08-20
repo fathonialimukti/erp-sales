@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { updateEventProposalSchema, eventProposalIdSchema, eventProposalListInputSchema } from '@repo/schemas/event-proposal';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
 import { validateEventProposal } from '../lib/ai-validation.js';
+import { assertBudgetCapacity, assertPaymentWithinBudget, computeEventProposalPlannedCost } from '../lib/budget-calc.js';
 
 export const eventProposalRouter = router({
   list: protectedProcedure
@@ -16,7 +17,7 @@ export const eventProposalRouter = router({
     .input(eventProposalListInputSchema)
     .query(async ({ input }) => {
       const { page, limit, skip } = buildPaginationParams(input);
-      const searchWhere = buildTextSearchWhere(input?.search, ['name', 'documentNumber', 'eventType', 'venue'] as const);
+      const searchWhere = buildTextSearchWhere(input?.search, ['name', 'documentNumber', 'venue'] as const);
 
       const where: Record<string, unknown> = { ...searchWhere };
       if (input?.areaId) where.areaId = input.areaId;
@@ -31,6 +32,7 @@ export const eventProposalRouter = router({
           include: {
             area: { select: { id: true, name: true } },
             createdBy: { select: { id: true, name: true } },
+            eventType: { select: { id: true, code: true, name: true } },
             _count: { select: { skus: true } },
           },
         }),
@@ -49,8 +51,16 @@ export const eventProposalRouter = router({
         include: {
           area: { select: { id: true, name: true } },
           createdBy: { select: { id: true, name: true } },
+          eventType: { select: { id: true, code: true, name: true } },
           skus: { include: { sku: { select: { id: true, name: true, code: true } } } },
           payments: { orderBy: { paymentDate: 'asc' } },
+          miscItems: true,
+          vendors: {
+            include: {
+              vendor: { select: { id: true, name: true } },
+              payments: { orderBy: { paymentDate: 'asc' } },
+            },
+          },
         },
       });
       if (!record) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event proposal not found.' });
@@ -61,12 +71,26 @@ export const eventProposalRouter = router({
     .use(hasPermission('event-proposal@create'))
     .input(createEventProposalSchema)
     .mutation(async ({ input, ctx }) => {
-      const { skus, payments, eventDate, eventEndDate, ...header } = input;
+      const { skus, payments, miscItems, vendors, eventDate, eventEndDate, ...header } = input;
+      const plannedCost = computeEventProposalPlannedCost({ skus, miscItems, vendors });
 
       const created = await prisma.$transaction(async (tx) => {
+        if (header.budgetLineId) {
+          await assertBudgetCapacity(tx, { lineId: header.budgetLineId, areaId: header.areaId, plannedCost });
+          // Hard block: nested vendor payments must also fit the line's remaining budget
+          const vendorPayments = vendors.flatMap((v) => v.payments);
+          if (vendorPayments.length > 0) {
+            await assertPaymentWithinBudget(tx, {
+              lineId: header.budgetLineId,
+              paymentAmount: vendorPayments.reduce((acc, p) => acc + p.amount, 0),
+            });
+          }
+        }
+
         const proposal = await tx.eventProposal.create({
           data: {
             ...header,
+            plannedCost,
             eventDate: new Date(eventDate),
             eventEndDate: eventEndDate ? new Date(eventEndDate) : null,
             createdById: ctx.user.userId,
@@ -85,6 +109,46 @@ export const eventProposalRouter = router({
               notes: sku.notes,
             })),
           });
+        }
+
+        // Misc items: ids are client-side refs, total is recomputed server-side
+        for (const item of miscItems) {
+          await tx.eventMiscItem.create({
+            data: {
+              eventProposalId: proposal.id,
+              name: item.name,
+              category: item.category ?? null,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.quantity * item.price,
+              notes: item.notes ?? null,
+            },
+          });
+        }
+
+        // Vendors + nested payments
+        for (const vendor of vendors) {
+          const createdVendor = await tx.eventVendor.create({
+            data: {
+              eventProposalId: proposal.id,
+              vendorId: vendor.vendorId,
+              scope: vendor.scope ?? null,
+              amount: vendor.amount,
+              notes: vendor.notes ?? null,
+            },
+          });
+          if (vendor.payments.length > 0) {
+            await tx.eventVendorPayment.createMany({
+              data: vendor.payments.map((p) => ({
+                eventVendorId: createdVendor.id,
+                amount: p.amount,
+                paymentDate: new Date(p.paymentDate),
+                method: p.method ?? null,
+                reference: p.reference ?? null,
+                notes: p.notes ?? null,
+              })),
+            });
+          }
         }
 
         if (payments.length > 0) {
@@ -116,16 +180,41 @@ export const eventProposalRouter = router({
     .use(hasPermission('event-proposal@update'))
     .input(updateEventProposalSchema)
     .mutation(async ({ input, ctx }) => {
-      const { currentId, skus, payments, eventDate, eventEndDate, ...header } = input;
+      const { currentId, skus, payments, miscItems, vendors, eventDate, eventEndDate, ...header } = input;
       const existing = await prisma.eventProposal.findUnique({ where: { id: currentId } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Event proposal not found.' });
       if (existing.approvalStatus !== 'DRAFT') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT proposals can be edited.' });
 
+      const plannedCost = computeEventProposalPlannedCost({ skus, miscItems, vendors });
+
       const updated = await prisma.$transaction(async (tx) => {
+        if (header.budgetLineId) {
+          await assertBudgetCapacity(tx, {
+            lineId: header.budgetLineId,
+            areaId: header.areaId,
+            plannedCost,
+            excludeId: currentId,
+          });
+          const vendorPayments = vendors.flatMap((v) => v.payments);
+          if (vendorPayments.length > 0) {
+            // Update replaces vendors + payments — exclude the old ones from spent
+            const existingVendorPayments = await tx.eventVendorPayment.findMany({
+              where: { eventVendor: { eventProposalId: currentId } },
+              select: { amount: true },
+            });
+            await assertPaymentWithinBudget(tx, {
+              lineId: header.budgetLineId,
+              paymentAmount: vendorPayments.reduce((acc, p) => acc + p.amount, 0),
+              excludePaymentAmount: existingVendorPayments.reduce((acc, p) => acc + Number(p.amount), 0),
+            });
+          }
+        }
+
         const proposal = await tx.eventProposal.update({
           where: { id: currentId },
           data: {
             ...header,
+            plannedCost,
             eventDate: new Date(eventDate),
             eventEndDate: eventEndDate ? new Date(eventEndDate) : null,
           },
@@ -144,6 +233,49 @@ export const eventProposalRouter = router({
               notes: sku.notes,
             })),
           });
+        }
+
+        // Replace misc items (ids are client-side refs — delete + recreate)
+        await tx.eventMiscItem.deleteMany({ where: { eventProposalId: currentId } });
+        for (const item of miscItems) {
+          await tx.eventMiscItem.create({
+            data: {
+              eventProposalId: proposal.id,
+              name: item.name,
+              category: item.category ?? null,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.quantity * item.price,
+              notes: item.notes ?? null,
+            },
+          });
+        }
+
+        // Replace vendors + nested payments
+        await tx.eventVendorPayment.deleteMany({ where: { eventVendor: { eventProposalId: currentId } } });
+        await tx.eventVendor.deleteMany({ where: { eventProposalId: currentId } });
+        for (const vendor of vendors) {
+          const createdVendor = await tx.eventVendor.create({
+            data: {
+              eventProposalId: proposal.id,
+              vendorId: vendor.vendorId,
+              scope: vendor.scope ?? null,
+              amount: vendor.amount,
+              notes: vendor.notes ?? null,
+            },
+          });
+          if (vendor.payments.length > 0) {
+            await tx.eventVendorPayment.createMany({
+              data: vendor.payments.map((p) => ({
+                eventVendorId: createdVendor.id,
+                amount: p.amount,
+                paymentDate: new Date(p.paymentDate),
+                method: p.method ?? null,
+                reference: p.reference ?? null,
+                notes: p.notes ?? null,
+              })),
+            });
+          }
         }
 
         await tx.eventProposalPayment.deleteMany({ where: { eventProposalId: currentId } });
