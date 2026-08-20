@@ -94,10 +94,15 @@ const defaults = (): FormValues => ({
   organizerName: "",
   organizerContact: "",
   areaId: "",
+<<<<<<< HEAD
+  proposedBudget: "",
   currency: "USD",
+=======
+  currency: "IDR",
   budgetLineId: "",
   miscItems: [],
   vendors: [],
+>>>>>>> fa706aa (add budgeting module with hard-block budget tracking, type/vendor master data, and sales-order discount linking)
 });
 
 export const EventProposalFormPage = () => {

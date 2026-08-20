@@ -218,7 +218,6 @@ model Region {
   code      String?  @unique @map("code")
   name      String   @map("name")
   areas     Area[]
-  budgetLines BudgetLine[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -236,7 +235,6 @@ model Area {
   actionPrograms ActionProgram[]
   eventProposals EventProposal[]
   salesOrders    SalesOrder[]
-  budgetLines    BudgetLine[]
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
 
@@ -358,8 +356,6 @@ model SalesOrder {
   source               String             @default("MANUAL") @map("source")
   emailConversationId  String?            @map("email_conversation_id")
   emailConversation    EmailConversation? @relation(fields: [emailConversationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  actionProgramId      String?            @map("action_program_id")
-  actionProgram        ActionProgram?     @relation(fields: [actionProgramId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   approvalStatus  ApprovalStatus @default(DRAFT) @map("approval_status")
   createdById     String         @map("created_by_id")
@@ -392,7 +388,6 @@ model SalesOrder {
   @@index([date])
   @@index([approvalStatus, date])
   @@index([emailConversationId])
-  @@index([actionProgramId])
   @@map("crm_sales_orders")
 }
 
@@ -478,164 +473,25 @@ model Payment {
   @@map("crm_payments")
 }
 
-// =============================================
-// BUDGETING MODULE
-// =============================================
-
-model BudgetType {
-  id          String   @id @default(ulid()) @map("id")
-  code        String   @unique @map("code")
-  name        String   @map("name")
-  description String?  @map("description")
-  budgetLines BudgetLine[]
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("budget_types")
-}
-
-model BudgetPeriod {
-  id          String       @id @default(ulid()) @map("id")
-  code        String       @unique @map("code")
-  name        String       @map("name")
-  startDate   DateTime     @map("start_date") @db.Date
-  endDate     DateTime     @map("end_date") @db.Date
-  status      String       @default("OPEN") @map("status")
-  budgetLines BudgetLine[]
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-
-  @@map("budget_periods")
-}
-
-model BudgetLine {
-  id             String          @id @default(ulid()) @map("id")
-  budgetTypeId   String          @map("budget_type_id")
-  budgetType     BudgetType      @relation(fields: [budgetTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  periodId       String          @map("period_id")
-  period         BudgetPeriod    @relation(fields: [periodId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  scope          String          @default("AREA") @map("scope")
-  regionId       String?         @map("region_id")
-  region         Region?         @relation(fields: [regionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  areaId         String?         @map("area_id")
-  area           Area?           @relation(fields: [areaId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  amount         Decimal         @map("amount")
-  currency       String          @default("IDR") @map("currency")
-  actionPrograms ActionProgram[]
-  eventProposals EventProposal[]
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-
-  @@unique([budgetTypeId, periodId, scope, regionId, areaId])
-  @@index([regionId])
-  @@index([areaId])
-  @@map("budget_lines")
-}
-
-model ActionType {
-  id             String          @id @default(ulid()) @map("id")
-  code           String          @unique @map("code")
-  name           String          @map("name")
-  description    String?         @map("description")
-  actionPrograms ActionProgram[]
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-
-  @@map("action_types")
-}
-
-model EventType {
-  id             String          @id @default(ulid()) @map("id")
-  code           String          @unique @map("code")
-  name           String          @map("name")
-  description    String?         @map("description")
-  eventProposals EventProposal[]
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-
-  @@map("event_types")
-}
-
-model Vendor {
-  id           String       @id @default(ulid()) @map("id")
-  code         String?      @unique @map("code")
-  name         String       @map("name")
-  contactName  String?      @map("contact_name")
-  contactPhone String?      @map("contact_phone")
-  email        String?      @map("email")
-  address      String?      @map("address")
-  category     String?      @map("category")
-  status       String       @default("ACTIVE") @map("status")
-  eventVendors EventVendor[]
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
-
-  @@map("vendors")
-}
-
-model EventMiscItem {
-  id              String        @id @default(ulid()) @map("id")
-  eventProposalId String        @map("event_proposal_id")
-  eventProposal   EventProposal @relation(fields: [eventProposalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  name            String        @map("name")
-  category        String?       @map("category")
-  quantity        Decimal       @map("quantity")
-  price           Decimal       @map("price")
-  total           Decimal       @map("total")
-  notes           String?       @map("notes")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-
-  @@index([eventProposalId])
-  @@map("event_misc_items")
-}
-
-model EventVendor {
-  id              String                @id @default(ulid()) @map("id")
-  eventProposalId String                @map("event_proposal_id")
-  eventProposal   EventProposal         @relation(fields: [eventProposalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  vendorId        String                @map("vendor_id")
-  vendor          Vendor                @relation(fields: [vendorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  scope           String?               @map("scope")
-  amount          Decimal               @map("amount")
-  notes           String?               @map("notes")
-  payments        EventVendorPayment[]
-  createdAt       DateTime              @default(now()) @map("created_at")
-  updatedAt       DateTime              @updatedAt @map("updated_at")
-
-  @@index([eventProposalId])
-  @@index([vendorId])
-  @@map("event_vendors")
-}
-
-model EventVendorPayment {
-  id            String      @id @default(ulid()) @map("id")
-  eventVendorId String      @map("event_vendor_id")
-  eventVendor   EventVendor @relation(fields: [eventVendorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  amount        Decimal     @map("amount")
-  paymentDate   DateTime    @map("payment_date") @db.Date
-  method        String?     @map("method")
-  reference     String?     @map("reference")
-  notes         String?     @map("notes")
-  createdAt     DateTime    @default(now()) @map("created_at")
-
-  @@index([eventVendorId])
-  @@map("event_vendor_payments")
+enum ActionProgramType {
+  DISCOUNT
+  BUNDLE
+  FREE_ITEM
+  REBATE
+  LOYALTY
+  DISPLAY_RENTAL
 }
 
 model ActionProgram {
   id             String            @id @default(ulid()) @map("id")
   documentNumber String?           @unique @map("document_number")
   name           String            @map("name")
-  actionTypeId   String            @map("action_type_id")
-  actionType     ActionType        @relation(fields: [actionTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  budgetLineId   String?           @map("budget_line_id")
-  budgetLine     BudgetLine?       @relation(fields: [budgetLineId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  plannedCost    Decimal           @default(0) @map("planned_cost")
+  type           ActionProgramType @map("type")
   description    String?           @map("description")
   files          Json?             @map("files")
   startDate      DateTime          @map("start_date") @db.Date
   endDate        DateTime          @map("end_date") @db.Date
+  budgetAmount   Decimal?          @map("budget_amount")
   budgetCurrency String            @default("IDR") @map("budget_currency")
   rules          Json              @map("rules")
   areaId         String            @map("area_id")
@@ -656,11 +512,10 @@ model ActionProgram {
   directorApprovedAt         DateTime?      @map("director_approved_at")
   approvalHistory            Json?          @map("approval_history")
 
-  outlets     ActionProgramOutlet[]
-  skus        ActionProgramSku[]
-  items       ActionProgramItem[]
-  payments    ActionProgramPayment[]
-  salesOrders SalesOrder[]
+  outlets  ActionProgramOutlet[]
+  skus     ActionProgramSku[]
+  items    ActionProgramItem[]
+  payments ActionProgramPayment[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -670,8 +525,6 @@ model ActionProgram {
   @@index([createdById])
   @@index([approvalStatus])
   @@index([startDate, endDate])
-  @@index([actionTypeId])
-  @@index([budgetLineId])
   @@map("crm_action_programs")
 }
 
@@ -680,8 +533,6 @@ model ActionProgramOutlet {
   actionProgram   ActionProgram @relation(fields: [actionProgramId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   outletId        String        @map("outlet_id")
   outlet          Outlet        @relation(fields: [outletId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  explanation     String?       @map("explanation")
-  cost            Decimal       @default(0) @map("cost")
 
   @@id([actionProgramId, outletId])
   @@map("crm_action_program_outlets")
@@ -740,10 +591,7 @@ model EventProposal {
   id               String    @id @default(ulid()) @map("id")
   documentNumber   String?   @unique @map("document_number")
   name             String    @map("name")
-  eventTypeId      String?   @map("event_type_id")
-  eventType        EventType? @relation(fields: [eventTypeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  budgetLineId     String?   @map("budget_line_id")
-  budgetLine       BudgetLine? @relation(fields: [budgetLineId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  eventType        String?   @map("event_type")
   description      String?   @map("description")
   files            Json?     @map("files")
   venue            String?   @map("venue")
@@ -754,7 +602,7 @@ model EventProposal {
   areaId           String    @map("area_id")
   area             Area      @relation(fields: [areaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   observationDays  Int       @default(90) @map("observation_days")
-  plannedCost      Decimal   @default(0) @map("planned_cost")
+  proposedBudget   Decimal?  @map("proposed_budget")
   currency         String    @default("IDR") @map("currency")
 
   approvalStatus             ApprovalStatus @default(DRAFT) @map("approval_status")
@@ -770,10 +618,8 @@ model EventProposal {
   directorApprovedAt         DateTime?      @map("director_approved_at")
   approvalHistory            Json?          @map("approval_history")
 
-  skus      EventProposalSku[]
-  payments  EventProposalPayment[]
-  miscItems EventMiscItem[]
-  vendors   EventVendor[]
+  skus     EventProposalSku[]
+  payments EventProposalPayment[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -782,8 +628,6 @@ model EventProposal {
   @@index([createdById])
   @@index([approvalStatus])
   @@index([eventDate])
-  @@index([eventTypeId])
-  @@index([budgetLineId])
   @@map("crm_event_proposals")
 }
 

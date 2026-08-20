@@ -12,7 +12,7 @@ const SKU_PRICES: Record<string, number> = Object.fromEntries(SKUS.map((s) => [s
 
 type EventSeed = {
   name: string;
-  eventType: string;
+  eventTypeCode: string;
   description: string;
   venue: string;
   eventDate: Date;
@@ -32,7 +32,7 @@ export function buildEventProposals(): EventSeed[] {
   return [
     {
       name: "SM Hypermarket North EDSA Grand Opening — Sampling Booth",
-      eventType: "STORE_OPENING",
+      eventTypeCode: "STORE_OPENING",
       description:
         "Sampling booth at the new SM Hypermarket North EDSA. Product sampling of Cola 1.5L, Potato Chips, and Instant Noodles for opening-week shoppers.",
       venue: "SM City North EDSA, Quezon City",
@@ -41,13 +41,13 @@ export function buildEventProposals(): EventSeed[] {
       organizerName: "SM Retail Events Team",
       organizerContact: "events@smretail.ph",
       areaCode: "QCR-QC",
-      proposedBudget: 120000,
+      plannedCost: 120000,
       skuCodes: ["LF-BEV-COL-1500", "LF-SNK-CHP-45", "LF-NDL-CHK-60"],
       approvalStatus: "APPROVED",
     },
     {
       name: "Sari-Sari Store Owner Appreciation Day — Quezon City",
-      eventType: "OWNER_APPRECIATION",
+      eventTypeCode: "OWNER_APPRECIATION",
       description:
         "Half-day appreciation event for top 50 sari-sari store owners in Quezon City. Product showcase, loyalty program launch, and raffle.",
       venue: "Luzon Foods Corp. HQ, Quezon City",
@@ -56,13 +56,13 @@ export function buildEventProposals(): EventSeed[] {
       organizerName: "Luzon Foods Trade Marketing",
       organizerContact: "trade@luzonfoods.ph",
       areaCode: "QCR-QC",
-      proposedBudget: 85000,
+      plannedCost: 85000,
       skuCodes: ["LF-BEV-COL-250", "LF-BEV-COF-25", "LF-HSH-SHM-8"],
       approvalStatus: "APPROVED",
     },
     {
       name: "Back-to-School Mall Sampling — Robinsons Galleria",
-      eventType: "SAMPLING",
+      eventTypeCode: "SAMPLING",
       description:
         "Back-to-school sampling activation at Robinsons Galleria. Focus on noodle and snack SKUs for students.",
       venue: "Robinsons Galleria, Ortigas, Pasig",
@@ -71,7 +71,7 @@ export function buildEventProposals(): EventSeed[] {
       organizerName: "Robinsons Malls Marketing",
       organizerContact: "marketing@robinsonsmalls.ph",
       areaCode: "QCR-PSG",
-      proposedBudget: 95000,
+      plannedCost: 95000,
       skuCodes: ["LF-NDL-CHK-60", "LF-NDL-BEF-60", "LF-SNK-CHP-45"],
       approvalStatus: "PROPOSED",
     },
@@ -93,7 +93,7 @@ export async function seedEventProposals(
       data: {
         documentNumber: nextEventProposalNumber(),
         name: event.name,
-        eventType: event.eventType,
+        eventType: { connect: { code: event.eventTypeCode } },
         description: event.description,
         venue: event.venue,
         eventDate: event.eventDate,
@@ -101,7 +101,7 @@ export async function seedEventProposals(
         organizerName: event.organizerName,
         organizerContact: event.organizerContact,
         areaId: areaIds[event.areaCode]!,
-        proposedBudget: event.proposedBudget,
+        plannedCost: event.plannedCost,
         currency: CURRENCY,
         approvalStatus: event.approvalStatus,
         createdById: userIds["trade@luzonfoods.ph"]!,

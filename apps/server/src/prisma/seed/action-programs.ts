@@ -52,12 +52,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     // --- DISPLAY RENTAL (the core mechanic) ---
     {
       name: "Luzon Cola Cooler Placement — Aling Nena's Store",
-      type: "DISPLAY_RENTAL",
+      actionTypeCode: "DISPLAY_RENTAL",
       description:
         "12-month branded 2-door cooler rental at high-volume sari-sari stores. Manufacturer supplies cooler, store provides floor space and electricity. Weekly restocking by route rep.",
       startDate: new Date(year, 0, 15),
       endDate: new Date(year, 11, 31),
-      budgetAmount: DISPLAY_RENTAL_PER_MONTH.COOLER * 12 * 8,
+      plannedCost: DISPLAY_RENTAL_PER_MONTH.COOLER * 12 * 8,
       rules: displayRules("COOLER", 12),
       areaCode: "QCR-QC",
       outletCodes: [], // filled at seed time from sari-sari outlets
@@ -70,12 +70,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     },
     {
       name: "SM Hypermarket North EDSA — Endcap Display (2 weeks)",
-      type: "DISPLAY_RENTAL",
+      actionTypeCode: "DISPLAY_RENTAL",
       description:
         "End-of-aisle endcap display at SM Hypermarket North EDSA for the new Cola 1.5L family pack. 2-week placement, manufacturer-funded.",
       startDate: new Date(year, 10, 1),
       endDate: new Date(year, 10, 14),
-      budgetAmount: DISPLAY_RENTAL_PER_MONTH.ENDCAP,
+      plannedCost: DISPLAY_RENTAL_PER_MONTH.ENDCAP,
       rules: displayRules("ENDCAP", 1),
       areaCode: "QCR-QC",
       outletCodes: [],
@@ -88,12 +88,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     },
     {
       name: "Puregold Sucat — FSDU Placement (1 month)",
-      type: "DISPLAY_RENTAL",
+      actionTypeCode: "DISPLAY_RENTAL",
       description:
         "Free-standing display unit at Puregold Sucat for snack and noodle impulse buys. 1-month placement with weekly restocking.",
       startDate: new Date(year, 4, 1),
       endDate: new Date(year, 4, 31),
-      budgetAmount: DISPLAY_RENTAL_PER_MONTH.FSDU,
+      plannedCost: DISPLAY_RENTAL_PER_MONTH.FSDU,
       rules: displayRules("FSDU", 1),
       areaCode: "SMD-PRQ",
       outletCodes: [],
@@ -106,12 +106,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     },
     {
       name: "7-Eleven BGC — Counter Display Unit (CDU)",
-      type: "DISPLAY_RENTAL",
+      actionTypeCode: "DISPLAY_RENTAL",
       description:
         "Counter display unit at 7-Eleven BGC checkout for sachet items (cola sachet, shampoo sachet, coffee sachet). 3-month placement.",
       startDate: new Date(year, 6, 1),
       endDate: new Date(year, 8, 30),
-      budgetAmount: DISPLAY_RENTAL_PER_MONTH.CDU * 3,
+      plannedCost: DISPLAY_RENTAL_PER_MONTH.CDU * 3,
       rules: displayRules("CDU", 3),
       areaCode: "SMD-TGG",
       outletCodes: [],
@@ -126,12 +126,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     // --- DISCOUNT (off-invoice) ---
     {
       name: "Summer Cola Blast — 12% Off-Invoice Discount",
-      type: "DISCOUNT",
+      actionTypeCode: "DISCOUNT",
       description:
         "Off-invoice 12% discount on Cola 1.5L and Iced Tea 500ml for all sari-sari stores, April–June. Drives summer beverage volume.",
       startDate: new Date(year, 3, 1),
       endDate: new Date(year, 5, 30),
-      budgetAmount: 450000,
+      plannedCost: 450000,
       rules: {
         discountPercent: 12,
         mechanism: "OFF_INVOICE",
@@ -148,12 +148,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     // --- REBATE (bill-back) ---
     {
       name: "Noodle Volume Rebate — ₱50/Case Bill-Back",
-      type: "REBATE",
+      actionTypeCode: "REBATE",
       description:
         "Bill-back rebate of ₱50 per case (24 pcs) on Instant Noodles for stores purchasing 100+ cases per month. Paid via GCash after month-end reconciliation.",
       startDate: new Date(year, 0, 1),
       endDate: new Date(year, 11, 31),
-      budgetAmount: 600000,
+      plannedCost: 600000,
       rules: {
         rebatePerCase: 50,
         caseSize: 24,
@@ -171,12 +171,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     // --- FREE_ITEM (free goods) ---
     {
       name: "Buy 12 Get 1 Free — Potato Chips",
-      type: "FREE_ITEM",
+      actionTypeCode: "FREE_ITEM",
       description:
         "Free goods deal: buy 12 bags of Potato Chips (any variant), get 1 free. Runs during school season (May–June) for convenience stores.",
       startDate: new Date(year, 4, 1),
       endDate: new Date(year, 5, 30),
-      budgetAmount: 180000,
+      plannedCost: 180000,
       rules: {
         buyQty: 12,
         freeQty: 1,
@@ -193,12 +193,12 @@ export function buildActionPrograms(): ProgramSeed[] {
     // --- BUNDLE ---
     {
       name: "Cola + Chips Combo Pack",
-      type: "BUNDLE",
+      actionTypeCode: "BUNDLE",
       description:
         "Bundle deal: Cola 1.5L + Potato Chips 45g at ₱85 (vs ₱95 separately). For modern trade chains, Q4 Christmas season.",
       startDate: new Date(year, 9, 1),
       endDate: new Date(year, 11, 31),
-      budgetAmount: 350000,
+      plannedCost: 350000,
       rules: {
         bundlePrice: 85,
         regularPrice: 95,
@@ -237,11 +237,11 @@ export async function seedActionPrograms(
       data: {
         documentNumber: nextActionProgramNumber(),
         name: program.name,
-        type: program.type,
+        actionTypeCode: program.actionTypeCode,
         description: program.description,
         startDate: program.startDate,
         endDate: program.endDate,
-        budgetAmount: program.budgetAmount,
+        plannedCost: program.plannedCost,
         budgetCurrency: CURRENCY,
         rules: program.rules,
         areaId: areaIds[program.areaCode]!,

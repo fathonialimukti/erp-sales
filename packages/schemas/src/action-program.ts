@@ -53,8 +53,12 @@ export const createActionProgramSchema = z.object({
   description: z.string().optional(),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
+<<<<<<< HEAD
   budgetCurrency: z.string().default('USD'),
+=======
+  budgetCurrency: z.string().default('IDR'),
   budgetLineId: z.string().optional(),
+>>>>>>> fa706aa (add budgeting module with hard-block budget tracking, type/vendor master data, and sales-order discount linking)
   rules: z.any().optional(),
   areaId: z.string().min(1, 'Area is required'),
   picId: z.string().min(1, 'PIC is required'),
