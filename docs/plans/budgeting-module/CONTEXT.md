@@ -80,4 +80,4 @@ spent     = Σ ActionProgramPayment + EventProposalPayment + EventVendorPayment
 
 - Backend Engineer → **deepseek**
 - Frontend Engineer → **longcat**
-- Code Reviewer → **tencent hy3**
+- Quality Engineer → **tencent hy3**

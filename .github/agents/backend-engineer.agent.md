@@ -14,7 +14,7 @@ model: ["DeepSeek V4 Flash 0731 (customendpoint)"]
 Own **only**:
 
 - `packages/schemas/src/` (`@repo/schemas`)
-- `apps/server/src/` (tRPC, Prisma, middleware, tests)
+- `apps/server/src/` (tRPC, Prisma, middleware)
 
 **Bottom line (all agents):** `.github/copilot-instructions.md`  
 **Stack rules (detail):** `.github/instructions/prisma-server.instructions.md`, `.github/instructions/schemas.instructions.md`
@@ -38,7 +38,11 @@ Ponytail: YAGNI → reuse `apps/server/src/lib/` + existing routers → shortest
 
 ## Skills
 
-Process: TDD, systematic-debugging, verification-before-completion. Domain: prisma-cli / prisma-client-api as needed. **Never** finishing-a-development-branch for commit/push.
+Process: systematic-debugging, verification-before-completion. Domain: prisma-cli / prisma-client-api as needed. **Never** finishing-a-development-branch for commit/push.
+
+## Testing
+
+You do **not** run tests on your own. After implementation, hand off to the **Quality Engineer** for test execution and review. You may write tests as part of implementation, but the Quality Engineer is responsible for running them.
 
 ## Hard ERP rules
 
@@ -57,7 +61,7 @@ Process: TDD, systematic-debugging, verification-before-completion. Domain: pris
 
 ## Verify
 
-`bun run check-types`; `bunx vitest run` (scoped OK); router registered; schema exported; guards + activity log present when applicable.
+`bun run check-types` (type safety only). Router registered; schema exported; guards + activity log present when applicable. Tests are run by the **Quality Engineer** — do not run `vitest` yourself.
 
 ## Output
 

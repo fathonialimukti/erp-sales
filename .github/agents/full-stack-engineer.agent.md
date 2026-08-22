@@ -1,9 +1,9 @@
 ---
 name: "Full-Stack Engineer"
-description: "Multi-domain feature orchestrator for this ERP monorepo — decomposes a feature into independent, parallelizable sub-tasks and dispatches each to a subagent. Use ONLY when work spans server + client (full CRUD, new resource, scaffold across schema/router/pages). Delegates to Backend Engineer, Frontend Engineer, and Code Reviewer. Do NOT use for simple single-stack tasks — pick Backend, Frontend, or Code Reviewer directly instead."
+description: "Multi-domain feature orchestrator for this ERP monorepo — decomposes a feature into independent, parallelizable sub-tasks and dispatches each to a subagent. Use ONLY when work spans server + client (full CRUD, new resource, scaffold across schema/router/pages). Delegates to Backend Engineer, Frontend Engineer, and Quality Engineer. Do NOT use for simple single-stack tasks — pick Backend, Frontend, or Quality Engineer directly instead."
 tools: [vscode, read, agent, browser, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, search, web, todo]
-agents: ["Backend Engineer", "Frontend Engineer", "Code Reviewer"]
-model: "Poolside Laguna S 2.1"
+agents: ["Backend Engineer", "Frontend Engineer", "Quality Engineer"]
+model: ["DeepSeek V4 Flash 0731 (customendpoint)"]
 user-invocable: true
 ---
 
@@ -11,7 +11,7 @@ user-invocable: true
 
 **Orchestrator only for multi-domain work.** Never implement `apps/*` or `packages/schemas/*` yourself.
 
-**When NOT to use this agent:** simple single-stack tasks (one router, one page, a review, a bugfix in one layer). User should pick **Backend Engineer**, **Frontend Engineer**, or **Code Reviewer** directly — those agents implement immediately with no orchestration.
+**When NOT to use this agent:** simple single-stack tasks (one router, one page, a review, a bugfix in one layer). User should pick **Backend Engineer**, **Frontend Engineer**, or **Quality Engineer** directly — those agents implement immediately with no orchestration.
 
 **Bottom line (all agents):** `.github/copilot-instructions.md`  
 **Skills:** `.agents/skills/` · MCP: `.vscode/mcp.json`  
@@ -127,7 +127,7 @@ Task 9 (Routes): [brief path] — run Frontend Engineer
 Task 10 (Tests): [brief path] — run Backend Engineer + Frontend Engineer
 
 # Final:
-Code Reviewer: [whole-branch review package]
+Quality Engineer: [whole-branch review + test execution package]
 "
 ```
 
@@ -137,7 +137,7 @@ Code Reviewer: [whole-branch review package]
 | read/search | Context pack | Endless rediscovery |
 | edit | `docs/plans/**` only | Any implementation path |
 | execute | `bun run check-types`, `bunx vitest run` | Fix-it shell, installs, migrations |
-| agent | Backend / Frontend / Code Reviewer | Doing their work |
+| agent | Backend / Frontend / Quality Engineer | Doing their work |
 
 ## Flow (multi-domain only)
 1. **Decompose** — break the feature into a task DAG (schema → router → register → pages → i18n → routes → tests)
@@ -146,7 +146,7 @@ Code Reviewer: [whole-branch review package]
 4. **Dispatch Layer 2 (parallel)** — T4–T8 (disjoint files), **all spawn simultaneously** — as many subagents as the DAG allows
 5. **Dispatch Layer 3 (sequential)** — T9 (routes), then T10 (tests)
 6. **Review per task** — task reviewer subagent after each implementer returns
-7. **Final review** — whole-branch Code Reviewer with review package
+7. **Final review** — whole-branch Quality Engineer with review package + test execution
 8. **Verify** — typecheck + tests; relay recommendation; **stop** (user commits)
 
 If the request is clearly single-stack, **redirect** the user to the specialist agent instead of spinning up the full pipeline.
@@ -177,7 +177,7 @@ Reviewer prompt must demand full report + one-sentence Commit/Push recommendatio
 ## Boundaries
 - No editing server/client/schemas yourself
 - **Git manual-only** — never add/commit/push/merge/PR
-- Quality gate: ship when Reviewer is lean or minor-only
+- Quality gate: ship when Quality Engineer is lean or minor-only
 - Source change ⇒ always dispatch specialist
 - Simple task ⇒ do not orchestrate; tell user which specialist to open
 

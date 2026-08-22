@@ -16,7 +16,7 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
-model: ["Muse Spark 1.2 Contributor (customendpoint)"]
+model: ["Ox Alpha (customendpoint)"]
 user-invocable: true
 ---
 
@@ -136,6 +136,10 @@ Approval chips: Draft=neutral · Proposed=primary · Approved=success · Rejecte
 | Process           | systematic-debugging, verification-before-completion | Bugs + finish gate                     |
 | Optional          | TDD                                                  | Non-trivial client logic only          |
 
+## Testing
+
+You do **not** run tests on your own. After implementation, hand off to the **Quality Engineer** for test execution and review. You may write tests as part of implementation, but the Quality Engineer is responsible for running them.
+
 ## Boundaries
 
 - No `apps/server/`, no `packages/schemas/`, no agent defs
@@ -149,6 +153,7 @@ Approval chips: Draft=neutral · Proposed=primary · Approved=success · Rejecte
 - Pre-delivery: contrast, focus, ≥44px targets, reduced-motion, Motion presets, no emoji, empty/loading/error
 - `bun run check-types` when types/routes/forms change
 - Both locales when copy changes; `data-ai-context` on pages
+- Tests are run by the **Quality Engineer** — do not run `vitest` or `playwright` yourself
 
 ## Output
 

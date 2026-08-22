@@ -2,7 +2,7 @@
 
 **Status:** Approved design law (implementation authority for agents + engineers)  
 **Date:** 2026-07-29  
-**Audience:** Frontend Engineer, Full-Stack orchestrator, Code Reviewer  
+**Audience:** Frontend Engineer, Full-Stack orchestrator, Quality Engineer  
 **Stack:** React 19 · Vite · Tailwind v4 · shadcn (`radix-mira`, zinc, CSS variables) · Lucide · **Motion** (`motion/react`)  
 **Canonical tokens:** `apps/client/src/index.css`  
 **Canonical motion:** `apps/client/src/lib/motion.ts`  
@@ -540,7 +540,7 @@ Documented so agents don’t invent ad-hoc values:
 |------|-----------|
 | Frontend Engineer | All `apps/client` UI; must follow this law + `ui-ux-pro-max` for polish |
 | Full-Stack Engineer | Orchestrates only; does not implement UI |
-| Code Reviewer | Flags ban violations / flat shells / wrong CTA colors |
+| Quality Engineer | Flags ban violations / flat shells / wrong CTA colors |
 
 ### Conflict order
 

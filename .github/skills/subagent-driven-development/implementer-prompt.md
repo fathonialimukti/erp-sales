@@ -34,7 +34,7 @@ Subagent (general-purpose):
     Once you're clear on requirements:
     1. Implement exactly what the task specifies
     2. Write tests (following TDD if task says to)
-    3. Verify implementation works
+    3. Verify implementation works (type-check only)
     4. Commit your work
     5. Self-review (see below)
     6. Report back
@@ -44,8 +44,9 @@ Subagent (general-purpose):
     **While you work:** If you encounter something unexpected or unclear, **ask questions**.
     It's always OK to pause and clarify. Don't guess or make assumptions.
 
-    While iterating, run the focused test for what you're changing; run the
-    full suite once before committing, not after every edit.
+    While iterating, run the focused type-check for what you're changing; run the
+    full type-check once before committing, not after every edit. Tests are run
+    by the Quality Engineer — do not run `vitest` or `playwright` yourself.
 
     ## Code Organization
 
@@ -101,14 +102,16 @@ Subagent (general-purpose):
     - Did I follow TDD if required?
     - Are tests comprehensive?
     - Is the test output pristine (no stray warnings or noise)?
+    - Note: Tests are run by the Quality Engineer — your report should note
+      what tests were written and what they cover, but you do not run them.
 
     If you find issues during self-review, fix them now before reporting.
 
     ## After Review Findings
 
-    If a reviewer finds issues and you fix them, re-run the tests that cover
-    the amended code and append the results to your report file. Reviewers
-    will not re-run tests for you — your report is the test evidence.
+    If a reviewer finds issues and you fix them, re-run the type-check that covers
+    the amended code and append the results to your report file. The Quality Engineer
+    will run tests for you — your report is the type-check evidence.
 
     ## Report Format
 

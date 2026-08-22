@@ -36,7 +36,7 @@ app.use(
         origin: (origin, callback) => {
             if (!origin) return callback(null, true);
             if (corsOrigin && origin === corsOrigin) return callback(null, true);
-            if (isDev && isAllowedDevOrigin(origin)) return callback(null, true);
+            if (isAllowedDevOrigin(origin)) return callback(null, true);
 
             return callback(new Error(`CORS blocked: ${origin}`));
         },

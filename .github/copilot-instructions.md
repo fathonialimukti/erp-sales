@@ -20,7 +20,7 @@ Shared floor for every agent and chat. **Domain detail does not live here** — 
 | UI / pages / client hooks | **Frontend Engineer** | `.github/instructions/client-frontend.instructions.md`, `i18n-locale.instructions.md` |
 | Routers / Prisma / schemas | **Backend Engineer** | `prisma-server.instructions.md`, `schemas.instructions.md` |
 | Schema + router + pages together | **Full-Stack Engineer** (orchestrates only) | delegates to specialists |
-| Review / audit / ship rec | **Code Reviewer** | read-only git; recommend commit only |
+| Review / audit / ship rec | **Quality Engineer** | read-only git; recommend commit only |
 
 Do **not** stuff frontend UI law or Prisma patterns into this file — specialists own those.
 
