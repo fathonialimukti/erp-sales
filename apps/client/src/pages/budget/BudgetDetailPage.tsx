@@ -79,7 +79,7 @@ export const BudgetDetailPage = () => {
       toast.success(intl.formatMessage({ id: "common.toast.deleted", defaultMessage: "Deleted successfully" }));
       navigate("/budget");
     } catch (error) {
-      toast.error(intl.formatMessage({ id: "common.toast.delete_failed", defaultMessage: "Failed to delete" }));
+      toast.error(error, intl.formatMessage({ id: "common.toast.delete_failed", defaultMessage: "Failed to delete" }));
     } finally {
       setIsDeleting(false);
     }

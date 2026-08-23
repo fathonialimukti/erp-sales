@@ -7,6 +7,7 @@ import { useForm } from "@tanstack/react-form";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
@@ -176,7 +177,7 @@ export const ActionProgramFormPage = () => {
       setTimeout(() => navigate("/action-program"), 1200);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });
@@ -209,7 +210,7 @@ export const ActionProgramFormPage = () => {
       setTimeout(() => navigate(`/action-program/${id}`), 1200);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });

@@ -11,7 +11,9 @@ import { useToast } from "../../components/useToast";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { EmptyState } from "../../components/EmptyState";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -20,6 +22,18 @@ type BudgetTypeDetail = {
   code: string | null;
   name: string;
   description: string | null;
+};
+
+type BudgetLineRow = {
+  id: string;
+  period: { id: string; name: string; code: string } | null;
+  scope: string;
+  region: { id: string; name: string } | null;
+  area: { id: string; name: string } | null;
+  amount: number | string;
+  currency: string;
+  summary: { allocated: number; committed: number; spent: number; remaining: number };
+  _count: { actionPrograms: number; eventProposals: number };
 };
 
 export const BudgetTypeDetailPage = () => {
@@ -43,6 +57,23 @@ export const BudgetTypeDetailPage = () => {
 
   const budgetType = data as BudgetTypeDetail | undefined;
 
+  const { data: budgetLinesData, isLoading: budgetLinesLoading } = useQuery({
+    queryKey: ["budgetLineList", "byType", id],
+    enabled: Boolean(id),
+    queryFn: () =>
+      trpcClient.budgetLine.list.query({
+        page: 1,
+        limit: 50,
+        budgetTypeId: id ?? undefined,
+      }),
+  });
+
+  const budgetLines = (budgetLinesData?.data ?? []) as BudgetLineRow[];
+
+  const formatCurrency = (value: number, currency = "IDR") => {
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency, minimumFractionDigits: 0 }).format(value);
+  };
+
   const handleDelete = async () => {
     if (!budgetType || isDeleting) return;
     setIsDeleting(true);
@@ -55,7 +86,7 @@ export const BudgetTypeDetailPage = () => {
       );
       navigate("/budget-type");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }
@@ -82,7 +113,7 @@ export const BudgetTypeDetailPage = () => {
         <div className="flex flex-col gap-3">
           <NavButtonGroup className="self-end" onBack={() => navigate("/budget-type")} />
           <PageHeader
-            module="budget"
+            module="budgetType"
             title={intl.formatMessage({ id: "budget_type.detail.not_found", defaultMessage: "Budget type not found" })}
           />
         </div>
@@ -128,7 +159,7 @@ export const BudgetTypeDetailPage = () => {
         </NavButtonGroup>
 
         <PageHeader
-          module="budget"
+          module="budgetType"
           eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
           title={budgetType.name}
           description={budgetType.code ?? "—"}
@@ -168,6 +199,88 @@ export const BudgetTypeDetailPage = () => {
               <dd className="text-sm font-normal text-foreground">{budgetType.description ?? "—"}</dd>
             </div>
           </dl>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-heading text-base font-bold">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-budget)_8%,transparent)] text-[var(--module-budget)]">
+              <svg className="size-4" aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </span>
+            {intl.formatMessage({ id: "budget_type.detail.associated_lines", defaultMessage: "Associated Budget Lines" })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {budgetLines.length === 0 ? (
+            <EmptyState
+              module="budgetType"
+              title={intl.formatMessage({ id: "budget_type.detail.no_lines", defaultMessage: "No budget lines found" })}
+              description={intl.formatMessage({ id: "budget_type.detail.no_lines_desc", defaultMessage: "This budget type has no associated budget lines yet." })}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th className="pb-2 pl-1">
+                      {intl.formatMessage({ id: "budget_line.index.header_period", defaultMessage: "Period" })}
+                    </th>
+                    <th className="pb-2">
+                      {intl.formatMessage({ id: "budget_line.index.header_scope", defaultMessage: "Scope" })}
+                    </th>
+                    <th className="pb-2">
+                      {intl.formatMessage({ id: "budget_line.index.header_region_area", defaultMessage: "Region / Area" })}
+                    </th>
+                    <th className="pb-2 text-right">
+                      {intl.formatMessage({ id: "budget_line.index.header_allocated", defaultMessage: "Allocated" })}
+                    </th>
+                    <th className="pb-2 text-right">
+                      {intl.formatMessage({ id: "budget_line.index.header_remaining", defaultMessage: "Remaining" })}
+                    </th>
+                    <th className="pb-2 text-center">
+                      {intl.formatMessage({ id: "budget_line.index.header_programs", defaultMessage: "Programs" })}
+                    </th>
+                    <th className="pb-2 text-center">
+                      {intl.formatMessage({ id: "budget_line.index.header_proposals", defaultMessage: "Proposals" })}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {budgetLines.map((line) => (
+                    <tr key={line.id} className="border-b last:border-0">
+                      <td className="py-2 pl-1">
+                        <span className="font-medium text-foreground">{line.period?.name ?? "—"}</span>
+                      </td>
+                      <td className="py-2">
+                        <Badge variant="outline">
+                          {line.scope === "REGION"
+                            ? intl.formatMessage({ id: "budget.scope.region", defaultMessage: "Region" })
+                            : intl.formatMessage({ id: "budget.scope.area", defaultMessage: "Area" })}
+                        </Badge>
+                      </td>
+                      <td className="py-2">
+                        <span className="text-sm text-foreground">
+                          {line.region?.name ?? line.area?.name ?? "—"}
+                        </span>
+                      </td>
+                      <td className="py-2 text-right font-mono">
+                        {formatCurrency(line.summary.allocated, line.currency)}
+                      </td>
+                      <td className="py-2 text-right font-mono">
+                        {formatCurrency(line.summary.remaining, line.currency)}
+                      </td>
+                      <td className="py-2 text-center tabular-nums">{line._count.actionPrograms}</td>
+                      <td className="py-2 text-center tabular-nums">{line._count.eventProposals}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

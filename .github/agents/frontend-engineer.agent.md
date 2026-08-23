@@ -16,7 +16,6 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
-model: ["Ox Alpha (customendpoint)"]
 user-invocable: true
 ---
 

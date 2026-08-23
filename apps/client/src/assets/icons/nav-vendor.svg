@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-vendor" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FDBA74"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="shine-vendor" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-vendor)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-vendor)"/>
+  <path d="M13 29 L31 17.4 a2 2 0 0 1 2.2 0 L51 29 V49 a2 2 0 0 1-2 2 H15 a2 2 0 0 1-2-2 Z" fill="#FFFFFF"/>
+  <circle cx="32" cy="27" r="2" fill="#EA580C" opacity="0.6"/>
+  <rect x="24" y="35" width="16" height="16" rx="1.5" fill="#EA580C" opacity="0.85"/>
+  <path d="M24 39.5 h16 M24 44 h16 M24 48.5 h16" stroke="#FFFFFF" stroke-width="1.8" opacity="0.75" fill="none"/>
+</svg>

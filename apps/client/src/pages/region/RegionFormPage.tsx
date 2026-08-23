@@ -7,6 +7,7 @@ import { useForm } from "@tanstack/react-form";
 import { Loader2, Save } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
@@ -91,7 +92,7 @@ export const RegionFormPage = () => {
       setTimeout(() => navigate("/region"), 1200);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });
@@ -111,7 +112,7 @@ export const RegionFormPage = () => {
       setTimeout(() => navigate(`/region/${id}`), 1200);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });

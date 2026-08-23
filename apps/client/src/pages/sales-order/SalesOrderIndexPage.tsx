@@ -188,7 +188,7 @@ export const SalesOrderIndexPage = () => {
         });
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load order for print");
+      toast.error(e, "Failed to load order for print");
     } finally {
       setIsPrintLoading(false);
     }
@@ -410,7 +410,7 @@ export const SalesOrderIndexPage = () => {
         }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

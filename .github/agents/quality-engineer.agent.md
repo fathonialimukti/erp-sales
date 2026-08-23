@@ -19,7 +19,6 @@ tools:
     "playwright/*",
     "shadcn/*",
   ]
-model: ["Dots 3 Note Preview (customendpoint)"]
 user-invocable: true
 ---
 

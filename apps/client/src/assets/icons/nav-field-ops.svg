@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-field-ops" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34D399"/>
+      <stop offset="1" stop-color="#84CC16"/>
+    </linearGradient>
+    <linearGradient id="shine-field-ops" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-field-ops)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-field-ops)"/>
+  <path d="M32 11 c-8.8 0-16 7.2-16 16 0 11.3 15.2 25.4 15.9 26 .3.3.8.3 1.1 0 C33.8 52.4 48 38.3 48 27 c0-8.8-7.2-16-16-16 z" fill="#FFFFFF"/>
+  <circle cx="32" cy="27" r="6.5" fill="#10B981"/>
+  <ellipse cx="32" cy="53" rx="9" ry="2" fill="#FFFFFF" opacity="0.4"/>
+</svg>

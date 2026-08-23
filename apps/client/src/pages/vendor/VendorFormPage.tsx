@@ -78,8 +78,8 @@ export const VendorFormPage = () => {
       queryClient.invalidateQueries({ queryKey: ["vendorList"] });
       navigate("/vendor");
     },
-    onError: () => {
-      toast.error(intl.formatMessage({ id: "common.toast.create_failed", defaultMessage: "Failed to create" }));
+    onError: (error) => {
+      toast.error(error, intl.formatMessage({ id: "common.toast.create_failed", defaultMessage: "Failed to create" }));
     },
   });
 
@@ -90,8 +90,8 @@ export const VendorFormPage = () => {
       queryClient.invalidateQueries({ queryKey: ["vendorList"] });
       navigate("/vendor");
     },
-    onError: () => {
-      toast.error(intl.formatMessage({ id: "common.toast.update_failed", defaultMessage: "Failed to update" }));
+    onError: (error) => {
+      toast.error(error, intl.formatMessage({ id: "common.toast.update_failed", defaultMessage: "Failed to update" }));
     },
   });
 

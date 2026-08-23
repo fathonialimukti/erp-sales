@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-event-type" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FDA4AF"/>
+      <stop offset="1" stop-color="#E11D48"/>
+    </linearGradient>
+    <linearGradient id="shine-event-type" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-event-type)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-event-type)"/>
+  <path d="M16 18 C16 16 18 14 20 14 H44 C46 14 48 16 48 18 V50 C48 52 46 54 44 54 H20 C18 54 16 52 16 50 Z" fill="#FFFFFF"/>
+  <rect x="22" y="10" width="5" height="8" rx="1.5" fill="#FFFFFF"/>
+  <rect x="37" y="10" width="5" height="8" rx="1.5" fill="#FFFFFF"/>
+  <rect x="16" y="22" width="32" height="5" fill="#E11D48" opacity="0.55"/>
+  <rect x="21" y="32" width="5" height="4" rx="1" fill="#E11D48" opacity="0.5"/>
+  <rect x="29.5" y="32" width="5" height="4" rx="1" fill="#E11D48" opacity="0.4"/>
+  <rect x="21" y="40" width="5" height="4" rx="1" fill="#E11D48" opacity="0.3"/>
+  <circle cx="42" cy="43" r="8.5" fill="#FFFFFF" stroke="#E11D48" stroke-width="2.5"/>
+  <path d="M42 37.8 L43.5 40.8 L46.8 41.3 L44.4 43.6 L45 46.9 L42 45.3 L39 46.9 L39.6 43.6 L37.2 41.3 L40.5 40.8 Z" fill="#E11D48"/>
+</svg>

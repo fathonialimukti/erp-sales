@@ -66,7 +66,7 @@ export const OutletDetailPage = () => {
       );
       navigate("/outlet");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

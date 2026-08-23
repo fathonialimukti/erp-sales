@@ -64,6 +64,12 @@
     --color-module-region: var(--module-region);
     --color-module-area: var(--module-area);
     --color-module-budget: var(--module-budget);
+    --color-module-budget-type: var(--module-budget-type);
+    --color-module-budget-period: var(--module-budget-period);
+    --color-module-budget-line: var(--module-budget-line);
+    --color-module-action-type: var(--module-action-type);
+    --color-module-event-type: var(--module-event-type);
+    --color-module-vendor: var(--module-vendor);
     --color-module-settings: var(--module-settings);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
@@ -135,6 +141,12 @@
     --module-region: oklch(0.46 0.2 220);
     --module-area: oklch(0.45 0.2 190);
     --module-budget: oklch(0.46 0.2 260);
+    --module-budget-type: oklch(0.46 0.2 50);
+    --module-budget-period: oklch(0.46 0.2 242);
+    --module-budget-line: oklch(0.46 0.2 280);
+    --module-action-type: oklch(0.46 0.2 160);
+    --module-event-type: oklch(0.46 0.21 20);
+    --module-vendor: oklch(0.46 0.2 30);
     --module-settings: oklch(0.46 0.19 320);
 }
 
@@ -193,6 +205,12 @@
     --module-region: oklch(0.52 0.2 220);
     --module-area: oklch(0.52 0.2 190);
     --module-budget: oklch(0.52 0.2 260);
+    --module-budget-type: oklch(0.52 0.2 50);
+    --module-budget-period: oklch(0.52 0.2 242);
+    --module-budget-line: oklch(0.52 0.2 280);
+    --module-action-type: oklch(0.52 0.2 160);
+    --module-event-type: oklch(0.52 0.21 20);
+    --module-vendor: oklch(0.52 0.2 30);
     --module-knowledge: oklch(0.52 0.2 140);
     --module-ai: oklch(0.54 0.2 300);
     --module-settings: oklch(0.52 0.19 320);

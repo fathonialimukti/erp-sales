@@ -81,6 +81,14 @@ export const budgetTypeRouter = router({
       const existing = await prisma.budgetType.findUnique({ where: { id: input.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Budget type not found.' });
 
+      const hasBudgetLines = await prisma.budgetLine.count({ where: { budgetTypeId: input.id } });
+      if (hasBudgetLines > 0) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `Cannot delete budget type "${existing.name}" because it has ${hasBudgetLines} associated budget line(s). Delete or reassign the budget lines first.`,
+        });
+      }
+
       await prisma.budgetType.delete({ where: { id: input.id } });
 
       await logActivity(prisma, {

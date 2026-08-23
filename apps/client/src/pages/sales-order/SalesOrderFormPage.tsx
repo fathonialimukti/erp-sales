@@ -9,6 +9,7 @@ import type { inferProcedureInput } from "@trpc/server";
 import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2 } from "lucide-react";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { DatePicker } from "../../components/DatePicker";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
@@ -270,7 +271,7 @@ export const SalesOrderFormPage = () => {
             intl.formatMessage({ id: "sales_order.form.proposed_toast", defaultMessage: "Order proposed for approval" }),
           );
         } catch (e) {
-          setResultMessage(e instanceof Error ? e.message : "Failed to propose");
+          setResultMessage(getFriendlyErrorMessage(e, "Failed to propose"));
         }
       } else {
         setResultMessage(intl.formatMessage({ id: "sales_order.form.success.created", defaultMessage: "Order created" }));
@@ -280,7 +281,7 @@ export const SalesOrderFormPage = () => {
       setTimeout(() => navigate(`/sales-order/${r.id}`), 1200);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });
@@ -301,7 +302,7 @@ export const SalesOrderFormPage = () => {
             intl.formatMessage({ id: "sales_order.form.proposed_toast", defaultMessage: "Order proposed for approval" }),
           );
         } catch (e) {
-          setResultMessage(e instanceof Error ? e.message : "Failed to propose");
+          setResultMessage(getFriendlyErrorMessage(e, "Failed to propose"));
         }
       } else {
         setResultMessage(intl.formatMessage({ id: "sales_order.form.success.updated", defaultMessage: "Order updated" }));
@@ -311,7 +312,7 @@ export const SalesOrderFormPage = () => {
       setTimeout(() => navigate(`/sales-order/${r.id}`), 1200);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });

@@ -312,7 +312,7 @@ export const AppSettingsPage = () => {
       );
     },
     onError: (e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to save settings");
+      toast.error(e, "Failed to save settings");
     },
   });
 

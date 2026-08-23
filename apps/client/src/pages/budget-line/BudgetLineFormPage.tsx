@@ -119,9 +119,8 @@ export const BudgetLineFormPage = () => {
       queryClient.invalidateQueries({ queryKey: ["budgetLineList"] });
       navigate("/budget-line");
     },
-    onError: (error: any) => {
-      const message = error?.data?.message || intl.formatMessage({ id: "common.toast.create_failed", defaultMessage: "Failed to create" });
-      toast.error(message);
+    onError: (error) => {
+      toast.error(error, intl.formatMessage({ id: "common.toast.create_failed", defaultMessage: "Failed to create" }));
     },
   });
 
@@ -136,9 +135,8 @@ export const BudgetLineFormPage = () => {
       queryClient.invalidateQueries({ queryKey: ["budgetLineList"] });
       navigate("/budget-line");
     },
-    onError: (error: any) => {
-      const message = error?.data?.message || intl.formatMessage({ id: "common.toast.update_failed", defaultMessage: "Failed to update" });
-      toast.error(message);
+    onError: (error) => {
+      toast.error(error, intl.formatMessage({ id: "common.toast.update_failed", defaultMessage: "Failed to update" }));
     },
   });
 

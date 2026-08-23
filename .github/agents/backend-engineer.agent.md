@@ -4,7 +4,6 @@ description: "Standalone backend implementer for this ERP monorepo. Use directly
 tools:
   [vscode, execute, read, agent, Prisma.prisma/prisma-migrate-status, Prisma.prisma/prisma-migrate-dev, Prisma.prisma/prisma-migrate-reset, Prisma.prisma/prisma-studio, Prisma.prisma/prisma-platform-login, Prisma.prisma/prisma-postgres-create-database, edit, search, web, browser, 'context7/*', 'prisma/*', 'prisma-local/*', 'chrome-devtools/*', 'playwright/*',  todo]
 user-invocable: true
-model: ["DeepSeek V4 Flash 0731 (customendpoint)"]
 ---
 
 # Backend Engineer (ERP)

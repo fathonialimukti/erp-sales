@@ -183,7 +183,7 @@ export const OutletIndexPage = () => {
         intl.formatMessage({ id: "outlet.index.delete_success", defaultMessage: "Outlet deleted" }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

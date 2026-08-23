@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Loader2, Save } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
@@ -105,7 +106,7 @@ const InnerForm = ({
       resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed to create role.");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed to create role."));
       setModalStage("error");
     },
   });
@@ -130,7 +131,7 @@ const InnerForm = ({
       resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed to update role.");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed to update role."));
       setModalStage("error");
     },
   });

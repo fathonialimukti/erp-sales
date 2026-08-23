@@ -42,7 +42,7 @@ type LineTarget = { scope: 'AREA'; areaId: string } | { scope: 'REGION'; regionI
 const createPeriod = async () => {
   const period = await caller.budgetPeriod.create({
     code: `BP-${uid()}`,
-    name: `Budget Period ${uid()}`,
+    name: `Budget Test Period ${uid()}`,
     startDate: '2026-01-01',
     endDate: '2026-12-31',
     status: 'OPEN',
@@ -76,7 +76,7 @@ type ProgramOpts = {
 
 const createProgram = async (opts: ProgramOpts) => {
   const program = await caller.actionProgram.create({
-    name: `Budget Program ${uid()}`,
+    name: `Budget Test Program ${uid()}`,
     actionTypeId,
     startDate,
     endDate,
@@ -108,7 +108,7 @@ type ProposalOpts = {
 
 const createProposal = async (opts: ProposalOpts) => {
   const proposal = await caller.eventProposal.create({
-    name: `Budget Event ${uid()}`,
+    name: `Budget Test Event ${uid()}`,
     eventTypeId,
     eventDate: now.toISOString(),
     areaId: opts.areaId ?? areaId,
@@ -157,22 +157,22 @@ beforeAll(async () => {
   });
   picUserId = pic.id;
 
-  regionId = (await caller.region.create({ name: `Budget Region A ${uid()}` })).id;
-  areaId = (await caller.area.create({ name: `Budget Area A ${uid()}`, regionId })).id;
-  regionBId = (await caller.region.create({ name: `Budget Region B ${uid()}` })).id;
-  areaBId = (await caller.area.create({ name: `Budget Area B ${uid()}`, regionId: regionBId })).id;
+  regionId = (await caller.region.create({ name: `Budget Test Region ${uid()}` })).id;
+  areaId = (await caller.area.create({ name: `Budget Test Area ${uid()}`, regionId })).id;
+  regionBId = (await caller.region.create({ name: `Budget Test Region B ${uid()}` })).id;
+  areaBId = (await caller.area.create({ name: `Budget Test Area B ${uid()}`, regionId: regionBId })).id;
 
-  customerId = (await caller.customer.create({ name: `Budget Customer ${uid()}` })).id;
-  outletId = (await caller.outlet.create({ name: `Budget Outlet 1 ${uid()}`, customerId, areaId })).id;
-  outletTwoId = (await caller.outlet.create({ name: `Budget Outlet 2 ${uid()}`, customerId, areaId })).id;
-  outletBId = (await caller.outlet.create({ name: `Budget Outlet B ${uid()}`, customerId, areaId: areaBId })).id;
+  customerId = (await caller.customer.create({ name: `Budget Test Customer ${uid()}` })).id;
+  outletId = (await caller.outlet.create({ name: `Budget Test Outlet 1 ${uid()}`, customerId, areaId })).id;
+  outletTwoId = (await caller.outlet.create({ name: `Budget Test Outlet 2 ${uid()}`, customerId, areaId })).id;
+  outletBId = (await caller.outlet.create({ name: `Budget Test Outlet B ${uid()}`, customerId, areaId: areaBId })).id;
 
-  skuId = (await caller.sku.create({ name: `Budget SKU ${uid()}`, basePrice: 10_000, baseUnit: 'pcs' })).id;
+  skuId = (await caller.sku.create({ name: `Budget Test SKU ${uid()}`, basePrice: 10_000, baseUnit: 'pcs' })).id;
 
-  actionTypeId = (await caller.actionType.create({ code: `AT-${uid()}`, name: 'Budget Discount' })).id;
-  eventTypeId = (await caller.eventType.create({ code: `ET-${uid()}`, name: 'Budget Exhibition' })).id;
-  vendorId = (await caller.vendor.create({ name: `Budget Vendor ${uid()}`, status: 'ACTIVE' })).id;
-  budgetTypeId = (await caller.budgetType.create({ code: `BT-${uid()}`, name: 'Budget Trade Promo' })).id;
+  actionTypeId = (await caller.actionType.create({ code: `AT-${uid()}`, name: 'Budget Test Discount' })).id;
+  eventTypeId = (await caller.eventType.create({ code: `ET-${uid()}`, name: 'Budget Test Exhibition' })).id;
+  vendorId = (await caller.vendor.create({ name: `Budget Test Vendor ${uid()}`, status: 'ACTIVE' })).id;
+  budgetTypeId = (await caller.budgetType.create({ code: `BT-${uid()}`, name: 'Budget Test Trade Promo' })).id;
 });
 
 afterAll(async () => {

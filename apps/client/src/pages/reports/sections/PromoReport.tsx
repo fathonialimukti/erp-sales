@@ -211,15 +211,15 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
             funnel,
           }}
         />
-        <Button type="button" variant="outline" size="sm" onClick={onExport}>
-          <Download className="size-4" aria-hidden />
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onExport}>
+          <Download className="size-3.5" aria-hidden />
           {intl.formatMessage({
             id: "report.export.excel",
             defaultMessage: "Export Excel",
           })}
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={onPrint}>
-          <Printer className="size-4" aria-hidden />
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onPrint}>
+          <Printer className="size-3.5" aria-hidden />
           {intl.formatMessage({
             id: "report.export.print",
             defaultMessage: "Print / PDF",

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-sales" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#93C5FD"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="shine-sales" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-sales)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-sales)"/>
+  <rect x="16" y="37" width="8" height="14" rx="2" fill="#FFFFFF" opacity="0.65"/>
+  <rect x="28" y="30" width="8" height="21" rx="2" fill="#FFFFFF" opacity="0.82"/>
+  <rect x="40" y="23" width="8" height="28" rx="2" fill="#FFFFFF"/>
+  <path d="M15 26 L25 18 L32 21.5 L45 11" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M38.5 10 L46 9.5 L45.5 17" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

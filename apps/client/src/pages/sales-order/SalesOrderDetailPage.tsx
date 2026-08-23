@@ -28,6 +28,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { StatusChip } from "../../components/StatusChip";
 import { AiSummarizeButton } from "../../components/AiSummarizeButton";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { AiRejectionFixButton } from "../../components/AiRejectionFixButton";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { trpcClient } from "../../lib/trpc";
@@ -158,7 +159,7 @@ export const SalesOrderDetailPage = () => {
       }, 1000);
     },
     onError: (e) => {
-      setModalError(e instanceof Error ? e.message : "Failed to propose");
+      setModalError(getFriendlyErrorMessage(e, "Failed to propose"));
       setProposeStage("confirm");
     },
   });
@@ -174,7 +175,7 @@ export const SalesOrderDetailPage = () => {
         }),
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to retry validation"),
+    onError: (e) => toast.error(e, "Failed to retry validation"),
   });
 
   const validateMutation = useMutation({
@@ -220,7 +221,7 @@ export const SalesOrderDetailPage = () => {
       );
     },
     onError: (e) => {
-      setModalError(e instanceof Error ? e.message : "Failed to approve");
+      setModalError(getFriendlyErrorMessage(e, "Failed to approve"));
     },
   });
 
@@ -241,7 +242,7 @@ export const SalesOrderDetailPage = () => {
       );
     },
     onError: (e) => {
-      setModalError(e instanceof Error ? e.message : "Failed to reject");
+      setModalError(getFriendlyErrorMessage(e, "Failed to reject"));
     },
   });
 
@@ -260,7 +261,7 @@ export const SalesOrderDetailPage = () => {
       );
       navigate("/sales-order");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

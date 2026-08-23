@@ -38,6 +38,17 @@ import navNotifications from "./icons/nav-notifications.svg";
 import navKnowledge from "./icons/nav-knowledge.svg";
 import navAi from "./icons/nav-ai.svg";
 import navSettings from "./icons/nav-settings.svg";
+import navSettingsPersonal from "./icons/nav-settings-personal.svg";
+import navSettingsApp from "./icons/nav-settings-app.svg";
+import navBudget from "./icons/nav-budget.svg";
+import navBudgetType from "./icons/nav-budget-type.svg";
+import navBudgetPeriod from "./icons/nav-budget-period.svg";
+import navBudgetLine from "./icons/nav-budget-line.svg";
+import navActionType from "./icons/nav-action-type.svg";
+import navEventType from "./icons/nav-event-type.svg";
+import navVendor from "./icons/nav-vendor.svg";
+import navSales from "./icons/nav-sales.svg";
+import navFieldOps from "./icons/nav-field-ops.svg";
 
 /* ── UI controls ── */
 import uiSearch from "./icons/ui-search.svg";
@@ -142,6 +153,17 @@ export const icons = {
   navKnowledge,
   navAi,
   navSettings,
+  navSettingsPersonal,
+  navSettingsApp,
+  navBudget,
+  navBudgetType,
+  navBudgetPeriod,
+  navBudgetLine,
+  navActionType,
+  navEventType,
+  navVendor,
+  navSales,
+  navFieldOps,
 
   /* UI controls */
   uiSearch,

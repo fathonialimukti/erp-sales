@@ -1,5 +1,7 @@
 import { toast as sonnerToast } from "sonner";
 
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
+
 interface ShowToastOptions {
   message: string;
   tone?: "success" | "error" | "info" | "warning";
@@ -23,7 +25,15 @@ const show = ({ message, tone = "info", durationMs = 3500 }: ShowToastOptions) =
 
 export const useToast = () => ({
   success: (message: string) => show({ message, tone: "success" }),
-  error: (message: string) => show({ message, tone: "error" }),
+  error: (messageOrError: unknown, fallback?: string) =>
+    show({
+      // Accepts a plain string or a thrown value; thrown values get DB-error translation.
+      message:
+        typeof messageOrError === "string"
+          ? messageOrError
+          : getFriendlyErrorMessage(messageOrError, fallback),
+      tone: "error",
+    }),
   info: (message: string) => show({ message, tone: "info" }),
   warning: (message: string) => show({ message, tone: "warning" }),
 });

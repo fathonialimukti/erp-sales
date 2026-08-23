@@ -101,7 +101,7 @@ export const EmailCrmAgentFailuresPage = () => {
         }),
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to retry agent"),
+    onError: (e) => toast.error(e, "Failed to retry agent"),
   });
 
   const handleRetry = useCallback(
@@ -126,7 +126,7 @@ export const EmailCrmAgentFailuresPage = () => {
         }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

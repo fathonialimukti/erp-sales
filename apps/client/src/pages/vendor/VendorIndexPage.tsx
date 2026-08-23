@@ -178,7 +178,7 @@ export const VendorIndexPage = () => {
       setDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (error) {
-      toast.error(intl.formatMessage({ id: "common.toast.delete_failed", defaultMessage: "Failed to delete" }));
+      toast.error(error, intl.formatMessage({ id: "common.toast.delete_failed", defaultMessage: "Failed to delete" }));
     } finally {
       setIsDeleting(false);
     }

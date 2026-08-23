@@ -16,6 +16,12 @@ export type ModuleKey =
   | "region"
   | "area"
   | "budget"
+  | "budgetType"
+  | "budgetPeriod"
+  | "budgetLine"
+  | "actionType"
+  | "eventType"
+  | "vendor"
   | "settings"
   | (string & {});
 
@@ -36,6 +42,12 @@ const KNOWN_MODULES = new Set([
   "region",
   "area",
   "budget",
+  "budgetType",
+  "budgetPeriod",
+  "budgetLine",
+  "actionType",
+  "eventType",
+  "vendor",
   "settings",
 ]);
 

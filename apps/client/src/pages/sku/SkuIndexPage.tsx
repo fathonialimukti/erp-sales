@@ -177,7 +177,7 @@ export const SkuIndexPage = () => {
         intl.formatMessage({ id: "sku.index.delete_success", defaultMessage: "SKU deleted" }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

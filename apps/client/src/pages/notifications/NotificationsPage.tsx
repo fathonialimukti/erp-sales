@@ -90,7 +90,7 @@ const NotificationsPage = () => {
       await trpcClient.notification.markAsRead.mutate({ id });
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to mark as read");
+      toast.error(e, "Failed to mark as read");
     }
   };
 
@@ -105,7 +105,7 @@ const NotificationsPage = () => {
         }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to mark all as read");
+      toast.error(e, "Failed to mark all as read");
     }
   };
 

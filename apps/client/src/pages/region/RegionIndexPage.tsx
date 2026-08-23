@@ -161,7 +161,7 @@ export const RegionIndexPage = () => {
         intl.formatMessage({ id: "region.index.delete_success", defaultMessage: "Region deleted" }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

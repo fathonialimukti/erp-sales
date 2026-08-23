@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
@@ -123,7 +124,7 @@ export const EventProposalDetailPage = () => {
         setDraftResult(accumulated);
       }
     } catch (e) {
-      setDraftError(e instanceof Error ? e.message : "Unknown error");
+      setDraftError(getFriendlyErrorMessage(e, "Unknown error"));
     } finally {
       setDraftLoading(false);
     }
@@ -144,7 +145,7 @@ export const EventProposalDetailPage = () => {
       );
       navigate("/event-proposal");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

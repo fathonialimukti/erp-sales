@@ -64,7 +64,7 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.sales",
-    icon: icons.navSalesOrder,
+    icon: icons.navSales,
     children: [
       {
         name: "nav.sales_order",
@@ -82,7 +82,7 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.field_ops",
-    icon: icons.navVisit,
+    icon: icons.navFieldOps,
     children: [
       {
         name: "nav.visit_log",
@@ -112,47 +112,47 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.budgeting",
-    icon: icons.navPlanning,
+    icon: icons.navBudget,
     children: [
       {
         name: "nav.budget",
-        icon: icons.navPlanning,
+        icon: icons.navBudget,
         href: "/budget",
         permission: "budget-line@read",
       },
       {
         name: "nav.budget_type",
-        icon: icons.navPlanning,
+        icon: icons.navBudgetType,
         href: "/budget-type",
         permission: "budget-type@read",
       },
       {
         name: "nav.budget_period",
-        icon: icons.navPlanning,
+        icon: icons.navBudgetPeriod,
         href: "/budget-period",
         permission: "budget-period@read",
       },
       {
         name: "nav.budget_line",
-        icon: icons.navPlanning,
+        icon: icons.navBudgetLine,
         href: "/budget-line",
         permission: "budget-line@read",
       },
       {
         name: "nav.action_type",
-        icon: icons.navPlanning,
+        icon: icons.navActionType,
         href: "/action-type",
         permission: "action-type@read",
       },
       {
         name: "nav.event_type",
-        icon: icons.navEvent,
+        icon: icons.navEventType,
         href: "/event-type",
         permission: "event-type@read",
       },
       {
         name: "nav.vendor",
-        icon: icons.navOutlet,
+        icon: icons.navVendor,
         href: "/vendor",
         permission: "vendor@read",
       },
@@ -206,12 +206,12 @@ export const NAV_MENU: NavMenuItem[] = [
     children: [
       {
         name: "nav.settings_personal",
-        icon: icons.navSettings,
+        icon: icons.navSettingsPersonal,
         href: "/settings",
       },
       {
         name: "nav.settings_app",
-        icon: icons.navSettings,
+        icon: icons.navSettingsApp,
         href: "/settings/app-settings",
         permission: "settings@read",
       },

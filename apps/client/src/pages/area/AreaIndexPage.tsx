@@ -154,7 +154,7 @@ export const AreaIndexPage = () => {
         intl.formatMessage({ id: "area.index.delete_success", defaultMessage: "Area deleted" }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

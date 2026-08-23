@@ -74,7 +74,7 @@ export const UserDetailPage = () => {
         intl.formatMessage({ id: "users.detail.delete_success", defaultMessage: "User deleted" }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

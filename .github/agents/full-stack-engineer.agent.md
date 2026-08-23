@@ -3,7 +3,6 @@ name: "Full-Stack Engineer"
 description: "Multi-domain feature orchestrator for this ERP monorepo — decomposes a feature into independent, parallelizable sub-tasks and dispatches each to a subagent. Use ONLY when work spans server + client (full CRUD, new resource, scaffold across schema/router/pages). Delegates to Backend Engineer, Frontend Engineer, and Quality Engineer. Do NOT use for simple single-stack tasks — pick Backend, Frontend, or Quality Engineer directly instead."
 tools: [vscode, read, agent, browser, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, search, web, todo]
 agents: ["Backend Engineer", "Frontend Engineer", "Quality Engineer"]
-model: ["DeepSeek V4 Flash 0731 (customendpoint)"]
 user-invocable: true
 ---
 

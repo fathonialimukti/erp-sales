@@ -77,9 +77,9 @@ export const KpiCard = ({
           <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             {label}
           </p>
-          <p className="font-heading text-2xl font-bold tracking-tight text-foreground tabular-nums">
+          <div className="font-heading text-2xl font-bold tracking-tight text-foreground tabular-nums">
             {value}
-          </p>
+          </div>
           {showDelta ? (
             <p
               className={cn(

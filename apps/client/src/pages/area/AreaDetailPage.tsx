@@ -62,7 +62,7 @@ export const AreaDetailPage = () => {
       );
       navigate("/area");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }

@@ -71,12 +71,12 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   "/action-program": "planning",
   "/event-proposal": "event",
   "/budget": "budget",
-  "/budget-type": "budget",
-  "/budget-period": "budget",
-  "/budget-line": "budget",
-  "/action-type": "planning",
-  "/event-type": "event",
-  "/vendor": "outlet",
+  "/budget-type": "budgetType",
+  "/budget-period": "budgetPeriod",
+  "/budget-line": "budgetLine",
+  "/action-type": "actionType",
+  "/event-type": "eventType",
+  "/vendor": "vendor",
   "/users": "user",
   "/access-control": "user",
   "/activity-logs": "user",
@@ -89,6 +89,7 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   "/region": "region",
   "/area": "area",
   "/settings": "settings",
+  "/settings/app-settings": "settings",
 };
 
 export const Sidebar = () => {
@@ -126,15 +127,19 @@ export const Sidebar = () => {
     );
     return [
       {
-        id: "favorites",
+        id: "main",
         name: intl.formatMessage({
-          id: "nav.section.favorites",
-          defaultMessage: "Favorites",
+          id: "nav.section.main",
+          defaultMessage: "Workspace",
         }),
         items: visible.filter((l) =>
-          ["/dashboard", "/sales-order", "/email-crm", "/invoice", "/visit-log"].includes(
-            l.href,
-          ),
+          [
+            "/dashboard",
+            "/reports",
+            "/sales-order",
+            "/email-crm",
+            "/visit-log",
+          ].includes(l.href),
         ),
       },
       {
@@ -149,6 +154,7 @@ export const Sidebar = () => {
             "/area",
             "/customer",
             "/outlet",
+            "/vendor",
             "/sku-category",
             "/sku",
           ].includes(l.href),
@@ -161,7 +167,9 @@ export const Sidebar = () => {
           defaultMessage: "Programs",
         }),
         items: visible.filter((l) =>
-          ["/action-program", "/event-proposal"].includes(l.href),
+          ["/action-program", "/action-type", "/event-proposal", "/event-type"].includes(
+            l.href,
+          ),
         ),
       },
       {
@@ -171,16 +179,16 @@ export const Sidebar = () => {
           defaultMessage: "Budgeting",
         }),
         items: visible.filter((l) =>
-          [
-            "/budget",
-            "/budget-type",
-            "/budget-period",
-            "/budget-line",
-            "/action-type",
-            "/event-type",
-            "/vendor",
-          ].includes(l.href),
+          ["/budget", "/budget-line", "/budget-type", "/budget-period"].includes(l.href),
         ),
+      },
+      {
+        id: "ai_tools",
+        name: intl.formatMessage({
+          id: "nav.section.ai_tools",
+          defaultMessage: "AI & Knowledge",
+        }),
+        items: visible.filter((l) => ["/ai-admin", "/knowledge-base"].includes(l.href)),
       },
       {
         id: "admin",
@@ -194,9 +202,6 @@ export const Sidebar = () => {
             "/access-control",
             "/activity-logs",
             "/notifications",
-            "/knowledge-base",
-            "/ai-admin",
-            "/settings",
             "/settings/app-settings",
           ].includes(l.href),
         ),

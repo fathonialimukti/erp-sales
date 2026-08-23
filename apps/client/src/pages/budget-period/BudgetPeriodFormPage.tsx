@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+   import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -69,8 +69,8 @@ export const BudgetPeriodFormPage = () => {
       queryClient.invalidateQueries({ queryKey: ["budgetPeriodList"] });
       navigate("/budget-period");
     },
-    onError: () => {
-      toast.error(intl.formatMessage({ id: "common.toast.create_failed", defaultMessage: "Failed to create" }));
+    onError: (error) => {
+      toast.error(error, intl.formatMessage({ id: "common.toast.create_failed", defaultMessage: "Failed to create" }));
     },
   });
 
@@ -81,8 +81,8 @@ export const BudgetPeriodFormPage = () => {
       queryClient.invalidateQueries({ queryKey: ["budgetPeriodList"] });
       navigate("/budget-period");
     },
-    onError: () => {
-      toast.error(intl.formatMessage({ id: "common.toast.update_failed", defaultMessage: "Failed to update" }));
+    onError: (error) => {
+      toast.error(error, intl.formatMessage({ id: "common.toast.update_failed", defaultMessage: "Failed to update" }));
     },
   });
 

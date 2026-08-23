@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g-settings-app" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D8B4FE"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="shine-settings-app" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-settings-app)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-settings-app)"/>
+  <g fill="#FFFFFF">
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2"/>
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2" transform="rotate(45 32 32)"/>
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2" transform="rotate(90 32 32)"/>
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2" transform="rotate(135 32 32)"/>
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2" transform="rotate(180 32 32)"/>
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2" transform="rotate(225 32 32)"/>
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2" transform="rotate(270 32 32)"/>
+    <rect x="29.5" y="15" width="5" height="5" rx="1.2" transform="rotate(315 32 32)"/>
+    <circle cx="32" cy="32" r="12"/>
+  </g>
+  <g fill="url(#g-settings-app)">
+    <rect x="26" y="26" width="5.4" height="5.4" rx="1.4"/>
+    <rect x="32.6" y="26" width="5.4" height="5.4" rx="1.4"/>
+    <rect x="26" y="32.6" width="5.4" height="5.4" rx="1.4"/>
+    <rect x="32.6" y="32.6" width="5.4" height="5.4" rx="1.4"/>
+  </g>
+</svg>

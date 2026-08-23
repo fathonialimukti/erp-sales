@@ -32,9 +32,9 @@ export const ReportKpiCard = ({
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {label}
         </p>
-        <p className="font-heading text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+        <div className="font-heading text-2xl font-semibold tracking-tight text-foreground tabular-nums">
           {value}
-        </p>
+        </div>
         {sub ? <p className="text-xs text-muted-foreground">{sub}</p> : null}
         {showDelta ? (
           <p

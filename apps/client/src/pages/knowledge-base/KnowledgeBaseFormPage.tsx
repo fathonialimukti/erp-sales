@@ -7,6 +7,7 @@ import { useForm } from "@tanstack/react-form";
 import { Loader2, Save } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
@@ -109,7 +110,7 @@ export const KnowledgeBaseFormPage = () => {
       setPollingId(created.id);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });
@@ -132,7 +133,7 @@ export const KnowledgeBaseFormPage = () => {
       setPollingId(updated.id);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed"));
       setModalStage("error");
     },
   });

@@ -156,7 +156,7 @@ export const BudgetTypeIndexPage = () => {
         intl.formatMessage({ id: "budget_type.index.delete_success", defaultMessage: "Budget type deleted" }),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }
@@ -173,7 +173,7 @@ export const BudgetTypeIndexPage = () => {
       })}
     >
       <PageHeader
-        module="budget"
+        module="budgetType"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={intl.formatMessage({ id: "budget_type.index.title", defaultMessage: "Budget Types" })}
         description={intl.formatMessage({ id: "budget_type.index.subtitle", defaultMessage: "Manage budget categories and classifications." })}
@@ -207,7 +207,7 @@ export const BudgetTypeIndexPage = () => {
         }
         empty={
           <EmptyState
-            module="budget"
+            module="budgetType"
             title={
               search
                 ? intl.formatMessage({ id: "budget_type.index.empty_search", defaultMessage: "No budget types found" })

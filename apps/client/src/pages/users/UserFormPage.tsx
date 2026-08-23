@@ -6,6 +6,7 @@ import { useForm } from "@tanstack/react-form";
 import { Loader2, Save } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
@@ -123,7 +124,7 @@ const InnerForm = ({
       resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed to create user.");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed to create user."));
       setModalStage("error");
     },
   });
@@ -151,7 +152,7 @@ const InnerForm = ({
       resultTimerRef.current = window.setTimeout(handleModalClose, 1500);
     },
     onError: (e) => {
-      setResultMessage(e instanceof Error ? e.message : "Failed to update user.");
+      setResultMessage(getFriendlyErrorMessage(e, "Failed to update user."));
       setModalStage("error");
     },
   });
@@ -504,7 +505,7 @@ const UserFormPage = () => {
         >
           <PageHeader
             module="user"
-            title={error instanceof Error ? error.message : "Failed to load user."}
+            title={getFriendlyErrorMessage(error, "Failed to load user.")}
         />
         </section>
       );

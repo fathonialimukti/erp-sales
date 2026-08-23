@@ -151,7 +151,7 @@ export const EmailCrmDetailPage = () => {
         intl.formatMessage({ id: "emailCrm.detail.reply_sent", defaultMessage: "Reply sent" }),
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to send reply"),
+    onError: (e) => toast.error(e, "Failed to send reply"),
   });
 
   const suggestMutation = useMutation({
@@ -170,7 +170,7 @@ export const EmailCrmDetailPage = () => {
         }),
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to suggest reply"),
+    onError: (e) => toast.error(e, "Failed to suggest reply"),
   });
 
   const retryAgentMutation = useMutation({
@@ -187,7 +187,7 @@ export const EmailCrmDetailPage = () => {
         }),
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to retry agent"),
+    onError: (e) => toast.error(e, "Failed to retry agent"),
   });
 
   const handleDelete = async () => {
@@ -205,7 +205,7 @@ export const EmailCrmDetailPage = () => {
       );
       navigate("/email-crm");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e, "Failed to delete");
     } finally {
       setIsDeleting(false);
     }
