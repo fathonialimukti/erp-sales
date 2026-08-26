@@ -11,14 +11,21 @@ const EMBED_BATCH_SIZE = 32;
 
 let warnedDimensionMismatch = false;
 
-/** True when AI provider base URL + model are set (API key optional). */
+/** True when embedding base URL + model are set (API key optional). */
 export async function isEmbeddingConfigured(db: DbClient): Promise<boolean> {
+  const embeddingBaseUrl = String(await getSettingValue(db, 'ai.embeddingBaseUrl')).trim();
+  const embeddingModel = String(await getSettingValue(db, 'ai.embeddingModel')).trim();
+  if (embeddingBaseUrl || embeddingModel) {
+    return Boolean(embeddingBaseUrl && embeddingModel);
+  }
   const baseUrl = String(await getSettingValue(db, 'ai.baseUrl')).trim();
   const model = String(await getSettingValue(db, 'ai.model')).trim();
   return Boolean(baseUrl && model);
 }
 
 export async function getEmbeddingModelId(db: DbClient): Promise<string> {
+  const embeddingModel = String(await getSettingValue(db, 'ai.embeddingModel')).trim();
+  if (embeddingModel) return embeddingModel;
   return String(await getSettingValue(db, 'ai.model')).trim();
 }
 
@@ -57,16 +64,21 @@ async function requireEmbeddingConfig(db: DbClient): Promise<{
   modelId: string;
   dimensions: number;
 }> {
-  const baseURL = String(await getSettingValue(db, 'ai.baseUrl')).trim().replace(/\/$/, '');
+  const embeddingBaseUrl = String(await getSettingValue(db, 'ai.embeddingBaseUrl')).trim();
+  const baseURL = (embeddingBaseUrl || String(await getSettingValue(db, 'ai.baseUrl')).trim()).replace(
+    /\/$/,
+    '',
+  );
   const modelId = await getEmbeddingModelId(db);
   if (!baseURL || !modelId) {
     throw new Error(
-      'Embedding not configured. Set ai.baseUrl and ai.model (or AI_BASE_URL / AI_MODEL) in the AI provider settings.',
+      'Embedding not configured. Set ai.embeddingBaseUrl + ai.embeddingModel (or AI_EMBEDDING_BASE_URL / AI_EMBEDDING_MODEL), or ai.baseUrl + ai.model (AI_BASE_URL / AI_MODEL).',
     );
   }
+  const embeddingApiKey = (await getSecretValue(db, 'ai.embeddingApiKey')).trim();
   return {
     baseURL,
-    apiKey: (await getSecretValue(db, 'ai.apiKey')).trim() || 'not-set',
+    apiKey: embeddingApiKey || (await getSecretValue(db, 'ai.apiKey')).trim() || 'not-set',
     modelId,
     dimensions: await getEmbeddingDimensions(db),
   };

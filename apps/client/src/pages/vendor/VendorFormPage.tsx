@@ -136,6 +136,8 @@ export const VendorFormPage = () => {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
+        module="vendor"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={isEdit
           ? intl.formatMessage({ id: "vendor.form.edit_title", defaultMessage: "Edit Vendor" })
           : intl.formatMessage({ id: "vendor.form.create_title", defaultMessage: "Create Vendor" })}

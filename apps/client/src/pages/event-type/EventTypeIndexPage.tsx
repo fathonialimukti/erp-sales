@@ -161,14 +161,16 @@ export const EventTypeIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-3">
       <PageHeader
+        module="eventType"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={intl.formatMessage({ id: "event_type.index.title", defaultMessage: "Event Types" })}
         description={intl.formatMessage({ id: "event_type.index.subtitle", defaultMessage: "Manage event types and classifications." })}
         actions={
           canCreate ? (
             <Button onClick={() => navigate("/event-type/create")}>
-              <Plus className="size-4 mr-2" />
+              <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
           ) : null

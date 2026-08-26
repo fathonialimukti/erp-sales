@@ -1,4 +1,4 @@
-import { Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, Paperclip, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,11 +6,12 @@ import { API_BASE_URL } from '@/lib/api-base';
 import { cn } from '@/lib/utils';
 import { useChat } from '@ai-sdk/react';
 import { useIntl } from 'react-intl';
+import { useGeneralSettings } from '@/hooks/useGeneralSettings';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { UIMessage } from 'ai';
+import { UIMessage, type FileUIPart } from 'ai';
 import { useNavigate } from 'react-router';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -52,6 +53,16 @@ const normalizeRoutePath = (path: string) => {
   const trimmedPath = path.trim();
   return ROUTE_ALIASES[trimmedPath] ?? trimmedPath;
 };
+
+const MAX_ATTACH_SIZE_BYTES = 5 * 1024 * 1024;
+
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.readAsDataURL(file);
+  });
 
 /**
  * Custom fetch wrapper that fixes a compatibility issue with local OpenAI-compatible models:
@@ -377,10 +388,15 @@ const collectPageContext = (): string => {
 
 export const AiAssistant = () => {
   const intl = useIntl();
+  const { multimodalEnabled } = useGeneralSettings();
   const [open, setOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const [summarizing, setSummarizing] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<FileUIPart[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
   const navigate = useNavigate();
   const setFormFill = useSetAtom(aiFormFillAtom);
   // Tracks toolCallIds already executed to prevent double-firing (Strict Mode / multiple effects)
@@ -390,6 +406,7 @@ export const AiAssistant = () => {
   const [, setPendingToolCallsVersion] = useState(0);
   // Sentinel element at the bottom of the messages list for auto-scroll
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const user = useAtomValue(authUserAtom);
   const chatId = user?.id ? `ai-chat-${user.id}` : 'ai-chat-anon';
@@ -652,14 +669,80 @@ export const AiAssistant = () => {
 
   const handleSend = () => {
     if (!input.trim() || isLoading) return;
-    sendMessage({ text: input.trim() });
+    sendMessage({ text: input.trim(), files: pendingFiles.length > 0 ? pendingFiles : undefined });
     setInput('');
+    setPendingFiles([]);
+    setAttachError(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const processFiles = async (files: File[]) => {
+    let skippedCount = 0;
+    const accepted: File[] = [];
+    for (const file of files) {
+      if (file.type.startsWith('image/') && file.size <= MAX_ATTACH_SIZE_BYTES) {
+        accepted.push(file);
+      } else {
+        skippedCount += 1;
+      }
+    }
+    setAttachError(
+      skippedCount > 0
+        ? `${skippedCount} file${skippedCount > 1 ? 's' : ''} skipped - images only, max 5 MB.`
+        : null,
+    );
+
+    const newParts: FileUIPart[] = [];
+    for (const file of accepted) {
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        newParts.push({ type: 'file', filename: file.name, mediaType: file.type, url: dataUrl });
+      } catch {
+        setAttachError(`Could not read ${file.name}.`);
+      }
+    }
+    if (newParts.length > 0) {
+      setPendingFiles((prev) => [...prev, ...newParts]);
+    }
+  };
+
+  const handleAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!multimodalEnabled) return;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    await processFiles(files);
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!multimodalEnabled || isLoading) return;
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+    await processFiles(files);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDragging(false);
     }
   };
 
@@ -718,7 +801,12 @@ export const AiAssistant = () => {
             'flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl',
             'animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none',
             isExpanded ? 'w-170' : 'w-96',
+            isDragging && multimodalEnabled ? 'border-dashed border-primary' : '',
           )}
+          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onDrop={handleDrop}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
         >
           <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
@@ -794,7 +882,7 @@ export const AiAssistant = () => {
               const isUser = message.role === 'user';
 
               const hasVisible = message.parts.some(
-                p => p.type === 'text' || p.type.startsWith('tool-') || p.type === 'dynamic-tool',
+                p => p.type === 'text' || p.type === 'file' || p.type.startsWith('tool-') || p.type === 'dynamic-tool',
               );
               if (!hasVisible) return null;
 
@@ -845,6 +933,26 @@ export const AiAssistant = () => {
                       }
                       if (part.type === 'step-start') {
                         flushText();
+                        return;
+                      }
+                      if (part.type === 'file') {
+                        if (!multimodalEnabled) return;
+                        flushText();
+                        if (isUser) {
+                          const mediaType = part.mediaType ?? '';
+                          const looksLikeImage = mediaType.startsWith('image/')
+                            || (!mediaType && part.url.startsWith('data:image/'));
+                          if (looksLikeImage) {
+                            elements.push(
+                              <img
+                                key={`file-${partIdx}`}
+                                src={part.url}
+                                alt={part.filename ?? 'attachment'}
+                                className="max-h-56 max-w-full rounded-xl object-cover"
+                              />,
+                            );
+                          }
+                        }
                         return;
                       }
                       if (!part.type.startsWith('tool-') && part.type !== 'dynamic-tool') return;
@@ -901,6 +1009,41 @@ export const AiAssistant = () => {
                 </Badge>
               </button>
             </div>
+            {attachError && (
+              <p className="mb-2 text-xs text-destructive">{attachError}</p>
+            )}
+            {multimodalEnabled && pendingFiles.length > 0 && (
+              <div className="mb-2.5 flex flex-wrap gap-2">
+                {pendingFiles.map((file, fileIdx) => (
+                  <div key={`${file.filename}-${fileIdx}`} className="relative">
+                    <img
+                      src={file.url}
+                      alt={file.filename ?? 'attachment'}
+                      className="h-16 w-16 rounded-lg border border-border object-cover"
+                    />
+                    <button
+                      type="button"
+                      className="absolute -top-1.5 -right-1.5 inline-flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => setPendingFiles((prev) => prev.filter((_, idx) => idx !== fileIdx))}
+                      aria-label={`Remove ${file.filename ?? 'attachment'}`}
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {multimodalEnabled && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                disabled={isLoading}
+                onChange={handleAttach}
+              />
+            )}
             <div className="flex w-full items-end gap-2">
               <Input
                 placeholder="Ask a question..."
@@ -910,6 +1053,19 @@ export const AiAssistant = () => {
                 disabled={isLoading}
                 className="h-10 rounded-xl"
               />
+              {multimodalEnabled && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-10 shrink-0 rounded-xl text-muted-foreground hover:text-foreground"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  aria-label="Attach image"
+                >
+                  <Paperclip className="size-4" aria-hidden />
+                </Button>
+              )}
               <Button
                 type="button"
                 size="icon"

@@ -161,14 +161,16 @@ export const ActionTypeIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-3">
       <PageHeader
+        module="actionType"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={intl.formatMessage({ id: "action_type.index.title", defaultMessage: "Action Types" })}
         description={intl.formatMessage({ id: "action_type.index.subtitle", defaultMessage: "Manage action program types and classifications." })}
         actions={
           canCreate ? (
             <Button onClick={() => navigate("/action-type/create")}>
-              <Plus className="size-4 mr-2" />
+              <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
           ) : null

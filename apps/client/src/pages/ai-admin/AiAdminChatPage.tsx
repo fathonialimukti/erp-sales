@@ -4,7 +4,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { UIMessage } from "ai";
+import { UIMessage, type FileUIPart } from "ai";
 import { useNavigate } from "react-router";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -12,8 +12,10 @@ import {
   AlertTriangle,
   Layers,
   Loader2,
+  Paperclip,
   SendHorizontal,
   Trash2,
+  X,
 } from "lucide-react";
 import { aiFormFillAtom, authUserAtom } from "../../lib/atoms";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/api-base";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 
 const ROUTE_ALIASES: Record<string, string> = {
   "/": "/dashboard",
@@ -59,6 +62,16 @@ const normalizeRoutePath = (path: string) => {
   const trimmedPath = path.trim();
   return ROUTE_ALIASES[trimmedPath] ?? trimmedPath;
 };
+
+const MAX_ATTACH_SIZE_BYTES = 5 * 1024 * 1024;
+
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Failed to read file."));
+    reader.readAsDataURL(file);
+  });
 
 const createPatchedFetch = (): typeof fetch => {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -388,11 +401,16 @@ const AiAdminChatPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
   const setFormFill = useSetAtom(aiFormFillAtom);
+  const { multimodalEnabled } = useGeneralSettings();
   const [input, setInput] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<FileUIPart[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const handledToolCallsRef = useRef(new Set<string>());
   const pendingToolCallsRef = useRef(new Set<string>());
   const [, setPendingToolCallsVersion] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const user = useAtomValue(authUserAtom);
   const chatId = user?.id ? `ai-admin-chat-${user.id}` : "ai-admin-chat-anon";
@@ -673,8 +691,13 @@ const AiAdminChatPage = () => {
 
   const handleSend = () => {
     if (!input.trim() || isLoading) return;
-    sendMessage({ text: input.trim() });
+    sendMessage({
+      text: input.trim(),
+      files: pendingFiles.length > 0 ? pendingFiles : undefined,
+    });
     setInput("");
+    setPendingFiles([]);
+    setAttachError(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -682,6 +705,44 @@ const AiAdminChatPage = () => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const processImageFiles = async (files: File[]) => {
+    let skippedCount = 0;
+    const accepted: File[] = [];
+    for (const file of files) {
+      if (file.type.startsWith("image/") && file.size <= MAX_ATTACH_SIZE_BYTES) {
+        accepted.push(file);
+      } else {
+        skippedCount += 1;
+      }
+    }
+    setAttachError(
+      skippedCount > 0
+        ? `${skippedCount} file${skippedCount > 1 ? "s" : ""} skipped - images only, max 5 MB.`
+        : null
+    );
+
+    const newParts: FileUIPart[] = [];
+    for (const file of accepted) {
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        newParts.push({ type: "file", filename: file.name, mediaType: file.type, url: dataUrl });
+      } catch {
+        setAttachError(`Could not read ${file.name}.`);
+      }
+    }
+    if (newParts.length > 0) {
+      setPendingFiles((prev) => [...prev, ...newParts]);
+    }
+  };
+
+  const handleAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!multimodalEnabled) return;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    await processImageFiles(files);
   };
 
   // Deduplicate tool parts
@@ -731,7 +792,27 @@ const AiAdminChatPage = () => {
         </div>
       </header>
 
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-border/80 py-0 shadow-sm">
+      <Card
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-hidden border-border/80 py-0 shadow-sm",
+          isDragging && multimodalEnabled && "border-dashed",
+        )}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (multimodalEnabled) setIsDragging(true);
+        }}
+        onDragLeave={() => {
+          if (multimodalEnabled) setIsDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          if (!multimodalEnabled || isLoading) return;
+          const files = Array.from(e.dataTransfer.files ?? []);
+          if (files.length === 0) return;
+          void processImageFiles(files);
+        }}
+      >
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
           {messages.length === 0 && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12 text-center">
@@ -753,7 +834,10 @@ const AiAdminChatPage = () => {
 
             const hasVisible = message.parts.some(
               (p) =>
-                p.type === "text" || p.type.startsWith("tool-") || p.type === "dynamic-tool"
+                p.type === "text" ||
+                (p.type === "file" && multimodalEnabled) ||
+                p.type.startsWith("tool-") ||
+                p.type === "dynamic-tool"
             );
             if (!hasVisible) return null;
 
@@ -805,6 +889,26 @@ const AiAdminChatPage = () => {
                       flushText();
                       return;
                     }
+                    if (part.type === "file") {
+                      flushText();
+                      if (isUser && multimodalEnabled) {
+                        const mediaType = part.mediaType ?? "";
+                        const looksLikeImage =
+                          mediaType.startsWith("image/") ||
+                          (!mediaType && part.url.startsWith("data:image/"));
+                        if (looksLikeImage) {
+                          elements.push(
+                            <img
+                              key={`file-${partIdx}`}
+                              src={part.url}
+                              alt={part.filename ?? "attachment"}
+                              className="max-h-56 max-w-full rounded-xl object-cover"
+                            />
+                          );
+                        }
+                      }
+                      return;
+                    }
                     if (!part.type.startsWith("tool-") && part.type !== "dynamic-tool") return;
 
                     flushText();
@@ -850,7 +954,58 @@ const AiAdminChatPage = () => {
         </div>
 
         <div className="shrink-0 border-t border-border bg-card p-3 sm:p-4">
+          {attachError && <p className="mb-2 text-xs text-destructive">{attachError}</p>}
+          {multimodalEnabled && pendingFiles.length > 0 && (
+            <div className="mb-2.5 flex flex-wrap gap-2">
+              {pendingFiles.map((file, fileIdx) => (
+                <div key={`${file.filename}-${fileIdx}`} className="relative">
+                  <img
+                    src={file.url}
+                    alt={file.filename ?? "attachment"}
+                    className="h-16 w-16 rounded-lg border border-border object-cover"
+                  />
+                  <button
+                    type="button"
+                    className="absolute -top-1.5 -right-1.5 inline-flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() =>
+                      setPendingFiles((prev) => prev.filter((_, idx) => idx !== fileIdx))
+                    }
+                    aria-label={`Remove ${file.filename ?? "attachment"}`}
+                  >
+                    <X className="size-3.5" aria-hidden />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {multimodalEnabled && (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              disabled={isLoading}
+              onChange={handleAttach}
+            />
+          )}
           <div className="flex items-end gap-2">
+            {multimodalEnabled && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 shrink-0 rounded-lg text-muted-foreground"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                aria-label={intl.formatMessage({
+                  id: "ai_admin.chat.attach",
+                  defaultMessage: "Attach image",
+                })}
+              >
+                <Paperclip className="size-4" aria-hidden />
+              </Button>
+            )}
             <Textarea
               className="min-h-11 flex-1 resize-none bg-card"
               placeholder={intl.formatMessage({

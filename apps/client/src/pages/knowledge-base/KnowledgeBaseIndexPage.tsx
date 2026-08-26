@@ -4,7 +4,7 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { Eye, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, Loader2, MoreHorizontal, Pencil, Plus, RotateCw, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -51,6 +51,7 @@ export const KnowledgeBaseIndexPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<KnowledgeBaseRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [reembeddingId, setReembeddingId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -204,6 +205,39 @@ export const KnowledgeBaseIndexPage = () => {
                     {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
                   </DropdownMenuItem>
                 ) : null}
+                {canUpdate && row.original.embeddingStatus !== "pending" ? (
+                  <DropdownMenuItem
+                    disabled={reembeddingId === row.original.id}
+                    onClick={async () => {
+                      if (reembeddingId === row.original.id) return;
+                      setReembeddingId(row.original.id);
+                      try {
+                        await trpcClient.knowledgeBase.reembed.mutate({ id: row.original.id });
+                        await queryClient.invalidateQueries({ queryKey: ["knowledgeBaseList"] });
+                        toast.success(
+                          intl.formatMessage({
+                            id: "knowledgeBase.index.reembed_success",
+                            defaultMessage: "Re-embedding started",
+                          }),
+                        );
+                      } catch (e) {
+                        toast.error(e, "Failed to re-embed");
+                      } finally {
+                        setReembeddingId(null);
+                      }
+                    }}
+                  >
+                    {reembeddingId === row.original.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <RotateCw className="size-4" />
+                    )}
+                    {intl.formatMessage({
+                      id: "knowledgeBase.index.reembed",
+                      defaultMessage: "Re-embed",
+                    })}
+                  </DropdownMenuItem>
+                ) : null}
                 {canDelete ? (
                   <>
                     <DropdownMenuSeparator />
@@ -225,7 +259,7 @@ export const KnowledgeBaseIndexPage = () => {
         ),
       },
     ],
-    [intl, navigate, canUpdate, canDelete],
+    [intl, navigate, queryClient, toast, canUpdate, canDelete, reembeddingId],
   );
 
   const handleDelete = async () => {

@@ -34,6 +34,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -67,7 +71,11 @@ interface FormValues {
   ai: {
     baseUrl: string;
     model: string;
+    multimodalEnabled: boolean;
     apiKey: string; // write-only: empty = keep existing
+    embeddingBaseUrl: string;
+    embeddingModel: string;
+    embeddingApiKey: string; // write-only: empty = keep existing
   };
   smtp: {
     host: string;
@@ -111,7 +119,11 @@ const toFormValues = (s: MaskedSettings): FormValues => ({
   ai: {
     baseUrl: s.ai?.baseUrl ?? "",
     model: s.ai?.model ?? "",
+    multimodalEnabled: Boolean(s.ai?.multimodalEnabled ?? false),
     apiKey: "",
+    embeddingBaseUrl: s.ai?.embeddingBaseUrl ?? "",
+    embeddingModel: s.ai?.embeddingModel ?? "",
+    embeddingApiKey: "",
   },
   smtp: {
     host: s.smtp?.host ?? "",
@@ -139,7 +151,13 @@ const buildPatch = (values: FormValues): AppSettings => ({
   ai: {
     baseUrl: values.ai.baseUrl,
     model: values.ai.model,
+    multimodalEnabled: values.ai.multimodalEnabled,
     ...(values.ai.apiKey ? { apiKey: values.ai.apiKey } : {}),
+    embeddingBaseUrl: values.ai.embeddingBaseUrl,
+    embeddingModel: values.ai.embeddingModel,
+    ...(values.ai.embeddingApiKey
+      ? { embeddingApiKey: values.ai.embeddingApiKey }
+      : {}),
   },
   smtp: {
     host: values.smtp.host,
@@ -332,6 +350,7 @@ export const AppSettingsPage = () => {
 
   // Secrets are write-only: show a masked placeholder when a value exists.
   const aiKeySet = Boolean(data?.ai?.apiKey?.hasValue);
+  const embeddingApiKeySet = Boolean(data?.ai?.embeddingApiKey?.hasValue);
   const smtpPassSet = Boolean(data?.smtp?.pass?.hasValue);
 
   if (!canRead) {
@@ -598,6 +617,94 @@ export const AppSettingsPage = () => {
               placeholder={aiKeySet ? "••••••" : ""}
               hint={secretHint}
               onChange={(v) => update("ai", "apiKey", v)}
+            />
+            <div className="space-y-1.5">
+              <Label>
+                {intl.formatMessage({
+                  id: "settings.app.field_ai_multimodal_enabled",
+                  defaultMessage: "Multimodal support",
+                })}
+              </Label>
+              <RadioGroup
+                value={form.ai.multimodalEnabled ? "enabled" : "disabled"}
+                onValueChange={(v) =>
+                  update("ai", "multimodalEnabled", v === "enabled")
+                }
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem
+                    id="ai-multimodal-enabled"
+                    value="enabled"
+                  />
+                  <Label htmlFor="ai-multimodal-enabled" className="font-normal">
+                    {intl.formatMessage({
+                      id: "settings.app.radio_ai_multimodal_enabled",
+                      defaultMessage: "Enabled",
+                    })}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem
+                    id="ai-multimodal-disabled"
+                    value="disabled"
+                  />
+                  <Label htmlFor="ai-multimodal-disabled" className="font-normal">
+                    {intl.formatMessage({
+                      id: "settings.app.radio_ai_multimodal_disabled",
+                      defaultMessage: "Disabled",
+                    })}
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-xs text-muted-foreground">
+                {intl.formatMessage({
+                  id: "settings.app.hint_ai_multimodal_enabled",
+                  defaultMessage:
+                    "When enabled, the configured AI model analyzes images. When disabled, image analysis is unavailable.",
+                })}
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-4 mb-3 border-t pt-4 text-xs font-semibold text-muted-foreground">
+            {intl.formatMessage({
+              id: "settings.app.ai_embedding_section_label",
+              defaultMessage:
+                "Embedding provider (optional — used for knowledge-base RAG). Leave blank to use the AI provider above.",
+            })}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TextField
+              id="ai-embedding-base-url"
+              label={intl.formatMessage({
+                id: "settings.app.field_ai_embedding_base_url",
+                defaultMessage: "Embedding base URL",
+              })}
+              type="url"
+              className="sm:col-span-2"
+              value={form.ai.embeddingBaseUrl}
+              onChange={(v) => update("ai", "embeddingBaseUrl", v)}
+            />
+            <TextField
+              id="ai-embedding-model"
+              label={intl.formatMessage({
+                id: "settings.app.field_ai_embedding_model",
+                defaultMessage: "Embedding model",
+              })}
+              value={form.ai.embeddingModel}
+              onChange={(v) => update("ai", "embeddingModel", v)}
+            />
+            <TextField
+              id="ai-embedding-api-key"
+              label={intl.formatMessage({
+                id: "settings.app.field_ai_embedding_api_key",
+                defaultMessage: "Embedding API key",
+              })}
+              type="password"
+              value={form.ai.embeddingApiKey}
+              placeholder={embeddingApiKeySet ? "••••••" : ""}
+              hint={secretHint}
+              onChange={(v) => update("ai", "embeddingApiKey", v)}
             />
           </div>
         </SectionCard>

@@ -6,7 +6,8 @@ import { appSettingsSchema, userSettingsSchema } from '@repo/schemas/settings';
 
 export const settingsRouter = router({
   // Permission-free: any authenticated user can read non-sensitive display
-  // settings (currency, fiscal year, page size). No ai/smtp/emailAgent/system/company.
+  // settings (currency, fiscal year, page size). No smtp/emailAgent/system/company.
+  // multimodalEnabled is a non-sensitive boolean toggle, safe to expose.
   public: protectedProcedure.query(async ({ ctx }) => {
     const settings = await getAppSettings(ctx.db);
     return {
@@ -14,6 +15,7 @@ export const settingsRouter = router({
       currencySymbol: settings.general.currencySymbol,
       fiscalYearStartMonth: settings.general.fiscalYearStartMonth,
       defaultPageSize: settings.general.defaultPageSize,
+      multimodalEnabled: settings.ai?.multimodalEnabled ?? false,
     };
   }),
 

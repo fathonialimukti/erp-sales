@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'crypto';
+import { Prisma } from '../../prisma/generated/client.js';
 import { createCaller } from '../helpers/caller.js';
 import { seedRoleWithPermissions, seedTestUser, deleteTestUser, deleteTestRole } from '../helpers/seed.js';
 import { prisma } from '../../lib/prisma.js';
@@ -59,5 +60,25 @@ describe('knowledge-base router', () => {
     const deleted = await caller.knowledgeBase.delete({ id: created.id });
     expect(deleted.success).toBe(true);
     createdIds.splice(createdIds.indexOf(created.id), 1);
+  });
+
+  it('re-embeds a chunk', async () => {
+    const created = await caller.knowledgeBase.create({
+      title: `Reembed KB ${randomUUID()}`,
+      content: 'Re-embed test content.',
+      source: 'unit-test',
+    });
+    createdIds.push(created.id);
+
+    const res = await caller.knowledgeBase.reembed({ id: created.id });
+    expect(res.success).toBe(true);
+
+    // embedding_status is written via raw SQL (vector column is Unsupported in the Prisma client),
+    // so assert it through raw SQL as well. Status is set synchronously before the fire-and-forget
+    // embed return, so it must be 'pending' right after reembed resolves.
+    const rows = await prisma.$queryRaw<Array<{ embedding_status: string }>>(
+      Prisma.sql`SELECT embedding_status FROM knowledge_chunks WHERE id = ${created.id}`,
+    );
+    expect(rows[0]?.embedding_status).toBe('pending');
   });
 });

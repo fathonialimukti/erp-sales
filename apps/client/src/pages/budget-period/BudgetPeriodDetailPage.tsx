@@ -125,6 +125,8 @@ export const BudgetPeriodDetailPage = () => {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
+        module="budgetPeriod"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={period.name}
         description={intl.formatMessage({ id: "budget_period.detail.subtitle", defaultMessage: "Budget period details and lines" })}
         actions={

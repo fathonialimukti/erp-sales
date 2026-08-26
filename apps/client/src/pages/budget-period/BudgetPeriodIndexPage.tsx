@@ -193,14 +193,16 @@ export const BudgetPeriodIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-3">
       <PageHeader
+        module="budgetPeriod"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={intl.formatMessage({ id: "budget_period.index.title", defaultMessage: "Budget Periods" })}
         description={intl.formatMessage({ id: "budget_period.index.subtitle", defaultMessage: "Manage budget periods and fiscal cycles." })}
         actions={
           canCreate ? (
             <Button onClick={() => navigate("/budget-period/create")}>
-              <Plus className="size-4 mr-2" />
+              <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
           ) : null

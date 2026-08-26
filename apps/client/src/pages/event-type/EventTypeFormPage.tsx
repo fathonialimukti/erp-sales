@@ -124,6 +124,8 @@ export const EventTypeFormPage = () => {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
+        module="eventType"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={isEdit
           ? intl.formatMessage({ id: "event_type.form.edit_title", defaultMessage: "Edit Event Type" })
           : intl.formatMessage({ id: "event_type.form.create_title", defaultMessage: "Create Event Type" })}

@@ -9,6 +9,11 @@ import {
 import { getChatModel } from '../lib/ai-provider.js';
 import { customerAiTools } from '../lib/customer-ai-tools.js';
 import { prisma } from '../lib/prisma.js';
+import {
+    analyzeImageTool,
+    hasImageParts,
+    OnlyTextModelError,
+} from '../lib/ai-multimodal.js';
 
 const SYSTEM_PROMPT = `You are a friendly B2B customer service assistant for an ERP sales platform.
 
@@ -40,6 +45,35 @@ export async function customerAiChatHandler(req: Request, res: Response) {
 
     const modelMessages = await convertToModelMessages(messages as any);
 
+    // Only expose the image-analysis tool when the conversation actually contains
+    // image parts, so the model cannot call it gratuitously on text-only chats.
+    // Graceful degradation: if no multimodal model is configured,
+    // analyzeImageTool's execute throws OnlyTextModelError — wrap execute so the
+    // tool resolves to a friendly error string instead of killing the stream
+    // (other errors still propagate to the AI SDK's tool-error path).
+    const hasImages = hasImageParts(messages as unknown[]);
+    const imageTool = hasImages ? analyzeImageTool(prisma) : null;
+    const tools = {
+        ...customerAiTools,
+        ...(imageTool
+            ? {
+                  analyzeImage: {
+                      ...imageTool,
+                      execute: async (args: any, options: any) => {
+                          try {
+                              return (await imageTool.execute!(args, options)) as string;
+                          } catch (error) {
+                              if (error instanceof OnlyTextModelError) {
+                                  return `[Image analysis unavailable: ${error.message}]`;
+                              }
+                              throw error;
+                          }
+                      },
+                  },
+              }
+            : {}),
+    };
+
     const stream = createUIMessageStream({
         execute: async ({ writer }) => {
             const result = streamText({
@@ -47,7 +81,7 @@ export async function customerAiChatHandler(req: Request, res: Response) {
                 instructions: SYSTEM_PROMPT,
                 messages: modelMessages,
                 temperature: 0.3,
-                tools: customerAiTools,
+                tools,
                 stopWhen: stepCountIs(5),
             });
             writer.merge(result.toUIMessageStream());

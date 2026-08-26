@@ -246,14 +246,16 @@ export const BudgetLineIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-3">
       <PageHeader
+        module="budgetLine"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={intl.formatMessage({ id: "budget_line.index.title", defaultMessage: "Budget Lines" })}
         description={intl.formatMessage({ id: "budget_line.index.subtitle", defaultMessage: "Manage budget line allocations with scope and remaining tracking." })}
         actions={
           canCreate ? (
             <Button onClick={() => navigate("/budget-line/create")}>
-              <Plus className="size-4 mr-2" />
+              <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
           ) : null

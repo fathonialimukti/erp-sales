@@ -51,8 +51,14 @@ const KNOWN_MODULES = new Set([
   "settings",
 ]);
 
-/** CSS color value for a known module accent, e.g. `var(--module-customer)`. */
+/**
+ * CSS color value for a known module accent, e.g. `var(--module-customer)`.
+ * Multi-word keys ("actionType") are kebab-cased to match the CSS token
+ * (`--module-action-type`) — a raw camelCase var silently resolves to nothing
+ * and renders a white header.
+ */
 export const moduleCssVar = (module?: string): string | undefined => {
   if (!module || !KNOWN_MODULES.has(module)) return undefined;
-  return `var(--module-${module})`;
+  const cssKey = module.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+  return `var(--module-${cssKey})`;
 };

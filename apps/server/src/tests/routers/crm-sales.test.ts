@@ -34,10 +34,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  deleteTestCustomer(customerId);
-  deleteTestSku(skuId);
-  deleteTestArea(areaId);
-  deleteTestRegion(regionId);
+  await deleteTestCustomer(customerId);
+  await deleteTestSku(skuId);
+  await deleteTestArea(areaId);
+  await deleteTestRegion(regionId);
   await deleteTestUser(actorUserId);
   await deleteTestRole(actorRoleId);
 });

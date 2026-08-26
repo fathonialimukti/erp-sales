@@ -6,6 +6,7 @@ export interface GeneralSettings {
   currencySymbol: string;
   fiscalYearStartMonth: number;
   defaultPageSize: number;
+  multimodalEnabled: boolean;
 }
 
 const DEFAULTS: GeneralSettings = {
@@ -13,6 +14,7 @@ const DEFAULTS: GeneralSettings = {
   currencySymbol: "$",
   fiscalYearStartMonth: 1,
   defaultPageSize: 10,
+  multimodalEnabled: false,
 };
 
 /**
@@ -32,5 +34,6 @@ export const useGeneralSettings = (): GeneralSettings => {
     currencySymbol: data.currencySymbol ?? DEFAULTS.currencySymbol,
     fiscalYearStartMonth: data.fiscalYearStartMonth ?? DEFAULTS.fiscalYearStartMonth,
     defaultPageSize: data.defaultPageSize ?? DEFAULTS.defaultPageSize,
+    multimodalEnabled: data?.multimodalEnabled ?? DEFAULTS.multimodalEnabled,
   };
 };

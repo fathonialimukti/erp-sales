@@ -3,7 +3,7 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Loader2, Pencil, RotateCw, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -43,6 +43,7 @@ export const KnowledgeBaseDetailPage = () => {
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isReembedding, setIsReembedding] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["knowledgeBaseDetail", id],
@@ -131,6 +132,45 @@ export const KnowledgeBaseDetailPage = () => {
             >
               <Pencil className="size-3.5" aria-hidden />
               {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {canUpdate && entry.embeddingStatus !== "pending" ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isReembedding}
+              onClick={async () => {
+                if (isReembedding) return;
+                setIsReembedding(true);
+                try {
+                  await trpcClient.knowledgeBase.reembed.mutate({ id: entry.id });
+                  await queryClient.invalidateQueries({ queryKey: ["knowledgeBaseDetail", id] });
+                  toast.success(
+                    intl.formatMessage({
+                      id: "knowledgeBase.detail.reembed_success",
+                      defaultMessage: "Re-embedding started",
+                    }),
+                  );
+                } catch (e) {
+                  toast.error(e, "Failed to re-embed");
+                } finally {
+                  setIsReembedding(false);
+                }
+              }}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              {isReembedding ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              ) : (
+                <RotateCw className="size-3.5" aria-hidden />
+              )}
+              {intl.formatMessage({
+                id: isReembedding
+                  ? "knowledgeBase.detail.embedding_in_progress"
+                  : "knowledgeBase.detail.reembed",
+                defaultMessage: "Re-embed",
+              })}
             </Button>
           ) : null}
           {canDelete ? (

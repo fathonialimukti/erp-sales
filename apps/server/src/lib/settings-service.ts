@@ -11,7 +11,10 @@ import type { AppSettings, UserSettings } from '@repo/schemas/settings';
  * `{ hasValue: boolean }` so real values never leave the server.
  */
 export type MaskedAppSettings = Omit<AppSettings, 'ai' | 'smtp'> & {
-  ai: Omit<NonNullable<AppSettings['ai']>, 'apiKey'> & { apiKey: { hasValue: boolean } };
+  ai: Omit<NonNullable<AppSettings['ai']>, 'apiKey' | 'embeddingApiKey'> & {
+    apiKey: { hasValue: boolean };
+    embeddingApiKey: { hasValue: boolean };
+  };
   smtp: Omit<NonNullable<AppSettings['smtp']>, 'pass'> & { pass: { hasValue: boolean } };
 };
 
@@ -29,6 +32,10 @@ const APP_SETTING_FALLBACKS: Record<string, EnvFallback> = {
   'ai.baseUrl': { env: 'AI_BASE_URL', default: 'http://localhost:20128/v1' },
   'ai.apiKey': { env: 'AI_API_KEY', default: '' },
   'ai.model': { env: 'AI_MODEL', default: 'chatbot' },
+  'ai.multimodalEnabled': { env: 'AI_MULTIMODAL_ENABLED', default: false },
+  'ai.embeddingBaseUrl': { env: 'AI_EMBEDDING_BASE_URL', default: '' },
+  'ai.embeddingApiKey': { env: 'AI_EMBEDDING_API_KEY', default: '' },
+  'ai.embeddingModel': { env: 'AI_EMBEDDING_MODEL', default: '' },
   'smtp.host': { env: 'SMTP_HOST', default: 'smtp-relay.brevo.com' },
   'smtp.port': { env: 'SMTP_PORT', default: 587 },
   'smtp.user': { env: 'SMTP_USER', default: '' },
@@ -63,7 +70,7 @@ const GENERAL_DEFAULTS: Record<string, unknown> = {
 };
 
 /** Secret keys that are never returned in plaintext. */
-const SECRET_KEYS = new Set(['ai.apiKey', 'smtp.pass']);
+const SECRET_KEYS = new Set(['ai.apiKey', 'ai.embeddingApiKey', 'smtp.pass']);
 
 // --- Cache (30s TTL) ---
 
@@ -98,6 +105,7 @@ function envValue(fallback: EnvFallback): unknown {
     const n = Number(raw);
     return Number.isFinite(n) ? n : def;
   }
+  if (typeof def === 'boolean') return raw === 'true' || raw === '1';
   return raw;
 }
 
@@ -161,6 +169,10 @@ export async function getAppSettings(db: DbClient): Promise<MaskedAppSettings> {
       baseUrl: read('ai.baseUrl') as string,
       apiKey: secret('ai.apiKey'),
       model: read('ai.model') as string,
+      multimodalEnabled: read('ai.multimodalEnabled') as boolean,
+      embeddingBaseUrl: read('ai.embeddingBaseUrl') as string,
+      embeddingApiKey: secret('ai.embeddingApiKey'),
+      embeddingModel: read('ai.embeddingModel') as string,
     },
     smtp: {
       host: read('smtp.host') as string,

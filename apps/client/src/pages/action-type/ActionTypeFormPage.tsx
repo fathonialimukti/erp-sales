@@ -124,6 +124,8 @@ export const ActionTypeFormPage = () => {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
+        module="actionType"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={isEdit
           ? intl.formatMessage({ id: "action_type.form.edit_title", defaultMessage: "Edit Action Type" })
           : intl.formatMessage({ id: "action_type.form.create_title", defaultMessage: "Create Action Type" })}

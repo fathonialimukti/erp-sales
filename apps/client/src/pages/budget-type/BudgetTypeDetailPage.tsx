@@ -114,6 +114,7 @@ export const BudgetTypeDetailPage = () => {
           <NavButtonGroup className="self-end" onBack={() => navigate("/budget-type")} />
           <PageHeader
             module="budgetType"
+            eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
             title={intl.formatMessage({ id: "budget_type.detail.not_found", defaultMessage: "Budget type not found" })}
           />
         </div>

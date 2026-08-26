@@ -127,4 +127,19 @@ export const knowledgeBaseRouter = router({
 
       return { success: true };
     }),
+
+  reembed: protectedProcedure
+    .use(hasPermission('knowledge-base@update'))
+    .input(knowledgeBaseIdSchema)
+    .mutation(async ({ input, ctx }) => {
+      const existing = await prisma.knowledgeChunk.findUnique({ where: { id: input.id } });
+      if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Knowledge entry not found.' });
+
+      // Mark pending before fire-and-forget re-embed — never fail the mutation.
+      try { await setChunkEmbeddingStatus(existing.id, 'pending'); } catch (e) { console.warn('[embedding] set pending failed:', e); }
+      // Best-effort re-embed — never fail the mutation.
+      void embedKnowledgeChunkBestEffort(ctx.db, existing.id, existing.title, existing.content);
+
+      return { success: true };
+    }),
 });

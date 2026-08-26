@@ -67,6 +67,7 @@
     --color-module-budget-type: var(--module-budget-type);
     --color-module-budget-period: var(--module-budget-period);
     --color-module-budget-line: var(--module-budget-line);
+    --color-module-sku-category: var(--module-sku-category);
     --color-module-action-type: var(--module-action-type);
     --color-module-event-type: var(--module-event-type);
     --color-module-vendor: var(--module-vendor);
@@ -144,6 +145,7 @@
     --module-budget-type: oklch(0.46 0.2 50);
     --module-budget-period: oklch(0.46 0.2 242);
     --module-budget-line: oklch(0.46 0.2 280);
+    --module-sku-category: oklch(0.46 0.19 85);
     --module-action-type: oklch(0.46 0.2 160);
     --module-event-type: oklch(0.46 0.21 20);
     --module-vendor: oklch(0.46 0.2 30);
@@ -208,6 +210,7 @@
     --module-budget-type: oklch(0.52 0.2 50);
     --module-budget-period: oklch(0.52 0.2 242);
     --module-budget-line: oklch(0.52 0.2 280);
+    --module-sku-category: oklch(0.52 0.19 85);
     --module-action-type: oklch(0.52 0.2 160);
     --module-event-type: oklch(0.52 0.21 20);
     --module-vendor: oklch(0.52 0.2 30);

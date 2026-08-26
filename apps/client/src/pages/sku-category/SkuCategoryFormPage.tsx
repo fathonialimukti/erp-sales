@@ -173,8 +173,9 @@ export const SkuCategoryFormPage = () => {
       />
 
       <PageHeader
-          module="skuCategory"
-          title={
+        module="skuCategory"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
+        title={
             isEdit
               ? intl.formatMessage({
                   id: "sku_category.form.title_edit",

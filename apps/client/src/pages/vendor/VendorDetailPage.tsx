@@ -120,6 +120,8 @@ export const VendorDetailPage = () => {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
+        module="vendor"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={vendor.name}
         description={vendor.category ?? intl.formatMessage({ id: "common.no_description", defaultMessage: "No description" })}
         actions={

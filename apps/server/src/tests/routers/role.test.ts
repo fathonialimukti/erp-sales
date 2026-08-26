@@ -32,6 +32,8 @@ afterAll(async () => {
   if (createdRoleIds.length > 0) {
     await prisma.role.deleteMany({ where: { id: { in: createdRoleIds } } });
   }
+  // Sweep ad-hoc TEST_ROLE_PERMISSION_* seeds (unique random names — safe to delete by prefix).
+  await prisma.permission.deleteMany({ where: { name: { startsWith: 'TEST_ROLE_PERMISSION_' } } });
   await prisma.user.delete({ where: { id: actorUserId } });
   await prisma.role.delete({ where: { id: actorRoleId } });
 });

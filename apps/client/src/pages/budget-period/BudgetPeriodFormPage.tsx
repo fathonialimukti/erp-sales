@@ -139,6 +139,8 @@ export const BudgetPeriodFormPage = () => {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
+        module="budgetPeriod"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={isEdit
           ? intl.formatMessage({ id: "budget_period.form.edit_title", defaultMessage: "Edit Budget Period" })
           : intl.formatMessage({ id: "budget_period.form.create_title", defaultMessage: "Create Budget Period" })}

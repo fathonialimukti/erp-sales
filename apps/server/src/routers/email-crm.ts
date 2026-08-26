@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { generateText } from 'ai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
   createDraftOrderFromEmailSchema,
   createEmailConversationSchema,
@@ -13,6 +14,8 @@ import {
 } from '@repo/schemas/email-crm';
 import { logActivity } from '../lib/activity-log.js';
 import { getChatModel } from '../lib/ai-provider.js';
+import { getMultimodalModelId, OnlyTextModelError } from '../lib/ai-multimodal.js';
+import { getSettingValue, getSecretValue } from '../lib/settings-service.js';
 import { enqueueEmailConcierge } from '../lib/email-concierge.js';
 import {
   htmlToText,
@@ -309,14 +312,56 @@ export const emailCrmRouter = router({
         ].join('\n'),
       ].filter(Boolean);
 
-      const { text } = await generateText({
-        model: await getChatModel(ctx.db),
-        instructions: system,
-        prompt: promptParts.join('\n\n'),
-        temperature: 0.7,
-      });
+      // Multimodal: when images are attached AND multimodal is enabled, send them as
+      // image content parts. If multimodal is disabled, silently fall back to
+      // text-only (the UI hides the attach UI anyway — this is defense in depth).
+      let draft = '';
+      {
+        const promptText = promptParts.join('\n\n');
+        const images = (input.images ?? []).filter((img) => img.url);
+        let multimodalModelId: string | null = null;
+        if (images.length > 0) {
+          try {
+            multimodalModelId = await getMultimodalModelId(ctx.db);
+          } catch (error) {
+            if (!(error instanceof OnlyTextModelError)) throw error;
+            // multimodal disabled → ignore images, text-only path below
+          }
+        }
 
-      const draft = text.trim();
+        if (multimodalModelId && images.length > 0) {
+          const baseURL = String(await getSettingValue(ctx.db, 'ai.baseUrl')).replace(/\/$/, '');
+          const apiKey = await getSecretValue(ctx.db, 'ai.apiKey');
+          const provider = createOpenAICompatible({
+            name: '9router-multimodal',
+            baseURL,
+            apiKey: apiKey || 'not-set',
+          });
+          const { text } = await generateText({
+            model: provider(multimodalModelId),
+            instructions: system,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  ...images.map((img) => ({ type: 'image' as const, image: img.url })),
+                  { type: 'text' as const, text: promptText },
+                ],
+              },
+            ],
+            temperature: 0.7,
+          });
+          draft = text.trim();
+        } else {
+          const { text } = await generateText({
+            model: await getChatModel(ctx.db),
+            instructions: system,
+            prompt: promptText,
+            temperature: 0.7,
+          });
+          draft = text.trim();
+        }
+      }
       let savedMessageId: string | undefined;
 
       if (input.save && draft) {

@@ -37,6 +37,16 @@ You are the **sole agent** responsible for running tests across the monorepo. Ba
 - `bunx playwright test` (e2e / browser tests)
 - Any other test runner configured in the workspace
 
+### Test-data hygiene (integration tests)
+
+Every integration test must leave the dev database as it found it. Enforce when reviewing or writing tests:
+
+- Every seeded row is deleted in `afterAll` — **`await`ed**, never fire-and-forget (unawaited `deleteTest*()` races process exit and silently leaks rows).
+- Children before parents (FK order); rely on `onDelete: Cascade` only where the schema actually has it.
+- Ad-hoc seeds with unique names (`TEST_*${uuid}`) are swept even when not pushed to a tracked array (a prefix `deleteMany` is fine).
+- Mutations restored: `app_settings` rows deleted, `process.env` restored, caches invalidated.
+- Red flags: `deleteTest*(...)` without `await`, `seed*()` results never tracked for cleanup, `beforeEach`-only cleanup (leaks after the last test).
+
 You also review diffs for correctness, security, and over-engineering (ponytail-review / ponytail-audit / ponytail-debt).
 
 ## Mode: direct task (default)

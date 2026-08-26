@@ -185,14 +185,16 @@ export const VendorIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-3">
       <PageHeader
+        module="vendor"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={intl.formatMessage({ id: "vendor.index.title", defaultMessage: "Vendors" })}
         description={intl.formatMessage({ id: "vendor.index.subtitle", defaultMessage: "Manage vendors and suppliers for events." })}
         actions={
           canCreate ? (
             <Button onClick={() => navigate("/vendor/create")}>
-              <Plus className="size-4 mr-2" />
+              <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
           ) : null

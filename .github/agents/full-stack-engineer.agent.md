@@ -28,6 +28,14 @@ UI craft owner: Frontend Engineer + ui-ux-pro-max
 
 ---
 
+## Context budget (hard rule)
+
+You read **at most 3 files, ever**: the user request, `docs/plans/<feature>/PLAN.md` (if present), and `.github/copilot-instructions.md`. **Never** grep, search, or open source files — no schemas, routers, pages, or helpers. Interface facts belong to subagents, not to you:
+
+- **Layer 1 briefs** come from the request + the Frozen-contract template (paths follow naming conventions — no lookup needed).
+- **Later-layer briefs** copy the producing subagent's `## Produces` report block verbatim into `Consumes:`. Every implementer must end its report with `## Produces` (exact export names, signatures, permission strings, i18n keys).
+- If a brief needs a fact you don't have, put that file in the subagent's `Reads:` list — never resolve it yourself.
+
 ## Orchestration Model
 
 The orchestrator **decomposes** a feature into a directed acyclic graph (DAG) of independent sub-tasks, then dispatches each sub-task to a dedicated subagent. Tasks with no dependencies between them run **in parallel**; tasks that depend on prior work run **sequentially** after their prerequisites complete.
@@ -36,15 +44,15 @@ The orchestrator **decomposes** a feature into a directed acyclic graph (DAG) of
 
 1. **Decompose, don't monolith.** A full CRUD resource is not "Backend + Frontend" — it is a sequence of small, independently testable tasks (schema → router → register → client hooks → index page → detail page → form page → i18n → routes → tests). Each task is the smallest unit that carries its own test cycle.
 
-2. **One subagent per task.** Each sub-task gets a fresh subagent with isolated context. No subagent inherits the orchestrator's session history. The orchestrator constructs exactly the context each subagent needs — no more, no less.
+2. **One subagent per task.** Each sub-task gets a fresh subagent with isolated context. No subagent inherits the orchestrator's session history — and the orchestrator does **not** gather context for them. Each subagent reads its own reference files (conventions, reference router, reference pages) inside its isolated context. The orchestrator only writes briefs and dispatches.
 
 3. **Unbounded parallelism.** All tasks in the same DAG layer (no inter-dependencies) are dispatched together in a single response. There is no fixed cap — if 10 tasks are independent, 10 subagents spawn simultaneously. The orchestrator dispatches as many parallel subagents as the DAG allows.
 
-4. **Frozen contract per task.** Each subagent receives a precise, frozen contract: exact files to create/modify, exact interfaces to consume/produce, exact permission strings, exact i18n keys. No subagent re-reads conventions or re-brainstorms.
+4. **Frozen contract per task.** Each subagent receives a precise, frozen contract: exact files to create/modify, exact interfaces to consume/produce, exact permission strings, exact i18n keys. The brief points at the reference files to open (e.g. `routers/region.ts`, `Region*.tsx`) — the subagent reads them itself. No re-brainstorming, no orchestrator-side rediscovery.
 
 5. **Isolation = no crashes.** Because each subagent gets a self-contained brief with exact file paths and interfaces, and because tasks are decomposed to touch disjoint file sets, subagents never crash into each other. Shared files (e.g. `router.ts`, `index.ts`) are owned by a single task that runs at the correct point in the DAG.
 
-6. **Review per task, review at end.** After each task's implementer subagent returns, a task reviewer subagent validates spec compliance + code quality. A final whole-branch review catches cross-task issues.
+6. **One review at the end.** No per-task reviewer subagents (they double latency for near-zero value). Each implementer self-reviews and runs its own scoped checks (`bun run check-types`, scoped vitest). A single final whole-branch Quality Engineer run catches cross-task issues.
 
 ### Decomposition template (CRUD resource)
 
@@ -88,6 +96,9 @@ Each task gets a brief file at `docs/plans/<feature>/tasks/task-N-<name>.md` con
 - Consumes: [exact signatures from earlier tasks]
 - Produces: [exact function/type names later tasks depend on]
 
+**Reads (in your own context — no context is provided):**
+- [reference files the subagent must open itself, e.g. `apps/server/src/routers/region.ts`, `apps/client/src/pages/Region*.tsx`, `.github/copilot-instructions.md`]
+
 **Frozen contract:**
 - Resource: `<domain>`
 - Permission: `<domain>@action`
@@ -99,12 +110,15 @@ Each task gets a brief file at `docs/plans/<feature>/tasks/task-N-<name>.md` con
 - [ ] Step 2: Implement the minimal code
 - [ ] Step 3: Run tests, confirm pass
 - [ ] Step 4: Self-review
+
+**Report back (mandatory):**
+End every implementer report with a `## Produces` block listing exact export/type names, signatures, permission strings, and i18n keys it created. Later-layer briefs copy this block verbatim into `Consumes:` — that is how contracts propagate without you reading code.
 ```
 
 ### Dispatch pattern
 
 ```
-Orchestrator: "I'm using subagent-driven development to implement this plan.
+Orchestrator: "I'm using subagent-driven development to implement this plan. I do not gather context — each subagent reads its own reference files listed in its brief."
 
 # Layer 1 — sequential chain (each depends on prior):
 Task 1 (Schema): [brief path] — run Backend Engineer
@@ -133,20 +147,19 @@ Quality Engineer: [whole-branch review + test execution package]
 ## Tool policy
 | Tool | Allowed | Forbidden |
 |------|---------|-----------|
-| read/search | Context pack | Endless rediscovery |
+| read/search | Request + plan + copilot-instructions only | Any source file, grep, codebase exploration |
 | edit | `docs/plans/**` only | Any implementation path |
-| execute | `bun run check-types`, `bunx vitest run` | Fix-it shell, installs, migrations |
+| execute | none | Fix-it shell, installs, migrations, typecheck |
 | agent | Backend / Frontend / Quality Engineer | Doing their work |
 
 ## Flow (multi-domain only)
-1. **Decompose** — break the feature into a task DAG (schema → router → register → pages → i18n → routes → tests)
-2. **Write briefs** — create `docs/plans/<feature>/tasks/task-N-<name>.md` for each task with frozen contracts
-3. **Dispatch Layer 1 (sequential)** — T1→T2→T3 (each depends on prior), one subagent per task
+1. **Decompose** — break the feature into a task DAG (schema → router → register → pages → i18n → routes → tests) from the request alone
+2. **Write lean briefs** — create `docs/plans/<feature>/tasks/task-N-<name>.md`. Layer 1 contracts from naming conventions; later layers fill `Consumes:` from each producer's `## Produces` report as it returns. **No context gathering**: never open source files.
+3. **Dispatch Layer 1 (sequential)** — T1→T2→T3 (each depends on prior), one subagent per task; paste each returned `## Produces` into the next brief
 4. **Dispatch Layer 2 (parallel)** — T4–T8 (disjoint files), **all spawn simultaneously** — as many subagents as the DAG allows
 5. **Dispatch Layer 3 (sequential)** — T9 (routes), then T10 (tests)
-6. **Review per task** — task reviewer subagent after each implementer returns
-7. **Final review** — whole-branch Quality Engineer with review package + test execution
-8. **Verify** — typecheck + tests; relay recommendation; **stop** (user commits)
+6. **Final review** — one whole-branch Quality Engineer with review package + test execution
+7. **Verify** — relay QE's typecheck + test results; **stop** (user commits)
 
 If the request is clearly single-stack, **redirect** the user to the specialist agent instead of spinning up the full pipeline.
 
@@ -161,9 +174,8 @@ Schema: packages/schemas/src/<domain>.ts → packages/schemas/src/index.ts
 Router: apps/server/src/routers/<domain>.ts → apps/server/src/router.ts
 Pages: apps/client/src/pages/<Domain>{Index,Detail,Form}Page.tsx
 i18n: <domain>.* in en.json + id.json
-Reference router: apps/server/src/routers/region.ts
-Reference pages: apps/client/src/pages/Region*.tsx
-Context pack: docs/plans/<feature>/CONTEXT.md
+Reference router (subagent reads): apps/server/src/routers/region.ts
+Reference pages (subagent reads): apps/client/src/pages/Region*.tsx
 Design law (FROZEN): docs/design-system/
 Tokens: apps/client/src/index.css
 Motion: apps/client/src/lib/motion.ts

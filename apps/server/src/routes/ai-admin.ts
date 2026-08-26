@@ -15,6 +15,11 @@ import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { prisma } from '../lib/prisma.js';
 import { getJwtSecret } from '../lib/jwt-secret.js';
+import {
+    analyzeImageTool,
+    hasImageParts,
+    OnlyTextModelError,
+} from '../lib/ai-multimodal.js';
 
 const JWT_SECRET = getJwtSecret();
 
@@ -374,11 +379,46 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
     // --- Trim message history ---
     const trimmedMessages = trimMessageHistory(messages as any[], MAX_HISTORY_TURNS);
 
+    // --- Multimodal ---
+    // Whether the conversation carries image parts (from the original, untrimmed
+    // messages so trimming can't hide an image attachment).
+    const hasImages = hasImageParts(messages);
+
     // --- RAG ---
     const relevantContext = await retrieveRelevantChunks(userText);
 
     // --- Stream ---
     const modelMessages = await convertToModelMessages(trimmedMessages as any);
+
+    // Only expose the image-analysis tool when the conversation actually contains
+    // image parts, so the model cannot call it gratuitously on text-only chats.
+    // Graceful degradation: if no multimodal model is configured,
+    // analyzeImageTool's execute throws OnlyTextModelError — wrap execute so the
+    // tool resolves to a friendly error string instead of killing the stream
+    // (other errors still propagate to the AI SDK's tool-error path).
+    const imageTool = hasImages ? analyzeImageTool(prisma) : null;
+    const tools = {
+        ...clientTools,
+        ...serverTools,
+        queryDatabaseAdmin,
+        ...(imageTool
+            ? {
+                  analyzeImage: {
+                      ...imageTool,
+                      execute: async (args: any, options: any) => {
+                          try {
+                              return (await imageTool.execute!(args, options)) as string;
+                          } catch (error) {
+                              if (error instanceof OnlyTextModelError) {
+                                  return `[Image analysis unavailable: ${error.message}]`;
+                              }
+                              throw error;
+                          }
+                      },
+                  },
+              }
+            : {}),
+    };
 
     const stream = createUIMessageStream({
         execute: async ({ writer }) => {
@@ -388,11 +428,8 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
                 messages: modelMessages,
                 temperature: 0,
                 // serverTools.searchKnowledge executes on the server (docs chip).
-                tools: {
-                    ...clientTools,
-                    ...serverTools,
-                    queryDatabaseAdmin,
-                },
+                // clientTools stay client-executed via onToolCall.
+                tools,
                 stopWhen: stepCountIs(5),
             });
             writer.merge(result.toUIMessageStream());

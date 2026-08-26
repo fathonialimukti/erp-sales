@@ -14,6 +14,11 @@ import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
 import { getJwtSecret } from '../lib/jwt-secret.js';
+import {
+    analyzeImageTool,
+    hasImageParts,
+    OnlyTextModelError,
+} from '../lib/ai-multimodal.js';
 
 
 const JWT_SECRET = getJwtSecret();
@@ -151,6 +156,11 @@ export async function aiChatHandler(req: Request, res: Response) {
     // Preserves full tool-call tool-result chains within each assistant message.
     const trimmedMessages = trimMessageHistory(messages as any[], MAX_HISTORY_TURNS);
 
+    // --- Multimodal ---
+    // Whether the conversation carries image parts (from the original, untrimmed
+    // messages so trimming can't hide an image attachment).
+    const hasImages = hasImageParts(messages);
+
     // --- RAG ---
     const relevantContext = await retrieveRelevantChunks(userText);
 
@@ -172,6 +182,35 @@ export async function aiChatHandler(req: Request, res: Response) {
     // --- Stream ---
     const modelMessages = await convertToModelMessages(trimmedMessages as any);
 
+    // Only expose the image-analysis tool when the conversation actually contains
+    // image parts, so the model cannot call it gratuitously on text-only chats.
+    // Graceful degradation: if no multimodal model is configured,
+    // analyzeImageTool's execute throws OnlyTextModelError — wrap execute so the
+    // tool resolves to a friendly error string instead of killing the stream
+    // (other errors still propagate to the AI SDK's tool-error path).
+    const imageTool = hasImages ? analyzeImageTool(prisma) : null;
+    const tools = {
+        ...clientTools,
+        ...serverTools,
+        ...(imageTool
+            ? {
+                  analyzeImage: {
+                      ...imageTool,
+                      execute: async (args: any, options: any) => {
+                          try {
+                              return (await imageTool.execute!(args, options)) as string;
+                          } catch (error) {
+                              if (error instanceof OnlyTextModelError) {
+                                  return `[Image analysis unavailable: ${error.message}]`;
+                              }
+                              throw error;
+                          }
+                      },
+                  },
+              }
+            : {}),
+    };
+
     const stream = createUIMessageStream({
         execute: async ({ writer }) => {
             const result = streamText({
@@ -181,10 +220,7 @@ export async function aiChatHandler(req: Request, res: Response) {
                 temperature: 0,
                 // serverTools (searchKnowledge) include execute — run on server.
                 // clientTools stay client-executed via onToolCall.
-                tools: {
-                    ...clientTools,
-                    ...serverTools,
-                },
+                tools,
                 stopWhen: stepCountIs(5),
             });
             writer.merge(result.toUIMessageStream());

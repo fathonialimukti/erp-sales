@@ -226,6 +226,37 @@ describe('settings router (app settings)', () => {
     await caller.settings.update(fullAppPatch({ ai: { apiKey: 'second-secret' } }));
     expect(await getSettingValue(prisma, 'ai.apiKey')).toBe('second-secret');
   });
+
+  it('persists ai embedding baseUrl/model and returns them', async () => {
+    await caller.settings.update(
+      fullAppPatch({
+        ai: {
+          embeddingBaseUrl: 'https://embedding.example.com/v1',
+          embeddingModel: 'embed-test-model',
+        },
+      }),
+    );
+    createdAppSettingKeys.push('ai.embeddingBaseUrl', 'ai.embeddingModel');
+
+    const settings = await caller.settings.get();
+    expect(settings.ai.embeddingBaseUrl).toBe('https://embedding.example.com/v1');
+    expect(settings.ai.embeddingModel).toBe('embed-test-model');
+  });
+
+  it('masks ai.embeddingApiKey and keeps existing on empty write', async () => {
+    await caller.settings.update(fullAppPatch({ ai: { embeddingApiKey: 'embed-secret' } }));
+    createdAppSettingKeys.push('ai.embeddingApiKey');
+
+    expect(await getSettingValue(prisma, 'ai.embeddingApiKey')).toBe('embed-secret');
+
+    const settings = await caller.settings.get();
+    expect(settings.ai.embeddingApiKey).toEqual({ hasValue: true });
+    expect(JSON.stringify(settings)).not.toContain('embed-secret');
+
+    // Empty string keeps the existing value.
+    await caller.settings.update(fullAppPatch({ ai: { embeddingApiKey: '' } }));
+    expect(await getSettingValue(prisma, 'ai.embeddingApiKey')).toBe('embed-secret');
+  });
 });
 
 describe('env fallback', () => {

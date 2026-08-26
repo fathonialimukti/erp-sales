@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -9,10 +9,12 @@ import {
   Inbox,
   Loader2,
   MessageSquare,
+  Paperclip,
   Pencil,
   ShoppingCart,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
@@ -35,6 +37,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 
 type AgentStatus = "IDLE" | "RUNNING" | "SENT" | "FAILED" | string;
 
@@ -105,6 +108,19 @@ const sanitizeOutboundHtml = (html: string): string | null => {
   return cleaned.length > 0 ? cleaned : null;
 };
 
+const MAX_ATTACH_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACH_IMAGES = 4;
+
+type PendingImage = { filename?: string; mediaType: string; url: string };
+
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Failed to read file."));
+    reader.readAsDataURL(file);
+  });
+
 export const EmailCrmDetailPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -119,6 +135,11 @@ export const EmailCrmDetailPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [composeBody, setComposeBody] = useState("");
   const [aiInstruction, setAiInstruction] = useState("");
+  const { multimodalEnabled } = useGeneralSettings();
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["emailCrmDetail", id],
@@ -146,6 +167,8 @@ export const EmailCrmDetailPage = () => {
       }),
     onSuccess: async () => {
       setComposeBody("");
+      setPendingImages([]);
+      setAttachError(null);
       await invalidateDetail();
       toast.success(
         intl.formatMessage({ id: "emailCrm.detail.reply_sent", defaultMessage: "Reply sent" }),
@@ -160,9 +183,12 @@ export const EmailCrmDetailPage = () => {
         conversationId: id ?? "",
         instruction: aiInstruction.trim() || undefined,
         save: false,
+        images: pendingImages.length > 0 ? pendingImages : undefined,
       }),
     onSuccess: (result) => {
       setComposeBody(result.draft ?? "");
+      setPendingImages([]);
+      setAttachError(null);
       toast.success(
         intl.formatMessage({
           id: "emailCrm.detail.suggest_ready",
@@ -189,6 +215,49 @@ export const EmailCrmDetailPage = () => {
     },
     onError: (e) => toast.error(e, "Failed to retry agent"),
   });
+
+  const attachErrorMessage = intl.formatMessage({
+    id: "emailCrm.detail.attach_error",
+    defaultMessage: "Images only, max 5 MB each, up to 4 images.",
+  });
+
+  const processImageFiles = async (files: File[]) => {
+    let skippedCount = 0;
+    const accepted: File[] = [];
+    for (const file of files) {
+      if (file.type.startsWith("image/") && file.size <= MAX_ATTACH_SIZE_BYTES) {
+        if (pendingImages.length + accepted.length >= MAX_ATTACH_IMAGES) {
+          skippedCount += 1;
+        } else {
+          accepted.push(file);
+        }
+      } else {
+        skippedCount += 1;
+      }
+    }
+    setAttachError(skippedCount > 0 ? attachErrorMessage : null);
+
+    const newImages: PendingImage[] = [];
+    for (const file of accepted) {
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        newImages.push({ filename: file.name, mediaType: file.type, url: dataUrl });
+      } catch {
+        setAttachError(attachErrorMessage);
+      }
+    }
+    if (newImages.length > 0) {
+      setPendingImages((prev) => [...prev, ...newImages].slice(0, MAX_ATTACH_IMAGES));
+    }
+  };
+
+  const handleAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!multimodalEnabled) return;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    await processImageFiles(files);
+  };
 
   const handleDelete = async () => {
     if (!conversation || isDeleting) return;
@@ -531,7 +600,22 @@ export const EmailCrmDetailPage = () => {
       </Card>
 
       {canUpdate ? (
-        <Card className="shadow-sm">
+        <Card
+          className={cn("shadow-sm", isDragging && multimodalEnabled && "border-dashed")}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (multimodalEnabled) setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            if (!multimodalEnabled || busy) return;
+            const files = Array.from(e.dataTransfer.files ?? []);
+            if (files.length === 0) return;
+            void processImageFiles(files);
+          }}
+        >
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-base">
               <span className="flex size-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--module-ai)_8%,transparent)] text-module-ai">
@@ -544,6 +628,44 @@ export const EmailCrmDetailPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
+            {attachError && <p className="text-xs text-destructive">{attachError}</p>}
+            {multimodalEnabled && pendingImages.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pendingImages.map((image, imageIdx) => (
+                  <div key={`${image.filename}-${imageIdx}`} className="relative">
+                    <img
+                      src={image.url}
+                      alt={image.filename ?? "attachment"}
+                      className="h-16 w-16 rounded-lg border border-border object-cover"
+                    />
+                    <button
+                      type="button"
+                      className="absolute -top-1.5 -right-1.5 inline-flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() =>
+                        setPendingImages((prev) => prev.filter((_, idx) => idx !== imageIdx))
+                      }
+                      aria-label={intl.formatMessage({
+                        id: "emailCrm.detail.remove_image",
+                        defaultMessage: "Remove image",
+                      })}
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {multimodalEnabled && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                disabled={busy}
+                onChange={handleAttach}
+              />
+            )}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email-crm-ai-instruction">
                 {intl.formatMessage({
@@ -582,6 +704,22 @@ export const EmailCrmDetailPage = () => {
               />
             </div>
             <div className="flex flex-wrap gap-2">
+              {multimodalEnabled && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 shrink-0 rounded-lg text-muted-foreground"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={busy}
+                  aria-label={intl.formatMessage({
+                    id: "emailCrm.detail.attach_image",
+                    defaultMessage: "Attach image",
+                  })}
+                >
+                  <Paperclip className="size-4" aria-hidden />
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"

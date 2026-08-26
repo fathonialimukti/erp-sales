@@ -3,9 +3,13 @@ import * as z from 'zod';
 // App settings — typed per group. Secrets are write-only.
 export const appSettingsSchema = z.object({
   ai: z.object({
-    baseUrl: z.string().url().optional(),
+    baseUrl: z.string().url().or(z.literal('')).optional(),
     apiKey: z.string().optional(), // write-only: empty = keep existing
     model: z.string().optional(),
+    multimodalEnabled: z.boolean().optional(),
+    embeddingBaseUrl: z.string().url().or(z.literal('')).optional(),
+    embeddingApiKey: z.string().optional(), // write-only: empty = keep existing
+    embeddingModel: z.string().optional(),
   }),
   smtp: z.object({
     host: z.string().optional(),

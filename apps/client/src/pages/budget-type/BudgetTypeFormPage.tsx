@@ -162,6 +162,7 @@ export const BudgetTypeFormPage = () => {
 
       <PageHeader
         module="budgetType"
+        eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
         title={
           isEdit
             ? intl.formatMessage({ id: "budget_type.form.title_edit", defaultMessage: "Edit budget type" })

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   getEmbeddingDimensions,
   getEmbeddingModelId,
@@ -50,6 +50,12 @@ beforeEach(async () => {
 
 afterEach(() => {
   restoreEnv();
+});
+
+// beforeEach resets settings before each test; this sweeps whatever the LAST test
+// created so no ai.* / embedding.* rows outlive the suite.
+afterAll(async () => {
+  await resetSettings([...AI_KEYS, 'embedding.similarityThreshold']);
 });
 
 describe('isEmbeddingConfigured', () => {

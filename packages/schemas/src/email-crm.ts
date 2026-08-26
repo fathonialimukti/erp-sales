@@ -74,6 +74,16 @@ export const suggestEmailReplySchema = z.object({
   conversationId: z.string(),
   instruction: z.string().optional(),
   save: z.boolean().optional().default(false),
+  images: z
+    .array(
+      z.object({
+        filename: z.string().optional(),
+        mediaType: z.string(),
+        url: z.string(),
+      }),
+    )
+    .max(4)
+    .optional(),
 });
 
 export const createDraftOrderFromEmailSchema = z.object({
@@ -97,6 +107,7 @@ export const sendEmailMessageSchema = z
     body: z.string().min(1).optional(),
     htmlBody: z.string().min(1).optional(),
     subject: z.string().optional(),
+    images: z.array(z.object({ dataUrl: z.string(), filename: z.string(), mediaType: z.string() })).optional(),
   })
   .refine((v) => Boolean(v.body?.trim() || v.htmlBody?.trim()), {
     message: 'body or htmlBody required',

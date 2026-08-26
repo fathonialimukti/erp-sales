@@ -742,6 +742,7 @@ model KnowledgeChunk {
   embedding          Unsupported("vector")? @map("embedding")
   embeddingModel     String?                @map("embedding_model")
   embeddingUpdatedAt DateTime?              @map("embedding_updated_at")
+  embeddingStatus    String                 @default("none") @map("embedding_status")
   createdAt          DateTime               @default(now()) @map("created_at")
   updatedAt          DateTime               @updatedAt @map("updated_at")
 
