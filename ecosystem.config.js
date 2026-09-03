@@ -10,7 +10,6 @@ module.exports = {
       kill_timeout: 10000,
       listen_timeout: 8000,
       shutdown_with_message: true,
-      wait_ready: true,
     },
     {
       name: 'erp-client',
