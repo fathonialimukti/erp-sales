@@ -7,11 +7,11 @@
   // After rebuild, access at http://localhost:10021 (frontend) and http://localhost:10022 (API).
   "runArgs": ["--network=dev", "--name=erp_sales"],
   "forwardPorts": [10021, 10022],
-  "appPort": ["10021:10021", "10022:10022"],
+  "appPort": [],
   "containerEnv": {
     "HOST": "0.0.0.0",
     "NODE_ENV": "production",
-    "VITE_TRPC_URL": "https://erp-sales-api.aetherglo.com",
+    "VITE_TRPC_URL": "https://erp-sales-api.aetherglo.com"
   },
   "portsAttributes": {
     "10021": {
@@ -39,5 +39,5 @@
   },
   // Install deps + generate Prisma client after the workspace is mounted.
   // The Dockerfile can't do this at build time because package.json isn't present until runtime.
-  "postCreateCommand": "bun install"
+  "postCreateCommand": "bun install&"
 }

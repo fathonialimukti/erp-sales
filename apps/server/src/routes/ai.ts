@@ -14,6 +14,7 @@ import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
 import { getJwtSecret } from '../lib/jwt-secret.js';
+import { checkUserAiRateLimit } from '../lib/rate-limiter.js';
 import {
     analyzeImageTool,
     hasImageParts,
@@ -139,11 +140,24 @@ export async function aiChatHandler(req: Request, res: Response) {
         return;
     }
 
+    // --- Rate limiting ---
+    const rateLimit = checkUserAiRateLimit(userId);
+    if (!rateLimit.allowed) {
+        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
+        return;
+    }
+
     // --- Parse body ---
     // Accept both { messages } (legacy) and { id, messages } (resume-stream pattern)
     const { messages, id: chatId } = req.body as { messages: unknown[]; id?: string };
     if (!Array.isArray(messages)) {
         res.status(400).json({ error: 'messages must be an array' });
+        return;
+    }
+
+    // --- Message count validation ---
+    if (messages.length > 100) {
+        res.status(413).json({ error: 'Too many messages (max 100)' });
         return;
     }
 
@@ -253,10 +267,20 @@ export async function aiQueryDatabaseHandler(req: Request, res: Response) {
         return;
     }
 
+    let userId: string;
     try {
-        jwt.verify(token, JWT_SECRET);
+        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
+        if (!payload?.userId) throw new Error('Invalid token payload');
+        userId = String(payload.userId);
     } catch {
         res.status(401).json({ error: 'Invalid token' });
+        return;
+    }
+
+    // --- Rate limiting ---
+    const rateLimit = checkUserAiRateLimit(userId);
+    if (!rateLimit.allowed) {
+        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
         return;
     }
 
@@ -338,6 +362,13 @@ export async function aiSummarizeHandler(req: Request, res: Response) {
     const userId = authUserId(req, res);
     if (!userId) return;
 
+    // --- Rate limiting ---
+    const rateLimit = checkUserAiRateLimit(userId);
+    if (!rateLimit.allowed) {
+        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
+        return;
+    }
+
     const { section, contextJson, recordJson } = req.body as {
         section?: string;
         contextJson?: string;
@@ -369,6 +400,13 @@ export async function aiSummarizeHandler(req: Request, res: Response) {
 export async function aiDraftHandler(req: Request, res: Response) {
     const userId = authUserId(req, res);
     if (!userId) return;
+
+    // --- Rate limiting ---
+    const rateLimit = checkUserAiRateLimit(userId);
+    if (!rateLimit.allowed) {
+        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
+        return;
+    }
 
     const { section, contextJson, kind } = req.body as {
         section?: string;

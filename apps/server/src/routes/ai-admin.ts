@@ -115,7 +115,8 @@ function validateAdminSql(sql: string): { valid: boolean; reason?: string } {
     const upperNoStrings = withoutStrings.toUpperCase();
 
     for (const keyword of BLOCKED_DDL_KEYWORDS) {
-        if (upperNoStrings.includes(keyword)) {
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        if (regex.test(upperNoStrings)) {
             return { valid: false, reason: `DDL operation rejected: ${keyword} is not allowed.` };
         }
     }

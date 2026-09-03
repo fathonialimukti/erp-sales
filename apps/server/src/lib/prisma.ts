@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Prisma, PrismaClient } from '../prisma/generated/client'
+import { logger } from './logger.js';
 
 if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
   process.noDeprecation = true;
@@ -31,7 +32,24 @@ const adapter = new PrismaPg({
     idleTimeoutMillis,
     connectionTimeoutMillis,
 })
-const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
+
+const MAX_RETRIES = 5;
+const RETRY_DELAY_MS = 2000;
+
+async function createPrismaClient(retries = 0): Promise<PrismaClient> {
+    try {
+        const client = new PrismaClient({ adapter });
+        await client.$connect();
+        return client;
+    } catch (error) {
+        if (retries >= MAX_RETRIES) throw error;
+        logger.warn(`Prisma connection failed, retry ${retries + 1}/${MAX_RETRIES}...`);
+        await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (retries + 1)));
+        return createPrismaClient(retries + 1);
+    }
+}
+
+const prisma = globalForPrisma.prisma ?? await createPrismaClient();
 
 export type DbClient = PrismaClient | Prisma.TransactionClient
 

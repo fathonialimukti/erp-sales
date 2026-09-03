@@ -36,6 +36,7 @@ const APP_SETTING_FALLBACKS: Record<string, EnvFallback> = {
   'ai.embeddingBaseUrl': { env: 'AI_EMBEDDING_BASE_URL', default: '' },
   'ai.embeddingApiKey': { env: 'AI_EMBEDDING_API_KEY', default: '' },
   'ai.embeddingModel': { env: 'AI_EMBEDDING_MODEL', default: '' },
+  'ai.embeddingDimensions': { env: 'AI_EMBEDDING_DIMENSIONS', default: 1536 },
   'smtp.host': { env: 'SMTP_HOST', default: 'smtp-relay.brevo.com' },
   'smtp.port': { env: 'SMTP_PORT', default: 587 },
   'smtp.user': { env: 'SMTP_USER', default: '' },
@@ -173,6 +174,7 @@ export async function getAppSettings(db: DbClient): Promise<MaskedAppSettings> {
       embeddingBaseUrl: read('ai.embeddingBaseUrl') as string,
       embeddingApiKey: secret('ai.embeddingApiKey'),
       embeddingModel: read('ai.embeddingModel') as string,
+      embeddingDimensions: read('ai.embeddingDimensions') as number,
     },
     smtp: {
       host: read('smtp.host') as string,

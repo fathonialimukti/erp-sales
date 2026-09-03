@@ -2,6 +2,7 @@ import { prisma } from './prisma.js';
 import { runAiValidation } from './ai-sales-order-validation.js';
 import { pushApprovalHistory, sendApprovalNotification } from './approval-helpers.js';
 import { logActivity } from './activity-log.js';
+import { logger } from './logger.js';
 
 /**
  * Fire-and-forget background AI validation for a sales order.
@@ -10,7 +11,7 @@ import { logActivity } from './activity-log.js';
 export function startBackgroundValidation(orderId: string, userId: string) {
   // Fire-and-forget — do NOT await
   void runValidation(orderId, userId).catch((err) => {
-    console.error(`[background-validation] Unhandled error for order ${orderId}:`, err);
+    logger.error(`[background-validation] Unhandled error for order ${orderId}`, { error: err });
   });
 }
 
@@ -28,7 +29,7 @@ async function runValidation(orderId: string, userId: string) {
     });
 
     if (!order) {
-      console.error(`[background-validation] Order ${orderId} not found`);
+      logger.error(`[background-validation] Order ${orderId} not found`);
       return;
     }
 
@@ -78,9 +79,9 @@ async function runValidation(orderId: string, userId: string) {
       await notifyCreatorOfFailure(orderId, order.documentNumber, order.createdById, userId, result);
     }
 
-    console.log(`[background-validation] Order ${orderId} validated: ${newStatus} (score: ${result.score})`);
+    logger.info(`[background-validation] Order ${orderId} validated: ${newStatus}`, { score: result.score });
   } catch (error) {
-    console.error(`[background-validation] Validation failed for order ${orderId}:`, error);
+    logger.error(`[background-validation] Validation failed for order ${orderId}`, { error });
 
     // Fetch current order state for history
     const order = await prisma.salesOrder.findUnique({

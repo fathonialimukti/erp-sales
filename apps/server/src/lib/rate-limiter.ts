@@ -50,3 +50,45 @@ export function checkRateLimit(ip: string): { allowed: boolean; remaining: numbe
     existing.count++;
     return { allowed: true, remaining: MAX_ATTEMPTS - existing.count, resetAt: existing.resetAt };
 }
+
+// ---- Per-user AI rate limiting ----
+
+const userAiStore = new Map<string, Entry>();
+
+const USER_AI_CLEANUP_INTERVAL = 5 * 60_000; // 5 minutes
+let userAiCleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+function startUserAiCleanup() {
+    if (userAiCleanupTimer !== null) return;
+    userAiCleanupTimer = setInterval(() => {
+        const now = Date.now();
+        for (const [userId, entry] of userAiStore) {
+            if (entry.resetAt <= now) {
+                userAiStore.delete(userId);
+            }
+        }
+    }, USER_AI_CLEANUP_INTERVAL);
+    userAiCleanupTimer.unref();
+}
+
+export function checkUserAiRateLimit(userId: string): { allowed: boolean; remaining: number } {
+    const MAX_AI_REQUESTS = 30;
+    const WINDOW_MS = 60_000;
+
+    startUserAiCleanup();
+
+    const now = Date.now();
+    const existing = userAiStore.get(userId);
+
+    if (!existing || existing.resetAt <= now) {
+        userAiStore.set(userId, { count: 1, resetAt: now + WINDOW_MS });
+        return { allowed: true, remaining: MAX_AI_REQUESTS - 1 };
+    }
+
+    if (existing.count >= MAX_AI_REQUESTS) {
+        return { allowed: false, remaining: 0 };
+    }
+
+    existing.count++;
+    return { allowed: true, remaining: MAX_AI_REQUESTS - existing.count };
+}

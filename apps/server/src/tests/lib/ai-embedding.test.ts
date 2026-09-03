@@ -10,7 +10,7 @@ import { prisma } from '../../lib/prisma.js';
 import { setAppSettings, type AppSettingsPatch } from '../../lib/settings-service.js';
 
 // AI provider env vars consumed by settings-service fallbacks.
-const ENV_KEYS = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'EMBEDDING_DIMENSIONS'] as const;
+const ENV_KEYS = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'AI_EMBEDDING_DIMENSIONS'] as const;
 const saved: Partial<Record<(typeof ENV_KEYS)[number], string | undefined>> = {};
 
 function stashEnv() {
@@ -41,7 +41,7 @@ async function resetSettings(keys: string[]) {
   await setAppSettings(prisma, {} as AppSettingsPatch, 'test');
 }
 
-const AI_KEYS = ['ai.baseUrl', 'ai.model', 'ai.apiKey'];
+const AI_KEYS = ['ai.baseUrl', 'ai.model', 'ai.apiKey', 'ai.embeddingDimensions'];
 
 beforeEach(async () => {
   stashEnv();
@@ -94,8 +94,19 @@ describe('embedding config helpers', () => {
     expect(await getEmbeddingDimensions(prisma)).toBe(1536);
   });
 
-  it('locks dimensions to 1536 even when EMBEDDING_DIMENSIONS differs', async () => {
-    process.env.EMBEDDING_DIMENSIONS = '768';
+  it('reads configured dimensions from ai.embeddingDimensions', async () => {
+    await setSetting('ai.embeddingDimensions', 3072);
+    expect(await getEmbeddingDimensions(prisma)).toBe(3072);
+  });
+
+  it('reads configured dimensions from AI_EMBEDDING_DIMENSIONS env', async () => {
+    process.env.AI_EMBEDDING_DIMENSIONS = '1024';
+    await resetSettings(['ai.embeddingDimensions']);
+    expect(await getEmbeddingDimensions(prisma)).toBe(1024);
+  });
+
+  it('falls back to 1536 for invalid configured dimensions', async () => {
+    await setSetting('ai.embeddingDimensions', 0);
     expect(await getEmbeddingDimensions(prisma)).toBe(1536);
   });
 

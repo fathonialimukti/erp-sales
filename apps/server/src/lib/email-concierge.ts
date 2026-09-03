@@ -8,6 +8,7 @@ import { htmlToText, sanitizeEmailHtml } from './email-html.js';
 import { sendSmtpEmail } from './email-smtp.js';
 import { prisma } from './prisma.js';
 import { getSettingValue } from './settings-service.js';
+import { logger } from './logger.js';
 
 const MIN_OUTBOUND_GAP_MS = 60_000;
 /** 50 RPM headroom → ~1.2s between agent LLM jobs */
@@ -270,7 +271,7 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
         // them in logs so failures (e.g. createDraftOrder) are visible.
         if (toolOutput.type === 'tool-error') {
           const err = toolOutput.error instanceof Error ? toolOutput.error.message : String(toolOutput.error);
-          console.error(
+          logger.error(
             `email concierge tool error [${conversationId}] ${toolCall.toolName}: ${err}`,
           );
         }
@@ -294,7 +295,7 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'concierge_error';
-    console.error('email concierge failed', conversationId, err);
+    logger.error('email concierge failed', { conversationId, error: err });
     await markFailed(conversationId, message);
   }
 }
@@ -312,6 +313,6 @@ export function enqueueEmailConcierge(conversationId: string): void {
       await runEmailConcierge(conversationId);
     })
     .catch((err) => {
-      console.error('email concierge queue error', conversationId, err);
+      logger.error('email concierge queue error', { conversationId, error: err });
     });
 }

@@ -3,6 +3,7 @@ import { emailInboundPayloadSchema } from '@repo/schemas/email-crm';
 import { enqueueEmailConcierge } from '../lib/email-concierge.js';
 import { processInboundEmail } from '../lib/email-inbound.js';
 import { isValidEmailWebhookSecret } from '../lib/email-webhook-secret.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Alias of inbound store + enqueue Email Concierge.
@@ -49,7 +50,7 @@ export async function emailAutoReplyHandler(req: Request, res: Response) {
       reply: null,
     });
   } catch (err) {
-    console.error('email auto-reply failed', err);
+    logger.error('email auto-reply failed', { error: err });
     res.status(500).json({ error: 'Internal error' });
   }
 }

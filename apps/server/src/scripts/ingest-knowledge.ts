@@ -1,11 +1,13 @@
 /**
  * Knowledge base ingestion script.
- * Reads all .md files from src/knowledge/, splits into chunks,
- * and replaces ONLY rows whose `source` matches those markdown basenames.
- * UI-created knowledge rows (other sources) are preserved.
+ * Reads all .md files from src/knowledge/, splits into chunks, and upserts them
+ * keyed by (source, title). UI-created knowledge rows (other sources) are preserved.
  *
- * When the AI provider (AI_BASE_URL + AI_MODEL) is configured, batch-embeds new chunks.
- * Otherwise leaves embedding NULL (FTS-only hybrid fallback).
+ * Idempotent: unchanged chunks keep their existing id + embedding (no re-embed,
+ * no vector wipe). Only new or content-changed chunks are embedded.
+ *
+ * When the AI provider (AI_BASE_URL + AI_MODEL) is configured, batch-embeds new
+ * chunks. Otherwise leaves embedding NULL (FTS-only hybrid fallback).
  *
  * Usage: bun src/scripts/ingest-knowledge.ts
  */
@@ -93,15 +95,18 @@ async function ingest() {
   await ensureVectorReadyColumns();
   console.log('Ensured embedding columns (nullable).');
 
-  // Only wipe rows that belong to markdown files being ingested — preserve UI KB rows.
-  const deleted = await prisma.knowledgeChunk.deleteMany({
+  // Load existing markdown-sourced rows once so we can upsert idempotently.
+  const existing = await prisma.knowledgeChunk.findMany({
     where: { source: { in: markdownSources } },
+    select: { id: true, source: true, title: true, content: true },
   });
-  console.log(
-    `Cleared ${deleted.count} markdown-sourced chunk(s) for sources: ${markdownSources.join(', ')}`,
-  );
+  const existingByKey = new Map(existing.map((r) => [`${r.source}\0${r.title}`, r]));
 
   let totalChunks = 0;
+  let created = 0;
+  let updated = 0;
+  let unchanged = 0;
+  const toEmbed: Array<{ id: string; title: string; content: string }> = [];
 
   for (const file of files) {
     const source = file.replace(/\.md$/, '');
@@ -110,16 +115,31 @@ async function ingest() {
 
     if (chunks.length === 0) continue;
 
-    await prisma.knowledgeChunk.createMany({
-      data: chunks.map((c) => ({
-        source,
-        title: c.title,
-        content: c.content,
-      })),
-    });
+    for (const chunk of chunks) {
+      const key = `${source}\0${chunk.title}`;
+      const row = existingByKey.get(key);
 
-    console.log(`  ${file}: ${chunks.length} chunk(s) ingested`);
-    totalChunks += chunks.length;
+      if (!row) {
+        const createdRow = await prisma.knowledgeChunk.create({
+          data: { source, title: chunk.title, content: chunk.content },
+          select: { id: true },
+        });
+        created += 1;
+        toEmbed.push({ id: createdRow.id, title: chunk.title, content: chunk.content });
+      } else if (row.content !== chunk.content) {
+        await prisma.knowledgeChunk.update({
+          where: { id: row.id },
+          data: { content: chunk.content },
+        });
+        updated += 1;
+        toEmbed.push({ id: row.id, title: chunk.title, content: chunk.content });
+      } else {
+        unchanged += 1;
+      }
+      totalChunks += 1;
+    }
+
+    console.log(`  ${file}: ${chunks.length} chunk(s) (${created + updated + unchanged} total)`);
   }
 
   // Create GIN index for full-text search if it doesn't exist
@@ -130,12 +150,8 @@ async function ingest() {
     `;
 
   if (await isEmbeddingConfigured(prisma)) {
-    const newRows = await prisma.knowledgeChunk.findMany({
-      where: { source: { in: markdownSources } },
-      select: { id: true, title: true, content: true },
-    });
-    console.log(`Embedding ${newRows.length} markdown chunk(s)…`);
-    const { attempted, succeeded } = await embedKnowledgeChunksBestEffort(prisma, newRows);
+    console.log(`Embedding ${toEmbed.length} new/changed chunk(s)…`);
+    const { attempted, succeeded } = await embedKnowledgeChunksBestEffort(prisma, toEmbed);
     console.log(`  embeddings: ${succeeded}/${attempted} succeeded`);
 
     const hnswOk = await ensureKnowledgeEmbeddingHnswIndex();
@@ -151,7 +167,7 @@ async function ingest() {
   });
 
   console.log(
-    `\n✓ Ingestion complete: ${totalChunks} markdown chunk(s) stored; ${preserved} non-markdown row(s) preserved.`,
+    `\n✓ Ingestion complete: ${totalChunks} markdown chunk(s) (${created} created, ${updated} updated, ${unchanged} unchanged); ${preserved} non-markdown row(s) preserved.`,
   );
   await prisma.$disconnect();
 }

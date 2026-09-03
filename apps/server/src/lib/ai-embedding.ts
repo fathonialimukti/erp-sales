@@ -4,12 +4,15 @@ import { prisma } from './prisma.js';
 import { getSecretValue, getSettingValue } from './settings-service.js';
 import type { DbClient } from './prisma.js';
 
-/** Locked to match `knowledge_chunks.embedding vector(1536)` (phase 2). */
+/**
+ * Default embedding dimensions — the column is created as vector(1536) unless
+ * resized via ensure-knowledge-vector-columns.ts. The effective dimension is
+ * configurable through `ai.embeddingDimensions` / AI_EMBEDDING_DIMENSIONS so a
+ * 3072-dim model (e.g. text-embedding-3-large) is not silently rejected.
+ */
 export const EMBEDDING_COLUMN_DIMENSIONS = 1536;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.5;
 const EMBED_BATCH_SIZE = 32;
-
-let warnedDimensionMismatch = false;
 
 /** True when embedding base URL + model are set (API key optional). */
 export async function isEmbeddingConfigured(db: DbClient): Promise<boolean> {
@@ -30,15 +33,15 @@ export async function getEmbeddingModelId(db: DbClient): Promise<string> {
 }
 
 /**
- * Always 1536 to match the pgvector column. The embedding provider is the AI
- * provider (`ai.*`); dimensions are locked to the column and cannot be tuned.
+ * Effective embedding dimensions: `ai.embeddingDimensions` (or env
+ * AI_EMBEDDING_DIMENSIONS) if set, else the 1536 default. Must match the
+ * `knowledge_chunks.embedding` column — resize via ensure-knowledge-vector-columns.ts.
  */
-export async function getEmbeddingDimensions(_db: DbClient): Promise<number> {
-  if (!warnedDimensionMismatch) {
-    warnedDimensionMismatch = true;
-    console.warn(
-      `[embedding] knowledge_chunks.embedding is fixed at vector(${EMBEDDING_COLUMN_DIMENSIONS}). Using ${EMBEDDING_COLUMN_DIMENSIONS}.`,
-    );
+export async function getEmbeddingDimensions(db: DbClient): Promise<number> {
+  const raw = String(await getSettingValue(db, 'ai.embeddingDimensions')).trim();
+  if (raw) {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return n;
   }
   return EMBEDDING_COLUMN_DIMENSIONS;
 }
@@ -164,9 +167,11 @@ export async function upsertChunkEmbedding(
 ): Promise<void> {
   if (!id) throw new Error('upsertChunkEmbedding: id required');
   if (!embedding.length) throw new Error('upsertChunkEmbedding: empty embedding');
-  if (embedding.length !== EMBEDDING_COLUMN_DIMENSIONS) {
+  const dimensions = await getEmbeddingDimensions(prisma);
+  if (embedding.length !== dimensions) {
     throw new Error(
-      `upsertChunkEmbedding: expected ${EMBEDDING_COLUMN_DIMENSIONS} dims, got ${embedding.length}`,
+      `upsertChunkEmbedding: column is vector(${dimensions}), model returned ${embedding.length} dims. ` +
+        `Set ai.embeddingDimensions to match the model and re-run ensure-knowledge-vector-columns.`,
     );
   }
 

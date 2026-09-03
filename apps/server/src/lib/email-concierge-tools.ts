@@ -352,7 +352,9 @@ export function createEmailConciergeTools(ctx: {
         const query = topics.includes('all') || topics.length === 0
           ? 'email agent rules voice anti-slop banned phrases structural patterns secrecy examples'
           : topics.join(' ');
-        const hits = await searchKnowledgeChunks(query, 5);
+        // Pinned to the email-agent-rules source: rule queries must never pull
+        // unrelated workflow/product chunks into the reply prompt.
+        const hits = await searchKnowledgeChunks(query, 5, { sources: ['email-agent-rules'] });
         const formatted = formatKnowledgeHits(hits);
         return {
           rulesLoaded: true,

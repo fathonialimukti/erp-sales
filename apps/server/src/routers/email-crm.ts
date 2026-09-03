@@ -273,9 +273,11 @@ export const emailCrmRouter = router({
 
       // Load voice / anti-slop / secrecy rules from the knowledge base (RAG).
       // Editable via Prisma Studio or the knowledgeBase router — no redeploy needed.
+      // Pinned to the email-agent-rules source so unrelated workflow chunks never leak in.
       const ruleHits = await searchKnowledgeChunks(
         'email agent rules voice anti-slop banned phrases structural patterns secrecy examples',
         5,
+        { sources: ['email-agent-rules'] },
       );
       const emailRules = formatKnowledgeHits(ruleHits);
 

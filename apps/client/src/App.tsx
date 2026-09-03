@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
 import { useAtomValue } from 'jotai';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppProviders } from './providers';
 import { router } from './routes';
 import { useAuthBootstrap } from './lib/useAuth';
@@ -22,10 +23,12 @@ function AppContent() {
 
 function App() {
   return (
-    <AppProviders>
-      <ThemeSync />
-      <AppContent />
-    </AppProviders>
+    <ErrorBoundary>
+      <AppProviders>
+        <ThemeSync />
+        <AppContent />
+      </AppProviders>
+    </ErrorBoundary>
   );
 }
 

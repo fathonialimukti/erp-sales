@@ -10,6 +10,7 @@ export const appSettingsSchema = z.object({
     embeddingBaseUrl: z.string().url().or(z.literal('')).optional(),
     embeddingApiKey: z.string().optional(), // write-only: empty = keep existing
     embeddingModel: z.string().optional(),
+    embeddingDimensions: z.number().int().positive().optional(),
   }),
   smtp: z.object({
     host: z.string().optional(),

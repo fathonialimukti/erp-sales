@@ -1,4 +1,4 @@
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, retryLink } from '@trpc/client';
 import type { appRouter } from '../../../server/src/router';
 
 // Defaults to localhost for local/dev. VITE_TRPC_URL is the production override
@@ -15,8 +15,16 @@ export type AppRouterType = AppRouter;
 
 const rawClient = createTRPCClient<AppRouterType>({
   links: [
+    retryLink({
+      retry: ({ attempts, error }) => {
+        if (attempts >= 3) return false;
+        const status = error.data?.httpStatus;
+        return !status || status >= 500;
+      },
+      retryDelayMs: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    }),
     httpBatchLink({
-      url: `${trpcBaseUrl}/trpc`,
+      url: `${trpcBaseUrl}/trpc/v1`,
       fetch(url, options) {
         return fetch(url, { ...options, credentials: 'include' });
       },

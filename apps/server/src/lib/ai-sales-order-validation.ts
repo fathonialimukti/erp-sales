@@ -63,8 +63,8 @@ export async function runAiValidation(orderId: string): Promise<ValidationResult
   // Retrieve relevant knowledge base chunks for validation context.
   // Skip chunks ingested from the prompt file itself — they are already in `instructions`.
   const ragQuery = `sales order validation pricing discount approval ${order.customer?.name ?? ''} ${order.items.map(i => i.sku.name).join(' ')}`;
-  const ragHits = await searchKnowledgeChunks(ragQuery);
-  const ragContext = formatKnowledgeHits(ragHits.filter((hit) => hit.source !== PROMPT_SOURCE));
+  const ragHits = await searchKnowledgeChunks(ragQuery, 5, { excludeSources: [PROMPT_SOURCE] });
+  const ragContext = formatKnowledgeHits(ragHits);
 
   const systemPrompt = `${await loadValidationPrompt()}
 
