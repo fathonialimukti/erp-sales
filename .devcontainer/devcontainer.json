@@ -6,12 +6,13 @@
   // Forward dev server ports from container → VPS → your local machine.
   // After rebuild, access at http://localhost:10021 (frontend) and http://localhost:10022 (API).
   "runArgs": ["--network=dev", "--name=erp_sales"],
-  "forwardPorts": [10021, 10022],
+  "forwardPorts": [10021, 10022, 10023],
   "appPort": [],
   "containerEnv": {
     "HOST": "0.0.0.0",
     "NODE_ENV": "production",
-    "VITE_TRPC_URL": "https://erp-sales-api.aetherglo.com"
+    "VITE_TRPC_URL": "https://erp-sales-api.aetherglo.com",
+    "ROUTERS9_API_KEY": "9r-rbVZTp378QS5NUX4hw0UCJc7uNhiI3U4sKaYmZGLmcU"
   },
   "portsAttributes": {
     "10021": {
@@ -21,6 +22,10 @@
     "10022": {
       "label": "tRPC Server",
       "onAutoForward": "notify"
+    },
+    "10023": {
+      "label": "OpenCode Web UI",
+      "onAutoForward": "openBrowser"
     }
   },
   // Configure tool-specific properties.
@@ -31,13 +36,14 @@
       "extensions": [
         "oven.bun-vscode",
         "Prisma.prisma",
-        "bradlc.vscode-tailwindcorConfig",
+        "bradlc.vscode-tailwindcss",
         "dbaeumer.vscode-eslint",
         "sst-dev.opencode"
       ]
     }
   },
-  // Install deps + generate Prisma client after the workspace is mounted.
+  // Install deps, generate Prisma client, then start everything under pm2
+  // (dev-mode server/client + headless opencode web UI on port 4096).
   // The Dockerfile can't do this at build time because package.json isn't present until runtime.
-  "postCreateCommand": "bun install&"
+  "postCreateCommand": "bun install && cd apps/server && bun prisma generate && cd ../.. && pm2 start ecosystem.config.js"
 }
