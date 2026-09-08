@@ -14,7 +14,7 @@ jobs:
     name: Lint · Types · Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -54,7 +54,7 @@ jobs:
       JWT_SECRET: ci-only-secret-not-used-in-production-0123456789
       NODE_ENV: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -95,7 +95,7 @@ jobs:
       CORS_ORIGIN: http://localhost:10021
       VITE_TRPC_URL: http://localhost:10022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -131,7 +131,7 @@ jobs:
     name: Locale sync (en/id)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
