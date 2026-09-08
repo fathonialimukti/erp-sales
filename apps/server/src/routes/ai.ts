@@ -1,6 +1,4 @@
 import type { Request, Response } from 'express';
-import { parseCookie } from 'cookie';
-import jwt from 'jsonwebtoken';
 import {
     streamText,
     createUIMessageStream,
@@ -13,16 +11,12 @@ import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
-import { getJwtSecret } from '../lib/jwt-secret.js';
-import { checkUserAiRateLimit } from '../lib/rate-limiter.js';
+import { withAuth } from '../lib/express-auth.js';
 import {
     analyzeImageTool,
     hasImageParts,
     OnlyTextModelError,
 } from '../lib/ai-multimodal.js';
-
-
-const JWT_SECRET = getJwtSecret();
 
 const ROUTE_CATALOG = `
 - Dashboard: /dashboard
@@ -113,40 +107,7 @@ function trimMessageHistory(messages: { role: string }[], maxTurns: number): typ
     return kept;
 }
 
-export async function aiChatHandler(req: Request, res: Response) {
-    // --- Auth ---
-    let token: string | null = null;
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) token = cookies.access_token;
-    }
-    if (!token) {
-        const auth = req.headers.authorization;
-        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
-    }
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-
-    let userId: string;
-    try {
-        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
-        if (!payload?.userId) throw new Error('Invalid token payload');
-        userId = String(payload.userId);
-    } catch {
-        res.status(401).json({ error: 'Invalid token' });
-        return;
-    }
-
-    // --- Rate limiting ---
-    const rateLimit = checkUserAiRateLimit(userId);
-    if (!rateLimit.allowed) {
-        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
-        return;
-    }
-
+export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, user) => {
     // --- Parse body ---
     // Accept both { messages } (legacy) and { id, messages } (resume-stream pattern)
     const { messages, id: chatId } = req.body as { messages: unknown[]; id?: string };
@@ -179,19 +140,9 @@ export async function aiChatHandler(req: Request, res: Response) {
     const relevantContext = await retrieveRelevantChunks(userText);
 
     // --- User context for system prompt ---
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            role: {
-                include: {
-                    permissions: { include: { permission: true } },
-                },
-            },
-        },
-    });
-    const permissions = user?.role?.permissions.map(rp => rp.permission.name) ?? [];
-    const userName = user?.name ?? user?.email ?? 'User';
-    const roleName = user?.role?.name ?? 'Unknown';
+    const permissions = user.permissions;
+    const userName = user.name ?? user.email ?? 'User';
+    const roleName = user.roleName ?? 'Unknown';
 
     // --- Stream ---
     const modelMessages = await convertToModelMessages(trimmedMessages as any);
@@ -242,48 +193,15 @@ export async function aiChatHandler(req: Request, res: Response) {
     });
 
     pipeUIMessageStreamToResponse({ response: res, stream });
-}
+});
 
-export async function aiChatResumeHandler(_req: Request, res: Response) {
+export const aiChatResumeHandler = withAuth({}, async (_req: Request, res: Response) => {
     // No resumable stream storage is configured yet; return 204 so useChat resume
     // can gracefully fall back to the local message cache on the client.
     res.status(204).end();
-}
+});
 
-export async function aiQueryDatabaseHandler(req: Request, res: Response) {
-    // --- Auth ---
-    let token: string | null = null;
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) token = cookies.access_token;
-    }
-    if (!token) {
-        const auth = req.headers.authorization;
-        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
-    }
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-
-    let userId: string;
-    try {
-        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
-        if (!payload?.userId) throw new Error('Invalid token payload');
-        userId = String(payload.userId);
-    } catch {
-        res.status(401).json({ error: 'Invalid token' });
-        return;
-    }
-
-    // --- Rate limiting ---
-    const rateLimit = checkUserAiRateLimit(userId);
-    if (!rateLimit.allowed) {
-        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
-        return;
-    }
-
+export const aiQueryDatabaseHandler = withAuth({ aiRateLimit: true }, async (req, res) => {
     // --- Parse body ---
     const { sql, limit = 100 } = req.body as { sql?: string; limit?: number };
     if (!sql || typeof sql !== 'string') {
@@ -317,7 +235,7 @@ export async function aiQueryDatabaseHandler(req: Request, res: Response) {
             hint: 'Check SQL syntax. Ensure table and column names match the database schema. Use snake_case for all identifiers.',
         });
     }
-}
+});
 
 const SUMMARIZE_SYSTEM = `You are a concise business analyst for a Sales ERP system.
 Summarize the provided page context into readable Markdown for a human:
@@ -333,42 +251,7 @@ Draft practical, professional text based on the provided page context.
 - reply: a polite reply to a customer or teammate.
 Keep it concise and business-appropriate. Respond in Markdown.`;
 
-function authUserId(req: Request, res: Response): string | null {
-    let token: string | null = null;
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) token = cookies.access_token;
-    }
-    if (!token) {
-        const auth = req.headers.authorization;
-        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
-    }
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return null;
-    }
-    try {
-        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
-        if (!payload?.userId) throw new Error('Invalid token payload');
-        return String(payload.userId);
-    } catch {
-        res.status(401).json({ error: 'Invalid token' });
-        return null;
-    }
-}
-
-export async function aiSummarizeHandler(req: Request, res: Response) {
-    const userId = authUserId(req, res);
-    if (!userId) return;
-
-    // --- Rate limiting ---
-    const rateLimit = checkUserAiRateLimit(userId);
-    if (!rateLimit.allowed) {
-        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
-        return;
-    }
-
+export const aiSummarizeHandler = withAuth({ aiRateLimit: true }, async (req, res) => {
     const { section, contextJson, recordJson } = req.body as {
         section?: string;
         contextJson?: string;
@@ -395,19 +278,9 @@ export async function aiSummarizeHandler(req: Request, res: Response) {
     });
     void relevantContext;
     pipeUIMessageStreamToResponse({ response: res, stream });
-}
+});
 
-export async function aiDraftHandler(req: Request, res: Response) {
-    const userId = authUserId(req, res);
-    if (!userId) return;
-
-    // --- Rate limiting ---
-    const rateLimit = checkUserAiRateLimit(userId);
-    if (!rateLimit.allowed) {
-        res.status(429).json({ error: 'Too many requests', retryAfter: 60 });
-        return;
-    }
-
+export const aiDraftHandler = withAuth({ aiRateLimit: true }, async (req, res) => {
     const { section, contextJson, kind } = req.body as {
         section?: string;
         contextJson?: string;
@@ -435,7 +308,7 @@ export async function aiDraftHandler(req: Request, res: Response) {
         },
     });
     pipeUIMessageStreamToResponse({ response: res, stream });
-}
+});
 
 function buildSystemPrompt(
     userName: string,

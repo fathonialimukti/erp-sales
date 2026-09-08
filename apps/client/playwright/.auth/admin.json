@@ -1,0 +1,29 @@
+{
+  "cookies": [
+    {
+      "name": "access_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMU0xRFdRWlcxUU5LNjJKMVM2VlRHMktWUCIsImVtYWlsIjoiYWRtaW5AbWFpbC5jb20iLCJuYW1lIjoiQWRtaW4iLCJpYXQiOjE3ODg1NDI5NTAsImV4cCI6MTc4OTE0Nzc1MCwianRpIjoiMmM0NTZjYjktZDk4YS00NDc5LTg3MjctZmRjYzAzNTA2YjE3In0.pQnF5iVayZQVlogiqcMH-dFEU7-iIRLE05EHzGNn6yw",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1789147750.927029,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:10025",
+      "localStorage": [
+        {
+          "name": "auth-user",
+          "value": "{\"id\":\"01M1DWQZW1QNK62J1S6VTG2KVP\",\"email\":\"admin@mail.com\",\"name\":\"Admin\",\"username\":\"admin@mail.com\",\"permissions\":[\"action-program@approve-area\",\"action-program@approve-director\",\"action-program@approve-finance\",\"action-program@approve-region\",\"action-program@create\",\"action-program@delete\",\"action-program@read\",\"action-program@update\",\"action-program@validate\",\"action-type@create\",\"action-type@delete\",\"action-type@read\",\"action-type@update\",\"activity_log@read\",\"ai-admin@access\",\"area@create\",\"area@delete\",\"area@read\",\"area@update\",\"budget-line@create\",\"budget-line@delete\",\"budget-line@read\",\"budget-line@update\",\"budget-period@create\",\"budget-period@delete\",\"budget-period@read\",\"budget-period@update\",\"budget-type@create\",\"budget-type@delete\",\"budget-type@read\",\"budget-type@update\",\"budget@create\",\"budget@delete\",\"budget@read\",\"budget@update\",\"customer@create\",\"customer@delete\",\"customer@read\",\"customer@update\",\"email-crm@create\",\"email-crm@delete\",\"email-crm@read\",\"email-crm@update\",\"event-proposal@approve-area\",\"event-proposal@approve-director\",\"event-proposal@approve-finance\",\"event-proposal@approve-region\",\"event-proposal@create\",\"event-proposal@delete\",\"event-proposal@read\",\"event-proposal@update\",\"event-proposal@validate\",\"event-type@create\",\"event-type@delete\",\"event-type@read\",\"event-type@update\",\"knowledge-base@create\",\"knowledge-base@delete\",\"knowledge-base@read\",\"knowledge-base@update\",\"log@read\",\"notification@broadcast\",\"notification@delete\",\"notification@read\",\"outlet@create\",\"outlet@delete\",\"outlet@read\",\"outlet@update\",\"payment@create\",\"payment@delete\",\"payment@read\",\"permission@create\",\"permission@delete\",\"permission@read\",\"permission@update\",\"region@create\",\"region@delete\",\"region@read\",\"region@update\",\"report@read\",\"role@create\",\"role@delete\",\"role@read\",\"role@update\",\"sales-order@approve\",\"sales-order@create\",\"sales-order@delete\",\"sales-order@propose\",\"sales-order@read\",\"sales-order@update\",\"sales-order@validate\",\"settings@read\",\"settings@update\",\"sku@create\",\"sku@delete\",\"sku@read\",\"sku@update\",\"skuCategory@create\",\"skuCategory@delete\",\"skuCategory@read\",\"skuCategory@update\",\"user@create\",\"user@delete\",\"user@read\",\"user@update\",\"vendor@create\",\"vendor@delete\",\"vendor@read\",\"vendor@update\",\"visit-log@create\",\"visit-log@delete\",\"visit-log@read\",\"visit-log@validate\"],\"roleName\":\"System Admin\"}"
+        },
+        {
+          "name": "auth-token",
+          "value": "\"01M1DWQZW1QNK62J1S6VTG2KVP:1789147750000\""
+        }
+      ]
+    }
+  ]
+}

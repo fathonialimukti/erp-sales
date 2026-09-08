@@ -21,7 +21,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-import brandLogo from "@/assets/icons/brand-logo.png";
+import { BrandMark } from "@/components/BrandMark";
 import {
   getMotionProps,
   pageEnter,
@@ -85,7 +85,7 @@ export const LoginPage = () => {
       className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-background text-foreground"
       data-ai-context={JSON.stringify({ section: "login-page" })}
     >
-      <div className="relative grid min-h-[calc(100dvh-4rem)] flex-1 lg:grid-cols-[1.05fr_1fr]">
+      <div className="relative mx-auto grid w-full max-w-7xl min-h-[calc(100dvh-4rem)] flex-1 lg:grid-cols-[1.05fr_1fr]">
         <aside
           className="relative hidden overflow-hidden border-r border-border bg-background text-foreground lg:block"
           aria-label="Brand"
@@ -96,11 +96,7 @@ export const LoginPage = () => {
             {...enterProps}
           >
             <motion.div className="flex items-center gap-3" variants={staggerItem}>
-              <img
-                src={brandLogo}
-                alt="ERP Sales"
-                className="size-11 rounded-xl object-contain"
-              />
+              <BrandMark className="size-11" label="ERP Sales" />
               <span className="font-heading text-lg font-bold tracking-tight">
                 ERP Sales
               </span>

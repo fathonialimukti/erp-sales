@@ -9,6 +9,7 @@ import {
 import { getChatModel } from '../lib/ai-provider.js';
 import { customerAiTools } from '../lib/customer-ai-tools.js';
 import { prisma } from '../lib/prisma.js';
+import { acquireAiSlot } from '../lib/rate-limiter.js';
 import {
     analyzeImageTool,
     hasImageParts,
@@ -37,6 +38,14 @@ Always confirm items and quantities before creating an order.`;
  * POST /api/ai/customer/chat
  */
 export async function customerAiChatHandler(req: Request, res: Response) {
+    // Public endpoint — protect the upstream AI key with the global limiter
+    // plus a synthetic per-client window (default 10/min) for abuse control.
+    const slot = await acquireAiSlot('public:customer-chat');
+    if (!slot.ok) {
+        res.status(429).json({ error: 'AI service is busy, please try again shortly', retryAfter: slot.retryAfter });
+        return;
+    }
+
     const { messages } = req.body as { messages: unknown[] };
     if (!Array.isArray(messages)) {
         res.status(400).json({ error: 'messages must be an array' });

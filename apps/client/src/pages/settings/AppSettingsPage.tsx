@@ -72,6 +72,8 @@ interface FormValues {
     baseUrl: string;
     model: string;
     multimodalEnabled: boolean;
+    userRpm: number;
+    globalRpm: number;
     apiKey: string; // write-only: empty = keep existing
     embeddingBaseUrl: string;
     embeddingModel: string;
@@ -120,6 +122,8 @@ const toFormValues = (s: MaskedSettings): FormValues => ({
     baseUrl: s.ai?.baseUrl ?? "",
     model: s.ai?.model ?? "",
     multimodalEnabled: Boolean(s.ai?.multimodalEnabled ?? false),
+    userRpm: s.ai?.userRpm ?? 10,
+    globalRpm: s.ai?.globalRpm ?? 10,
     apiKey: "",
     embeddingBaseUrl: s.ai?.embeddingBaseUrl ?? "",
     embeddingModel: s.ai?.embeddingModel ?? "",
@@ -152,6 +156,8 @@ const buildPatch = (values: FormValues): AppSettings => ({
     baseUrl: values.ai.baseUrl,
     model: values.ai.model,
     multimodalEnabled: values.ai.multimodalEnabled,
+    userRpm: values.ai.userRpm,
+    globalRpm: values.ai.globalRpm,
     ...(values.ai.apiKey ? { apiKey: values.ai.apiKey } : {}),
     embeddingBaseUrl: values.ai.embeddingBaseUrl,
     embeddingModel: values.ai.embeddingModel,
@@ -664,6 +670,35 @@ export const AppSettingsPage = () => {
                 })}
               </p>
             </div>
+            <NumberField
+              id="ai-user-rpm"
+              label={intl.formatMessage({
+                id: "settings.app.field_ai_user_rpm",
+                defaultMessage: "AI requests / minute per user",
+              })}
+              value={form.ai.userRpm}
+              min={1}
+              max={600}
+              onChange={(v) => update("ai", "userRpm", v)}
+            />
+            <NumberField
+              id="ai-global-rpm"
+              label={intl.formatMessage({
+                id: "settings.app.field_ai_global_rpm",
+                defaultMessage: "AI requests / minute (global)",
+              })}
+              value={form.ai.globalRpm}
+              min={1}
+              max={600}
+              onChange={(v) => update("ai", "globalRpm", v)}
+            />
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              {intl.formatMessage({
+                id: "settings.app.hint_ai_rate_limits",
+                defaultMessage:
+                  "Requests beyond these limits wait in a queue instead of failing. Keep the global cap at or below your AI provider's per-key quota (10/min). The per-user cap stops one user from consuming the whole quota.",
+              })}
+            </p>
           </div>
 
           <p className="mt-4 mb-3 border-t pt-4 text-xs font-semibold text-muted-foreground">

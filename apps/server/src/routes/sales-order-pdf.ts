@@ -1,50 +1,18 @@
 import type { Request, Response } from 'express';
-import { parseCookie } from 'cookie';
-import jwt from 'jsonwebtoken';
-import { Prisma } from '../prisma/generated/client';
 import { prisma } from '../lib/prisma.js';
 import { streamSalesOrderPdf, type SalesOrderPdfRecord } from '../lib/sales-order-pdf.js';
-import { getJwtSecret } from '../lib/jwt-secret.js';
-
-const JWT_SECRET = getJwtSecret();
+import { withAuth } from '../lib/express-auth.js';
 
 /**
  * GET /api/sales-order/:id/pdf
  *
  * Streams a sales-order PDF inline so the browser's native PDF
  * viewer renders it (preview + print + download). Auth is enforced
- * via the same cookie/bearer scheme used by tRPC.
+ * via the shared cookie/bearer middleware (same scheme as tRPC).
  */
-export async function salesOrderPdfHandler(req: Request, res: Response) {
-    // --- Auth ---
-    // Cookie is httpOnly + cross-origin (client on :10021, server on :10022),
-    // so a new browser tab can't send it. Accept the token from either the
-    // cookie or the Authorization header.
-    let token: string | null = null;
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) token = cookies.access_token;
-    }
-    if (!token) {
-        const auth = req.headers.authorization;
-        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
-    }
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-
-    let userId: string;
-    try {
-        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
-        if (!payload?.userId) throw new Error('Invalid token payload');
-        userId = String(payload.userId);
-    } catch {
-        res.status(401).json({ error: 'Invalid token' });
-        return;
-    }
-
+export const salesOrderPdfHandler = withAuth(
+    { permission: 'sales-order@read' },
+    async (req: Request, res: Response) => {
     // --- Load record (same shape as salesOrder.detail) ---
     const record = await prisma.salesOrder.findUnique({
         where: { id: String(req.params.id) },
@@ -63,25 +31,6 @@ export async function salesOrderPdfHandler(req: Request, res: Response) {
 
     if (!record) {
         res.status(404).json({ error: 'Sales order not found' });
-        return;
-    }
-
-    // --- Permission check (sales-order@read) ---
-    // Mirrors the hasPermission middleware: Permission.name stores the
-    // full "resource@action" string.
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            role: {
-                include: {
-                    permissions: { include: { permission: { select: { name: true } } } },
-                },
-            },
-        },
-    });
-    const userPerms = user?.role?.permissions.map((rp) => rp.permission.name) ?? [];
-    if (!userPerms.includes('sales-order@read')) {
-        res.status(403).json({ error: 'Forbidden' });
         return;
     }
 
@@ -117,4 +66,5 @@ export async function salesOrderPdfHandler(req: Request, res: Response) {
     };
 
     streamSalesOrderPdf(res, pdfRecord);
-}
+    }
+);

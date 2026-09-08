@@ -1,42 +1,10 @@
 import type { Request, Response } from 'express';
-import { parseCookie } from 'cookie';
-import jwt from 'jsonwebtoken';
 import { generateText } from 'ai';
 import { getChatModel } from '../lib/ai-provider.js';
-import { getJwtSecret } from '../lib/jwt-secret.js';
+import { withAuth } from '../lib/express-auth.js';
 import { prisma } from '../lib/prisma.js';
 
-const JWT_SECRET = getJwtSecret();
 
-// Reuse the auth pattern from ai-form-fill.ts — parse cookie `access_token`
-// or Bearer header, verify JWT, return null (and 401) if invalid.
-function authUserId(req: Request, res: Response): string | null {
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) {
-            try {
-                const payload = jwt.verify(cookies.access_token, JWT_SECRET) as jwt.JwtPayload;
-                return payload?.userId ? String(payload.userId) : null;
-            } catch {
-                res.status(401).json({ error: 'Invalid token' });
-                return null;
-            }
-        }
-    }
-    const auth = req.headers.authorization;
-    if (auth?.startsWith('Bearer ')) {
-        try {
-            const payload = jwt.verify(auth.slice('Bearer '.length), JWT_SECRET) as jwt.JwtPayload;
-            return payload?.userId ? String(payload.userId) : null;
-        } catch {
-            res.status(401).json({ error: 'Invalid token' });
-            return null;
-        }
-    }
-    res.status(401).json({ error: 'Unauthorized' });
-    return null;
-}
 
 const REJECTION_FIX_INSTRUCTIONS = `You are a sales-order quality assistant. A manager rejected a draft/proposed sales order. Based on the rejection reason and the order's current contents, produce a concise Markdown checklist of concrete actions the rep should take to fix the order and resubmit. Rules: (1) Address the actual rejection reason first. (2) Reference real order fields/items (item names, line numbers, amounts). (3) If a reason mentions price, margin, quantity, missing info, or dates, give a specific concrete fix (e.g. 'Raise line 3 unit price from Rp 5,000 to Rp 6,500'). (4) Never invent SKUs not in the order. (5) Keep it under ~250 words, bullet points, business language, English or Indonesian matching the reason.`;
 
@@ -65,9 +33,7 @@ function latestRejectionReason(history: unknown): string {
     return typeof message === 'string' && message.trim() ? message.trim() : 'No specific reason given';
 }
 
-export async function aiRejectionFixHandler(req: Request, res: Response) {
-    const userId = authUserId(req, res);
-    if (!userId) return;
+export const aiRejectionFixHandler = withAuth({ aiRateLimit: true }, async (req: Request, res: Response) => {
 
     const { salesOrderId } = req.body as { salesOrderId?: unknown };
     if (typeof salesOrderId !== 'string' || !salesOrderId) {
@@ -131,4 +97,4 @@ export async function aiRejectionFixHandler(req: Request, res: Response) {
             message: error instanceof Error ? error.message : 'Unknown error',
         });
     }
-}
+});

@@ -4,7 +4,6 @@ import { useIntl } from "react-intl";
 import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowDown,
-  ArrowRight,
   BarChart3,
   BookOpen,
   Building2,
@@ -52,7 +51,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { MermaidDiagram } from "../components/MermaidDiagram";
 import {
@@ -284,33 +282,6 @@ const CONTACT_ITEMS = [
     icon: Link2,
     labelId: "landing.contact_linkedin",
     href: CONTACT.linkedin,
-  },
-] as const;
-
-const STATS = [
-  {
-    key: "orders",
-    valueId: "landing.v2.stats_orders_value",
-    labelId: "landing.v2.stats_orders",
-    icon: ShoppingCart,
-  },
-  {
-    key: "visits",
-    valueId: "landing.v2.stats_visits_value",
-    labelId: "landing.v2.stats_visits",
-    icon: MapPin,
-  },
-  {
-    key: "approval",
-    valueId: "landing.v2.stats_approval_value",
-    labelId: "landing.v2.stats_approval",
-    icon: ShieldCheck,
-  },
-  {
-    key: "modules",
-    valueId: "landing.v2.stats_modules_value",
-    labelId: "landing.v2.stats_modules",
-    icon: Users,
   },
 ] as const;
 
@@ -562,7 +533,7 @@ export const LandingPage = () => {
           variant="b"
         />
 
-        <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
           <Stagger className="space-y-6">
             <StaggerItem>
               <Badge
@@ -577,20 +548,17 @@ export const LandingPage = () => {
             <StaggerItem>
               <h1 className="font-heading text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
                 <span className="block text-foreground">
-                  {t("landing.v2.hero_title_lead", "Sales Management,")}
+                  {t("landing.v2.hero_title_lead", "Sales ops,")}
                 </span>
                 <span className="mt-1 block text-primary">
-                  {t("landing.v2.hero_title_accent", "Reimagined")}
+                  {t("landing.v2.hero_title_accent", "one system")}
                 </span>
               </h1>
             </StaggerItem>
 
             <StaggerItem>
               <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                {t(
-                  "landing.hero_subtitle",
-                  "One platform to manage customers, outlets, sales orders, visits, and approvals.",
-                )}
+                {t("landing.hero_subtitle", "Customers, outlets, orders, visits, approvals.")}
               </p>
             </StaggerItem>
 
@@ -633,14 +601,6 @@ export const LandingPage = () => {
 
           <motion.div className="relative" variants={fadeIn} {...softEnter}>
             <div className="relative rounded-2xl border border-border bg-card p-3">
-              <div className="mb-3 flex items-center justify-between px-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t("landing.v2.command_stage", "Command stage")}
-                </span>
-                <Badge variant="outline" className="text-[0.625rem]">
-                  Live preview
-                </Badge>
-              </div>
               <HeroDashboard className="mx-auto w-full max-w-xl" />
             </div>
           </motion.div>
@@ -653,26 +613,14 @@ export const LandingPage = () => {
         aria-labelledby="features-title"
         className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div>
+        <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-10 max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-              {t("landing.features_eyebrow", "Modules")}
-            </p>
             <h2
               id="features-title"
-              className="mt-2 font-heading text-3xl font-bold tracking-tight"
+              className="font-heading text-3xl font-bold tracking-tight"
             >
-              {t(
-                "landing.features_title",
-                "Everything your sales operation needs",
-              )}
+              {t("landing.features_title", "Modules")}
             </h2>
-            <p className="mt-3 text-muted-foreground">
-              {t(
-                "landing.features_subtitle",
-                "From the first customer touch to the final approval.",
-              )}
-            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -713,7 +661,7 @@ export const LandingPage = () => {
         aria-labelledby="how-title"
         className="scroll-mt-20 border-y border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div>
+        <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.how_it_works_eyebrow", "Workflow")}
@@ -724,12 +672,6 @@ export const LandingPage = () => {
             >
               {t("landing.how_it_works_title", "How It Works")}
             </h2>
-            <p className="mt-3 text-muted-foreground">
-              {t(
-                "landing.how_it_works_subtitle",
-                "Four steps from setup to insight.",
-              )}
-            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -760,31 +702,9 @@ export const LandingPage = () => {
       {/* Spotlight deep dives */}
       <section
         id="workflow"
-        aria-labelledby="spotlight-title"
         className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="space-y-16">
-          <div className="max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-              {t("landing.v2.spotlight_eyebrow", "Deep dives")}
-            </p>
-            <h2
-              id="spotlight-title"
-              className="mt-2 font-heading text-3xl font-bold tracking-tight"
-            >
-              {t(
-                "landing.v2.spotlight_title",
-                "How the operating system works",
-              )}
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              {t(
-                "landing.v2.spotlight_subtitle",
-                "Governance, AI, and automation — three systems that keep field work and back-office in the same loop.",
-              )}
-            </p>
-          </div>
-
+        <div className="mx-auto max-w-7xl space-y-16">
           {/* Approval */}
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
             <div className="space-y-4">
@@ -792,14 +712,8 @@ export const LandingPage = () => {
                 {t("landing.workflow_eyebrow", "Governance")}
               </Badge>
               <h3 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-                {t("landing.workflow_title", "Approval, with a paper trail")}
+                {t("landing.workflow_title", "Approvals with an audit trail")}
               </h3>
-              <p className="leading-relaxed text-muted-foreground">
-                {t(
-                  "landing.workflow_subtitle",
-                  "Every document moves through a clear, multi-level workflow.",
-                )}
-              </p>
               <ul className="space-y-2.5 text-sm">
                 {[
                   t(
@@ -837,14 +751,8 @@ export const LandingPage = () => {
                 {t("landing.automation_eyebrow", "Automation")}
               </Badge>
               <h3 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-                {t("landing.automation_title", "Orders that file themselves")}
+                {t("landing.automation_title", "Email to order")}
               </h3>
-              <p className="leading-relaxed text-muted-foreground">
-                {t(
-                  "landing.automation_subtitle",
-                  "Customers email your company inbox. Email Concierge drafts an AI HTML reply.",
-                )}
-              </p>
               <ul className="space-y-2.5 text-sm">
                 {[
                   {
@@ -885,20 +793,11 @@ export const LandingPage = () => {
           >
             <div className="space-y-4">
               <Badge variant="outline">
-                {t("landing.ai_eyebrow", "Built-in AI")}
+                {t("landing.ai_eyebrow", "AI")}
               </Badge>
               <h3 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-                {t(
-                  "landing.ai_title",
-                  "An AI assistant that actually does the work",
-                )}
+                {t("landing.ai_title", "Built-in AI assistant")}
               </h3>
-              <p className="leading-relaxed text-muted-foreground">
-                {t(
-                  "landing.ai_subtitle",
-                  "A streaming LLM engine sits inside the app — grounded in your docs via RAG.",
-                )}
-              </p>
               <ul className="space-y-2.5 text-sm">
                 {[
                   {
@@ -950,7 +849,7 @@ export const LandingPage = () => {
         aria-labelledby="rag-title"
         className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div>
+        <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.rag_eyebrow", "AI Knowledge")}
@@ -959,58 +858,13 @@ export const LandingPage = () => {
               id="rag-title"
               className="mt-2 font-heading text-3xl font-bold tracking-tight"
             >
-              {t("landing.rag_title", "How the AI learns from your business")}
+              {t("landing.rag_title", "Grounded in your documents")}
             </h2>
             <p className="mt-3 text-muted-foreground">
-              {t(
-                "landing.rag_subtitle",
-                "Your team adds documents. The AI reads and understands them. Then it answers questions using YOUR information — not guesses.",
-              )}
+              {t("landing.rag_subtitle", "Upload docs. The AI answers from them.")}
             </p>
           </div>
           <RagArchitecture className="w-full" />
-          <div className="mx-auto mt-8 max-w-2xl">
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                {
-                  icon: "📄",
-                  titleId: "landing.rag_step_1_title",
-                  descId: "landing.rag_step_1_desc",
-                  title: "Add your docs",
-                  desc: "Policies, FAQs, product info — the AI reads them all.",
-                },
-                {
-                  icon: "🧠",
-                  titleId: "landing.rag_step_2_title",
-                  descId: "landing.rag_step_2_desc",
-                  title: "AI understands",
-                  desc: "It learns the meaning behind your words, not just keywords.",
-                },
-                {
-                  icon: "💬",
-                  titleId: "landing.rag_step_3_title",
-                  descId: "landing.rag_step_3_desc",
-                  title: "Ask anything",
-                  desc: "Get accurate answers sourced from your own documents.",
-                },
-              ].map((step) => (
-                <div
-                  key={step.titleId}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/50 p-4 text-center"
-                >
-                  <span className="text-2xl" aria-hidden="true">
-                    {step.icon}
-                  </span>
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {t(step.titleId, step.title)}
-                  </h3>
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    {t(step.descId, step.desc)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
           <div className="mt-6 flex justify-end">
             <Button
               variant="outline"
@@ -1059,7 +913,7 @@ export const LandingPage = () => {
         aria-labelledby="faq-title"
         className="scroll-mt-20 border-y border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div>
+        <div className="mx-auto max-w-7xl">
           <div className="mb-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.faq_eyebrow", "FAQ")}
@@ -1093,7 +947,7 @@ export const LandingPage = () => {
         aria-labelledby="about-title"
         className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div>
+        <div className="mx-auto max-w-7xl">
           <Card className="overflow-hidden border-border/80 shadow-sm">
             <CardContent className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[220px_1fr] lg:gap-10">
               <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
@@ -1149,7 +1003,7 @@ export const LandingPage = () => {
         aria-labelledby="contact-title"
         className="scroll-mt-20 border-t border-border bg-muted px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div>
+        <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
               {t("landing.contact_eyebrow", "Contact")}
@@ -1189,50 +1043,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* Bottom CTA band */}
-      <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div>
-          <Card className="overflow-hidden border-primary/20 bg-card shadow-md">
-            <CardContent className="flex flex-col items-start gap-6 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-              <div className="space-y-2">
-                <Badge variant="secondary" className="gap-1.5">
-                  <Star className="size-3.5 text-primary" />
-                  {t("landing.v2.cta_badge", "Bold CRM")}
-                </Badge>
-                <h2 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-                  {t("landing.cta_primary", "Try the Demo")}
-                </h2>
-                <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  {t(
-                    "landing.hero_subtitle",
-                    "One platform to manage customers, outlets, sales orders, visits, and approvals.",
-                  )}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  size="default"
-                  className="h-9 px-4"
-                  onClick={() => navigate("/login")}
-                >
-                  <LogIn className="size-4" />
-                  {t("landing.footer_sign_in", "Sign In")}
-                  <ArrowRight className="size-4" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="min-h-11 px-5"
-                  onClick={() => scrollTo("contact")}
-                >
-                  {t("landing.contact_title", "Get in Touch")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          <Separator className="mt-10 opacity-0" aria-hidden="true" />
-        </div>
-      </section>
     </div>
   );
 };

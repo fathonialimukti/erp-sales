@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { icons } from "@/assets/icons";
+import { BrandMark } from "@/components/BrandMark";
 import { NavModuleTile } from "@/components/NavModuleTile";
 import { UserAvatarMenu } from "@/components/UserAvatarMenu";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -80,6 +81,7 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   "/users": "user",
   "/access-control": "user",
   "/activity-logs": "user",
+  "/backups": "settings",
   "/notifications": "user",
   "/reports": "report",
   "/email-crm": "email",
@@ -201,6 +203,7 @@ export const Sidebar = () => {
             "/users",
             "/access-control",
             "/activity-logs",
+            "/backups",
             "/notifications",
             "/settings/app-settings",
           ].includes(l.href),
@@ -246,13 +249,8 @@ export const Sidebar = () => {
             isCollapsed && "justify-center",
           )}
         >
-          <img
-            src={icons.brandLogo}
-            alt=""
-            className={cn(
-              "shrink-0 rounded-xl object-contain shadow-sm",
-              isCollapsed ? "size-10" : "size-9",
-            )}
+          <BrandMark
+            className={isCollapsed ? "size-10" : "size-9"}
           />
           {!isCollapsed && (
             <div className="min-w-0 leading-tight">

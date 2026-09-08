@@ -1,43 +1,11 @@
 import type { Request, Response } from 'express';
-import { parseCookie } from 'cookie';
-import jwt from 'jsonwebtoken';
 import * as z from 'zod';
 import { generateObject } from 'ai';
 import { getChatModel } from '../lib/ai-provider.js';
+import { withAuth } from '../lib/express-auth.js';
 import { prisma } from '../lib/prisma.js';
-import { getJwtSecret } from '../lib/jwt-secret.js';
 
-const JWT_SECRET = getJwtSecret();
 
-// Reuse the auth pattern from ai-form-fill.ts — parse cookie `access_token`
-// or Bearer header, verify JWT, return null (and 401) if invalid.
-function authUserId(req: Request, res: Response): string | null {
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) {
-            try {
-                const payload = jwt.verify(cookies.access_token, JWT_SECRET) as jwt.JwtPayload;
-                return payload?.userId ? String(payload.userId) : null;
-            } catch {
-                res.status(401).json({ error: 'Invalid token' });
-                return null;
-            }
-        }
-    }
-    const auth = req.headers.authorization;
-    if (auth?.startsWith('Bearer ')) {
-        try {
-            const payload = jwt.verify(auth.slice('Bearer '.length), JWT_SECRET) as jwt.JwtPayload;
-            return payload?.userId ? String(payload.userId) : null;
-        } catch {
-            res.status(401).json({ error: 'Invalid token' });
-            return null;
-        }
-    }
-    res.status(401).json({ error: 'Unauthorized' });
-    return null;
-}
 
 const parentSchema = z.object({
     dataset: z.enum(['customer', 'outlet']),
@@ -56,9 +24,7 @@ const duplicateSchema = z.object({
 
 const DUPLICATE_SYSTEM = `You are a CRM data-hygiene assistant. Given a list of customers (or outlets) with their fields, identify likely duplicate records. Rules: (1) Compare normalized names (case/whitespace-insensitive), codes, tax IDs, phones, addresses. (2) Only flag pairs that are genuinely likely duplicates (same name + same phone/address/taxId, or near-identical name + same location). (3) a and b must be the actual record ids. (4) reason is a short human explanation. (5) confidence 0-1. (6) Return at most 20 pairs, strongest first. (7) Do not flag records that merely share a common word.`;
 
-export async function aiDuplicateCheckHandler(req: Request, res: Response) {
-    const userId = authUserId(req, res);
-    if (!userId) return;
+export const aiDuplicateCheckHandler = withAuth({ aiRateLimit: true }, async (req: Request, res: Response) => {
 
     const parsed = parentSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -118,4 +84,4 @@ export async function aiDuplicateCheckHandler(req: Request, res: Response) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         res.status(500).json({ error: 'Duplicate check failed', message });
     }
-}
+});

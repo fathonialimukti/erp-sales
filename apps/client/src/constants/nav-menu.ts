@@ -52,7 +52,7 @@ export const NAV_MENU: NavMenuItem[] = [
         name: "nav.sku_category",
         icon: icons.navSkuCategory,
         href: "/sku-category",
-        permission: "sku@read",
+        permission: "skuCategory@read",
       },
       {
         name: "nav.sku",
@@ -179,6 +179,18 @@ export const NAV_MENU: NavMenuItem[] = [
         icon: icons.navActivity,
         href: "/activity-logs",
         permission: "activity_log@read",
+      },
+      {
+        name: "nav.system_logs",
+        icon: icons.navLogs,
+        href: "/system-logs",
+        permission: "log@read",
+      },
+      {
+        name: "backup.title",
+        icon: icons.navLogs,
+        href: "/backups",
+        permission: "backup@read",
       },
       {
         name: "nav.notifications_admin",

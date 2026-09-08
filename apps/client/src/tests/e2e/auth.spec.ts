@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// This spec exercises the login flow itself — start logged-out.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('auth', () => {
   test('landing page renders with Try the Demo button', async ({ page }) => {
     await page.goto('/');
@@ -11,14 +14,14 @@ test.describe('auth', () => {
     await page.getByRole('button', { name: /try the demo/i }).first().click();
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
   });
 
   test('fails with invalid credentials', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill('wrong@wrong.com');
-    await page.getByLabel('Password').fill('wrong');
+    await page.getByLabel('Password', { exact: true }).fill('wrong');
     await page.getByRole('button', { name: /sign in/i }).click();
     await expect(page).toHaveURL(/\/login/);
   });
@@ -26,8 +29,11 @@ test.describe('auth', () => {
   test('admin logs in and sees main layout', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill('admin@mail.com');
-    await page.getByLabel('Password').fill('password');
+    await page.getByLabel('Password', { exact: true }).fill('password');
     await page.getByRole('button', { name: /sign in/i }).click();
-    await expect(page.locator('main')).toBeAttached({ timeout: 15000 });
+    // The login page itself renders a <main>; the post-login redirect is the
+    // real "authenticated layout" signal.
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await expect(page.locator('main')).toBeAttached();
   });
 });

@@ -1,14 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Session comes from the auth-setup project's storageState — no per-test
+// login (keeps the suite under the login rate limit).
 test.describe('CRM smoke tests', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Email').fill('admin@mail.com');
-    await page.getByLabel('Password').fill('password');
-    await page.getByRole('button', { name: /sign in/i }).click();
-    await expect(page.locator('main')).toBeAttached({ timeout: 15000 });
-  });
-
   test('dashboard loads', async ({ page }) => {
     await page.goto('/dashboard');
     await expect(page.locator('main')).toBeAttached();
@@ -49,8 +43,8 @@ test.describe('CRM smoke tests', () => {
     await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
   });
 
-  test('invoice page loads', async ({ page }) => {
-    await page.goto('/invoice');
+  test('system logs page loads', async ({ page }) => {
+    await page.goto('/system-logs');
     await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
   });
 
@@ -74,8 +68,8 @@ test.describe('CRM smoke tests', () => {
     await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
   });
 
-  test('roles page loads', async ({ page }) => {
-    await page.goto('/roles');
+  test('access control page loads', async ({ page }) => {
+    await page.goto('/access-control');
     await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
   });
 

@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { API_BASE_URL } from '../lib/api-base';
 
 interface Props {
   children: ReactNode;
@@ -7,6 +8,26 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+}
+
+/** Fire-and-forget report to the server's client-log endpoint (app_logs). */
+function reportClientError(error: Error, info: React.ErrorInfo) {
+  try {
+    void fetch(`${API_BASE_URL}/api/log/client`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        level: 'ERROR',
+        message: `React boundary: ${error.message}`.slice(0, 1000),
+        stack: [error.stack, info.componentStack].filter(Boolean).join('\n---\n').slice(0, 8000),
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // Never let error reporting break error handling.
+  }
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -18,6 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('React error boundary caught:', error, info);
+    reportClientError(error, info);
   }
 
   handleReload = () => {

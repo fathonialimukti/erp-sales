@@ -1,6 +1,4 @@
 import type { Request, Response } from 'express';
-import { parseCookie } from 'cookie';
-import jwt from 'jsonwebtoken';
 import {
     streamText,
     createUIMessageStream,
@@ -14,14 +12,12 @@ import { getChatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { prisma } from '../lib/prisma.js';
-import { getJwtSecret } from '../lib/jwt-secret.js';
+import { withAuth } from '../lib/express-auth.js';
 import {
     analyzeImageTool,
     hasImageParts,
     OnlyTextModelError,
 } from '../lib/ai-multimodal.js';
-
-const JWT_SECRET = getJwtSecret();
 
 const ROUTE_CATALOG = `
 - Dashboard: /dashboard
@@ -313,58 +309,12 @@ The tool will validate your SQL and block DDL operations.
 Results are returned as JSON with row counts and affected row counts for write operations.${contextSection}`;
 }
 
-export async function aiAdminChatHandler(req: Request, res: Response) {
-    // --- Auth ---
-    let token: string | null = null;
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) token = cookies.access_token;
-    }
-    if (!token) {
-        const auth = req.headers.authorization;
-        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
-    }
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-
-    let userId: string;
-    try {
-        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
-        if (!payload?.userId) throw new Error('Invalid token payload');
-        userId = String(payload.userId);
-    } catch {
-        res.status(401).json({ error: 'Invalid token' });
-        return;
-    }
-
-    // --- Permission check: admin role or ai-admin@access ---
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            role: {
-                include: {
-                    permissions: { include: { permission: true } },
-                },
-            },
-        },
-    });
-
-    const userPermissions = user?.role?.permissions.map(rp => rp.permission.name) ?? [];
-    const isAdminRole = user?.role?.name === 'System Admin';
-    const hasAdminPermission = userPermissions.includes('ai-admin@access');
-    if (!isAdminRole && !hasAdminPermission) {
-        res.status(403).json({
-            error: 'Forbidden: admin access required',
-            message: 'You must have the System Admin role or the ai-admin@access permission to use the AI System Administrator.',
-        });
-        return;
-    }
-
-    const userName = user?.name ?? user?.email ?? 'User';
-    const roleName = user?.role?.name ?? 'Unknown';
+export const aiAdminChatHandler = withAuth(
+    { permission: 'ai-admin@access', aiRateLimit: true },
+    async (req: Request, res: Response, user) => {
+    const userName = user.name ?? user.email ?? 'User';
+    const roleName = user.roleName ?? 'Unknown';
+    const userPermissions = user.permissions;
 
     // --- Parse body ---
     const { messages, id: chatId } = req.body as { messages: unknown[]; id?: string };
@@ -438,57 +388,12 @@ export async function aiAdminChatHandler(req: Request, res: Response) {
     });
 
     pipeUIMessageStreamToResponse({ response: res, stream });
-}
-
-export async function aiAdminChatResumeHandler(req: Request, res: Response) {
-    // --- Auth ---
-    let token: string | null = null;
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) token = cookies.access_token;
     }
-    if (!token) {
-        const auth = req.headers.authorization;
-        if (auth?.startsWith('Bearer ')) token = auth.slice('Bearer '.length);
-    }
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
+);
 
-    let userId: string;
-    try {
-        const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
-        if (!payload?.userId) throw new Error('Invalid token payload');
-        userId = String(payload.userId);
-    } catch {
-        res.status(401).json({ error: 'Invalid token' });
-        return;
-    }
-
-    // --- Permission check: admin role or ai-admin@access ---
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            role: {
-                include: {
-                    permissions: { include: { permission: true } },
-                },
-            },
-        },
-    });
-
-    const userPermissions = user?.role?.permissions.map(rp => rp.permission.name) ?? [];
-    const isAdminRole = user?.role?.name === 'System Admin';
-    const hasAdminPermission = userPermissions.includes('ai-admin@access');
-    if (!isAdminRole && !hasAdminPermission) {
-        res.status(403).json({
-            error: 'Forbidden: admin access required',
-            message: 'You must have the System Admin role or the ai-admin@access permission to use the AI System Administrator.',
-        });
-        return;
-    }
-
+export const aiAdminChatResumeHandler = withAuth(
+    { permission: 'ai-admin@access' },
+    async (_req: Request, res: Response) => {
     res.status(204).end();
-}
+    }
+);

@@ -15,9 +15,10 @@ const IntlProviderCompat = IntlProvider as unknown as React.ComponentType<IntlPr
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0,
+      // Modules read mostly-stable master data; 30s keeps navigation snappy
+      // without the refetch storm of staleTime:0 + refetchOnMount:'always'.
+      staleTime: 1000 * 30,
       gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
-      refetchOnMount: 'always',
       refetchOnReconnect: true,
       refetchOnWindowFocus: true,
     },

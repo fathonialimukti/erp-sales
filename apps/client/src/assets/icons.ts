@@ -5,7 +5,6 @@
  * self-documenting:
  *   nav-*    sidebar / chrome navigation
  *   ui-*     generic chrome controls (search, bell, theme…)
- *   brand-*  app brand mark
  *   dash-*   colorful iOS-style dashboard + hero glyphs
  *   action-* shared CRUD / table actions (back, edit, delete…)
  *   <domain>-*  domain-specific glyphs (region-*, sku-*, …)
@@ -13,9 +12,6 @@
  * Vite returns an asset URL string for every `import`, so no `?url` suffix
  * is needed. Consume via `icons.<key>` (typed by `IconName`).
  */
-
-/* ── Brand ── */
-import brandLogo from "./icons/brand-logo.png";
 
 /* ── Navigation (sidebar Family A tiles) ── */
 import navDashboard from "./icons/nav-dashboard.svg";
@@ -34,6 +30,7 @@ import navEvent from "./icons/nav-event.svg";
 import navUsers from "./icons/nav-users.svg";
 import navRoles from "./icons/nav-roles.svg";
 import navActivity from "./icons/nav-activity.svg";
+import navLogs from "./icons/nav-logs.svg";
 import navNotifications from "./icons/nav-notifications.svg";
 import navKnowledge from "./icons/nav-knowledge.svg";
 import navAi from "./icons/nav-ai.svg";
@@ -128,9 +125,6 @@ import eventProposalCalendar from "./icons/event-proposal-calendar.svg";
 import eventProposalBudget from "./icons/event-proposal-budget.svg";
 
 export const icons = {
-  /* Brand */
-  brandLogo,
-
   /* Navigation */
   navDashboard,
   navReports,
@@ -149,6 +143,7 @@ export const icons = {
   navUsers,
   navRoles,
   navActivity,
+  navLogs,
   navNotifications,
   navKnowledge,
   navAi,

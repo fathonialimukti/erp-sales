@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { Globe, LogIn, Menu } from "lucide-react";
 
-import brandLogo from "@/assets/icons/brand-logo.png";
+import { BrandMark } from "@/components/BrandMark";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -154,15 +154,14 @@ export const PublicLayout = () => {
             : "border-transparent bg-background",
         )}
       >
-        <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             className="group flex min-h-11 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
-            <img
-              src={brandLogo}
-              alt="ERP Sales"
-              className="size-9 rounded-xl object-contain shadow-sm shadow-primary/25 transition-transform group-hover:scale-[1.02]"
+            <BrandMark
+              className="size-9 transition-transform group-hover:scale-[1.02]"
+              label="ERP Sales"
             />
             <span className="font-heading text-sm font-semibold tracking-tight sm:text-base">
               ERP Sales
@@ -345,14 +344,10 @@ export const PublicLayout = () => {
 
       {!isLogin && (
         <footer className="mt-auto border-t border-border bg-card px-4 py-10 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-2.5">
-                  <img
-                    src={brandLogo}
-                    alt="ERP Sales"
-                    className="size-9 rounded-xl object-contain shadow-sm shadow-primary/25"
-                  />
+                  <BrandMark className="size-9" label="ERP Sales" />
                   <span className="font-heading text-sm font-semibold tracking-tight">
                     ERP Sales
                   </span>

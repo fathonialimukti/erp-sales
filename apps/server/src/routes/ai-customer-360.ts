@@ -1,42 +1,10 @@
 import type { Request, Response } from 'express';
-import { parseCookie } from 'cookie';
-import jwt from 'jsonwebtoken';
 import { generateText } from 'ai';
 import { getChatModel } from '../lib/ai-provider.js';
+import { withAuth } from '../lib/express-auth.js';
 import { prisma } from '../lib/prisma.js';
-import { getJwtSecret } from '../lib/jwt-secret.js';
 
-const JWT_SECRET = getJwtSecret();
 
-// Reuse the auth pattern from ai-form-fill.ts — parse cookie `access_token`
-// or Bearer header, verify JWT, return null (and 401) if invalid.
-function authUserId(req: Request, res: Response): string | null {
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-        const cookies = parseCookie(cookieHeader);
-        if (cookies.access_token) {
-            try {
-                const payload = jwt.verify(cookies.access_token, JWT_SECRET) as jwt.JwtPayload;
-                return payload?.userId ? String(payload.userId) : null;
-            } catch {
-                res.status(401).json({ error: 'Invalid token' });
-                return null;
-            }
-        }
-    }
-    const auth = req.headers.authorization;
-    if (auth?.startsWith('Bearer ')) {
-        try {
-            const payload = jwt.verify(auth.slice('Bearer '.length), JWT_SECRET) as jwt.JwtPayload;
-            return payload?.userId ? String(payload.userId) : null;
-        } catch {
-            res.status(401).json({ error: 'Invalid token' });
-            return null;
-        }
-    }
-    res.status(401).json({ error: 'Unauthorized' });
-    return null;
-}
 
 const CUSTOMER_360_INSTRUCTIONS = `You are a sales manager's pre-meeting assistant. Produce a scannable Markdown brief for a customer meeting with sections: **Profile** (name, code, outlets, contacts), **Money** (approved revenue, order count, average order value, open orders), **Activity** (recent orders, visits), **Risks & Opportunities** (up to 3 bullets, e.g. open orders needing follow-up, low visit frequency, top SKU concentration). Use the actual numbers provided; never invent. Business language, English or Indonesian matching the customer name/context if discernible. No raw JSON.`;
 
@@ -46,9 +14,7 @@ const toNumber = (value: unknown): number => {
     return Number.isNaN(n) ? 0 : n;
 };
 
-export async function aiCustomer360Handler(req: Request, res: Response) {
-    const userId = authUserId(req, res);
-    if (!userId) return;
+export const aiCustomer360Handler = withAuth({ aiRateLimit: true }, async (req: Request, res: Response) => {
 
     const { customerId } = req.body as { customerId?: unknown };
     if (typeof customerId !== 'string' || !customerId) {
@@ -160,4 +126,4 @@ export async function aiCustomer360Handler(req: Request, res: Response) {
             message: error instanceof Error ? error.message : 'Unknown error',
         });
     }
-}
+});

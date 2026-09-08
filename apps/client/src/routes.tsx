@@ -1,11 +1,11 @@
-import { createBrowserRouter } from 'react-router';
-import { lazy } from 'react';
+import { createBrowserRouter, Outlet } from 'react-router';
+import { lazy, Suspense } from 'react';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { RequirePermission } from './components/RequirePermission';
 import { PrivateLayout } from './layouts/PrivateLayout';
 import { PublicLayout } from './layouts/PublicLayout';
 
 // ── Critical (eager) — needed for first paint / login / 404 ──
-import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RouteErrorPage } from './pages/RouteErrorPage';
@@ -18,6 +18,9 @@ const lazyNamed = <T extends Record<string, unknown>, K extends keyof T & string
 ) => lazy(() => importer().then((m) => ({ default: m[name] as unknown as React.ComponentType })));
 
 // ── Non-critical (lazy) — loaded on module navigation ──
+// Dashboard is lazy: it pulls recharts+d3 (~450KB) that nothing else on the
+// first paint needs.
+const Dashboard = lazyNamed(() => import('./pages/Dashboard'), 'Dashboard');
 const ReportsHub = lazyNamed(() => import('./pages/reports/ReportsHub'), 'ReportsHub');
 const RegionIndexPage = lazyNamed(() => import('./pages/region/RegionIndexPage'), 'RegionIndexPage');
 const RegionDetailPage = lazyNamed(() => import('./pages/region/RegionDetailPage'), 'RegionDetailPage');
@@ -57,6 +60,8 @@ const RoleDetailPage = lazyNamed(() => import('./pages/access-control/RoleDetail
 const RoleFormPage = lazyNamed(() => import('./pages/access-control/RoleFormPage'), 'RoleFormPage');
 const ActivityLogsIndexPage = lazyNamed(() => import('./pages/activity-logs/ActivityLogsIndexPage'), 'ActivityLogsIndexPage');
 const ActivityLogDetailPage = lazyNamed(() => import('./pages/activity-logs/ActivityLogDetailPage'), 'ActivityLogDetailPage');
+const SystemLogsIndexPage = lazyNamed(() => import('./pages/system-logs/SystemLogsIndexPage'), 'SystemLogsIndexPage');
+const BackupIndexPage = lazyNamed(() => import('./pages/backup/BackupIndexPage'), 'BackupIndexPage');
 const NotificationsPage = lazyNamed(() => import('./pages/notifications/NotificationsPage'), 'NotificationsPage');
 const AiAdminChatPage = lazy(() => import('./pages/ai-admin/AiAdminChatPage'));
 const EmailCrmIndexPage = lazyNamed(() => import('./pages/email-crm/EmailCrmIndexPage'), 'EmailCrmIndexPage');
@@ -124,10 +129,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'reports',
-        element: <ReportsHub />,
+        element: (
+          <RequirePermission permission="report@read">
+            <ReportsHub />
+          </RequirePermission>
+        ),
       },
       {
         path: 'region',
+        element: <RequirePermission permission="region@read" />,
         children: [
           { index: true, element: <RegionIndexPage /> },
           { path: 'create', element: <RegionFormPage /> },
@@ -137,6 +147,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'area',
+        element: <RequirePermission permission="area@read" />,
         children: [
           { index: true, element: <AreaIndexPage /> },
           { path: 'create', element: <AreaFormPage /> },
@@ -146,6 +157,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'customer',
+        element: <RequirePermission permission="customer@read" />,
         children: [
           { index: true, element: <CustomerIndexPage /> },
           { path: 'create', element: <CustomerFormPage /> },
@@ -155,6 +167,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'outlet',
+        element: <RequirePermission permission="outlet@read" />,
         children: [
           { index: true, element: <OutletIndexPage /> },
           { path: 'create', element: <OutletFormPage /> },
@@ -164,6 +177,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sku-category',
+        element: <RequirePermission permission="skuCategory@read" />,
         children: [
           { index: true, element: <SkuCategoryIndexPage /> },
           { path: 'create', element: <SkuCategoryFormPage /> },
@@ -173,6 +187,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sku',
+        element: <RequirePermission permission="sku@read" />,
         children: [
           { index: true, element: <SkuIndexPage /> },
           { path: 'create', element: <SkuFormPage /> },
@@ -182,6 +197,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sales-order',
+        element: <RequirePermission permission="sales-order@read" />,
         children: [
           { index: true, element: <SalesOrderIndexPage /> },
           { path: 'create', element: <SalesOrderFormPage /> },
@@ -191,6 +207,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'email-crm',
+        element: <RequirePermission permission="email-crm@read" />,
         children: [
           { index: true, element: <EmailCrmIndexPage /> },
           { path: 'create', element: <EmailCrmFormPage /> },
@@ -201,6 +218,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'visit-log',
+        element: <RequirePermission permission="visit-log@read" />,
         children: [
           { index: true, element: <VisitLogIndexPage /> },
           { path: 'create', element: <VisitLogFormPage /> },
@@ -209,6 +227,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'action-program',
+        element: <RequirePermission permission="action-program@read" />,
         children: [
           { index: true, element: <ActionProgramIndexPage /> },
           { path: 'create', element: <ActionProgramFormPage /> },
@@ -218,6 +237,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'event-proposal',
+        element: <RequirePermission permission="event-proposal@read" />,
         children: [
           { index: true, element: <EventProposalIndexPage /> },
           { path: 'create', element: <EventProposalFormPage /> },
@@ -227,6 +247,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'budget-type',
+        element: <RequirePermission permission="budget-type@read" />,
         children: [
           { index: true, element: <BudgetTypeIndexPage /> },
           { path: 'create', element: <BudgetTypeFormPage /> },
@@ -236,6 +257,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'budget',
+        element: <RequirePermission permission="budget-line@read" />,
         children: [
           { index: true, element: <BudgetIndexPage /> },
           { path: 'create', element: <BudgetFormPage /> },
@@ -245,6 +267,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'budget-period',
+        element: <RequirePermission permission="budget-period@read" />,
         children: [
           { index: true, element: <BudgetPeriodIndexPage /> },
           { path: 'create', element: <BudgetPeriodFormPage /> },
@@ -254,6 +277,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'budget-line',
+        element: <RequirePermission permission="budget-line@read" />,
         children: [
           { index: true, element: <BudgetLineIndexPage /> },
           { path: 'create', element: <BudgetLineFormPage /> },
@@ -263,6 +287,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'action-type',
+        element: <RequirePermission permission="action-type@read" />,
         children: [
           { index: true, element: <ActionTypeIndexPage /> },
           { path: 'create', element: <ActionTypeFormPage /> },
@@ -272,6 +297,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'event-type',
+        element: <RequirePermission permission="event-type@read" />,
         children: [
           { index: true, element: <EventTypeIndexPage /> },
           { path: 'create', element: <EventTypeFormPage /> },
@@ -281,6 +307,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'vendor',
+        element: <RequirePermission permission="vendor@read" />,
         children: [
           { index: true, element: <VendorIndexPage /> },
           { path: 'create', element: <VendorFormPage /> },
@@ -290,6 +317,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'users',
+        element: <RequirePermission permission="user@read" />,
         children: [
           { index: true, element: <UsersIndexPage /> },
           { path: 'create', element: <UserFormPage /> },
@@ -299,6 +327,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'access-control',
+        element: <RequirePermission permission="role@read" />,
         children: [
           { index: true, element: <RolesIndexPage /> },
           { path: 'create', element: <RoleFormPage /> },
@@ -308,17 +337,36 @@ export const router = createBrowserRouter([
       },
       {
         path: 'activity-logs',
+        element: <RequirePermission permission="activity_log@read" />,
         children: [
           { index: true, element: <ActivityLogsIndexPage /> },
           { path: ':id', element: <ActivityLogDetailPage /> },
         ],
       },
       {
+        path: 'system-logs',
+        element: (
+          <RequirePermission permission="log@read">
+            <SystemLogsIndexPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'backups',
+        element: <RequirePermission permission="backup@read" />,
+        children: [{ index: true, element: <BackupIndexPage /> }],
+      },
+      {
         path: 'notifications',
-        element: <NotificationsPage />,
+        element: (
+          <RequirePermission permission="notification@read">
+            <NotificationsPage />
+          </RequirePermission>
+        ),
       },
       {
         path: 'knowledge-base',
+        element: <RequirePermission permission="knowledge-base@read" />,
         children: [
           { index: true, element: <KnowledgeBaseIndexPage /> },
           { path: 'create', element: <KnowledgeBaseFormPage /> },
@@ -328,10 +376,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'ai-admin',
-        element: <AiAdminChatPage />,
+        element: (
+          <RequirePermission permission="ai-admin@access">
+            <AiAdminChatPage />
+          </RequirePermission>
+        ),
       },
       {
         path: 'settings',
+        element: <RequirePermission permission="settings@read" />,
         children: [
           { index: true, element: <SettingsPage /> },
           { path: 'app-settings', element: <AppSettingsPage /> },
