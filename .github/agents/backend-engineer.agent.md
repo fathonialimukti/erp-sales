@@ -15,8 +15,8 @@ Own **only**:
 - `packages/schemas/src/` (`@repo/schemas`)
 - `apps/server/src/` (tRPC, Prisma, middleware)
 
-**Bottom line (all agents):** `.github/copilot-instructions.md`  
-**Stack rules (detail):** `.github/instructions/prisma-server.instructions.md`, `.github/instructions/schemas.instructions.md`
+**Bottom line (all agents):** `AGENTS.md`  
+**Stack rules (detail):** `.agents/skills/prisma-cli`, `.agents/skills/prisma-client-api`, `.agents/skills/trpc-router`; architecture overview in `docs/ARCHITECTURE.md`
 
 ## Mode: direct task (default)
 

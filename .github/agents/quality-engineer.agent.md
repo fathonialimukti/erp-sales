@@ -58,8 +58,8 @@ You also review diffs for correctness, security, and over-engineering (ponytail-
 
 ## ERP pointers
 
-- Bottom line: `.github/copilot-instructions.md`
-- Paths: `.github/instructions/*` (client / server / schemas / i18n)
+- Bottom line: `AGENTS.md`
+- Architecture: `docs/ARCHITECTURE.md` (client / server / schemas detail)
 - Skills: `.agents/skills/` only
 - Client: Tailwind v4 + shadcn Aurora; flag HeroUI / CSS-in-JS; `apps/client/src/ui/` legacy
 - UI craft: Frontend Engineer + design law `docs/design-system/aurora-commerce-design-law.md` — flag ban violations (mint/module as CTA, rainbow table cells, flat gray shells, **gray text**, ad-hoc Motion, wrong primary)

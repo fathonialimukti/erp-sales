@@ -12,7 +12,7 @@ user-invocable: true
 
 **When NOT to use this agent:** simple single-stack tasks (one router, one page, a review, a bugfix in one layer). User should pick **Backend Engineer**, **Frontend Engineer**, or **Quality Engineer** directly — those agents implement immediately with no orchestration.
 
-**Bottom line (all agents):** `.github/copilot-instructions.md`  
+**Bottom line (all agents):** `AGENTS.md`  
 **Skills:** `.agents/skills/` · MCP: `.vscode/mcp.json`  
 **Client stack:** Tailwind + shadcn — **Frontend Engineer owns UI craft** (do not implement UI here)
 
@@ -30,7 +30,7 @@ UI craft owner: Frontend Engineer + ui-ux-pro-max
 
 ## Context budget (hard rule)
 
-You read **at most 3 files, ever**: the user request, `docs/plans/<feature>/PLAN.md` (if present), and `.github/copilot-instructions.md`. **Never** grep, search, or open source files — no schemas, routers, pages, or helpers. Interface facts belong to subagents, not to you:
+You read **at most 3 files, ever**: the user request, `docs/plans/<feature>/PLAN.md` (if present), and `AGENTS.md`. **Never** grep, search, or open source files — no schemas, routers, pages, or helpers. Interface facts belong to subagents, not to you:
 
 - **Layer 1 briefs** come from the request + the Frozen-contract template (paths follow naming conventions — no lookup needed).
 - **Later-layer briefs** copy the producing subagent's `## Produces` report block verbatim into `Consumes:`. Every implementer must end its report with `## Produces` (exact export names, signatures, permission strings, i18n keys).
@@ -97,7 +97,7 @@ Each task gets a brief file at `docs/plans/<feature>/tasks/task-N-<name>.md` con
 - Produces: [exact function/type names later tasks depend on]
 
 **Reads (in your own context — no context is provided):**
-- [reference files the subagent must open itself, e.g. `apps/server/src/routers/region.ts`, `apps/client/src/pages/Region*.tsx`, `.github/copilot-instructions.md`]
+- [reference files the subagent must open itself, e.g. `apps/server/src/routers/region.ts`, `apps/client/src/pages/Region*.tsx`, `AGENTS.md`]
 
 **Frozen contract:**
 - Resource: `<domain>`
@@ -147,7 +147,7 @@ Quality Engineer: [whole-branch review + test execution package]
 ## Tool policy
 | Tool | Allowed | Forbidden |
 |------|---------|-----------|
-| read/search | Request + plan + copilot-instructions only | Any source file, grep, codebase exploration |
+| read/search | Request + plan + AGENTS.md only | Any source file, grep, codebase exploration |
 | edit | `docs/plans/**` only | Any implementation path |
 | execute | none | Fix-it shell, installs, migrations, typecheck |
 | agent | Backend / Frontend / Quality Engineer | Doing their work |
