@@ -4,7 +4,7 @@ import { logActivity } from '../lib/activity-log.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
-import { hasPermission, protectedProcedure, router } from '../trpc.js';
+import { hasPermission, protectedProcedure, router, clearPermissionCache } from '../trpc.js';
 
 export const roleRouter = router({
   list: protectedProcedure
@@ -104,6 +104,9 @@ export const roleRouter = router({
         return role;
       });
 
+      // Role permissions changed — drop cached permission sets.
+      clearPermissionCache();
+
       await logActivity(prisma, {
         action: 'UPDATE',
         userId: ctx.user.userId,
@@ -127,6 +130,7 @@ export const roleRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Role not found.' });
 
       await prisma.role.delete({ where: { id: input.id } });
+      clearPermissionCache();
 
       await logActivity(prisma, {
         action: 'DELETE',

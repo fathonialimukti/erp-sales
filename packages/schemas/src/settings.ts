@@ -7,6 +7,10 @@ export const appSettingsSchema = z.object({
     apiKey: z.string().optional(), // write-only: empty = keep existing
     model: z.string().optional(),
     multimodalEnabled: z.boolean().optional(),
+    // Rate limits (requests per minute). Requests queue instead of being
+    // rejected; globalRpm should match the provider's hard per-key quota.
+    userRpm: z.number().int().min(1).max(600).optional(),
+    globalRpm: z.number().int().min(1).max(600).optional(),
     embeddingBaseUrl: z.string().url().or(z.literal('')).optional(),
     embeddingApiKey: z.string().optional(), // write-only: empty = keep existing
     embeddingModel: z.string().optional(),

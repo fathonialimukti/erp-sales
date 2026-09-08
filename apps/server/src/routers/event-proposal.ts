@@ -348,20 +348,28 @@ export const eventProposalRouter = router({
         message: 'Document validated successfully',
       });
 
-      const updated = await prisma.eventProposal.update({
-        where: { id: input.id },
-        data: {
-          approvalStatus: 'VALIDATING',
-          approvalHistory: history as any,
-        },
-      });
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.eventProposal.updateMany({
+          where: { id: input.id, approvalStatus: 'DRAFT' },
+          data: {
+            approvalStatus: 'VALIDATING',
+            approvalHistory: history as any,
+          },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT proposals can be validated.' });
+        }
+        const proposal = await tx.eventProposal.findUniqueOrThrow({ where: { id: input.id } });
 
-      await logActivity(prisma, {
-        action: 'APPROVE',
-        userId: ctx.user.userId,
-        resource: 'event_proposal',
-        resourceId: updated.id,
-        message: `Validated event proposal ${updated.name}`,
+        await logActivity(tx, {
+          action: 'APPROVE',
+          userId: ctx.user.userId,
+          resource: 'event_proposal',
+          resourceId: proposal.id,
+          message: `Validated event proposal ${proposal.name}`,
+        });
+
+        return proposal;
       });
 
       return updated;
@@ -385,22 +393,31 @@ export const eventProposalRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.eventProposal.update({
-        where: { id: idInput.id },
-        data: { approvalStatus: 'PROPOSED', areaManagerApprovedById: ctx.user.userId, areaManagerApprovedAt: new Date(), approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.eventProposal.updateMany({
+          where: { id: idInput.id, approvalStatus: 'VALIDATING', areaManagerApprovedAt: null },
+          data: { approvalStatus: 'PROPOSED', areaManagerApprovedById: ctx.user.userId, areaManagerApprovedAt: new Date(), approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING proposals can start approval.' });
+        }
+        const proposal = await tx.eventProposal.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Event Proposal Progress`,
+          message: `Area Manager approved your proposal "${existing.name}".`,
+          targetType: 'EVENT_PROPOSAL',
+          targetId: existing.id,
+          actionUrl: `/event-proposal/${existing.id}`,
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: proposal.id, message: `Area Manager approved ${proposal.name}` });
+        return proposal;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Event Proposal Progress`,
-        message: `Area Manager approved your proposal "${existing.name}".`,
-        targetType: 'EVENT_PROPOSAL',
-        targetId: existing.id,
-        actionUrl: `/event-proposal/${existing.id}`,
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: updated.id, message: `Area Manager approved ${updated.name}` });
       return updated;
     }),
 
@@ -420,22 +437,31 @@ export const eventProposalRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.eventProposal.update({
-        where: { id: idInput.id },
-        data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.eventProposal.updateMany({
+          where: { id: idInput.id, regionManagerApprovedAt: null, areaManagerApprovedAt: { not: null } },
+          data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Area Manager approval.' });
+        }
+        const proposal = await tx.eventProposal.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Event Proposal Progress`,
+          message: `Regional Manager approved your proposal "${existing.name}".`,
+          targetType: 'EVENT_PROPOSAL',
+          targetId: existing.id,
+          actionUrl: `/event-proposal/${existing.id}`,
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: proposal.id, message: `Region Manager approved ${proposal.name}` });
+        return proposal;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Event Proposal Progress`,
-        message: `Regional Manager approved your proposal "${existing.name}".`,
-        targetType: 'EVENT_PROPOSAL',
-        targetId: existing.id,
-        actionUrl: `/event-proposal/${existing.id}`,
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: updated.id, message: `Region Manager approved ${updated.name}` });
       return updated;
     }),
 
@@ -455,22 +481,31 @@ export const eventProposalRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.eventProposal.update({
-        where: { id: idInput.id },
-        data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.eventProposal.updateMany({
+          where: { id: idInput.id, financeManagerApprovedAt: null, regionManagerApprovedAt: { not: null } },
+          data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Region Manager approval.' });
+        }
+        const proposal = await tx.eventProposal.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Event Proposal Progress`,
+          message: `Finance PIC approved your proposal "${existing.name}".`,
+          targetType: 'EVENT_PROPOSAL',
+          targetId: existing.id,
+          actionUrl: `/event-proposal/${existing.id}`,
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: proposal.id, message: `Finance approved ${proposal.name}` });
+        return proposal;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Event Proposal Progress`,
-        message: `Finance PIC approved your proposal "${existing.name}".`,
-        targetType: 'EVENT_PROPOSAL',
-        targetId: existing.id,
-        actionUrl: `/event-proposal/${existing.id}`,
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: updated.id, message: `Finance approved ${updated.name}` });
       return updated;
     }),
 
@@ -490,23 +525,32 @@ export const eventProposalRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.eventProposal.update({
-        where: { id: idInput.id },
-        data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.eventProposal.updateMany({
+          where: { id: idInput.id, approvalStatus: 'PROPOSED', financeManagerApprovedAt: { not: null } },
+          data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Finance approval.' });
+        }
+        const proposal = await tx.eventProposal.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Event Proposal Fully Approved`,
+          message: `Director has approved your proposal "${existing.name}". All approvals complete.`,
+          targetType: 'EVENT_PROPOSAL',
+          targetId: existing.id,
+          actionUrl: `/event-proposal/${existing.id}`,
+          type: 'SUCCESS',
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: proposal.id, message: `Director approved ${proposal.name}` });
+        return proposal;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Event Proposal Fully Approved`,
-        message: `Director has approved your proposal "${existing.name}". All approvals complete.`,
-        targetType: 'EVENT_PROPOSAL',
-        targetId: existing.id,
-        actionUrl: `/event-proposal/${existing.id}`,
-        type: 'SUCCESS',
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'event_proposal', resourceId: updated.id, message: `Director approved ${updated.name}` });
       return updated;
     }),
 
@@ -525,23 +569,33 @@ export const eventProposalRouter = router({
         message: message ?? 'Rejected',
       });
 
-      const updated = await prisma.eventProposal.update({
-        where: { id: idInput.id },
-        data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        // Rejectable while in-flight (VALIDATING or PROPOSED), not after full approval.
+        const result = await tx.eventProposal.updateMany({
+          where: { id: idInput.id, approvalStatus: { in: ['VALIDATING', 'PROPOSED'] } },
+          data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only in-review proposals can be rejected.' });
+        }
+        const proposal = await tx.eventProposal.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Event Proposal Rejected`,
+          message: `Your proposal "${existing.name}" has been rejected.${message ? ` Reason: ${message}` : ''}`,
+          targetType: 'EVENT_PROPOSAL',
+          targetId: existing.id,
+          actionUrl: `/event-proposal/${existing.id}`,
+          type: 'WARNING',
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'REJECT', userId: ctx.user.userId, resource: 'event_proposal', resourceId: proposal.id, message: `Rejected ${proposal.name}` });
+        return proposal;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Event Proposal Rejected`,
-        message: `Your proposal "${existing.name}" has been rejected.${message ? ` Reason: ${message}` : ''}`,
-        targetType: 'EVENT_PROPOSAL',
-        targetId: existing.id,
-        actionUrl: `/event-proposal/${existing.id}`,
-        type: 'WARNING',
-      });
-
-      await logActivity(prisma, { action: 'REJECT', userId: ctx.user.userId, resource: 'event_proposal', resourceId: updated.id, message: `Rejected ${updated.name}` });
       return updated;
     }),
 });

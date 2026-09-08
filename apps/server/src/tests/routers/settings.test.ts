@@ -261,6 +261,15 @@ describe('settings router (app settings)', () => {
 
 describe('env fallback', () => {
   it('returns env values when no DB row exists', async () => {
+    // Establish the precondition: the shared dev DB may carry persisted
+    // settings rows — remove the two keys under test, then verify the
+    // env fallback wins.
+    const removed = await prisma.appSetting.findMany({
+      where: { key: { in: ['ai.model', 'smtp.host'] } },
+      select: { key: true, value: true },
+    });
+    await prisma.appSetting.deleteMany({ where: { key: { in: ['ai.model', 'smtp.host'] } } });
+
     setEnv('AI_MODEL', 'test-model');
     setEnv('SMTP_HOST', 'smtp.test.example');
 
@@ -270,6 +279,15 @@ describe('env fallback', () => {
     const settings = await getAppSettings(prisma);
     expect(settings.ai.model).toBe('test-model');
     expect(settings.smtp.host).toBe('smtp.test.example');
+
+    // Restore whatever the DB had so other suites are unaffected.
+    for (const row of removed) {
+      await prisma.appSetting.upsert({
+        where: { key: row.key },
+        create: { key: row.key, value: row.value as object, updatedBy: 'settings.test' },
+        update: { value: row.value as object, updatedBy: 'settings.test' },
+      });
+    }
   });
 });
 

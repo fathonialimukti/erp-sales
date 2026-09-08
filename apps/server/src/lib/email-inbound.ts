@@ -98,11 +98,15 @@ async function resolveConversationId(
     }
   }
 
-  // Header threading: same sender without reply headers → NEW conversation
-  const subject = payload.subject?.trim();
-  const existing = subject
+  // Header threading: same sender without reply headers → NEW conversation.
+  // Subject lookup strips repeated Re:/Fwd: prefixes (Outlook-style chains)
+  // so replies thread onto the original conversation even without
+  // In-Reply-To/References headers.
+  const normalizedSubject =
+    payload.subject?.trim().replace(/^((?:re|fwd?|fw)\s*(:|\[)\s*)+/i, '').trim() ?? '';
+  const existing = normalizedSubject
     ? await prisma.emailConversation.findFirst({
-        where: { email, subject, status: 'OPEN' },
+        where: { email, subject: normalizedSubject, status: 'OPEN' },
         orderBy: { lastMessageAt: 'desc' },
         select: { id: true },
       })
@@ -123,7 +127,7 @@ async function resolveConversationId(
   const created = await prisma.emailConversation.create({
     data: {
       email,
-      subject: subject || null,
+      subject: normalizedSubject || null,
       lastMessageAt: new Date(),
       customerId: linkedCustomerId,
     },

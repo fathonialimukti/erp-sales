@@ -1,137 +1,101 @@
-# Turborepo starter
+# erp-sales
 
-This Turborepo starter is maintained by the Turborepo core team.
+A B2B field-sales / CRM ERP: regions → areas → customers → outlets → SKU visits → sales orders, with approval workflows, budgeting, reporting, and AI woven into daily ops (order extraction, customer chat, email concierge, knowledge base).
 
-## Using this example
+Trust-first, boardroom-ready. English + Bahasa Indonesia.
 
-Run the following command:
+## Stack
+
+| Layer     | Tech |
+|-----------|------|
+| Client    | React 19 + Vite + Tailwind v4 + shadcn, tRPC v11 vanilla client, TanStack Query/Form, jotai, react-intl, Tauri desktop wrapper |
+| Server    | Express 5 + tRPC v11, Prisma 7 (PostgreSQL, pgvector), Zod 4, AI SDK v7 |
+| Shared    | `@repo/schemas` (Zod validation, shared client/server) |
+| Tooling   | Bun + Turborepo, ESLint, Prettier, Vitest (server), Playwright (e2e) |
+
+## Monorepo layout
+
+```
+apps/
+  client/        React SPA (port 10021) + src-tauri/ desktop wrapper
+  server/        Express + tRPC API (port 10022)
+packages/
+  schemas/       Zod schemas shared end-to-end
+  eslint-config/ Shared ESLint configs
+  typescript-config/ Shared tsconfigs
+docs/            Design system, plans, security report
+scripts/         backup-db.sh
+```
+
+## Prerequisites
+
+- [Bun](https://bun.sh) ≥ 1.3
+- PostgreSQL (with the `vector` extension available for the knowledge base)
+- pm2 (production only)
+
+## Getting started
 
 ```sh
-npx create-turbo@latest
+bun install
+
+# Server env — copy and edit (DATABASE_URL, JWT_SECRET, ...)
+cp apps/server/.env.example apps/server/.env
+
+# Generate the Prisma client (required before dev/start)
+bun run init
+
+# Dev database: push schema + seed + ingest knowledge base
+bun run --cwd apps/server db:all
+
+# Run client + server
+bun run dev
 ```
 
-## What's inside?
+- Client: http://localhost:10021
+- API: http://localhost:10022 (`/healthz`, `/readyz`)
+- tRPC: http://localhost:10022/trpc/v1
 
-This Turborepo includes the following packages/apps:
+## Scripts (root)
 
-### Apps and Packages
+| Script | Purpose |
+|--------|---------|
+| `bun run dev` | Turbo dev — client + server |
+| `bun run build` | Build all apps/packages |
+| `bun run lint` | ESLint, zero warnings allowed |
+| `bun run check-types` | tsc across the monorepo |
+| `bun run test` | Server (Vitest) + client (Playwright) tests |
+| `bun run tsc` | Direct tsc pass over server/client/schemas |
+| `bun run init` | `prisma generate` |
+| `bun run prod` | `prisma generate` + pm2 start `ecosystem.config.js` |
+| `bun run prod:restart` / `prod:stop` / `prod:logs` | pm2 management |
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Server specifics
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```sh
+cd apps/server
+bun run db:all      # dev only: db push --force-reset + seed + KB ingest
+bun run ai:ingest   # re-ingest src/knowledge/*.md into the RAG index
+bun run test        # Vitest — needs a reachable Postgres
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Tests run sequentially against a real database (see `src/tests/helpers/seed.ts`).
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+## Environment
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+- `apps/server/.env.example` — API: DB, JWT, CORS, pool, AI provider + rate limits, SMTP, email webhook secret
+- `apps/client/.env.example` — `VITE_TRPC_URL`
 
-### Develop
+Never commit real `.env` files or provider keys. The upstream AI provider key has a hard 10 req/min quota — enforce with `AI_GLOBAL_RPM` (default 10).
 
-To develop all apps and packages, run the following command:
+## Conventions
 
-```
-cd my-turborepo
+- Route URLs are kebab-case (`/sales-order`); tRPC namespaces and permission strings are camelCase (`salesOrder.list`, `sales-order@read`)
+- All user-visible strings go through react-intl in **both** `en.json` and `id.json`
+- ULID string ids everywhere; every mutation is permission-gated (`resource@action`) and activity-logged
+- Design law: `docs/design-system/DESIGN.md` — text is never gray, one primary action per region, dense scannable tables
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+## Documentation
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
-# erp-warehouse
-# erp-sales
+- `docs/design-system/DESIGN.md` — UI law (tokens, motion, do/don't)
+- `docs/security-testing-report.md` — security assessment + remediation status
+- `docs/plans/` — implementation plans (budgeting, KB embedding, production readiness)

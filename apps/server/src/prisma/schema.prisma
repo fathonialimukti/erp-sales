@@ -29,6 +29,7 @@ model User {
   notificationsReceived Notification[]  @relation("notification_recipient")
   crmArea               Area?           @relation(fields: [areaId], references: [id])
   role                  Role?           @relation(fields: [roleId], references: [id])
+  backups               Backup[]        @relation("backup_created_by")
 
   @@index([roleId])
   @@map("users")
@@ -811,4 +812,61 @@ enum ActivityAction {
   LOGOUT
   EXPORT
   IMPORT
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+// Operational log (server + client-reported events) surfaced in the
+// in-app system-logs viewer. No FK on userId so logs survive user deletion.
+model AppLog {
+  id        String   @id @default(ulid()) @map("id")
+  level     LogLevel @default(INFO) @map("level")
+  module    String   @map("module")
+  message   String   @map("message")
+  detail    Json?    @map("detail")
+  requestId String?  @map("request_id")
+  userId    String?  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([level, createdAt])
+  @@index([module, createdAt])
+  @@map("app_logs")
+}
+
+// Revoked JWT ids (logout). Purged once expired by lib/token-blacklist.ts.
+model RevokedToken {
+  jti       String   @id @map("jti")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("revoked_tokens")
+}
+
+enum BackupSource {
+  CREATED
+  UPLOADED
+}
+
+// Backup metadata. The backup file itself lives on disk, never in the DB.
+model Backup {
+  id            String       @id @default(ulid()) @map("id")
+  filename      String       @unique @map("filename")
+  sizeBytes     Int          @map("size_bytes")
+  tableCounts   Json         @map("table_counts")
+  schemaVersion String       @map("schema_version")
+  source        BackupSource @map("source")
+  note          String?      @map("note")
+  createdById   String       @map("created_by_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  createdBy     User         @relation("backup_created_by", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
+  @@map("backups")
 }

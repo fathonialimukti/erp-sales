@@ -44,3 +44,13 @@ apps/client/src/assets/glb/*
 /docs/superpowers/*
 # heroui-agents-md
 .heroui-docs/
+
+# Playwright auth state
+playwright/.auth/
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+
+# Server backup files (database backup & restore)
+apps/server/backups/

@@ -11,10 +11,10 @@ const createdPermissionIds: string[] = [];
 
 beforeAll(async () => {
   const role = await seedRoleWithPermissions([
-    'user@read',
-    'user@create',
-    'user@update',
-    'user@delete',
+    'permission@read',
+    'permission@create',
+    'permission@update',
+    'permission@delete',
   ]);
 
   const actor = await seedTestUser({

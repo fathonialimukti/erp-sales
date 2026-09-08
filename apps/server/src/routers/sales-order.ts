@@ -130,38 +130,46 @@ export const salesOrderRouter = router({
       }
 
       // Auto-generate document number if not provided
-      let documentNumber = header.documentNumber;
-      if (!documentNumber) {
-        const today = new Date();
-        const dateStr = today.toISOString().split('T')[0]!.replace(/-/g, ''); // YYYYMMDD
-        const prefix = `SO-${dateStr}-`;
-
-        // Find the last document number for today
-        const lastOrder = await prisma.salesOrder.findFirst({
-          where: {
-            documentNumber: {
-              startsWith: prefix,
-            },
-          },
-          orderBy: {
-            documentNumber: 'desc',
-          },
-          select: {
-            documentNumber: true,
-          },
-        });
-
-        let nextNum = 1;
-        if (lastOrder?.documentNumber) {
-          const lastNum = parseInt(lastOrder.documentNumber.slice(-4), 10);
-          if (!isNaN(lastNum)) {
-            nextNum = lastNum + 1;
-          }
-        }
-        documentNumber = `${prefix}${nextNum.toString().padStart(4, '0')}`;
-      }
+      const providedDocumentNumber = header.documentNumber;
 
       const created = await prisma.$transaction(async (tx) => {
+        let documentNumber = providedDocumentNumber;
+        if (!documentNumber) {
+          const today = new Date();
+          const dateStr = today.toISOString().split('T')[0]!.replace(/-/g, ''); // YYYYMMDD
+          const prefix = `SO-${dateStr}-`;
+
+          // Serialize concurrent number generation for this prefix so two
+          // simultaneous creates cannot compute the same next number.
+          // Advisory xact lock auto-releases at commit/rollback; the
+          // documentNumber @unique constraint remains the hard backstop.
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${prefix}))`;
+
+          // Find the last document number for today
+          const lastOrder = await tx.salesOrder.findFirst({
+            where: {
+              documentNumber: {
+                startsWith: prefix,
+              },
+            },
+            orderBy: {
+              documentNumber: 'desc',
+            },
+            select: {
+              documentNumber: true,
+            },
+          });
+
+          let nextNum = 1;
+          if (lastOrder?.documentNumber) {
+            const lastNum = parseInt(lastOrder.documentNumber.slice(-4), 10);
+            if (!isNaN(lastNum)) {
+              nextNum = lastNum + 1;
+            }
+          }
+          documentNumber = `${prefix}${nextNum.toString().padStart(4, '0')}`;
+        }
+
         const order = await tx.salesOrder.create({
           data: {
             ...header,
@@ -183,16 +191,16 @@ export const salesOrderRouter = router({
           })),
         });
 
-        return order;
-      });
+        await logActivity(tx, {
+          action: 'CREATE',
+          userId: ctx.user.userId,
+          resource: 'sales_order',
+          resourceId: order.id,
+          message: `Created sales order ${order.documentNumber ?? order.id}`,
+          detail: buildCreateLogDetail(order as unknown as Record<string, unknown>),
+        });
 
-      await logActivity(prisma, {
-        action: 'CREATE',
-        userId: ctx.user.userId,
-        resource: 'sales_order',
-        resourceId: created.id,
-        message: `Created sales order ${created.documentNumber ?? created.id}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        return order;
       });
 
       return created;
@@ -254,16 +262,16 @@ export const salesOrderRouter = router({
           })),
         });
 
-        return order;
-      });
+        await logActivity(tx, {
+          action: 'UPDATE',
+          userId: ctx.user.userId,
+          resource: 'sales_order',
+          resourceId: order.id,
+          message: `Updated sales order ${order.documentNumber ?? order.id}`,
+          detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, order as unknown as Record<string, unknown>),
+        });
 
-      await logActivity(prisma, {
-        action: 'UPDATE',
-        userId: ctx.user.userId,
-        resource: 'sales_order',
-        resourceId: updated.id,
-        message: `Updated sales order ${updated.documentNumber ?? updated.id}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        return order;
       });
 
       return updated;
@@ -276,15 +284,17 @@ export const salesOrderRouter = router({
       const existing = await prisma.salesOrder.findUnique({ where: { id: input.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
 
-      await prisma.salesOrder.delete({ where: { id: input.id } });
+      await prisma.$transaction(async (tx) => {
+        await tx.salesOrder.delete({ where: { id: input.id } });
 
-      await logActivity(prisma, {
-        action: 'DELETE',
-        userId: ctx.user.userId,
-        resource: 'sales_order',
-        resourceId: existing.id,
-        message: `Deleted sales order ${existing.documentNumber ?? existing.id}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        await logActivity(tx, {
+          action: 'DELETE',
+          userId: ctx.user.userId,
+          resource: 'sales_order',
+          resourceId: existing.id,
+          message: `Deleted sales order ${existing.documentNumber ?? existing.id}`,
+          detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        });
       });
 
       return { success: true };
@@ -313,21 +323,30 @@ export const salesOrderRouter = router({
         message: 'Document validated successfully',
       });
 
-      const updated = await prisma.salesOrder.update({
-        where: { id: input.id },
-        data: {
-          approvalStatus: 'PROPOSED',
-          proposedAt: new Date(),
-          approvalHistory: history as any,
-        },
-      });
+      const updated = await prisma.$transaction(async (tx) => {
+        // Conditional update: rejects a concurrent state change (TOCTOU guard).
+        const result = await tx.salesOrder.updateMany({
+          where: { id: input.id, approvalStatus: 'DRAFT' },
+          data: {
+            approvalStatus: 'PROPOSED',
+            proposedAt: new Date(),
+            approvalHistory: history as any,
+          },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT orders can be validated.' });
+        }
+        const order = await tx.salesOrder.findUniqueOrThrow({ where: { id: input.id } });
 
-      await logActivity(prisma, {
-        action: 'APPROVE',
-        userId: ctx.user.userId,
-        resource: 'sales_order',
-        resourceId: updated.id,
-        message: `Validated sales order ${updated.documentNumber ?? updated.id}`,
+        await logActivity(tx, {
+          action: 'APPROVE',
+          userId: ctx.user.userId,
+          resource: 'sales_order',
+          resourceId: order.id,
+          message: `Validated sales order ${order.documentNumber ?? order.id}`,
+        });
+
+        return order;
       });
 
       return updated;
@@ -387,23 +406,31 @@ export const salesOrderRouter = router({
         message: message ?? 'Sales order submitted for AI validation',
       });
 
-      const updated = await prisma.salesOrder.update({
-        where: { id: idInput.id },
-        data: {
-          approvalStatus: 'VALIDATING',
-          approvalHistory: history as any,
-        },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.salesOrder.updateMany({
+          where: { id: idInput.id, approvalStatus: { in: ['DRAFT', 'REJECTED'] } },
+          data: {
+            approvalStatus: 'VALIDATING',
+            approvalHistory: history as any,
+          },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT or REJECTED orders can be proposed.' });
+        }
+        const order = await tx.salesOrder.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await logActivity(tx, {
+          action: 'APPROVE',
+          userId: ctx.user.userId,
+          resource: 'sales_order',
+          resourceId: order.id,
+          message: `Submitted sales order ${order.documentNumber ?? order.id} for AI validation`,
+        });
+
+        return order;
       });
 
-      await logActivity(prisma, {
-        action: 'APPROVE',
-        userId: ctx.user.userId,
-        resource: 'sales_order',
-        resourceId: updated.id,
-        message: `Submitted sales order ${updated.documentNumber ?? updated.id} for AI validation`,
-      });
-
-      // Fire-and-forget background validation
+      // Fire-and-forget background validation (reads committed data)
       startBackgroundValidation(updated.id, ctx.user.userId);
 
       return updated;
@@ -425,33 +452,42 @@ export const salesOrderRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.salesOrder.update({
-        where: { id: idInput.id },
-        data: {
-          approvalStatus: 'APPROVED',
-          approvedById: ctx.user.userId,
-          approvedAt: new Date(),
-          approvalHistory: history as any,
-        },
-      });
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.salesOrder.updateMany({
+          where: { id: idInput.id, approvalStatus: 'PROPOSED' },
+          data: {
+            approvalStatus: 'APPROVED',
+            approvedById: ctx.user.userId,
+            approvedAt: new Date(),
+            approvalHistory: history as any,
+          },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only PROPOSED orders can be approved.' });
+        }
+        const order = await tx.salesOrder.findUniqueOrThrow({ where: { id: idInput.id } });
 
-      // Notify creator
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Sales Order Approved`,
-        message: `Your sales order ${existing.documentNumber ?? existing.id} has been approved by ${ctx.user.name ?? 'Manager'}.`,
-        targetType: 'SALES_ORDER',
-        targetId: existing.id,
-        actionUrl: `/sales-order/${existing.id}`,
-      });
+        // Notify creator atomically with the state change.
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Sales Order Approved`,
+          message: `Your sales order ${order.documentNumber ?? order.id} has been approved by ${ctx.user.name ?? 'Manager'}.`,
+          targetType: 'SALES_ORDER',
+          targetId: order.id,
+          actionUrl: `/sales-order/${order.id}`,
+          db: tx,
+        });
 
-      await logActivity(prisma, {
-        action: 'APPROVE',
-        userId: ctx.user.userId,
-        resource: 'sales_order',
-        resourceId: updated.id,
-        message: `Approved sales order ${updated.documentNumber ?? updated.id}`,
+        await logActivity(tx, {
+          action: 'APPROVE',
+          userId: ctx.user.userId,
+          resource: 'sales_order',
+          resourceId: order.id,
+          message: `Approved sales order ${order.documentNumber ?? order.id}`,
+        });
+
+        return order;
       });
 
       return updated;
@@ -472,29 +508,38 @@ export const salesOrderRouter = router({
         message: message ?? 'Rejected',
       });
 
-      const updated = await prisma.salesOrder.update({
-        where: { id: idInput.id },
-        data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
-      });
+      const updated = await prisma.$transaction(async (tx) => {
+        // PROPOSED or VALIDATING (manager can reject while AI validation runs).
+        const result = await tx.salesOrder.updateMany({
+          where: { id: idInput.id, approvalStatus: { in: ['PROPOSED', 'VALIDATING'] } },
+          data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only PROPOSED or VALIDATING orders can be rejected.' });
+        }
+        const order = await tx.salesOrder.findUniqueOrThrow({ where: { id: idInput.id } });
 
-      // Notify creator
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Sales Order Rejected`,
-        message: `Your sales order ${existing.documentNumber ?? existing.id} has been rejected.${message ? ` Reason: ${message}` : ''}`,
-        targetType: 'SALES_ORDER',
-        targetId: existing.id,
-        actionUrl: `/sales-order/${existing.id}`,
-        type: 'WARNING',
-      });
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Sales Order Rejected`,
+          message: `Your sales order ${order.documentNumber ?? order.id} has been rejected.${message ? ` Reason: ${message}` : ''}`,
+          targetType: 'SALES_ORDER',
+          targetId: order.id,
+          actionUrl: `/sales-order/${order.id}`,
+          type: 'WARNING',
+          db: tx,
+        });
 
-      await logActivity(prisma, {
-        action: 'REJECT',
-        userId: ctx.user.userId,
-        resource: 'sales_order',
-        resourceId: updated.id,
-        message: `Rejected sales order ${updated.documentNumber ?? updated.id}`,
+        await logActivity(tx, {
+          action: 'REJECT',
+          userId: ctx.user.userId,
+          resource: 'sales_order',
+          resourceId: order.id,
+          message: `Rejected sales order ${order.documentNumber ?? order.id}`,
+        });
+
+        return order;
       });
 
       return updated;

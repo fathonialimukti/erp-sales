@@ -1,4 +1,6 @@
 import { TRPCError } from '@trpc/server';
+import { randomUUID } from 'node:crypto';
+import bcrypt from 'bcrypt';
 import { stringifySetCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
@@ -10,9 +12,14 @@ import { publicProcedure, protectedProcedure, router } from '../trpc.js';
 import { getMessage } from '../lib/locale.js';
 import { loginSchema } from '@repo/schemas/auth';
 import { getJwtSecret } from '../lib/jwt-secret.js';
+import { logApp } from '../lib/app-log.js';
 
 const JWT_SECRET = getJwtSecret();
 const TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
+
+// Bcrypt compare cost for unknown accounts so login timing does not reveal
+// whether an email exists (user-miss path does the same work as a real hash).
+const DUMMY_HASH = bcrypt.hashSync(randomUUID(), 10);
 
 const createAuthCookie = (token: string, rememberMe?: boolean) =>
     stringifySetCookie({
@@ -51,6 +58,12 @@ export const authRouter = router({
                 ?? 'unknown';
             const rateLimit = checkRateLimit(ip);
             if (!rateLimit.allowed) {
+                logApp({
+                    level: 'WARN',
+                    module: 'auth',
+                    message: 'Login rate limit exceeded',
+                    detail: { email, ip },
+                });
                 throw new TRPCError({
                     code: 'TOO_MANY_REQUESTS',
                     message: getMessage(ctx.locale, 'auth.rateLimitExceeded'),
@@ -72,10 +85,26 @@ export const authRouter = router({
                 },
             });
 
-            if (!user) throw new TRPCError({ code: 'UNAUTHORIZED', message: getMessage(ctx.locale, 'auth.invalidCredentials') });
+            if (!user) {
+                // Equalize timing with the found-user path before rejecting.
+                await verifyPassword(password, DUMMY_HASH);
+                logApp({
+                    level: 'WARN',
+                    module: 'auth',
+                    message: 'Login failed: unknown email',
+                    detail: { email, ip },
+                });
+                throw new TRPCError({ code: 'UNAUTHORIZED', message: getMessage(ctx.locale, 'auth.invalidCredentials') });
+            }
 
             const isPasswordValid = await verifyPassword(password, user.password);
             if (!isPasswordValid) {
+                logApp({
+                    level: 'WARN',
+                    module: 'auth',
+                    message: 'Login failed: invalid password',
+                    detail: { email, ip },
+                });
                 throw new TRPCError({ code: 'UNAUTHORIZED', message: getMessage(ctx.locale, 'auth.invalidCredentials') });
             }
 
@@ -86,7 +115,7 @@ export const authRouter = router({
                     name: user.name,
                 },
                 JWT_SECRET,
-                { expiresIn: '7d' }
+                { expiresIn: '7d', jwtid: randomUUID() }
             );
 
             const decoded = jwt.decode(token) as jwt.JwtPayload | null;
@@ -156,9 +185,13 @@ export const authRouter = router({
     }),
 
     logout: protectedProcedure.mutation(async ({ ctx }) => {
-        // Revoke the current token by adding it to the blacklist
+        // Revoke the current token (DB-backed by jti + in-memory fast path).
         if (ctx.token) {
-            addToBlacklist(ctx.token, ctx.user.exp * 1000);
+            await addToBlacklist({
+                token: ctx.token,
+                exp: ctx.user.exp * 1000,
+                jti: ctx.user.jti,
+            });
         }
 
         // Log logout activity

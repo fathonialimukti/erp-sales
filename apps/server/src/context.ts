@@ -14,6 +14,7 @@ export type AuthUser = {
     email: string;
     name: string | null;
     exp: number;
+    jti?: string | null;
 };
 
 export type RequestContext = {
@@ -39,28 +40,31 @@ const getTokenFromRequest = (req: CreateExpressContextOptions['req']) => {
     return null;
 };
 
-const getUserFromToken = (token: string): AuthUser | null => {
-    if (isBlacklisted(token)) return null;
+const getUserFromToken = async (token: string): Promise<AuthUser | null> => {
     try {
         const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
         if (!payload?.userId || !payload?.email || typeof payload.exp !== 'number') {
             return null;
         }
+        const jti = typeof payload.jti === 'string' ? payload.jti : null;
+
+        if (await isBlacklisted(token, jti)) return null;
 
         return {
             userId: String(payload.userId),
             email: String(payload.email),
             name: payload.name ? String(payload.name) : null,
             exp: payload.exp,
+            jti,
         };
     } catch {
         return null;
     }
 };
 
-export const createContext = ({ req, res }: CreateExpressContextOptions) => {
+export const createContext = async ({ req, res }: CreateExpressContextOptions) => {
     const token = getTokenFromRequest(req);
-    const user = token ? getUserFromToken(token) : null;
+    const user = token ? await getUserFromToken(token) : null;
     const locale = parseLocaleCookie(req.headers.cookie ?? undefined) ?? DEFAULT_LOCALE;
 
     const cookieHeader = req.headers.cookie;

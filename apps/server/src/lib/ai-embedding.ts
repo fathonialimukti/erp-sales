@@ -1,6 +1,7 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { embed, embedMany } from 'ai';
 import { prisma } from './prisma.js';
+import { logger } from './logger.js';
 import { getSecretValue, getSettingValue } from './settings-service.js';
 import type { DbClient } from './prisma.js';
 
@@ -248,10 +249,9 @@ export async function embedKnowledgeChunkBestEffort(
     await setChunkEmbeddingStatus(id, 'done');
     return true;
   } catch (err) {
-    console.warn(
-      `[embedding] failed for knowledge chunk ${id}:`,
-      err instanceof Error ? err.message : err,
-    );
+    logger.warn(`[embedding] failed for knowledge chunk ${id}`, {
+      error: err instanceof Error ? err.message : String(err),
+    });
     try {
       await setChunkEmbeddingStatus(id, 'failed');
     } catch {
@@ -289,10 +289,9 @@ export async function embedKnowledgeChunksBestEffort(
           await setChunkEmbeddingStatus(row.id, 'done');
           succeeded += 1;
         } catch (err) {
-          console.warn(
-            `[embedding] persist failed for ${row.id}:`,
-            err instanceof Error ? err.message : err,
-          );
+          logger.warn(`[embedding] persist failed for ${row.id}`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
           try {
             await setChunkEmbeddingStatus(row.id, 'failed');
           } catch {
@@ -301,10 +300,9 @@ export async function embedKnowledgeChunksBestEffort(
         }
       }
     } catch (err) {
-      console.warn(
-        `[embedding] batch failed (${batch.length} rows):`,
-        err instanceof Error ? err.message : err,
-      );
+      logger.warn(`[embedding] batch failed (${batch.length} rows)`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
       for (const row of batch) {
         try {
           await setChunkEmbeddingStatus(row.id, 'failed');
@@ -328,10 +326,9 @@ export async function ensureKnowledgeEmbeddingHnswIndex(): Promise<boolean> {
     `);
     return true;
   } catch (err) {
-    console.warn(
-      '[embedding] HNSW index create skipped:',
-      err instanceof Error ? err.message : err,
-    );
+    logger.warn('[embedding] HNSW index create skipped', {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return false;
   }
 }

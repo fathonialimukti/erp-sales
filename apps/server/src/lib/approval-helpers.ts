@@ -1,4 +1,5 @@
 import { prisma } from './prisma.js';
+import type { DbClient } from './prisma.js';
 import type { NotificationTargetType, NotificationType } from '../prisma/generated/client';
 
 // Standard approval history entry: { process, name, dateTime, message }
@@ -26,8 +27,11 @@ export async function sendApprovalNotification(params: {
   targetId: string;
   type?: NotificationType;
   actionUrl?: string;
+  /** Pass a transaction client to create the notification atomically with the state change. */
+  db?: DbClient;
 }) {
-  await prisma.notification.create({
+  const db = params.db ?? prisma;
+  await db.notification.create({
     data: {
       userId: params.recipientId,
       createdById: params.createdById,

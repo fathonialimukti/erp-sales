@@ -5,6 +5,7 @@ import {
   toPgVectorLiteral,
 } from './ai-embedding.js';
 import { prisma } from './prisma.js';
+import { logger } from './logger.js';
 
 export type KnowledgeHit = {
   id?: string;
@@ -250,12 +251,9 @@ export async function searchKnowledgeChunks(
               : 'fts';
       }
     } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(
-          '[rag] vector search failed; FTS only:',
-          err instanceof Error ? err.message : err,
-        );
-      }
+      logger.warn('[rag] vector search failed; FTS only', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       mode = 'fts';
       vectorHits = [];
     }
@@ -267,7 +265,7 @@ export async function searchKnowledgeChunks(
       : ftsHits.slice(0, limit);
 
   if (process.env.NODE_ENV !== 'production') {
-    console.debug(
+    logger.info(
       `[rag] mode=${mode} fts=${ftsHits.length} vector=${vectorHits.length} merged=${hits.length}` +
         (hits.length > 0
           ? ` titles=${hits.map((c) => c.title).join(' | ')}`

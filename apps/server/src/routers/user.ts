@@ -12,7 +12,7 @@ import {
     userMutationSelect,
 } from '../lib/user-mutation-service.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
-import { hasPermission, protectedProcedure, router } from '../trpc.js';
+import { hasPermission, protectedProcedure, router, clearPermissionCache } from '../trpc.js';
 import { createUserSchema, updateUserSchema, userIdSchema } from '@repo/schemas/user';
 
 export const userRouter = router({
@@ -119,6 +119,9 @@ export const userRouter = router({
                 data: updateData,
                 select: userMutationSelect,
             });
+
+            // Role may have changed — drop the caller's permission cache entry.
+            clearPermissionCache(user.id);
 
             await logUserMutation({
                 db: prisma,

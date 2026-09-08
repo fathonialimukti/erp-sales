@@ -14,6 +14,7 @@ import { eventProposalRouter } from './routers/event-proposal.js';
 import { userRouter } from './routers/user.js';
 import { accessControlRouter } from './routers/access-control.js';
 import { activityLogRouter } from './routers/activity-log.js';
+import { systemLogRouter } from './routers/system-log.js';
 import { notificationRouter } from './routers/notification.js';
 import { reportingRouter } from './routers/reporting.js';
 import { emailCrmRouter } from './routers/email-crm.js';
@@ -26,6 +27,7 @@ import { budgetRouter } from './routers/budget.js';
 import { actionTypeRouter } from './routers/action-type.js';
 import { eventTypeRouter } from './routers/event-type.js';
 import { vendorRouter } from './routers/vendor.js';
+import { backupRouter } from './routers/backup.js';
 
 export const appRouter = router({
     hello: publicProcedure.query(() => ({ message: 'Hello World' })),
@@ -44,6 +46,7 @@ export const appRouter = router({
     user: userRouter,
     accessControl: accessControlRouter,
     activityLog: activityLogRouter,
+    systemLog: systemLogRouter,
     notification: notificationRouter,
     reporting: reportingRouter,
     emailCrm: emailCrmRouter,
@@ -57,6 +60,7 @@ export const appRouter = router({
     actionType: actionTypeRouter,
     eventType: eventTypeRouter,
     vendor: vendorRouter,
+    backup: backupRouter,
 });
 
 export type AppRouter = typeof appRouter;

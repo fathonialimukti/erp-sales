@@ -2,6 +2,7 @@ export * from './action-program';
 export * from './action-type';
 export * from './area';
 export * from './auth';
+export * from './backup';
 export * from './budget-line';
 export * from './budget-period';
 export * from './budget-type';

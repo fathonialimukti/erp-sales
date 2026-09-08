@@ -8,6 +8,7 @@ import {
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import { createKnowledgeBaseSchema, updateKnowledgeBaseSchema, knowledgeBaseIdSchema } from '@repo/schemas/knowledge-base';
 
@@ -57,7 +58,7 @@ export const knowledgeBaseRouter = router({
       });
 
       // Mark pending before fire-and-forget embed — never fail the mutation.
-      try { await setChunkEmbeddingStatus(created.id, 'pending'); } catch (e) { console.warn('[embedding] set pending failed:', e); }
+      try { await setChunkEmbeddingStatus(created.id, 'pending'); } catch (e) { logger.warn('[embedding] set pending failed', { error: e instanceof Error ? e.message : String(e) }); }
       // Best-effort hybrid RAG embedding — never fail the mutation.
       void embedKnowledgeChunkBestEffort(ctx.db, created.id, created.title, created.content);
 
@@ -93,13 +94,12 @@ export const knowledgeBaseRouter = router({
         try {
           await clearChunkEmbedding(updated.id);
         } catch (err) {
-          console.warn(
-            `[embedding] clear failed for knowledge chunk ${updated.id}:`,
-            err instanceof Error ? err.message : err,
-          );
+          logger.warn(`[embedding] clear failed for knowledge chunk ${updated.id}`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
         // Mark pending before fire-and-forget re-embed — never fail the mutation.
-        try { await setChunkEmbeddingStatus(updated.id, 'pending'); } catch (e) { console.warn('[embedding] set pending failed:', e); }
+        try { await setChunkEmbeddingStatus(updated.id, 'pending'); } catch (e) { logger.warn('[embedding] set pending failed', { error: e instanceof Error ? e.message : String(e) }); }
         // Best-effort re-embed — never fail the mutation.
         void embedKnowledgeChunkBestEffort(ctx.db, updated.id, updated.title, updated.content);
       }
@@ -136,7 +136,7 @@ export const knowledgeBaseRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Knowledge entry not found.' });
 
       // Mark pending before fire-and-forget re-embed — never fail the mutation.
-      try { await setChunkEmbeddingStatus(existing.id, 'pending'); } catch (e) { console.warn('[embedding] set pending failed:', e); }
+      try { await setChunkEmbeddingStatus(existing.id, 'pending'); } catch (e) { logger.warn('[embedding] set pending failed', { error: e instanceof Error ? e.message : String(e) }); }
       // Best-effort re-embed — never fail the mutation.
       void embedKnowledgeChunkBestEffort(ctx.db, existing.id, existing.title, existing.content);
 

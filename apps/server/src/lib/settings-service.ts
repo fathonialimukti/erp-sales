@@ -33,6 +33,8 @@ const APP_SETTING_FALLBACKS: Record<string, EnvFallback> = {
   'ai.apiKey': { env: 'AI_API_KEY', default: '' },
   'ai.model': { env: 'AI_MODEL', default: 'chatbot' },
   'ai.multimodalEnabled': { env: 'AI_MULTIMODAL_ENABLED', default: false },
+  'ai.userRpm': { env: 'AI_USER_RPM', default: 10 },
+  'ai.globalRpm': { env: 'AI_GLOBAL_RPM', default: 10 },
   'ai.embeddingBaseUrl': { env: 'AI_EMBEDDING_BASE_URL', default: '' },
   'ai.embeddingApiKey': { env: 'AI_EMBEDDING_API_KEY', default: '' },
   'ai.embeddingModel': { env: 'AI_EMBEDDING_MODEL', default: '' },
@@ -94,6 +96,11 @@ function cacheSet(key: string, value: unknown) {
 
 function cacheInvalidate() {
   appSettingsCache.clear();
+}
+
+/** Clear the settings cache — used by tests and after role/permission-affecting writes. */
+export function clearSettingsCache(): void {
+  cacheInvalidate();
 }
 
 // --- Helpers ---
@@ -171,6 +178,8 @@ export async function getAppSettings(db: DbClient): Promise<MaskedAppSettings> {
       apiKey: secret('ai.apiKey'),
       model: read('ai.model') as string,
       multimodalEnabled: read('ai.multimodalEnabled') as boolean,
+      userRpm: read('ai.userRpm') as number,
+      globalRpm: read('ai.globalRpm') as number,
       embeddingBaseUrl: read('ai.embeddingBaseUrl') as string,
       embeddingApiKey: secret('ai.embeddingApiKey'),
       embeddingModel: read('ai.embeddingModel') as string,

@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import cors from 'cors';
+import compression from 'compression';
 import { createContext } from './context.js';
 import { serveUpload } from './lib/upload-file.js';
 import { prisma } from './lib/prisma.js';
@@ -21,26 +22,41 @@ import { aiDuplicateCheckHandler } from './routes/ai-duplicate-check.js';
 import { aiKbWriterHandler } from './routes/ai-kb-writer.js';
 import { customerAiChatHandler } from './routes/customer-ai.js';
 import { salesOrderPdfHandler } from './routes/sales-order-pdf.js';
+import { backupUploadErrorHandler, backupUploadHandler } from './routes/backup-upload.js';
 import { emailInboundHandler } from './routes/email-inbound.js';
 import { emailAutoReplyHandler } from './routes/email-auto-reply.js';
+import { clientLogHandler } from './routes/client-log.js';
 import { validateEnv } from './lib/env-validate.js';
 import { checkMigrations } from './lib/migration-check.js';
+import { startAppLogRetention, logApp } from './lib/app-log.js';
 
-const port = Number(process.env.PORT ?? 10022);
 const corsOrigin = process.env.CORS_ORIGIN;
-const isDev = process.env.NODE_ENV !== 'production';
 
 const isAllowedDevOrigin = (origin: string) =>
     /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin) || origin === 'tauri://localhost';
 
 const app = express();
 
+// Behind a reverse proxy (nginx/Cloudflare) so req IPs come from
+// X-Forwarded-For instead of the proxy socket — keeps login rate
+// limiting per real client.
+app.set('trust proxy', 1);
+
+// gzip/brotli JSON + tRPC responses (API payloads compress ~70-90%).
+app.use(compression());
+
+// CORS_ORIGIN may list multiple origins, comma-separated.
+const allowedOrigins = (corsOrigin ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
 app.use(
     cors({
         origin: (origin, callback) => {
             // No Origin header (curl, same-origin, server-to-server) → allow.
             if (!origin) return callback(null, true);
-            if (corsOrigin && origin === corsOrigin) return callback(null, true);
+            if (allowedOrigins.includes(origin)) return callback(null, true);
             if (isAllowedDevOrigin(origin)) return callback(null, true);
 
             callback(new Error('Not allowed by CORS'));
@@ -56,6 +72,18 @@ app.use((req, res, next) => {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // Lock down browser features we don't use.
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+    // The API serves JSON/SSE/PDF only — deny everything scriptable.
+    // (The client is a separate Vite/Tauri origin with its own CSP.)
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+    next();
+});
+
+// Uploaded files (including SVG) run in a sandboxed unique origin —
+// mitigates stored XSS via crafted SVG/HTML uploads.
+app.use('/uploads', (req, res, next) => {
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
     next();
 });
 
@@ -67,6 +95,33 @@ app.use((req, res, next) => {
     next();
 });
 
+// HTTP access log (stdout → pm2 file; high-volume, intentionally not in app_logs)
+app.use((req, res, next) => {
+    if (req.path === '/healthz' || req.path === '/readyz') return next();
+    const start = Date.now();
+    res.on('finish', () => {
+        logger.info(`${req.method} ${req.originalUrl.split('?')[0]} ${res.statusCode}`, {
+            requestId: (req as any).requestId,
+            durationMs: Date.now() - start,
+        });
+    });
+    next();
+});
+
+// Client-side error reports → app_logs (visible in System Logs viewer).
+// Registered BEFORE the global 10mb parser so its own 16kb cap is effective.
+app.post('/api/log/client', express.json({ limit: '16kb' }), clientLogHandler);
+
+// Backup file upload — backup envelopes exceed the global 10mb cap, so it gets
+// its own scoped 100mb parser. Registered BEFORE the global parser so the
+// scoped limit applies to this route (same pattern as the client-log route).
+app.post(
+    '/api/backups/upload',
+    express.json({ limit: '100mb' }),
+    backupUploadHandler,
+    backupUploadErrorHandler
+);
+
 app.use(/^\/api\/ai/, express.json({ limit: '1mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(serveUpload);
@@ -76,6 +131,22 @@ app.use(
     createExpressMiddleware({
         router: appRouter,
         createContext,
+        onError: ({ error, req }) => {
+            // Expected client-side outcomes (NOT_FOUND, FORBIDDEN, …) stay on
+            // stdout only — DB-logging them would flood the System Logs viewer.
+            if (error.code === 'INTERNAL_SERVER_ERROR') {
+                logApp({
+                    level: 'ERROR',
+                    module: 'trpc',
+                    message: `${error.code}: ${error.message.slice(0, 500)}`,
+                    requestId: (req as any).requestId,
+                });
+            } else {
+                logger.info(`tRPC ${error.code}: ${error.message.slice(0, 300)}`, {
+                    requestId: (req as any).requestId,
+                });
+            }
+        },
     })
 );
 
@@ -110,15 +181,27 @@ app.get('/api/sales-order/:id/pdf', salesOrderPdfHandler);
 app.get('/healthz', healthHandler);
 app.get('/readyz', readyHandler);
 
-validateEnv();
+// Fail fast on invalid configuration BEFORE binding the port.
+const env = validateEnv();
 checkMigrations();
+startAppLogRetention();
 
-const server = app.listen(port, '0.0.0.0', () => {
-    logger.info(`Server listening on port ${port}`);
+const server = app.listen(env.PORT, '0.0.0.0', () => {
+    logger.info(`Server listening on port ${env.PORT}`, { nodeEnv: env.NODE_ENV });
 });
 
 server.requestTimeout = 30_000;
 server.keepAliveTimeout = 65_000;
+
+// Crash the process on unexpected async failures instead of continuing in an
+// undefined state — pm2 restarts and /readyz flips back once healthy.
+process.on('uncaughtException', (error) => {
+    logger.error('uncaughtException, shutting down', { error: error.stack ?? error.message });
+    shutdown('uncaughtException');
+});
+process.on('unhandledRejection', (reason) => {
+    logger.error('unhandledRejection', { error: reason instanceof Error ? reason.stack : String(reason) });
+});
 
 const shutdown = (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully...`);

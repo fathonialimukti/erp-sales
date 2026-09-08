@@ -43,6 +43,7 @@ const PERMISSIONS = [
 
   // Activity Log
   { name: "activity_log@read", description: "Read activity logs" },
+  { name: "log@read", description: "Read system logs (server + client operational events)" },
 
   { name: "report@read", description: "Read reports" },
 

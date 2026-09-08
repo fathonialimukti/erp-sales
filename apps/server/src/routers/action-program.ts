@@ -322,20 +322,28 @@ export const actionProgramRouter = router({
         message: 'Document validated successfully',
       });
 
-      const updated = await prisma.actionProgram.update({
-        where: { id: input.id },
-        data: {
-          approvalStatus: 'VALIDATING',
-          approvalHistory: history as any,
-        },
-      });
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.actionProgram.updateMany({
+          where: { id: input.id, approvalStatus: 'DRAFT' },
+          data: {
+            approvalStatus: 'VALIDATING',
+            approvalHistory: history as any,
+          },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT programs can be validated.' });
+        }
+        const program = await tx.actionProgram.findUniqueOrThrow({ where: { id: input.id } });
 
-      await logActivity(prisma, {
-        action: 'APPROVE',
-        userId: ctx.user.userId,
-        resource: 'action_program',
-        resourceId: updated.id,
-        message: `Validated action program ${updated.name}`,
+        await logActivity(tx, {
+          action: 'APPROVE',
+          userId: ctx.user.userId,
+          resource: 'action_program',
+          resourceId: program.id,
+          message: `Validated action program ${program.name}`,
+        });
+
+        return program;
       });
 
       return updated;
@@ -359,27 +367,36 @@ export const actionProgramRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.actionProgram.update({
-        where: { id: idInput.id },
-        data: {
-          approvalStatus: 'PROPOSED',
-          areaManagerApprovedById: ctx.user.userId,
-          areaManagerApprovedAt: new Date(),
-          approvalHistory: history as any,
-        },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.actionProgram.updateMany({
+          where: { id: idInput.id, approvalStatus: 'VALIDATING', areaManagerApprovedAt: null },
+          data: {
+            approvalStatus: 'PROPOSED',
+            areaManagerApprovedById: ctx.user.userId,
+            areaManagerApprovedAt: new Date(),
+            approvalHistory: history as any,
+          },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING programs can start approval.' });
+        }
+        const program = await tx.actionProgram.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Action Program Progress`,
+          message: `Area Manager approved your program "${existing.name}".`,
+          targetType: 'ACTION_PROGRAM',
+          targetId: existing.id,
+          actionUrl: `/action-program/${existing.id}`,
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: program.id, message: `Area Manager approved ${program.name}` });
+        return program;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Action Program Progress`,
-        message: `Area Manager approved your program "${existing.name}".`,
-        targetType: 'ACTION_PROGRAM',
-        targetId: existing.id,
-        actionUrl: `/action-program/${existing.id}`,
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: updated.id, message: `Area Manager approved ${updated.name}` });
       return updated;
     }),
 
@@ -399,22 +416,31 @@ export const actionProgramRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.actionProgram.update({
-        where: { id: idInput.id },
-        data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.actionProgram.updateMany({
+          where: { id: idInput.id, regionManagerApprovedAt: null, areaManagerApprovedAt: { not: null } },
+          data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Area Manager approval.' });
+        }
+        const program = await tx.actionProgram.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Action Program Progress`,
+          message: `Regional Manager approved your program "${existing.name}".`,
+          targetType: 'ACTION_PROGRAM',
+          targetId: existing.id,
+          actionUrl: `/action-program/${existing.id}`,
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: program.id, message: `Region Manager approved ${program.name}` });
+        return program;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Action Program Progress`,
-        message: `Regional Manager approved your program "${existing.name}".`,
-        targetType: 'ACTION_PROGRAM',
-        targetId: existing.id,
-        actionUrl: `/action-program/${existing.id}`,
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: updated.id, message: `Region Manager approved ${updated.name}` });
       return updated;
     }),
 
@@ -434,22 +460,31 @@ export const actionProgramRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.actionProgram.update({
-        where: { id: idInput.id },
-        data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.actionProgram.updateMany({
+          where: { id: idInput.id, financeManagerApprovedAt: null, regionManagerApprovedAt: { not: null } },
+          data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Region Manager approval.' });
+        }
+        const program = await tx.actionProgram.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Action Program Progress`,
+          message: `Finance PIC approved your program "${existing.name}".`,
+          targetType: 'ACTION_PROGRAM',
+          targetId: existing.id,
+          actionUrl: `/action-program/${existing.id}`,
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: program.id, message: `Finance approved ${program.name}` });
+        return program;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Action Program Progress`,
-        message: `Finance PIC approved your program "${existing.name}".`,
-        targetType: 'ACTION_PROGRAM',
-        targetId: existing.id,
-        actionUrl: `/action-program/${existing.id}`,
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: updated.id, message: `Finance approved ${updated.name}` });
       return updated;
     }),
 
@@ -469,23 +504,32 @@ export const actionProgramRouter = router({
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.actionProgram.update({
-        where: { id: idInput.id },
-        data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.actionProgram.updateMany({
+          where: { id: idInput.id, approvalStatus: 'PROPOSED', financeManagerApprovedAt: { not: null } },
+          data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Finance approval.' });
+        }
+        const program = await tx.actionProgram.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Action Program Fully Approved`,
+          message: `Director has approved your program "${existing.name}". All approvals complete.`,
+          targetType: 'ACTION_PROGRAM',
+          targetId: existing.id,
+          actionUrl: `/action-program/${existing.id}`,
+          type: 'SUCCESS',
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: program.id, message: `Director approved ${program.name}` });
+        return program;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Action Program Fully Approved`,
-        message: `Director has approved your program "${existing.name}". All approvals complete.`,
-        targetType: 'ACTION_PROGRAM',
-        targetId: existing.id,
-        actionUrl: `/action-program/${existing.id}`,
-        type: 'SUCCESS',
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'action_program', resourceId: updated.id, message: `Director approved ${updated.name}` });
       return updated;
     }),
 
@@ -504,23 +548,33 @@ export const actionProgramRouter = router({
         message: message ?? 'Rejected',
       });
 
-      const updated = await prisma.actionProgram.update({
-        where: { id: idInput.id },
-        data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+      const updated = await prisma.$transaction(async (tx) => {
+        // Rejectable while in-flight (VALIDATING or PROPOSED), not after full approval.
+        const result = await tx.actionProgram.updateMany({
+          where: { id: idInput.id, approvalStatus: { in: ['VALIDATING', 'PROPOSED'] } },
+          data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only in-review programs can be rejected.' });
+        }
+        const program = await tx.actionProgram.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.createdById,
+          createdById: ctx.user.userId,
+          title: `Action Program Rejected`,
+          message: `Your program "${existing.name}" has been rejected.${message ? ` Reason: ${message}` : ''}`,
+          targetType: 'ACTION_PROGRAM',
+          targetId: existing.id,
+          actionUrl: `/action-program/${existing.id}`,
+          type: 'WARNING',
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'REJECT', userId: ctx.user.userId, resource: 'action_program', resourceId: program.id, message: `Rejected ${program.name}` });
+        return program;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.createdById,
-        createdById: ctx.user.userId,
-        title: `Action Program Rejected`,
-        message: `Your program "${existing.name}" has been rejected.${message ? ` Reason: ${message}` : ''}`,
-        targetType: 'ACTION_PROGRAM',
-        targetId: existing.id,
-        actionUrl: `/action-program/${existing.id}`,
-        type: 'WARNING',
-      });
-
-      await logActivity(prisma, { action: 'REJECT', userId: ctx.user.userId, resource: 'action_program', resourceId: updated.id, message: `Rejected ${updated.name}` });
       return updated;
     }),
 });

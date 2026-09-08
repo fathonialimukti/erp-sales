@@ -1,7 +1,7 @@
 import { TRPCError, initTRPC } from '@trpc/server';
 import type { Context } from './context.js';
 import { prisma } from './lib/prisma.js';
-import { getMessage } from './lib/locale.js';
+import { getMessage, DEFAULT_LOCALE } from './lib/locale.js';
 import { CSRF_HEADER, validateCsrfToken } from './lib/csrf.js';
 
 const t = initTRPC.context<Context>().create();
@@ -27,35 +27,54 @@ const normalizePermission = (permission: string) => {
     return `${permission.slice(0, sepIndex)}@${permission.slice(sepIndex + 1)}`;
 };
 
+// 30s TTL cache of userId -> permission strings. Avoids a user+role+permission
+// join on every gated call. Tradeoff: permission/role changes take effect
+// within 30s; mutation routers call clearPermissionCache() to apply instantly.
+const PERMISSION_CACHE_TTL_MS = 30_000;
+const permissionCache = new Map<string, { permissions: string[]; at: number }>();
+
+async function loadUserPermissions(db: Context['db'], userId: string): Promise<string[]> {
+    const user = await db.user.findUnique({
+        where: { id: userId },
+        include: {
+            role: {
+                include: {
+                    permissions: {
+                        include: { permission: true },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!user?.role) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: getMessage(DEFAULT_LOCALE, 'auth.noRoleAssigned') });
+    }
+
+    const permissions = user.role.permissions.map((rp) => rp.permission.name);
+    permissionCache.set(userId, { permissions, at: Date.now() });
+    return permissions;
+}
+
+export function clearPermissionCache(userId?: string) {
+    if (userId) permissionCache.delete(userId);
+    else permissionCache.clear();
+}
+
 const hasPermission = (requiredPermissions: string | string[]) => {
     return t.middleware(async ({ ctx, next }) => {
         if (!ctx.user) {
             throw new TRPCError({ code: 'UNAUTHORIZED', message: getMessage(ctx.locale, 'auth.authenticationRequired') });
         }
 
-        // Fetch user permissions from database
-        const user = await ctx.db.user.findUnique({
-            where: { id: ctx.user.userId },
-            include: {
-                role: {
-                    include: {
-                        permissions: {
-                            include: { permission: true },
-                        },
-                    },
-                },
-            },
-        });
+        const cached = permissionCache.get(ctx.user.userId);
+        const userPermissions =
+            cached && Date.now() - cached.at <= PERMISSION_CACHE_TTL_MS
+                ? cached.permissions
+                : await loadUserPermissions(ctx.db, ctx.user.userId);
 
-        if (!user?.role) {
-            throw new TRPCError({ code: 'FORBIDDEN', message: getMessage(ctx.locale, 'auth.noRoleAssigned') });
-        }
-
-        const userPermissions = user.role.permissions.map((rp) => rp.permission.name);
         const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-
         const normalizedRequired = permissions.map(normalizePermission);
-
         const hasRequiredPermission = normalizedRequired.some((perm) => userPermissions.includes(perm));
 
         if (!hasRequiredPermission) {

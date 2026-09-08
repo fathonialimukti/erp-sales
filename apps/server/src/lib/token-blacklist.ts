@@ -1,53 +1,86 @@
 /**
- * In-memory token blacklist.
+ * Token revocation (logout / stolen-token defense).
  *
- * JWT tokens are stateless and cannot be revoked before their expiry.
- * This blacklist provides a best-effort revocation mechanism for stolen
- * tokens. Note: the blacklist is process-local and resets on restart.
+ * JWTs are stateless; revocation is tracked in the `revoked_tokens` table
+ * keyed by the token's `jti` claim, so it survives restarts. A process-local
+ * in-memory set provides a fast path and covers legacy tokens without a jti.
+ * Expired rows are purged periodically.
  */
 
-type BlacklistedToken = {
-    exp: number;
+import { prisma } from './prisma.js';
+
+const memoryBlacklist = new Map<string, number>(); // token -> exp (ms)
+
+const PURGE_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+let purgeStarted = false;
+
+const startPurge = () => {
+    if (purgeStarted) return;
+    purgeStarted = true;
+    setInterval(() => {
+        void prisma.revokedToken
+            .deleteMany({ where: { expiresAt: { lt: new Date() } } })
+            .catch(() => {});
+        const now = Date.now();
+        for (const [token, exp] of memoryBlacklist) {
+            if (exp <= now) memoryBlacklist.delete(token);
+        }
+    }, PURGE_INTERVAL_MS).unref();
 };
 
-const blacklist = new Map<string, BlacklistedToken>();
+/**
+ * Revoke a token. Writes through to the DB when the token carries a `jti`
+ * (all tokens issued by the current auth router do) and always records the
+ * in-memory entry.
+ */
+export const addToBlacklist = async (params: { token: string; exp: number; jti?: string | null }): Promise<void> => {
+    const { token, exp, jti } = params;
+    memoryBlacklist.set(token, exp);
+    startPurge();
 
-const CLEANUP_INTERVAL_MS = 60 * 1000;
+    if (jti) {
+        await prisma.revokedToken
+            .upsert({
+                where: { jti },
+                create: { jti, expiresAt: new Date(exp) },
+                update: { expiresAt: new Date(exp) },
+            })
+            .catch(() => {
+                // Revocation must never break logout — memory entry still applies.
+            });
+    }
+};
 
-const cleanupExpired = () => {
-    const now = Date.now();
-    for (const [token, entry] of blacklist) {
-        if (entry.exp <= now) {
-            blacklist.delete(token);
+/**
+ * Returns true if the token is currently revoked.
+ * Checks memory first, then the DB when a jti is present.
+ */
+export const isBlacklisted = async (token: string, jti?: string | null): Promise<boolean> => {
+    const entry = memoryBlacklist.get(token);
+    if (entry !== undefined) {
+        if (entry <= Date.now()) {
+            memoryBlacklist.delete(token);
+        } else {
+            return true;
         }
     }
-};
 
-let cleanupStarted = false;
-
-const startCleanup = () => {
-    if (cleanupStarted) return;
-    cleanupStarted = true;
-    setInterval(cleanupExpired, CLEANUP_INTERVAL_MS).unref();
-};
-
-/**
- * Adds a token to the blacklist with its expiry timestamp (ms since epoch).
- */
-export const addToBlacklist = (token: string, exp: number): void => {
-    blacklist.set(token, { exp });
-    startCleanup();
-};
-
-/**
- * Returns true if the token is currently in the blacklist.
- */
-export const isBlacklisted = (token: string): boolean => {
-    const entry = blacklist.get(token);
-    if (!entry) return false;
-    if (entry.exp <= Date.now()) {
-        blacklist.delete(token);
-        return false;
+    if (jti) {
+        try {
+            const row = await prisma.revokedToken.findUnique({ where: { jti }, select: { expiresAt: true } });
+            if (row) {
+                if (row.expiresAt.getTime() <= Date.now()) {
+                    await prisma.revokedToken.delete({ where: { jti } }).catch(() => {});
+                    return false;
+                }
+                return true;
+            }
+        } catch {
+            // DB unavailable — fail closed for tokens with jti: treat as revoked
+            // rather than letting a logged-out token back in.
+            return true;
+        }
     }
-    return true;
+
+    return false;
 };
