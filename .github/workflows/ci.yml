@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · Types · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run check-types
+
+      - name: Build
+        run: bun run build
+
+  server-tests:
+    name: Server tests (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: erp_sales_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/erp_sales_test
+      JWT_SECRET: ci-only-secret-not-used-in-production-0123456789
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Push schema + seed
+        run: |
+          bun run --cwd apps/server prisma generate
+          bun run --cwd apps/server prisma db push --skip-generate
+          bun run --cwd apps/server prisma db seed
+
+      - name: Run server tests
+        run: bun run --cwd apps/server test
+
+  e2e:
+    name: Playwright e2e
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: erp_sales_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/erp_sales_test
+      JWT_SECRET: ci-only-secret-not-used-in-production-0123456789
+      CORS_ORIGIN: http://localhost:10021
+      VITE_TRPC_URL: http://localhost:10022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Push schema + seed
+        run: |
+          bun run --cwd apps/server prisma generate
+          bun run --cwd apps/server prisma db push --skip-generate
+          bun run --cwd apps/server prisma db seed
+
+      - name: Start API server
+        run: bun run --cwd apps/server dev &
+
+      - name: Wait for API
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:10022/healthz && exit 0
+            sleep 1
+          done
+          exit 1
+
+      - name: Run e2e (client dev server + specs)
+        run: bun run --cwd apps/client test
+
+  i18n:
+    name: Locale sync (en/id)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Check locale key drift
+        run: bun scripts/check-i18n.mjs
