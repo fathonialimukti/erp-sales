@@ -16,7 +16,9 @@ export type Toast = {
 };
 
 const show = ({ message, tone = "info", durationMs = 3500 }: ShowToastOptions) => {
-  const opts = { duration: durationMs };
+  // id + testId lets ui/sonner.tsx's delegated click handler dismiss this toast
+  const id = crypto.randomUUID();
+  const opts = { duration: durationMs, id, testId: id };
   if (tone === "success") sonnerToast.success(message, opts);
   else if (tone === "error") sonnerToast.error(message, opts);
   else if (tone === "warning") sonnerToast.warning(message, opts);

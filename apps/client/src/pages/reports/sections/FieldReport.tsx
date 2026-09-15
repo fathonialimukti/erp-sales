@@ -1,7 +1,6 @@
-import { useRef } from "react";
 import { useIntl } from "react-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Printer } from "lucide-react";
+import { Download, Loader2, Printer } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -17,11 +16,12 @@ import {
   ReportTable,
   type ReportTableColumn,
 } from "../../../components/reports/ReportTable";
+import { printReport } from "../../../components/reports/useReportExport";
 import {
-  exportExcel,
-  printReport,
-  type ExportColumn,
-} from "../../../components/reports/useReportExport";
+  useWorkbookExport,
+  type WorkbookColumn,
+} from "../../../lib/export/useWorkbookExport";
+import { ReportPrintSheet } from "../../../components/reports/ReportPrintSheet";
 import { AiReportNarrate } from "../../../components/AiReportNarrate";
 import type { ReportFilterValue } from "../../../components/reports/ReportFilters";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,6 @@ interface FieldReportProps {
 export const FieldReport = ({ filters }: FieldReportProps) => {
   const intl = useIntl();
   const { currencyCode } = useGeneralSettings();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const query = useQuery({
     queryKey: ["reporting.fieldActivity", filters],
@@ -110,7 +109,7 @@ export const FieldReport = ({ filters }: FieldReportProps) => {
     },
   ];
 
-  const exportColumns: ExportColumn[] = [
+  const exportColumns: WorkbookColumn[] = [
     {
       key: "name",
       header: intl.formatMessage({
@@ -118,21 +117,84 @@ export const FieldReport = ({ filters }: FieldReportProps) => {
         defaultMessage: "Salesman",
       }),
     },
-    { key: "visits", header: "Visits", format: (v) => Number(v) },
-    { key: "orders", header: "Orders", format: (v) => Number(v) },
-    { key: "revenue", header: "Revenue", format: (v) => Number(v) },
+    {
+      key: "visits",
+      header: intl.formatMessage({
+        id: "report.table.visits",
+        defaultMessage: "Visits",
+      }),
+      format: (v) => Number(v),
+    },
+    {
+      key: "orders",
+      header: intl.formatMessage({
+        id: "report.table.orders_col",
+        defaultMessage: "Orders",
+      }),
+      format: (v) => Number(v),
+    },
+    {
+      key: "revenue",
+      header: intl.formatMessage({
+        id: "report.table.revenue_col",
+        defaultMessage: "Revenue",
+      }),
+      format: (v) => Number(v),
+    },
   ];
 
+  const { exportWorkbook, isExporting } = useWorkbookExport();
+
   const onExport = () =>
-    exportExcel(
-      perSalesman as Record<string, unknown>[],
-      exportColumns,
-      "field-activity.xlsx",
-    );
-  const onPrint = () => printReport(printRef as React.RefObject<HTMLElement>);
+    exportWorkbook({
+      prefix: "field-activity",
+      sheetName: intl.formatMessage({
+        id: "report.tab.field",
+        defaultMessage: "Field",
+      }),
+      columns: exportColumns,
+      rows: perSalesman as Record<string, unknown>[],
+      summary: {
+        sheetName: intl.formatMessage({
+          id: "reports.print.summary",
+          defaultMessage: "Summary",
+        }),
+        rows: [
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.visits",
+              defaultMessage: "Visits",
+            }),
+            value: data?.totalVisits ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.coverage",
+              defaultMessage: "Outlet coverage",
+            }),
+            value: data?.coveragePercent ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.conversion",
+              defaultMessage: "Visit→order conversion",
+            }),
+            value: data?.conversionPercent ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.orders",
+              defaultMessage: "Orders",
+            }),
+            value: perSalesman.reduce((s, r) => s + r.orders, 0),
+          },
+        ],
+      },
+    });
+  const onPrint = () => printReport();
 
   return (
-    <div className="flex flex-col gap-5 print-area" ref={printRef}>
+    <div className="flex flex-col gap-5">
       <div className="no-print flex justify-end gap-2">
         <AiReportNarrate
           reportType="field"
@@ -147,12 +209,30 @@ export const FieldReport = ({ filters }: FieldReportProps) => {
             perSalesman,
           }}
         />
-        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onExport}>
-          <Download className="size-3.5" aria-hidden />
-          {intl.formatMessage({
-            id: "report.export.excel",
-            defaultMessage: "Export Excel",
-          })}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 px-2.5"
+          onClick={onExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Download className="size-3.5" aria-hidden />
+          )}
+          {intl.formatMessage(
+            isExporting
+              ? {
+                  id: "reports.export.loading",
+                  defaultMessage: "Preparing export…",
+                }
+              : {
+                  id: "report.export.excel",
+                  defaultMessage: "Export Excel",
+                },
+          )}
         </Button>
         <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onPrint}>
           <Printer className="size-3.5" aria-hidden />
@@ -263,6 +343,21 @@ export const FieldReport = ({ filters }: FieldReportProps) => {
           </Card>
         </>
       )}
+
+      <ReportPrintSheet
+        title={intl.formatMessage({
+          id: "report.tab.field",
+          defaultMessage: "Field",
+        })}
+        dateFrom={filters.dateFrom}
+        dateTo={filters.dateTo}
+        columns={tableColumns}
+        rows={perSalesman as Record<string, unknown>[]}
+        emptyMessage={intl.formatMessage({
+          id: "report.empty",
+          defaultMessage: "No data for the selected filters.",
+        })}
+      />
     </div>
   );
 };

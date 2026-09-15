@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, BookOpen, BookMarked, FileText } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -13,6 +13,9 @@ import { useToast } from "../../components/useToast";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { AiKbWriter } from "@/components/AiKbWriter";
@@ -84,6 +87,13 @@ export const KnowledgeBaseFormPage = () => {
     content: (v: unknown) => form.setFieldValue("content" as never, String(v) as never),
     source: (v: unknown) => form.setFieldValue("source" as never, String(v) as never),
   });
+
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [live.title, live.content, live.source].filter(
+    (v) => String(v ?? "").trim().length > 0,
+  ).length;
+  const excerpt = (live.content ?? "").trim().replace(/\s+/g, " ").slice(0, 140);
 
   useEffect(() => {
     if (isEdit && data) {
@@ -282,6 +292,36 @@ export const KnowledgeBaseFormPage = () => {
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="knowledge"
+            icon={BookOpen}
+            title={live.title}
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={filled}
+            total={3}
+            rows={[
+              {
+                icon: BookMarked,
+                label: intl.formatMessage({
+                  id: "knowledgeBase.form.field_source",
+                  defaultMessage: "Source",
+                }),
+                value: live.source,
+              },
+              {
+                icon: FileText,
+                label: intl.formatMessage({
+                  id: "knowledgeBase.form.field_content",
+                  defaultMessage: "Content",
+                }),
+                value: excerpt.length > 0 ? `${excerpt}${(live.content ?? "").trim().length > 140 ? "…" : ""}` : "",
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -295,6 +335,9 @@ export const KnowledgeBaseFormPage = () => {
         />
 
         <FormSection
+          icon={BookOpen}
+          step={1}
+          tone="knowledge"
           title={intl.formatMessage({
             id: "knowledgeBase.form.section_basic",
             defaultMessage: "Basic information",
@@ -394,7 +437,7 @@ export const KnowledgeBaseFormPage = () => {
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <AiKbWriter />
           <Button
             size="sm"
@@ -412,8 +455,9 @@ export const KnowledgeBaseFormPage = () => {
                 defaultMessage: "Save",
               })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

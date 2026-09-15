@@ -1,7 +1,7 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { devToolsMiddleware } from '@ai-sdk/devtools';
 import { wrapLanguageModel } from 'ai';
-import { getSecretValue, getSettingValue } from './settings-service.js';
+import { normalizeOpenAiBaseUrl, getSecretValue, getSettingValue } from './settings-service.js';
 import type { DbClient } from './prisma.js';
 
 /**
@@ -10,7 +10,7 @@ import type { DbClient } from './prisma.js';
  * to env. `AI_DEVTOOLS_ENABLED` + `NODE_ENV` stay env-only (infra concerns).
  */
 export async function getChatModel(db: DbClient) {
-    const baseUrl = String(await getSettingValue(db, 'ai.baseUrl')).replace(/\/$/, '');
+    const baseUrl = normalizeOpenAiBaseUrl(String(await getSettingValue(db, 'ai.baseUrl')));
     const apiKey = await getSecretValue(db, 'ai.apiKey');
     const model = String(await getSettingValue(db, 'ai.model'));
     const devtoolsEnabled =

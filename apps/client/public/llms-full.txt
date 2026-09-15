@@ -1,10 +1,10 @@
-# ERP Sales — Sales Management Platform
+# B2B CRM — Sales Management Platform
 
-> ERP Sales is a sales management platform for field teams and back-office operations. Manage customers, outlets, sales orders, visits, approvals, and real-time insights in one platform.
+> B2B CRM is a sales management platform for field teams and back-office operations. Manage customers, outlets, sales orders, visits, approvals, and real-time insights in one platform.
 
 ## Overview
 
-ERP Sales is a comprehensive sales management platform designed for field sales teams, distributors, SMEs, and any organization that needs to track customer relationships, sales orders, and field activity in a structured, auditable system.
+B2B CRM is a comprehensive sales management platform designed for field sales teams, distributors, SMEs, and any organization that needs to track customer relationships, sales orders, and field activity in a structured, auditable system.
 
 Built with React, tRPC, Prisma, and PostgreSQL — with AI-powered approval workflows, email-to-order automation, and a RAG-grounded knowledge base.
 
@@ -63,11 +63,11 @@ Each step is logged with timestamps and user attribution, creating a complete au
 
 ## FAQ
 
-### What is ERP Sales?
-ERP Sales is a sales management platform designed for field teams and back-office operations. It helps you manage customers, outlets, sales orders, visit logs, action programs, and approvals — all in one place with a full audit trail.
+### What is B2B CRM?
+B2B CRM is a sales management platform designed for field teams and back-office operations. It helps you manage customers, outlets, sales orders, visit logs, action programs, and approvals — all in one place with a full audit trail.
 
 ### Who is this for?
-ERP Sales is built for field sales teams, distributors, SMEs, and any organization that needs to track customer relationships, sales orders, and field activity in a structured, auditable system.
+B2B CRM is built for field sales teams, distributors, SMEs, and any organization that needs to track customer relationships, sales orders, and field activity in a structured, auditable system.
 
 ### How does the approval workflow work?
 Every document (sales orders, visit logs, action programs, event proposals) goes through a multi-level approval workflow: Draft → Proposed → Approved/Rejected. Each step is logged with timestamps and user attribution, creating a complete audit trail.
@@ -76,7 +76,7 @@ Every document (sales orders, visit logs, action programs, event proposals) goes
 Yes. Email Concierge receives inbound customer email, drafts an AI HTML reply from your company inbox, and can create an optional draft sales order linked to the thread — so replies and orders stay connected without manual entry.
 
 ### Is my data secure?
-Absolutely. ERP Sales uses role-based access control with granular permissions, JWT authentication, and a full activity log. Every action is attributed to a specific user, and all data is stored in a PostgreSQL database with proper access controls.
+Absolutely. B2B CRM uses role-based access control with granular permissions, JWT authentication, and a full activity log. Every action is attributed to a specific user, and all data is stored in a PostgreSQL database with proper access controls.
 
 ## How It Works (4 Steps)
 

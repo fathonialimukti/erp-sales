@@ -236,8 +236,7 @@
 
 /* 60% ambient canvas — near-flat; bold-mesh kept as a ≤3% imperceptible tint
    so the background reads as solid --background (Trustworthy Corporate §2).
-   Class retained because layout shells reference it. */
-@layer utilities {
+   Class retained because layout shells reference it. */@layer utilities {
   .bold-mesh {
     background-color: var(--background);
     background-image:
@@ -256,5 +255,19 @@
         color-mix(in oklch, var(--primary) 3%, transparent),
         transparent 55%
       );
+  }
+}
+
+/* Sonner toasts: whole toast is clickable and dismisses on click
+   (handler wired in ui/sonner.tsx; swipe still handled by sonner itself).
+   Press feedback — quick shrink on press, sonner's own 400ms transition on release. */
+[data-sonner-toast] {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-sonner-toast]:active {
+    transform: scale(0.97);
+    transition: transform 100ms ease-out;
   }
 }

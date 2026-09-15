@@ -41,7 +41,7 @@ export const HeroDashboard = ({ className }: { className?: string }) => (
     viewBox="0 0 560 420"
     fill="none"
     role="img"
-    aria-label="ERP Sales dashboard preview"
+    aria-label="B2B CRM dashboard preview"
     xmlns="http://www.w3.org/2000/svg"
   >
     <defs>

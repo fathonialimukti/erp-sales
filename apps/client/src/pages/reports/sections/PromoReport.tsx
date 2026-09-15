@@ -1,7 +1,7 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { useIntl } from "react-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Printer } from "lucide-react";
+import { Download, Loader2, Printer } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -17,11 +17,12 @@ import {
   ReportTable,
   type ReportTableColumn,
 } from "../../../components/reports/ReportTable";
+import { printReport } from "../../../components/reports/useReportExport";
 import {
-  exportExcel,
-  printReport,
-  type ExportColumn,
-} from "../../../components/reports/useReportExport";
+  useWorkbookExport,
+  type WorkbookColumn,
+} from "../../../lib/export/useWorkbookExport";
+import { ReportPrintSheet } from "../../../components/reports/ReportPrintSheet";
 import { AiReportNarrate } from "../../../components/AiReportNarrate";
 import type { ReportFilterValue } from "../../../components/reports/ReportFilters";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,6 @@ interface PromoReportProps {
 export const PromoReport = ({ filters }: PromoReportProps) => {
   const intl = useIntl();
   const { currencyCode } = useGeneralSettings();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const roiQuery = useQuery({
     queryKey: ["reporting.promoRoi", filters],
@@ -132,7 +132,7 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
     },
   ];
 
-  const exportColumns: ExportColumn[] = [
+  const exportColumns: WorkbookColumn[] = [
     {
       key: "name",
       header: intl.formatMessage({
@@ -140,24 +140,110 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
         defaultMessage: "Promotion",
       }),
     },
-    { key: "type", header: "Type" },
-    { key: "budget", header: "Budget", format: (v) => Number(v) },
-    { key: "cost", header: "Cost", format: (v) => Number(v) },
-    { key: "revenue", header: "Revenue", format: (v) => Number(v) },
+    {
+      key: "type",
+      header: intl.formatMessage({
+        id: "report.table.type",
+        defaultMessage: "Type",
+      }),
+    },
+    {
+      key: "budget",
+      header: intl.formatMessage({
+        id: "report.table.budget",
+        defaultMessage: "Budget",
+      }),
+      format: (v) => Number(v),
+    },
+    {
+      key: "cost",
+      header: intl.formatMessage({
+        id: "report.table.cost",
+        defaultMessage: "Cost",
+      }),
+      format: (v) => Number(v),
+    },
+    {
+      key: "revenue",
+      header: intl.formatMessage({
+        id: "report.table.revenue_col",
+        defaultMessage: "Revenue",
+      }),
+      format: (v) => Number(v),
+    },
     {
       key: "roi",
-      header: "ROI %",
+      header: intl.formatMessage({
+        id: "report.table.roi",
+        defaultMessage: "ROI %",
+      }),
       format: (v) => (v === null ? "" : Number(v)),
     },
   ];
 
+  const { exportWorkbook, isExporting } = useWorkbookExport();
+
   const onExport = () =>
-    exportExcel(
-      items as Record<string, unknown>[],
-      exportColumns,
-      "promo-roi.xlsx",
-    );
-  const onPrint = () => printReport(printRef as React.RefObject<HTMLElement>);
+    exportWorkbook({
+      prefix: "promo-roi",
+      sheetName: intl.formatMessage({
+        id: "report.tab.promo",
+        defaultMessage: "Promo",
+      }),
+      columns: exportColumns,
+      rows: items as Record<string, unknown>[],
+      summary: {
+        sheetName: intl.formatMessage({
+          id: "reports.print.summary",
+          defaultMessage: "Summary",
+        }),
+        rows: [
+          {
+            label: intl.formatMessage({
+              id: "report.funnel.visits",
+              defaultMessage: "Visits",
+            }),
+            value: funnel?.visits ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.funnel.draft",
+              defaultMessage: "Draft orders",
+            }),
+            value: funnel?.draft ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.funnel.proposed",
+              defaultMessage: "Proposed",
+            }),
+            value: funnel?.proposed ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.funnel.approved",
+              defaultMessage: "Approved",
+            }),
+            value: funnel?.approved ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.funnel.paid",
+              defaultMessage: "Paid",
+            }),
+            value: funnel?.paidOrders ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.avg_approval_days",
+              defaultMessage: "Avg approval time (days)",
+            }),
+            value: funnel?.avgApprovalDays ?? 0,
+          },
+        ],
+      },
+    });
+  const onPrint = () => printReport();
 
   const funnelData = useMemo(() => {
     if (!funnel) return [];
@@ -201,7 +287,7 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
   }, [funnel, intl]);
 
   return (
-    <div className="flex flex-col gap-5 print-area" ref={printRef}>
+    <div className="flex flex-col gap-5">
       <div className="no-print flex justify-end gap-2">
         <AiReportNarrate
           reportType="promo"
@@ -211,12 +297,30 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
             funnel,
           }}
         />
-        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onExport}>
-          <Download className="size-3.5" aria-hidden />
-          {intl.formatMessage({
-            id: "report.export.excel",
-            defaultMessage: "Export Excel",
-          })}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 px-2.5"
+          onClick={onExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Download className="size-3.5" aria-hidden />
+          )}
+          {intl.formatMessage(
+            isExporting
+              ? {
+                  id: "reports.export.loading",
+                  defaultMessage: "Preparing export…",
+                }
+              : {
+                  id: "report.export.excel",
+                  defaultMessage: "Export Excel",
+                },
+          )}
         </Button>
         <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onPrint}>
           <Printer className="size-3.5" aria-hidden />
@@ -331,6 +435,21 @@ export const PromoReport = ({ filters }: PromoReportProps) => {
           </Card>
         </>
       )}
+
+      <ReportPrintSheet
+        title={intl.formatMessage({
+          id: "report.tab.promo",
+          defaultMessage: "Promo",
+        })}
+        dateFrom={filters.dateFrom}
+        dateTo={filters.dateTo}
+        columns={tableColumns}
+        rows={items as Record<string, unknown>[]}
+        emptyMessage={intl.formatMessage({
+          id: "report.empty",
+          defaultMessage: "No data for the selected filters.",
+        })}
+      />
     </div>
   );
 };

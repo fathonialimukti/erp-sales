@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, Package, Hash, Tags, BadgeDollarSign } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -107,6 +110,14 @@ export const SkuFormPage = () => {
     baseUnit: (v: unknown) => form.setFieldValue("baseUnit" as never, String(v) as never),
     status: (v: unknown) => form.setFieldValue("status" as never, String(v) as never),
   });
+
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [live.name, live.code, live.categoryId, live.basePrice, live.baseUnit].filter(
+    (v) => String(v ?? "").trim().length > 0,
+  ).length;
+  const categoryName =
+    (categories?.data ?? []).find((c) => c.id === live.categoryId)?.name ?? "";
 
   useEffect(() => {
     if (isEdit && data) {
@@ -226,6 +237,43 @@ export const SkuFormPage = () => {
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="sku"
+            icon={Package}
+            title={live.name}
+            subtitle={categoryName || undefined}
+            status={live.status}
+            filled={filled}
+            total={5}
+            rows={[
+              {
+                icon: Hash,
+                label: intl.formatMessage({ id: "sku.form.field_code", defaultMessage: "Code" }),
+                value: live.code,
+              },
+              {
+                icon: BadgeDollarSign,
+                label: intl.formatMessage({
+                  id: "sku.form.field_base_price",
+                  defaultMessage: "Base price",
+                }),
+                value: live.basePrice,
+                money: true,
+              },
+              {
+                icon: Tags,
+                label: intl.formatMessage({
+                  id: "sku.form.field_category",
+                  defaultMessage: "Category",
+                }),
+                value: categoryName,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -244,6 +292,9 @@ export const SkuFormPage = () => {
         />
 
         <FormSection
+          icon={Package}
+          step={1}
+          tone="sku"
           title={intl.formatMessage({
             id: "sku.form.section_basic",
             defaultMessage: "Basic information",
@@ -425,7 +476,7 @@ export const SkuFormPage = () => {
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
@@ -439,8 +490,9 @@ export const SkuFormPage = () => {
               )}
               {intl.formatMessage({ id: "sku.form.save_button", defaultMessage: "Save" })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

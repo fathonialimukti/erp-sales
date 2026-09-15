@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useAtomValue } from "jotai";
 import type { inferProcedureInput } from "@trpc/server";
-import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2, Store, PackagePlus, NotebookPen, Receipt, Hash, CalendarDays, Package, BadgeDollarSign } from "lucide-react";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -16,6 +16,9 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { FormSection } from "@/components/FormSection";
+import { FormLayout } from "@/components/FormLayout";
+import { FormFooter } from "@/components/FormFooter";
+import { FormPreview } from "@/components/FormPreview";
 import { SelectSearch } from "../../components/SelectSearch";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { AiFillButton } from '@/components/AiFillButton';
@@ -586,6 +589,83 @@ export const SalesOrderFormPage = () => {
         }
       />
 
+      <FormLayout
+        sidebar={
+          <form.Subscribe selector={(s) => s.values as FormValues}>
+            {(so) => {
+              const soItems = (so.items ?? []) as LineItem[];
+              const soItemCount = soItems.filter((it) => it.skuId).length;
+              const soTotals = recalcTotals(soItems);
+              const soOutlet = outletList.find((o) => o.id === so.outletId);
+              return (
+                <FormPreview
+                  module="order"
+                  icon={Receipt}
+                  title={so.documentNumber || soOutlet?.name || ""}
+                  subtitle={
+                    so.documentNumber && soOutlet?.name ? soOutlet.name : undefined
+                  }
+                  status={!isEdit ? "DRAFT" : undefined}
+                  filled={[
+                    so.outletId,
+                    so.date,
+                    so.expectedDeliveryDate,
+                    so.paymentTerms,
+                    soItemCount > 0 ? "x" : "",
+                  ].filter((v) => String(v ?? "").trim().length > 0).length}
+                  total={5}
+                  rows={[
+                    {
+                      icon: Store,
+                      label: intl.formatMessage({
+                        id: "sales_order.form.field_outlet",
+                        defaultMessage: "Outlet",
+                      }),
+                      value: soOutlet?.name,
+                    },
+                    {
+                      icon: Hash,
+                      label: intl.formatMessage({
+                        id: "sales_order.form.field_document_number",
+                        defaultMessage: "Document Number",
+                      }),
+                      value: so.documentNumber,
+                    },
+                    {
+                      icon: CalendarDays,
+                      label: intl.formatMessage({
+                        id: "sales_order.form.field_order_date",
+                        defaultMessage: "Order date",
+                      }),
+                      value: so.date,
+                    },
+                    {
+                      icon: Package,
+                      label: intl.formatMessage({
+                        id: "sales_order.form.preview.lines",
+                        defaultMessage: "Line items",
+                      }),
+                      value: intl.formatMessage(
+                        { id: "form.preview.lines", defaultMessage: "{count} line items" },
+                        { count: soItemCount },
+                      ),
+                    },
+                    {
+                      icon: BadgeDollarSign,
+                      label: intl.formatMessage({
+                        id: "sales_order.form.grand_total",
+                        defaultMessage: "Grand total",
+                      }),
+                      value: formatCurrency(soTotals.grandTotal, so.currency || "IDR"),
+                      money: true,
+                    },
+                  ]}
+                />
+              );
+            }}
+          </form.Subscribe>
+        }
+      >
       <form
         data-so-form
         className="flex flex-col gap-3"
@@ -643,6 +723,9 @@ export const SalesOrderFormPage = () => {
         ) : null}
 
         <FormSection
+          icon={Store}
+          step={1}
+          tone="order"
           title="Outlet & Location"
           description="Select outlet to auto-fill customer and area"
         >
@@ -712,6 +795,9 @@ export const SalesOrderFormPage = () => {
         </FormSection>
 
         <FormSection
+          icon={PackagePlus}
+          step={2}
+          tone="order"
           title="Line items"
           action={
             <Button type="button" variant="outline" size="sm" className="h-7" onClick={handleAddItem}>
@@ -887,7 +973,7 @@ export const SalesOrderFormPage = () => {
           </div>
         </FormSection>
 
-        <FormSection title="Additional information">
+        <FormSection icon={NotebookPen} step={3} tone="order" title="Additional information">
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="paymentTerms">
               {(f) => (
@@ -918,7 +1004,7 @@ export const SalesOrderFormPage = () => {
           </div>
         </FormSection>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             type="button"
             variant="outline"
@@ -942,8 +1028,9 @@ export const SalesOrderFormPage = () => {
             <Send className="size-3.5" />
             {intl.formatMessage({ id: "sales_order.form.propose", defaultMessage: "Propose" })}
           </Button>
-        </div>
+        </FormFooter>
       </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "draft-confirm"}

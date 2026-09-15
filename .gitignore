@@ -47,6 +47,7 @@ apps/client/src/assets/glb/*
 
 # Playwright auth state
 playwright/.auth/
+apps/client/playwright/.auth/
 
 # Playwright test artifacts
 test-results/

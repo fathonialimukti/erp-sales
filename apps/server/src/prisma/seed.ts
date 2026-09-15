@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { hashSync } from "bcrypt";
 import { faker } from "@faker-js/faker";
 import { prisma } from "../lib/prisma.js";
+import { seedAppSettings } from "../lib/seed-app-settings.js";
 
 const FAKER_SEED = Number(process.env.SEED_SEED) || 20260519;
 
@@ -58,6 +59,10 @@ const PERMISSIONS = [
   // Settings
   { name: "settings@read", description: "Read app settings" },
   { name: "settings@update", description: "Update app settings" },
+  { name: "settings@app@read", description: "Read key-value app settings" },
+  { name: "settings@app@update", description: "Update key-value app settings" },
+  { name: "settings@user@read", description: "Read key-value user settings" },
+  { name: "settings@user@update", description: "Update key-value user settings" },
 
   // Knowledge Base
   { name: "knowledge-base@read", description: "Read knowledge base entries" },
@@ -170,13 +175,121 @@ const PERMISSIONS = [
   { name: "vendor@create", description: "Create vendors" },
   { name: "vendor@update", description: "Update vendors" },
   { name: "vendor@delete", description: "Delete vendors" },
+
+  // Inbound (goods receiving lane — deliberately no approve/delete yet)
+  { name: "inbound@read", description: "Read goods receipts" },
+  { name: "inbound@create", description: "Record goods receipts" },
 ];
 
-const ROLES = [
-  { name: "System Admin", description: "Full system access", pattern: "*" as const },
+const ROLES: Array<{ name: string; description: string; pattern?: string; permissions?: string[] }> = [
+  {
+    name: "System Admin",
+    description: "Full system access",
+    permissions: [
+      "user@create", "user@read", "user@update", "user@delete",
+      "role@create", "role@read", "role@update", "role@delete",
+      "permission@create", "permission@read", "permission@update", "permission@delete",
+      "sku@create", "sku@read", "sku@update", "sku@delete",
+      "skuCategory@read", "skuCategory@create", "skuCategory@update", "skuCategory@delete",
+      "activity_log@read", "log@read",
+      "report@read",
+      "notification@read", "notification@delete", "notification@broadcast",
+      "ai-admin@access",
+      "settings@read", "settings@update",
+      "settings@app@read", "settings@app@update",
+      "settings@user@read", "settings@user@update",
+      "knowledge-base@read", "knowledge-base@create", "knowledge-base@update", "knowledge-base@delete",
+      "region@read", "region@create", "region@update", "region@delete",
+      "area@read", "area@create", "area@update", "area@delete",
+      "customer@read", "customer@create", "customer@update", "customer@delete",
+      "outlet@read", "outlet@create", "outlet@update", "outlet@delete",
+      "sales-order@read", "sales-order@create", "sales-order@update", "sales-order@delete",
+      "sales-order@validate", "sales-order@propose", "sales-order@approve",
+      "action-program@read", "action-program@create", "action-program@update", "action-program@delete",
+      "action-program@validate", "action-program@approve-area", "action-program@approve-region",
+      "action-program@approve-finance", "action-program@approve-director",
+      "event-proposal@read", "event-proposal@create", "event-proposal@update", "event-proposal@delete",
+      "event-proposal@validate", "event-proposal@approve-area", "event-proposal@approve-region",
+      "event-proposal@approve-finance", "event-proposal@approve-director",
+      "visit-log@read", "visit-log@create", "visit-log@delete", "visit-log@validate",
+      "payment@read", "payment@create", "payment@delete",
+      "email-crm@read", "email-crm@create", "email-crm@update", "email-crm@delete",
+      "budget@read", "budget@create", "budget@update", "budget@delete",
+      "budget-type@read", "budget-type@create", "budget-type@update", "budget-type@delete",
+      "budget-period@read", "budget-period@create", "budget-period@update", "budget-period@delete",
+      "budget-line@read", "budget-line@create", "budget-line@update", "budget-line@delete",
+      "action-type@read", "action-type@create", "action-type@update", "action-type@delete",
+      "event-type@read", "event-type@create", "event-type@update", "event-type@delete",
+      "vendor@read", "vendor@create", "vendor@update", "vendor@delete",
+      "inbound@read", "inbound@create",
+    ],
+  },
   { name: "Sales Manager", description: "Manage sales operations", pattern: "sales-order@*" },
   { name: "Salesperson", description: "Create and manage own sales orders", pattern: "sales-order@read" },
   { name: "Viewer", description: "Read-only access to most modules", pattern: "@read" },
+  // Demo set (@aetherglo.com) — explicit arrays; pattern matcher too coarse for Manager/Supervisor.
+  {
+    name: "Demo Manager",
+    description: "Demo: validate + approve sales chain, area-level program approval",
+    permissions: [
+      "sales-order@read",
+      "sales-order@create",
+      "sales-order@update",
+      "sales-order@validate",
+      "sales-order@propose",
+      "sales-order@approve",
+      "customer@read",
+      "outlet@read",
+      "region@read",
+      "area@read",
+      "sku@read",
+      "payment@read",
+      "payment@create",
+      "visit-log@read",
+      "visit-log@validate",
+      "action-program@read",
+      "action-program@approve-area",
+      "event-proposal@read",
+      "event-proposal@approve-area",
+      "report@read",
+    ],
+  },
+  {
+    name: "Demo Supervisor",
+    description: "Demo: validate sales orders and visits, no approve",
+    permissions: [
+      "sales-order@read",
+      "sales-order@validate",
+      "sales-order@propose",
+      "visit-log@read",
+      "visit-log@create",
+      "visit-log@validate",
+      "customer@read",
+      "outlet@read",
+      "sku@read",
+      "report@read",
+    ],
+  },
+  {
+    name: "Demo Salesperson",
+    description: "Demo: create orders and visits, no validate/approve, no pricing",
+    permissions: [
+      "sales-order@read",
+      "sales-order@create",
+      "sales-order@update",
+      "customer@read",
+      "outlet@read",
+      "sku@read",
+      "visit-log@read",
+      "visit-log@create",
+      "payment@read",
+    ],
+  },
+  {
+    name: "Demo Inbound Staff",
+    description: "Demo: receiving-only lane, isolated from pricing/orders",
+    permissions: ["inbound@read", "inbound@create", "sku@read", "vendor@read"],
+  },
 ];
 
 // =============================================
@@ -189,7 +302,6 @@ function normalizePermissionName(permission: string) {
 }
 
 function matchesPattern(permName: string, pattern: string): boolean {
-  if (pattern === "*") return true;
   const normalizedPermission = normalizePermissionName(permName);
   const normalizedPattern = pattern.includes("@") ? pattern : normalizePermissionName(pattern);
   if (normalizedPattern === normalizedPermission) return true;
@@ -228,7 +340,10 @@ async function seedPermissionsAndRoles() {
   for (const role of ROLES) {
     const roleId = roleIds[role.name];
     if (!roleId) continue;
-    const matched = allPermissions.filter((p) => matchesPattern(p.name, role.pattern));
+    // ponytail: explicit arrays win; pattern fallback keeps legacy roles working.
+    const matched = role.permissions
+      ? allPermissions.filter((p) => role.permissions!.includes(p.name))
+      : allPermissions.filter((p) => matchesPattern(p.name, role.pattern!));
     await prisma.roleHasPermission.createMany({
       data: matched.map((p) => ({ roleId, permissionId: p.id })),
     });
@@ -311,6 +426,71 @@ async function seedUsers(roleIds: Record<string, string>) {
     });
     console.log(`✓ AI system user created (id: ${aiUser.id})`);
   }
+
+  console.log("Ensuring demo users exist...");
+  const demoUsers = [
+    {
+      email: "demo.admin@aetherglo.com",
+      name: "Demo Admin",
+      role: "System Admin",
+      description: "Full access to users, roles, and every workflow.",
+    },
+    {
+      email: "demo.manager@aetherglo.com",
+      name: "Demo Manager",
+      role: "Demo Manager",
+      description: "Runs the sales operation: reviews, validates, and approves team orders.",
+    },
+    {
+      email: "demo.supervisor@aetherglo.com",
+      name: "Demo Supervisor",
+      role: "Demo Supervisor",
+      description: "Supervises the team: proposes and validates orders, but never approves.",
+    },
+    {
+      email: "demo.staff@aetherglo.com",
+      name: "Demo Staff",
+      role: "Demo Salesperson",
+      description: "Field account: creates own sales orders and records visits.",
+    },
+    {
+      email: "demo.inbound@aetherglo.com",
+      name: "Demo Inbound",
+      role: "Demo Inbound Staff",
+      description: "Receiving only: records incoming goods, no pricing or sales orders.",
+    },
+  ];
+  for (const demo of demoUsers) {
+    const existing = await prisma.user.findUnique({ where: { email: demo.email } });
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name: demo.name,
+          password: hashedPassword,
+          roleId: roleIds[demo.role],
+          // ponytail: Demo Admin's description is user-owned — only set when missing
+          // so a customized card text survives reseeding; the other demo accounts
+          // re-sync to the seed texts on every run (matches the name/password/role
+          // always-update convention).
+          ...(demo.name === "Demo Admin" && existing.description
+            ? {}
+            : { description: demo.description }),
+        },
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          email: demo.email,
+          name: demo.name,
+          password: hashedPassword,
+          roleId: roleIds[demo.role],
+          description: demo.description,
+        },
+      });
+    }
+  }
+  console.log(`✓ ${demoUsers.length} demo users upserted`);
 }
 
 // =============================================
@@ -568,6 +748,8 @@ async function main() {
   try {
     const roleIds = await seedPermissionsAndRoles();
     await seedUsers(roleIds);
+    const seeded = await seedAppSettings(prisma);
+    console.log(`✓ ${seeded} app setting(s) seeded (insert-only)`);
 
     faker.seed(FAKER_SEED);
     await seedCrmData();

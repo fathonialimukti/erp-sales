@@ -7,10 +7,10 @@ interface BrandMarkProps {
 }
 
 /**
- * ERP Sales brand mark — "Territory Route": a route-drawn E with waypoint
- * dots over a territory grid, on an Aurora Azure tile. Colors ride the theme
- * tokens so light/dark stay on-law; geometry mirrors the master artwork in
- * `src/assets/brand/mark.svg`.
+ * B2B CRM brand mark — "Twin Cards": two overlapping business cards, one
+ * Azure and one Amber, joined by a shared connection node. Colors ride the
+ * theme tokens so light/dark stay on-law; geometry mirrors the master
+ * artwork in `src/assets/brand/mark.svg`.
  */
 export function BrandMark({ className, label }: BrandMarkProps) {
   return (
@@ -22,28 +22,20 @@ export function BrandMark({ className, label }: BrandMarkProps) {
       className={cn("shrink-0", className)}
     >
       <rect width="64" height="64" rx="14" fill="var(--primary)" />
-      <path
-        d="M21.33 0 V64 M42.66 0 V64 M0 21.33 H64 M0 42.66 H64"
+      <g transform="rotate(-9 25 32)">
+        <rect x="11" y="15" width="28" height="34" rx="9" fill="var(--primary-foreground)" />
+      </g>
+      <g transform="rotate(9 39 32)">
+        <rect x="25" y="15" width="28" height="34" rx="9" fill="var(--warning)" />
+      </g>
+      <circle
+        cx="32"
+        cy="32"
+        r="6.5"
+        fill="var(--primary)"
         stroke="var(--primary-foreground)"
-        strokeOpacity="0.28"
-        strokeWidth="1.3"
-        fill="none"
+        strokeWidth="2.5"
       />
-      <path
-        d="M42 15 H18 V49 H42 M18 32 H34"
-        stroke="var(--primary-foreground)"
-        strokeWidth="7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <polygon
-        points="36,28 44,32 36,36"
-        fill="var(--primary-foreground)"
-      />
-      <circle cx="49.5" cy="15" r="3.4" fill="var(--primary-foreground)" />
-      <circle cx="49.5" cy="49" r="3.4" fill="var(--primary-foreground)" />
-      <circle cx="49.5" cy="32" r="3.4" fill="var(--primary-foreground)" />
     </svg>
   );
 }

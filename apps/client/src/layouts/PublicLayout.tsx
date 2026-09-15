@@ -161,10 +161,10 @@ export const PublicLayout = () => {
           >
             <BrandMark
               className="size-9 transition-transform group-hover:scale-[1.02]"
-              label="ERP Sales"
+              label="B2B CRM"
             />
             <span className="font-heading text-sm font-semibold tracking-tight sm:text-base">
-              ERP Sales
+              B2B CRM
             </span>
           </Link>
 
@@ -250,7 +250,7 @@ export const PublicLayout = () => {
               <SheetContent side="right" className="w-[min(100%,20rem)] p-0">
                 <SheetHeader className="border-b border-border px-5 py-5 text-left">
                   <SheetTitle className="font-heading text-base">
-                    ERP Sales
+                    B2B CRM
                   </SheetTitle>
                   <SheetDescription>
                     {t(
@@ -347,15 +347,15 @@ export const PublicLayout = () => {
         <div className="mx-auto flex max-w-7xl flex-col gap-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-2.5">
-                  <BrandMark className="size-9" label="ERP Sales" />
+                  <BrandMark className="size-9" label="B2B CRM" />
                   <span className="font-heading text-sm font-semibold tracking-tight">
-                    ERP Sales
+                    B2B CRM
                   </span>
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {t(
                     "landing.footer_tagline",
-                    "ERP Sales — the operating system for your sales team.",
+                    "B2B CRM — the operating system for your sales team.",
                   )}
                 </p>
               </div>
@@ -394,7 +394,7 @@ export const PublicLayout = () => {
                 {" · "}
                 {t(
                   "landing.footer_copyright",
-                  "© 2026 ERP Sales. All rights reserved.",
+                  "© 2026 B2B CRM. All rights reserved.",
                 )}
               </p>
               <p className="text-xs sm:text-sm">

@@ -11,6 +11,7 @@ import {
   Loader2,
   MapPin,
   Pencil,
+  Printer,
   ShoppingCart,
   Sparkles,
   Trash2,
@@ -20,6 +21,7 @@ import {
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { sanitizePdfFileName } from "../../lib/pdf/usePdfDocument";
 import { useToast } from "../../components/useToast";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
@@ -28,6 +30,7 @@ import { API_BASE_URL } from "@/lib/api-base";
 import { StatusChip } from "../../components/StatusChip";
 import { AiSummarizeButton } from "../../components/AiSummarizeButton";
 import { AiVisitOrderButton } from "../../components/AiVisitOrderButton";
+import { PdfDocumentModal } from "../../components/pdf/PdfDocumentModal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,10 +47,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  buildVisitReportPdfLabels,
+  buildVisitReportPdfSpec,
+  visitReportDocumentNumber,
+  type VisitReportPdfFormatMessage,
+  type VisitReportPdfRecord,
+} from "./visitReportPdf";
 
 type VisitLogDetail = {
   id: string;
   date: string;
+  updatedAt: string;
   checkInAt: string | null;
   checkOutAt: string | null;
   approvalStatus: string;
@@ -73,6 +84,10 @@ export const VisitLogDetailPage = () => {
   const canUpdate = hasPermission("visit-log@update");
   const canDelete = hasPermission("visit-log@delete");
   const toast = useToast();
+  /** Small (id, defaultMessage, values) helper — the PDF labels' intl seam. */
+  const t: VisitReportPdfFormatMessage = (id, defaultMessage, values) =>
+    intl.formatMessage({ id, defaultMessage }, values as Record<string, string>);
+  const [printModalOpen, setPrintModalOpen] = useState(false);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -221,6 +236,11 @@ export const VisitLogDetailPage = () => {
     visitLog.outlet?.name ??
     intl.formatMessage({ id: "visit_log.detail.unnamed", defaultMessage: "Visit Log" });
 
+  // The local VisitLogDetail type is a narrow view of the detail payload,
+  // but it covers every field the spec mapper prints (purpose, notes,
+  // feedback, relations) — structurally assignable, no cast needed.
+  const pdfRecord: VisitReportPdfRecord = visitLog;
+
   return (
     <section
       className="flex flex-col gap-6 pt-2 pb-8"
@@ -248,6 +268,19 @@ export const VisitLogDetailPage = () => {
               approvalStatus: visitLog.approvalStatus,
             }}
           />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPrintModalOpen(true)}
+            className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <Printer className="size-3.5" aria-hidden />
+            {intl.formatMessage({
+              id: "visit_log.detail.print",
+              defaultMessage: "Print / PDF",
+            })}
+          </Button>
           {canUpdate ? (
             <Button
               type="button"
@@ -464,6 +497,30 @@ export const VisitLogDetailPage = () => {
           ) : null}
         </DialogContent>
       </Dialog>
+
+      {/* PDF preview modal (docs/plans/jspdf-documents pipeline): the
+       * toolbar button opens it; the built blob previews in the
+       * browser's native PDF viewer inside an iframe, and the same blob
+       * serves Print (scoped to the PDF) and Download. The modal queries
+       * `settings.companyIdentity` itself; `buildKey` is stable per
+       * record state (`<id>:<updatedAt>`) so edits rebuild exactly once. */}
+      <PdfDocumentModal
+        open={printModalOpen}
+        onOpenChange={setPrintModalOpen}
+        title={intl.formatMessage({
+          id: "visit_log.print.title",
+          defaultMessage: "Visit Report",
+        })}
+        buildKey={`${visitLog.id}:${visitLog.updatedAt}`}
+        buildSpec={(identity) =>
+          buildVisitReportPdfSpec(
+            pdfRecord,
+            identity,
+            buildVisitReportPdfLabels(t),
+          )
+        }
+        fileName={sanitizePdfFileName(visitReportDocumentNumber(visitLog))}
+      />
     </section>
   );
 };

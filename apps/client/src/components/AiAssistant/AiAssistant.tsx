@@ -16,6 +16,12 @@ import { useNavigate } from 'react-router';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { aiFormFillAtom, authUserAtom } from '../../lib/atoms';
+import {
+  ChatWidgetPart,
+  WIDGET_TOOL_NAMES,
+  createWidgetTurnHandlers,
+  lastAssistantStepHasWidgetTool,
+} from '@/components/ai/ChatWidgetWiring';
 
 const ROUTE_ALIASES: Record<string, string> = {
   '/': '/dashboard',
@@ -446,10 +452,13 @@ export const AiAssistant = () => {
         credentials: 'include' as RequestCredentials,
       }),
     }),
-    sendAutomaticallyWhen: (messages) => {
+    sendAutomaticallyWhen: ({ messages }) => {
       // Block auto-send while any async tool call (like queryDatabase) is still pending
       if (pendingToolCallsRef.current.size > 0) return false;
-      return lastAssistantMessageIsCompleteWithToolCalls(messages);
+      // Widget tool calls END the turn (SPEC §5.2) — the user's structured
+      // response resumes it; never auto-continue from a card.
+      if (lastAssistantStepHasWidgetTool(messages)) return false;
+      return lastAssistantMessageIsCompleteWithToolCalls({ messages });
     },
     // Execute ALL tools (dynamic and typed) directly in onToolCall — NOT in useEffect.
     // sendAutomaticallyWhen is checked immediately after this callback resolves.
@@ -463,10 +472,19 @@ export const AiAssistant = () => {
     },
   });
 
+  // Widget interaction handlers (SPEC §5.3): persist status onto the widget
+  // tool-part output and append the structured turns that resume the AI.
+  const widgetTurns = createWidgetTurnHandlers(setMessages, sendMessage);
+
   // runTool is defined as a stable function via useCallback-equivalent pattern.
   // It must not close over stale addToolOutput — since it's called from inside useEffect
   // which always has the latest closure, this is safe.
   const runTool = (toolName: string, toolCallId: string, toolInput: unknown) => {
+    // Widget tools (request_form_input / request_confirmation) render as cards,
+    // never executed client-side — and never "Unknown tool", whose addToolOutput
+    // fallback would clobber the widget output (SPEC §7).
+    if (WIDGET_TOOL_NAMES.has(toolName)) return;
+
     const alreadyHandled = handledToolCallsRef.current.has(toolCallId);
     if (alreadyHandled) {
       console.log('[AI] dedup skip side-effects for', toolCallId);
@@ -881,8 +899,14 @@ export const AiAssistant = () => {
               if (message.role !== 'user' && message.role !== 'assistant') return null;
               const isUser = message.role === 'user';
 
+              // Structured widget turns (form_response/confirmation/action_result)
+              // carry only an empty text part + metadata — they render nothing.
               const hasVisible = message.parts.some(
-                p => p.type === 'text' || p.type === 'file' || p.type.startsWith('tool-') || p.type === 'dynamic-tool',
+                p =>
+                  (p.type === 'text' && p.text.trim() !== '') ||
+                  p.type === 'file' ||
+                  p.type.startsWith('tool-') ||
+                  p.type === 'dynamic-tool',
               );
               if (!hasVisible) return null;
 
@@ -969,6 +993,26 @@ export const AiAssistant = () => {
                       const toolName = part.type === 'dynamic-tool'
                         ? String(p.toolName)
                         : part.type.slice('tool-'.length);
+
+                      // Widget tool parts render as cards below the text (SPEC §7) —
+                      // never as a raw tool chip. Malformed payloads render nothing.
+                      if (WIDGET_TOOL_NAMES.has(toolName) && String(p.state ?? '') === 'output-available') {
+                        elements.push(
+                          <ChatWidgetPart
+                            key={`widget-${partIdx}`}
+                            part={part}
+                            chatId={chatId}
+                            messages={messages}
+                            disabled={isLoading}
+                            onSubmitted={widgetTurns.onSubmitted}
+                            onCancelled={widgetTurns.onCancelled}
+                            onStatusChange={widgetTurns.onStatusChange}
+                            onResult={widgetTurns.onResult}
+                          />,
+                        );
+                        return;
+                      }
+
                       elements.push(<ToolChip key={`tool-${partIdx}`} toolName={toolName} part={p} />);
                     });
 

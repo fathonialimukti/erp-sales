@@ -2,14 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, UserRound, Mail, ShieldCheck, ImagePlus } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ImageUploadField } from "../../components/ImageUploadField";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -199,6 +202,13 @@ const InnerForm = ({
 
   const roleOptions = (rolesData?.data ?? []) as { id: string; name: string }[];
 
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as UserFormValues;
+  const filled = [live.name, live.email, live.roleId].filter(
+    (v) => String(v ?? "").trim().length > 0,
+  ).length;
+  const roleName = roleOptions.find((r) => r.id === live.roleId)?.name ?? "";
+
   return (
     <section
       className="flex flex-col gap-3 pt-1 pb-6"
@@ -236,6 +246,30 @@ const InnerForm = ({
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="user"
+            icon={UserRound}
+            title={live.name}
+            status={isEdit ? "ENABLED" : "DRAFT"}
+            filled={filled}
+            total={3}
+            rows={[
+              {
+                icon: Mail,
+                label: intl.formatMessage({ id: "users.form.email", defaultMessage: "Email" }),
+                value: live.email,
+              },
+              {
+                icon: ShieldCheck,
+                label: intl.formatMessage({ id: "users.form.role", defaultMessage: "Role" }),
+                value: roleName,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -253,6 +287,9 @@ const InnerForm = ({
         />
 
         <FormSection
+          icon={UserRound}
+          step={1}
+          tone="user"
           title={intl.formatMessage({ id: "users.form.identity", defaultMessage: "Identity" })}
           description={intl.formatMessage({
             id: "users.form.identity_description",
@@ -399,6 +436,9 @@ const InnerForm = ({
         </FormSection>
 
         <FormSection
+          icon={ImagePlus}
+          step={2}
+          tone="user"
           title={intl.formatMessage({ id: "users.form.photo", defaultMessage: "Profile photo" })}
           description={intl.formatMessage({
             id: "users.form.photo_description",
@@ -415,7 +455,7 @@ const InnerForm = ({
           </form.Field>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button size="sm" className="h-8 gap-1.5 px-2.5" type="submit" disabled={isPending}>
               {isPending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
@@ -426,8 +466,9 @@ const InnerForm = ({
                 ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })
                 : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <Dialog
         open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}

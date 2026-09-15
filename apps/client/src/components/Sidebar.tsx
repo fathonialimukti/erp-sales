@@ -5,7 +5,6 @@ import { useIntl } from "react-intl";
 import { Search } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
-import { icons } from "@/assets/icons";
 import { BrandMark } from "@/components/BrandMark";
 import { NavModuleTile } from "@/components/NavModuleTile";
 import { UserAvatarMenu } from "@/components/UserAvatarMenu";
@@ -90,8 +89,6 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   // geo master data — module tokens + PageHeader MODULE_ICON exist for these keys
   "/region": "region",
   "/area": "area",
-  "/settings": "settings",
-  "/settings/app-settings": "settings",
 };
 
 export const Sidebar = () => {
@@ -205,7 +202,6 @@ export const Sidebar = () => {
             "/activity-logs",
             "/backups",
             "/notifications",
-            "/settings/app-settings",
           ].includes(l.href),
         ),
       },
@@ -256,8 +252,8 @@ export const Sidebar = () => {
             <div className="min-w-0 leading-tight">
               <span className="block truncate font-heading text-sm font-semibold text-foreground">
                 {intl.formatMessage({
-                  id: "nav.erp_sales",
-                  defaultMessage: "CRM",
+                  id: "nav.brand_name",
+                  defaultMessage: "B2B CRM",
                 })}
               </span>
               <span className="block truncate text-xs text-muted-foreground">

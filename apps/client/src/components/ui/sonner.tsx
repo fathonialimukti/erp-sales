@@ -1,11 +1,33 @@
 "use client"
 
+import { useEffect } from "react"
 import { useTheme } from "next-themes"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { toast, Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
+
+  // Sonner v2 has no built-in click-to-dismiss; dismiss via the toast's data-testid id.
+  useEffect(() => {
+    const dismiss = (target: EventTarget | null) => {
+      const el = target instanceof Element ? target.closest("[data-sonner-toast]") : null
+      const id = el?.getAttribute("data-testid")
+      if (id) toast.dismiss(id)
+    }
+    const onClick = (e: MouseEvent) => dismiss(e.target)
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " ") return
+      dismiss(e.target)
+      e.preventDefault()
+    }
+    document.addEventListener("click", onClick)
+    document.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.removeEventListener("click", onClick)
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  }, [])
 
   return (
     <Sonner

@@ -1,3 +1,4 @@
+export * from './applicationLog';
 export * from './action-program';
 export * from './action-type';
 export * from './area';
@@ -6,6 +7,7 @@ export * from './backup';
 export * from './budget-line';
 export * from './budget-period';
 export * from './budget-type';
+export * from './chatWidget';
 export * from './common';
 export * from './customer-contact';
 export * from './customer';

@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, Mail, UserRound, Tags, Flame } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -135,6 +138,14 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
     customerId: (v: unknown) => form.setFieldValue("customerId" as never, String(v) as never),
   });
 
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [live.email, live.subject, live.customerId].filter(
+    (v) => String(v ?? "").trim().length > 0,
+  ).length;
+  const customerName =
+    customers.find((c) => c.id === live.customerId)?.name ?? "";
+
   const createMutation = useMutation({
     mutationFn: (d: FormValues) =>
       trpcClient.emailCrm.create.mutate({
@@ -257,6 +268,42 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="email"
+            icon={Mail}
+            title={live.subject || live.email}
+            subtitle={live.subject && live.email ? live.email : undefined}
+            status={live.status}
+            filled={filled}
+            total={3}
+            rows={[
+              {
+                icon: Flame,
+                label: intl.formatMessage({
+                  id: "emailCrm.form.priority",
+                  defaultMessage: "Priority",
+                }),
+                value: live.priority,
+              },
+              {
+                icon: UserRound,
+                label: intl.formatMessage({
+                  id: "emailCrm.form.customer",
+                  defaultMessage: "Customer",
+                }),
+                value: customerName,
+              },
+              {
+                icon: Tags,
+                label: intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" }),
+                value: live.tags,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -275,6 +322,9 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
         />
 
         <FormSection
+          icon={Mail}
+          step={1}
+          tone="email"
           title={intl.formatMessage({
             id: "emailCrm.form.section_basic",
             defaultMessage: "Conversation",
@@ -452,7 +502,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
@@ -466,8 +516,9 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
               )}
               {intl.formatMessage({ id: "emailCrm.common.save", defaultMessage: "Save" })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

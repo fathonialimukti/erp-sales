@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Plus, Save, Trash2, PartyPopper, CalendarRange, MapPin, UserRound, Wallet, Store, ListPlus } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -177,6 +180,24 @@ export const EventProposalFormPage = () => {
     },
   });
 
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [
+    live.name,
+    live.eventTypeId,
+    live.eventDate,
+    live.areaId,
+    live.currency,
+    live.vendors.filter((v) => v.vendorId).length > 0 ? "x" : "",
+  ].filter((v) => String(v ?? "").trim().length > 0).length;
+  const eventTypeName =
+    (eventTypes?.data ?? []).find((et) => et.id === live.eventTypeId)?.name ?? "";
+  const areaName = (areas?.data ?? []).find((a) => a.id === live.areaId)?.name ?? "";
+  const dateRange =
+    live.eventDate && live.eventEndDate
+      ? `${live.eventDate} → ${live.eventEndDate}`
+      : (live.eventDate || live.eventEndDate || "");
+
   const { data: budgetLines } = useQuery({
     queryKey: ["budgetLineOptions", form.state.values.areaId],
     enabled: Boolean(form.state.values.areaId),
@@ -315,6 +336,83 @@ export const EventProposalFormPage = () => {
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="event"
+            icon={PartyPopper}
+            title={live.name}
+            subtitle={eventTypeName || undefined}
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={filled}
+            total={6}
+            rows={[
+              {
+                icon: CalendarRange,
+                label: intl.formatMessage({
+                  id: "event_proposal.preview.dates",
+                  defaultMessage: "Dates",
+                }),
+                value: dateRange,
+              },
+              {
+                icon: MapPin,
+                label: intl.formatMessage({
+                  id: "event_proposal.form.field_venue",
+                  defaultMessage: "Venue",
+                }),
+                value: live.venue,
+              },
+              {
+                icon: UserRound,
+                label: intl.formatMessage({
+                  id: "event_proposal.form.field_organizer_name",
+                  defaultMessage: "Organizer name",
+                }),
+                value: live.organizerName,
+              },
+              {
+                icon: MapPin,
+                label: intl.formatMessage({
+                  id: "event_proposal.form.field_area",
+                  defaultMessage: "Area",
+                }),
+                value: areaName,
+              },
+              {
+                icon: Store,
+                label: intl.formatMessage({
+                  id: "event_proposal.form.section_vendors",
+                  defaultMessage: "Vendors",
+                }),
+                value: intl.formatMessage(
+                  { id: "form.preview.vendors", defaultMessage: "{count} vendors" },
+                  { count: live.vendors.length },
+                ),
+              },
+              {
+                icon: ListPlus,
+                label: intl.formatMessage({
+                  id: "event_proposal.form.section_misc_items",
+                  defaultMessage: "Miscellaneous Items",
+                }),
+                value: intl.formatMessage(
+                  { id: "form.preview.misc_items", defaultMessage: "{count} misc items" },
+                  { count: live.miscItems.length },
+                ),
+              },
+              {
+                icon: Wallet,
+                label: intl.formatMessage({
+                  id: "event_proposal.form.field_currency",
+                  defaultMessage: "Currency",
+                }),
+                value: live.currency,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -335,6 +433,9 @@ export const EventProposalFormPage = () => {
         />
 
         <FormSection
+          icon={PartyPopper}
+          step={1}
+          tone="event"
           title={intl.formatMessage({
             id: "event_proposal.form.section_basic",
             defaultMessage: "Basic information",
@@ -609,6 +710,9 @@ export const EventProposalFormPage = () => {
 
         {/* Misc Items */}
         <FormSection
+          icon={ListPlus}
+          step={2}
+          tone="event"
           title="Miscellaneous Items"
           action={
             <Button
@@ -697,6 +801,9 @@ export const EventProposalFormPage = () => {
 
         {/* Vendors */}
         <FormSection
+          icon={Store}
+          step={3}
+          tone="event"
           title="Vendors"
           action={
             <Button
@@ -826,7 +933,7 @@ export const EventProposalFormPage = () => {
           </form.Field>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
@@ -843,8 +950,9 @@ export const EventProposalFormPage = () => {
                 defaultMessage: "Save",
               })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

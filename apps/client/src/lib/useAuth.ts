@@ -100,5 +100,25 @@ export function useAuthActions() {
     }
   };
 
-  return { login, logout };
+  // Passwordless demo login (Option A) — gated server-side by
+  // DEMO_LOGIN_ENABLED. Response mirrors login output shape, so session
+  // handling stays identical to the password path.
+  const demoLogin = async (userId: string) => {
+    const response = await trpcClient.auth.demoLogin.mutate({ userId });
+
+    const rolePermissions = mapPermissions(response.user.roles);
+    const primaryRoleName = response.user.roles[0]?.name ?? 'User';
+
+    setAuthToken(`${response.user.id}:${response.tokenExpiresAt ?? Date.now()}`);
+    setAuthUser({
+      id: response.user.id,
+      email: response.user.email,
+      name: response.user.name ?? response.user.email,
+      username: response.user.email,
+      permissions: rolePermissions,
+      roleName: primaryRoleName,
+    });
+  };
+
+  return { login, demoLogin, logout };
 }

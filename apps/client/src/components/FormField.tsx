@@ -27,7 +27,7 @@ export const FormField = ({
     {label ? (
       <Label htmlFor={id} className="font-semibold">
         {label}
-        {isRequired ? <span className="text-destructive">*</span> : null}
+        {isRequired ? <span aria-hidden="true" className="text-destructive">*</span> : null}
       </Label>
     ) : null}
     {children}

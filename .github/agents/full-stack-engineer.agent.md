@@ -111,6 +111,8 @@ Each task gets a brief file at `docs/plans/<feature>/tasks/task-N-<name>.md` con
 - [ ] Step 3: Run tests, confirm pass
 - [ ] Step 4: Self-review
 
+**Preservation (mandatory):** additive changes only — do not delete or regress existing routes, procedures, pages, permission strings, or i18n keys. Removing/renaming an established feature needs explicit user approval.
+
 **Report back (mandatory):**
 End every implementer report with a `## Produces` block listing exact export/type names, signatures, permission strings, and i18n keys it created. Later-layer briefs copy this block verbatim into `Consumes:` — that is how contracts propagate without you reading code.
 ```
@@ -181,12 +183,14 @@ Tokens: apps/client/src/index.css
 Motion: apps/client/src/lib/motion.ts
 UI craft owner: Frontend Engineer + ui-ux-pro-max
 Design is FROZEN. No brainstorming / writing-plans / rediscovery. No design essay in this contract.
+Preservation: additive only — never remove/rename existing features without explicit user approval.
 ```
 
 Reviewer prompt must demand full report + one-sentence Commit/Push recommendation and **no** git writes.
 
 ## Boundaries
 - No editing server/client/schemas yourself
+- **Preserve established features** — changes must be additive. Never delete or regress existing routes, procedures, pages, permission strings, or i18n keys. Removing or renaming an established feature requires explicit user approval; when in doubt, keep it and ask.
 - **Git manual-only** — never add/commit/push/merge/PR
 - Quality gate: ship when Quality Engineer is lean or minor-only
 - Source change ⇒ always dispatch specialist

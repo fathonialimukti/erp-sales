@@ -11,6 +11,7 @@ model User {
   id                    String          @id @default(ulid()) @map("id")
   email                 String          @unique @map("email")
   name                  String?         @map("name")
+  description           String?         @map("description")
   password              String          @map("password")
   roleId                String?         @map("role_id")
   photo                 String?         @map("photo")
@@ -849,9 +850,29 @@ model RevokedToken {
   @@map("revoked_tokens")
 }
 
+enum SettingScope {
+  APP
+  USER
+}
+
 enum BackupSource {
   CREATED
   UPLOADED
+}
+
+model Setting {
+  id        String      @id @default(cuid())
+  key       String      @map("key")
+  value     Json        @map("value")
+  scope     SettingScope @map("scope")
+  userId    String?     @map("user_id")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@unique([key, userId])
+  @@index([scope])
+  @@index([userId])
+  @@map("settings")
 }
 
 // Backup metadata. The backup file itself lives on disk, never in the DB.
@@ -869,4 +890,25 @@ model Backup {
 
   @@index([createdById])
   @@map("backups")
+}
+
+// AI Admin chat SQL gate. The server executes exactly sqlText once, only when
+// status is "confirmed" (one-time-use); state transitions are enforced in
+// application code (aiChat router), not DB constraints.
+model AiActionConfirmation {
+  id        String   @id @default(ulid()) @map("id")
+  widgetId  String   @map("widget_id")
+  sqlText   String   @map("sql_text")
+  readOnly  Boolean  @map("read_only")
+  backupAck Boolean  @default(false) @map("backup_ack")
+  status    String   @default("pending") @map("status")
+  chatId    String   @map("chat_id")
+  createdBy String   @map("created_by")
+  result    Json?    @map("result")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([chatId])
+  @@index([createdBy])
+  @@map("ai_action_confirmations")
 }

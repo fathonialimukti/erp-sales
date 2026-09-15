@@ -29,11 +29,7 @@ import { clientLogHandler } from './routes/client-log.js';
 import { validateEnv } from './lib/env-validate.js';
 import { checkMigrations } from './lib/migration-check.js';
 import { startAppLogRetention, logApp } from './lib/app-log.js';
-
-const corsOrigin = process.env.CORS_ORIGIN;
-
-const isAllowedDevOrigin = (origin: string) =>
-    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin) || origin === 'tauri://localhost';
+import { isOriginAllowed, parseAllowedOrigins } from './lib/cors-origin.js';
 
 const app = express();
 
@@ -46,19 +42,12 @@ app.set('trust proxy', 1);
 app.use(compression());
 
 // CORS_ORIGIN may list multiple origins, comma-separated.
-const allowedOrigins = (corsOrigin ?? '')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean);
+const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGIN);
 
 app.use(
     cors({
         origin: (origin, callback) => {
-            // No Origin header (curl, same-origin, server-to-server) → allow.
-            if (!origin) return callback(null, true);
-            if (allowedOrigins.includes(origin)) return callback(null, true);
-            if (isAllowedDevOrigin(origin)) return callback(null, true);
-
+            if (isOriginAllowed(origin, allowedOrigins)) return callback(null, true);
             callback(new Error('Not allowed by CORS'));
         },
         credentials: true,

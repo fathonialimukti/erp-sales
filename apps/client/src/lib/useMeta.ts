@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 interface MetaConfig {
-  /** Page title appended to " — ERP Sales" */
+  /** Page title appended to " — B2B CRM" */
   title?: string;
   /** Meta description */
   description?: string;
@@ -17,7 +17,7 @@ interface MetaConfig {
 
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://erp-sales.app';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
-const SITE_NAME = 'ERP Sales';
+const SITE_NAME = 'B2B CRM';
 const GLOBAL_DESCRIPTION = 'Sales management platform for field teams and back-office. Manage customers, outlets, sales orders, visits, approvals, and real-time insights in one platform.';
 
 /**

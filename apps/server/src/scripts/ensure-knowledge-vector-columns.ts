@@ -38,21 +38,30 @@ async function main() {
   `);
   console.log(`  ✓ embedding vector(${dimensions})`);
 
+  // information_schema.data_type returns the bare typname ("vector") without
+  // the dimension — use format_type, which yields "vector(4096)" (or "vector"
+  // when undimensioned).
   const colInfo = await prisma.$queryRawUnsafe<Array<{ data_type: string }>>(
-    `SELECT data_type FROM information_schema.columns
-     WHERE table_name = 'knowledge_chunks' AND column_name = 'embedding'`,
+    `SELECT format_type(a.atttypid, a.atttypmod) AS data_type
+     FROM pg_attribute a
+     WHERE a.attrelid = 'knowledge_chunks'::regclass
+       AND a.attname = 'embedding'
+       AND NOT a.attisdropped`,
   );
   const declared = colInfo[0]?.data_type ?? '';
   const match = declared.match(/vector\((\d+)\)/);
-  if (match && Number(match[1]) !== dimensions) {
+  const needsResize =
+    (match && Number(match[1]) !== dimensions) ||
+    // Bare "vector" (undimensioned) — created by older migrations.
+    (!match && declared.trim() === 'vector');
+  if (needsResize) {
     console.warn(
-      `  ⚠ embedding column is vector(${match[1]}) but configured dimension is ${dimensions}. ` +
+      `  ⚠ embedding column is ${declared.trim()} but configured dimension is ${dimensions}. ` +
         `Resizing (drops the HNSW index; existing vectors are cleared).`,
     );
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE knowledge_chunks
-        DROP INDEX IF EXISTS knowledge_chunks_embedding_hnsw_idx
-    `);
+    await prisma.$executeRawUnsafe(
+      `DROP INDEX IF EXISTS knowledge_chunks_embedding_hnsw_idx`,
+    );
     await prisma.$executeRawUnsafe(`
       ALTER TABLE knowledge_chunks
         ALTER COLUMN embedding TYPE vector(${dimensions})

@@ -3,18 +3,21 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Save, X, MapPin, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, X, MapPin, AlertCircle, Wallet, CalendarRange, MapPinned, Map, BadgeDollarSign } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
+import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 type BudgetFormData = {
@@ -196,6 +199,31 @@ export const BudgetFormPage = () => {
   const isLoading = isEdit && isLoadingDetail;
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+  const typeName =
+    budgetTypes?.data?.find((t: BudgetTypeOption) => t.id === formData.budgetTypeId)?.name ?? "";
+  const periodName =
+    budgetPeriods?.data?.find((p: BudgetPeriodOption) => p.id === formData.periodId)?.name ?? "";
+  const regionName =
+    regions?.data?.find((r: RegionOption) => r.id === formData.regionId)?.name ?? "";
+  const areaName =
+    areas?.data?.find((a: AreaOption) => a.id === formData.areaId)?.name ?? "";
+  const scopeName = intl.formatMessage(
+    formData.scope === "REGION"
+      ? { id: "budget.scope.region", defaultMessage: "Region" }
+      : { id: "budget.scope.area", defaultMessage: "Area" },
+  );
+  const scopeFilled =
+    formData.scope === "REGION"
+      ? formData.regionId
+        ? 1
+        : 0
+      : formData.areaId
+        ? 1
+        : 0;
+  const filled =
+    [formData.budgetTypeId, formData.periodId, formData.amount].filter(Boolean).length +
+    scopeFilled;
+
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -223,21 +251,56 @@ export const BudgetFormPage = () => {
         }
       />
       <div className="flex-1 overflow-auto p-6">
-        <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{intl.formatMessage({ id: "budget_line.form.basic_info", defaultMessage: "Basic Information" })}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="budgetTypeId">{intl.formatMessage({ id: "budget_line.form.budget_type", defaultMessage: "Budget Type" })} *</Label>
+        <FormLayout
+          sidebar={
+            <FormPreview
+              module="budget"
+              icon={Wallet}
+              title={typeName || periodName || scopeName}
+              subtitle={periodName || undefined}
+              status={!isEdit ? "DRAFT" : undefined}
+              filled={filled}
+              total={4}
+              rows={[
+                {
+                  icon: MapPin,
+                  label: intl.formatMessage({ id: "budget_line.form.scope", defaultMessage: "Scope" }),
+                  value: `${scopeName} · ${
+                    formData.scope === "REGION" ? regionName : areaName
+                  }`,
+                },
+                {
+                  icon: BadgeDollarSign,
+                  label: intl.formatMessage({ id: "budget_line.form.amount", defaultMessage: "Amount" }),
+                  value: `${formData.currency} ${Number(formData.amount || 0).toLocaleString()}`,
+                  money: true,
+                },
+              ]}
+            />
+          }
+        >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <FormSection
+              icon={Wallet}
+              step={1}
+              tone="budget"
+              title={intl.formatMessage({
+                id: "budget_line.form.basic_info",
+                defaultMessage: "Basic Information",
+              })}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="budgetTypeId">
+                    {intl.formatMessage({ id: "budget_line.form.budget_type", defaultMessage: "Budget Type" })}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={formData.budgetTypeId}
                     onValueChange={(value) => setFormData({ ...formData, budgetTypeId: value })}
                     disabled={isEdit}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="budgetTypeId">
                       <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select budget type" })} />
                     </SelectTrigger>
                     <SelectContent>
@@ -249,14 +312,17 @@ export const BudgetFormPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="periodId">{intl.formatMessage({ id: "budget_line.form.period", defaultMessage: "Budget Period" })} *</Label>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="periodId">
+                    {intl.formatMessage({ id: "budget_line.form.period", defaultMessage: "Budget Period" })}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={formData.periodId}
                     onValueChange={(value) => setFormData({ ...formData, periodId: value })}
                     disabled={isEdit}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="periodId">
                       <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select budget period" })} />
                     </SelectTrigger>
                     <SelectContent>
@@ -268,35 +334,39 @@ export const BudgetFormPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="scope">{intl.formatMessage({ id: "budget_line.form.scope", defaultMessage: "Scope" })} *</Label>
-                <Select
-                  value={formData.scope}
-                  onValueChange={(value) => handleScopeChange(value as "REGION" | "AREA")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select scope" })} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="REGION">
-                      {intl.formatMessage({ id: "budget.scope.region", defaultMessage: "Region" })}
-                    </SelectItem>
-                    <SelectItem value="AREA">
-                      {intl.formatMessage({ id: "budget.scope.area", defaultMessage: "Area" })}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="regionId">{intl.formatMessage({ id: "budget_line.form.region", defaultMessage: "Region" })} {formData.scope === "REGION" && <span className="text-destructive">*</span>}</Label>
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <Label htmlFor="scope">
+                    {intl.formatMessage({ id: "budget_line.form.scope", defaultMessage: "Scope" })}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.scope}
+                    onValueChange={(value) => handleScopeChange(value as "REGION" | "AREA")}
+                  >
+                    <SelectTrigger id="scope">
+                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select scope" })} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="REGION">
+                        {intl.formatMessage({ id: "budget.scope.region", defaultMessage: "Region" })}
+                      </SelectItem>
+                      <SelectItem value="AREA">
+                        {intl.formatMessage({ id: "budget.scope.area", defaultMessage: "Area" })}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="regionId">
+                    {intl.formatMessage({ id: "budget_line.form.region", defaultMessage: "Region" })}{" "}
+                    {formData.scope === "REGION" && <span className="text-destructive">*</span>}
+                  </Label>
                   <Select
                     value={formData.regionId}
                     onValueChange={(value) => setFormData({ ...formData, regionId: value })}
                     disabled={formData.scope !== "REGION"}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="regionId">
                       <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select region" })} />
                     </SelectTrigger>
                     <SelectContent>
@@ -308,14 +378,17 @@ export const BudgetFormPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="areaId">{intl.formatMessage({ id: "budget_line.form.area", defaultMessage: "Area" })} {formData.scope === "AREA" && <span className="text-destructive">*</span>}</Label>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="areaId">
+                    {intl.formatMessage({ id: "budget_line.form.area", defaultMessage: "Area" })}{" "}
+                    {formData.scope === "AREA" && <span className="text-destructive">*</span>}
+                  </Label>
                   <Select
                     value={formData.areaId}
                     onValueChange={(value) => setFormData({ ...formData, areaId: value })}
                     disabled={formData.scope !== "AREA"}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="areaId">
                       <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select area" })} />
                     </SelectTrigger>
                     <SelectContent>
@@ -327,10 +400,11 @@ export const BudgetFormPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">{intl.formatMessage({ id: "budget_line.form.amount", defaultMessage: "Amount" })} *</Label>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="amount">
+                    {intl.formatMessage({ id: "budget_line.form.amount", defaultMessage: "Amount" })}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="amount"
                     type="number"
@@ -339,8 +413,10 @@ export const BudgetFormPage = () => {
                     placeholder={intl.formatMessage({ id: "budget_line.form.amount_placeholder", defaultMessage: "Enter amount" })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">{intl.formatMessage({ id: "budget_line.form.currency", defaultMessage: "Currency" })}</Label>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="currency">
+                    {intl.formatMessage({ id: "budget_line.form.currency", defaultMessage: "Currency" })}
+                  </Label>
                   <Input
                     id="currency"
                     value={formData.currency}
@@ -348,22 +424,22 @@ export const BudgetFormPage = () => {
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </FormSection>
 
-          <div className="flex justify-end gap-4 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              <X className="size-4 mr-2" />
-              {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              <Save className="size-4 mr-2" />
-              {isSubmitting
-                ? intl.formatMessage({ id: "common.action.saving", defaultMessage: "Saving..." })
-                : intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })}
-            </Button>
-          </div>
-        </form>
+            <FormFooter>
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                <X className="size-4 mr-2" />
+                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                <Save className="size-4 mr-2" />
+                {isSubmitting
+                  ? intl.formatMessage({ id: "common.action.saving", defaultMessage: "Saving..." })
+                  : intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })}
+              </Button>
+            </FormFooter>
+          </form>
+        </FormLayout>
       </div>
     </div>
   );

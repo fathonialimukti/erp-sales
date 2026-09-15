@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, Hash, MapPinned } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -82,6 +85,12 @@ export const AreaFormPage = () => {
     code: (v: unknown) => form.setFieldValue("code" as never, String(v) as never),
     name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
   });
+
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [live.name, live.code, live.regionId].filter((v) => String(v ?? "").trim().length > 0).length;
+  const regionName =
+    (regions?.data ?? []).find((r) => r.id === live.regionId)?.name ?? "";
 
   useEffect(() => {
     if (isEdit && data) {
@@ -192,6 +201,29 @@ export const AreaFormPage = () => {
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="area"
+            icon={MapPinned}
+            title={live.name}
+            subtitle={regionName || undefined}
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={filled}
+            total={3}
+            rows={[
+              {
+                icon: Hash,
+                label: intl.formatMessage({
+                  id: "area.form.field_code",
+                  defaultMessage: "Code",
+                }),
+                value: live.code,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -208,6 +240,9 @@ export const AreaFormPage = () => {
         />
 
         <FormSection
+          icon={MapPinned}
+          step={1}
+          tone="area"
           title={intl.formatMessage({
             id: "area.form.section_basic",
             defaultMessage: "Basic information",
@@ -295,7 +330,7 @@ export const AreaFormPage = () => {
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
@@ -309,8 +344,9 @@ export const AreaFormPage = () => {
               )}
               {intl.formatMessage({ id: "area.form.save_button", defaultMessage: "Save" })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

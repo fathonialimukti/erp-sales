@@ -212,21 +212,21 @@ export const NAV_MENU: NavMenuItem[] = [
     href: "/ai-admin",
     permission: "ai-admin@access",
   },
-  {
-    name: "nav.settings",
-    icon: icons.navSettings,
-    children: [
-      {
-        name: "nav.settings_personal",
-        icon: icons.navSettingsPersonal,
-        href: "/settings",
-      },
-      {
-        name: "nav.settings_app",
-        icon: icons.navSettingsApp,
-        href: "/settings/app-settings",
-        permission: "settings@read",
-      },
-    ],
-  },
 ];
+
+/**
+ * Breadcrumb/title metadata for routes that are reachable from the UI but
+ * intentionally absent from the sidebar (e.g. the user-modal destinations).
+ * Topbar reads this so those pages never fall back to a generic "Page" title.
+ *
+ * `kicker` is a `nav.*` message id (Topbar prefixes raw strings with `nav.`);
+ * `title` is any message id resolved directly by `intl.formatMessage`.
+ */
+export const ROUTE_META: Record<string, { kicker: string; title: string }> = {
+  "/setting": { kicker: "nav.section.settings", title: "settings.user.title" },
+  "/settings": { kicker: "nav.section.settings", title: "settings.app.title" },
+  "/application-logs": {
+    kicker: "nav.administration",
+    title: "applicationLog.index.title",
+  },
+};

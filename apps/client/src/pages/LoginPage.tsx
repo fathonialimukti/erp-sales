@@ -1,24 +1,20 @@
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { motion, useReducedMotion } from "motion/react";
 import {
-  ArrowRight,
+  AlertTriangle,
   CheckCircle2,
-  Eye,
-  EyeOff,
-  Lock,
-  Mail,
   MapPin,
   Quote,
+  RefreshCw,
   Shield,
   ShieldCheck,
   ShoppingBag,
   Users,
   Zap,
-  AlertTriangle,
 } from "lucide-react";
 
 import { BrandMark } from "@/components/BrandMark";
@@ -31,11 +27,9 @@ import {
 import { useAuthActions } from "../lib/useAuth";
 import { isAuthenticatedAtom } from "../lib/atoms";
 import { useMeta } from "../lib/useMeta";
+import { trpcClient } from "../lib/trpc";
 import { useToast } from "../components/useToast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -44,14 +38,49 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EmptyState } from "../components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DemoUserCard } from "./auth/DemoUserCard";
+import { LegacyLoginForm } from "./auth/LegacyLoginForm";
+
+type SelectErrorKey =
+  | "demo.errors.forbidden"
+  | "demo.errors.notFound"
+  | "demo.errors.generic";
+
+const getRpcCode = (error: unknown): string | undefined => {
+  if (typeof error !== "object" || error === null || !("data" in error)) {
+    return undefined;
+  }
+  const data = (error as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null || !("code" in data)) {
+    return undefined;
+  }
+  const code = (data as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
+};
+
+const selectErrorKeyFor = (error: unknown): SelectErrorKey => {
+  const code = getRpcCode(error);
+  if (code === "NOT_FOUND") return "demo.errors.notFound";
+  if (code === "FORBIDDEN") return "demo.errors.forbidden";
+  return "demo.errors.generic";
+};
+
+const SELECT_ERROR_MESSAGES: Record<SelectErrorKey, string> = {
+  "demo.errors.forbidden":
+    "This account is not allowed to sign in to the demo.",
+  "demo.errors.notFound": "That demo account no longer exists.",
+  "demo.errors.generic": "Sign in failed. Please try again.",
+};
 
 export const LoginPage = () => {
   const intl = useIntl();
   const navigate = useNavigate();
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
-  const { login } = useAuthActions();
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const { demoLogin } = useAuthActions();
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [selectErrorKey, setSelectErrorKey] = useState<SelectErrorKey | null>(null);
   const toast = useToast();
   const reducedMotion = useReducedMotion();
   const enterProps = getMotionProps(reducedMotion);
@@ -59,26 +88,49 @@ export const LoginPage = () => {
 
   useMeta({
     title: 'Sign In',
-    description: 'Sign in to ERP Sales — sales management platform for field teams and back-office.',
+    description: 'Sign in to B2B CRM — sales management platform for field teams and back-office.',
     robots: 'noindex, follow',
   });
 
-  const form = useForm({
-    defaultValues: { email: "", password: "", remember: true },
-    onSubmit: async ({ value }) => {
-      setSubmitError(null);
-      try {
-        await login({ email: value.email, password: value.password });
-        toast.success(intl.formatMessage({ id: "login.submit" }));
-        navigate("/dashboard", { replace: true });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Login failed";
-        setSubmitError(message);
-      }
-    },
+  const demoUsersQuery = useQuery({
+    queryKey: ["demoUsers"],
+    queryFn: () => trpcClient.auth.listDemoUsers.query(),
   });
 
+  const users = demoUsersQuery.data ?? [];
+  const listCode = demoUsersQuery.isError ? getRpcCode(demoUsersQuery.error) : undefined;
+  const isDisabled = listCode === "FORBIDDEN";
+
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+
+  const handleSelect = async (userId: string) => {
+    if (pendingUserId) return;
+    const selected = users.find((user) => user.id === userId);
+    setPendingUserId(userId);
+    setSelectErrorKey(null);
+    try {
+      await demoLogin(userId);
+      toast.success(
+        intl.formatMessage(
+          { id: "demo.loginAs", defaultMessage: "Continue as {name}" },
+          { name: selected?.name ?? selected?.email ?? "" },
+        ),
+      );
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      const key = selectErrorKeyFor(error);
+      setSelectErrorKey(key);
+      toast.error(
+        intl.formatMessage({ id: key, defaultMessage: SELECT_ERROR_MESSAGES[key] }),
+      );
+    } finally {
+      setPendingUserId(null);
+    }
+  };
+
+  const handleRetry = () => {
+    void demoUsersQuery.refetch();
+  };
 
   return (
     <div
@@ -96,9 +148,9 @@ export const LoginPage = () => {
             {...enterProps}
           >
             <motion.div className="flex items-center gap-3" variants={staggerItem}>
-              <BrandMark className="size-11" label="ERP Sales" />
+              <BrandMark className="size-11" label="B2B CRM" />
               <span className="font-heading text-lg font-bold tracking-tight">
-                ERP Sales
+                B2B CRM
               </span>
             </motion.div>
 
@@ -198,181 +250,177 @@ export const LoginPage = () => {
         </aside>
 
         <div className="relative flex min-h-0 flex-col bg-background">
-          <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8">
-            <motion.div className="w-full max-w-md" variants={pageEnter} {...enterProps}>
-              <Card className="border-border bg-card shadow-sm">
+          <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-8 sm:px-8">
+            <motion.div
+              className="flex min-h-0 w-full max-w-md flex-col"
+              variants={pageEnter}
+              {...enterProps}
+            >
+              <Card className="flex min-h-0 w-full max-h-[calc(100dvh-11rem)] flex-col border-border bg-card shadow-sm">
                 <CardHeader className="space-y-2">
                   <span className="text-xs font-semibold tracking-wide text-primary uppercase">
-                    {intl.formatMessage({ id: "login.form_kicker" })}
+                    {isDisabled
+                      ? intl.formatMessage({
+                          id: "login.form_kicker",
+                          defaultMessage: "Sign in to your workspace",
+                        })
+                      : intl.formatMessage({
+                          id: "auth.login.title",
+                          defaultMessage: "Sign in",
+                        })}
                   </span>
                   <CardTitle className="font-heading text-2xl">
-                    {intl.formatMessage({ id: "login.form_title" })}
+                    {isDisabled
+                      ? intl.formatMessage({
+                          id: "login.form_title",
+                          defaultMessage: "Welcome back",
+                        })
+                      : intl.formatMessage({
+                          id: "demo.title",
+                          defaultMessage: "Demo accounts",
+                        })}
                   </CardTitle>
                   <CardDescription>
-                    {intl.formatMessage({ id: "login.form_subtitle" })}
+                    {isDisabled
+                      ? intl.formatMessage({
+                          id: "login.form_subtitle",
+                          defaultMessage: "Enter your credentials to continue.",
+                        })
+                      : intl.formatMessage({
+                          id: "demo.subtitle",
+                          defaultMessage: "One click to explore the workspace as any role.",
+                        })}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent>
-                  <form
-                    className="space-y-4"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      void form.handleSubmit();
-                    }}
-                  >
-                    <form.Field
-                      name="email"
-                      validators={{
-                        onChange: ({ value }) =>
-                          value
-                            ? undefined
-                            : intl.formatMessage({ id: "login.error_required_email" }),
-                      }}
-                    >
-                      {(field) => {
-                        const error = field.state.meta.errors[0]
-                          ? String(field.state.meta.errors[0])
-                          : undefined;
-                        return (
-                          <div className="space-y-2">
-                            <Label htmlFor="email">
-                              {intl.formatMessage({ id: "login.email_label" })}
-                            </Label>
-                            <div className="relative">
-                              <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                id="email"
-                                type="email"
-                                placeholder={intl.formatMessage({
-                                  id: "login.email_placeholder",
-                                })}
-                                value={field.state.value}
-                                onChange={(event) => field.handleChange(event.target.value)}
-                                autoComplete="email"
-                                aria-invalid={Boolean(error)}
-                                className="pl-9"
-                              />
+                <CardContent className="flex min-h-0 flex-1 flex-col">
+                  {demoUsersQuery.isLoading ? (
+                    <div role="status" aria-live="polite" className="space-y-3">
+                      <span className="sr-only">
+                        {intl.formatMessage({
+                          id: "demo.loading",
+                          defaultMessage: "Loading demo accounts…",
+                        })}
+                      </span>
+                      {[0, 1, 2].map((index) => (
+                        <div
+                          key={index}
+                          aria-hidden
+                          className="space-y-3 rounded-xl border border-border p-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="size-11 shrink-0 rounded-xl" />
+                            <div className="flex-1 space-y-1.5">
+                              <Skeleton className="h-4 w-2/3" />
+                              <Skeleton className="h-3 w-1/2" />
                             </div>
-                            {error ? <p className="text-xs text-destructive">{error}</p> : null}
                           </div>
-                        );
-                      }}
-                    </form.Field>
-
-                    <form.Field
-                      name="password"
-                      validators={{
-                        onChange: ({ value }) =>
-                          value
-                            ? undefined
-                            : intl.formatMessage({ id: "login.error_required_password" }),
-                      }}
-                    >
-                      {(field) => {
-                        const error = field.state.meta.errors[0]
-                          ? String(field.state.meta.errors[0])
-                          : undefined;
-                        return (
-                          <div className="space-y-2">
-                            <Label htmlFor="password">
-                              {intl.formatMessage({ id: "login.password_label" })}
-                            </Label>
-                            <div className="relative">
-                              <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                id="password"
-                                type={showPassword ? "text" : "password"}
-                                placeholder={intl.formatMessage({
-                                  id: "login.password_placeholder",
-                                })}
-                                value={field.state.value}
-                                onChange={(event) => field.handleChange(event.target.value)}
-                                autoComplete="current-password"
-                                aria-invalid={Boolean(error)}
-                                className="pr-10 pl-9"
-                              />
-                              <button
-                                type="button"
-                                className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
-                                onClick={() => setShowPassword((prev) => !prev)}
-                                aria-label={intl.formatMessage({
-                                  id: showPassword
-                                    ? "login.password_hide"
-                                    : "login.password_show",
-                                })}
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="size-4" />
-                                ) : (
-                                  <Eye className="size-4" />
-                                )}
-                              </button>
-                            </div>
-                            {error ? <p className="text-xs text-destructive">{error}</p> : null}
-                          </div>
-                        );
-                      }}
-                    </form.Field>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <form.Field name="remember">
-                        {(field) => (
-                          <label className="flex cursor-pointer items-center gap-2 text-sm">
-                            <Checkbox
-                              checked={field.state.value}
-                              onCheckedChange={(checked) =>
-                                field.handleChange(checked === true)
-                              }
-                            />
-                            <span className="text-muted-foreground">
-                              {intl.formatMessage({ id: "login.remember_me" })}
-                            </span>
-                          </label>
-                        )}
-                      </form.Field>
-
-                      <button
-                        type="button"
-                        className="cursor-pointer text-sm font-medium text-primary transition-colors hover:text-primary/80"
-                        onClick={() =>
-                          toast.info(
-                            `${intl.formatMessage({ id: "login.forgot_password" })} — Please contact your workspace administrator.`,
-                          )
-                        }
-                      >
-                        {intl.formatMessage({ id: "login.forgot_password" })}
-                      </button>
+                          <Skeleton className="h-11 w-full rounded-lg" />
+                        </div>
+                      ))}
                     </div>
-
-                    {submitError ? (
-                      <div
-                        className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3"
-                        role="alert"
-                      >
+                  ) : isDisabled ? (
+                    <LegacyLoginForm />
+                  ) : demoUsersQuery.isError ? (
+                    <div
+                      className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4"
+                      role="alert"
+                    >
+                      <div className="flex gap-3">
                         <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-destructive">
                             {intl.formatMessage({ id: "login.error_title" })}
                           </p>
-                          <p className="text-xs text-destructive/90">{submitError}</p>
+                          <p className="text-xs text-destructive/90">
+                            {intl.formatMessage({
+                              id: "demo.errors.generic",
+                              defaultMessage: "Sign in failed. Please try again.",
+                            })}
+                          </p>
                         </div>
                       </div>
-                    ) : null}
-
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="w-full"
-                      disabled={form.state.isSubmitting}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-[44px] w-full"
+                        onClick={handleRetry}
+                      >
+                        <RefreshCw className="size-4" />
+                        {intl.formatMessage({
+                          id: "common.action.retry",
+                          defaultMessage: "Retry",
+                        })}
+                      </Button>
+                    </div>
+                  ) : users.length === 0 ? (
+                    <EmptyState
+                      module="user"
+                      title={intl.formatMessage({
+                        id: "demo.empty",
+                        defaultMessage: "No demo users available",
+                      })}
+                      description={intl.formatMessage({
+                        id: "demo.emptyHint",
+                        defaultMessage: "Ask your administrator to seed demo accounts.",
+                      })}
+                      action={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="min-h-[44px]"
+                          onClick={handleRetry}
+                        >
+                          <RefreshCw className="size-4" />
+                          {intl.formatMessage({
+                            id: "common.action.retry",
+                            defaultMessage: "Retry",
+                          })}
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <motion.ul
+                      className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-1"
+                      variants={staggerContainer}
+                      {...enterProps}
+                      aria-label={intl.formatMessage({
+                        id: "demo.selectUser",
+                        defaultMessage: "Select a user",
+                      })}
                     >
-                      {form.state.isSubmitting
-                        ? intl.formatMessage({ id: "login.submit_loading" })
-                        : intl.formatMessage({ id: "login.submit" })}
-                      {!form.state.isSubmitting ? <ArrowRight className="size-4" /> : null}
-                    </Button>
-                  </form>
+                      {users.map((user) => (
+                        <motion.li key={user.id} variants={staggerItem}>
+                          <DemoUserCard
+                            user={user}
+                            pending={pendingUserId === user.id}
+                            disabled={pendingUserId !== null}
+                            onSelect={handleSelect}
+                          />
+                        </motion.li>
+                      ))}
+                    </motion.ul>
+                  )}
+
+                  {selectErrorKey ? (
+                    <div
+                      className="mt-3 flex gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3"
+                      role="alert"
+                    >
+                      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-destructive">
+                          {intl.formatMessage({ id: "login.error_title" })}
+                        </p>
+                        <p className="text-xs text-destructive/90">
+                          {intl.formatMessage({
+                            id: selectErrorKey,
+                            defaultMessage: SELECT_ERROR_MESSAGES[selectErrorKey],
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </CardContent>
 
                 <CardFooter className="justify-center gap-2 border-t pt-6 text-sm text-muted-foreground">

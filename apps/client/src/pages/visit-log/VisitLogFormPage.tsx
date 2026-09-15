@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, Footprints, Store, UserRound, CalendarDays, Target } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -104,6 +107,16 @@ export const VisitLogFormPage = () => {
     purpose: (v: unknown) => form.setFieldValue("purpose" as never, String(v) as never),
     notes: (v: unknown) => form.setFieldValue("notes" as never, String(v) as never),
   });
+
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [live.salesmanId, live.outletId, live.date, live.purpose].filter(
+    (v) => String(v ?? "").trim().length > 0,
+  ).length;
+  const salesmanName =
+    (salesmen?.data ?? []).find((u) => u.id === live.salesmanId)?.name ?? "";
+  const outletName =
+    (outlets?.data ?? []).find((o) => o.id === live.outletId)?.name ?? "";
 
   // ponytail: keep original seed-via-defaultValues only (detail query gates render via isLoading)
 
@@ -222,6 +235,53 @@ export const VisitLogFormPage = () => {
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="visit"
+            icon={Footprints}
+            title={outletName || live.purpose}
+            subtitle={
+              live.date ||
+              intl.formatMessage({ id: "visit_log.preview.title", defaultMessage: "Field visit" })
+            }
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={filled}
+            total={4}
+            rows={[
+              {
+                icon: UserRound,
+                label: intl.formatMessage({
+                  id: "visitLog.form.field_salesman",
+                  defaultMessage: "Salesman",
+                }),
+                value: salesmanName,
+              },
+              {
+                icon: Store,
+                label: intl.formatMessage({
+                  id: "visitLog.form.field_outlet",
+                  defaultMessage: "Outlet",
+                }),
+                value: outletName,
+              },
+              {
+                icon: CalendarDays,
+                label: intl.formatMessage({ id: "visitLog.form.field_date", defaultMessage: "Date" }),
+                value: live.date,
+              },
+              {
+                icon: Target,
+                label: intl.formatMessage({
+                  id: "visitLog.form.field_purpose",
+                  defaultMessage: "Purpose",
+                }),
+                value: live.purpose,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -239,6 +299,9 @@ export const VisitLogFormPage = () => {
         />
 
         <FormSection
+          icon={Footprints}
+          step={1}
+          tone="visit"
           title={intl.formatMessage({
             id: "visit_log.form.section_basic",
             defaultMessage: "Basic information",
@@ -398,7 +461,7 @@ export const VisitLogFormPage = () => {
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
@@ -412,8 +475,9 @@ export const VisitLogFormPage = () => {
               )}
               {intl.formatMessage({ id: "visit_log.form.save_button", defaultMessage: "Save" })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

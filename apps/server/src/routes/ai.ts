@@ -4,7 +4,6 @@ import {
     createUIMessageStream,
     pipeUIMessageStreamToResponse,
     convertToModelMessages,
-    stepCountIs,
 } from 'ai';
 import { getChatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
@@ -12,6 +11,12 @@ import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
 import { withAuth } from '../lib/express-auth.js';
+import {
+    createFormInputTool,
+    createWidgetStopCondition,
+    isWidgetContinuationTurn,
+    renderStructuredTurns,
+} from '../lib/ai-widgets.js';
 import {
     analyzeImageTool,
     hasImageParts,
@@ -116,6 +121,16 @@ export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, us
         return;
     }
 
+    // --- Pause enforcement (SPEC §5.2) ---
+    // A widget tool call ended the previous turn; the client's
+    // sendAutomaticallyWhen fires a continuation POST once the widget output is
+    // available. That continuation must not generate anything — wait for the
+    // user's structured response instead.
+    if (isWidgetContinuationTurn(messages)) {
+        res.status(204).end();
+        return;
+    }
+
     // --- Message count validation ---
     if (messages.length > 100) {
         res.status(413).json({ error: 'Too many messages (max 100)' });
@@ -145,7 +160,10 @@ export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, us
     const roleName = user.roleName ?? 'Unknown';
 
     // --- Stream ---
-    const modelMessages = await convertToModelMessages(trimmedMessages as any);
+    // Structured widget turns (form_response metadata) render as tagged JSON
+    // blocks in the model context (SPEC §5.3/§8).
+    const preparedMessages = renderStructuredTurns(trimmedMessages);
+    const modelMessages = await convertToModelMessages(preparedMessages as any);
 
     // Only expose the image-analysis tool when the conversation actually contains
     // image parts, so the model cannot call it gratuitously on text-only chats.
@@ -157,6 +175,11 @@ export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, us
     const tools = {
         ...clientTools,
         ...serverTools,
+        // Server-executed widget tool (SPEC §8): the model supplies the payload,
+        // the server assigns the widget id/status. request_confirmation is
+        // deliberately NOT registered here — the regular chatbox has no SQL
+        // execution path; the gate belongs to the AI Admin pipeline (ai-admin.ts).
+        request_form_input: createFormInputTool(),
         ...(imageTool
             ? {
                   analyzeImage: {
@@ -186,7 +209,8 @@ export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, us
                 // serverTools (searchKnowledge) include execute — run on server.
                 // clientTools stay client-executed via onToolCall.
                 tools,
-                stopWhen: stepCountIs(5),
+                // A widget tool call ends the generation turn (SPEC §5.2).
+                stopWhen: createWidgetStopCondition(),
             });
             writer.merge(result.toUIMessageStream());
         },
@@ -364,6 +388,11 @@ ${ROUTE_CATALOG}
 - After filling fields, explicitly tell the user the form is prefilled and they must review and click Save/Submit themselves. Do NOT call getPageContext again to verify — trust that fillFormFields worked and move on to the final confirmation message.
 - Do not write a lead-in sentence when a tool call can directly satisfy the user request.
 - Permission format is always resource@action (e.g. sales-order@approve, region@create).
+
+## Forms (Structured Input)
+- Whenever structured information from the user is missing (several related values, a choice from a list, a date, a number, a confirmation), call request_form_input to render an inline form card instead of asking plain-text questions.
+- Field labels must already be written in the user's language; select fields MUST include options.
+- Calling request_form_input ENDS your turn immediately: do not write text or call other tools after it. The user's answers arrive as a structured form_response turn — continue the task from those values.
 
 ## Knowledge vs Live Data
 - Relevant documentation may already be injected under **Relevant Documentation**.

@@ -30,7 +30,7 @@ Monorepo: `apps/client`, `apps/server`, `packages/schemas` (shared Zod), `packag
 |---|---|---|
 | Auth | `context.ts`, `lib/express-auth.ts`, `lib/token-blacklist.ts` | JWT (jti) in httpOnly cookie (Bearer fallback). tRPC: async context + `hasPermission` middleware (30s permission cache). Express routes: `withAuth({ permission, aiRateLimit })`. Revocation in `revoked_tokens` (DB), purged 30-min. |
 | Authorization | `trpc.ts` | `resource@action` permission strings on every procedure; activity log on every mutation. |
-| Rate limiting | `lib/rate-limiter.ts` | Login 5/min/IP (fixed window). AI: rolling-window global cap (`ai.globalRpm`, mirrors provider 10 req/min key quota) + per-user cap; **requests queue** (≤ `AI_QUEUE_MAX_WAIT_MS` 25s) instead of 429. Limits configurable in Settings → AI provider. |
+| Rate limiting | `lib/rate-limiter.ts` | Login 5/min/IP (fixed window). AI: single rolling-window global cap (`ai.globalRpm`, shared by all users — mirrors the API key's per-minute quota; **unset = unlimited**); **requests queue** (≤ `AI_QUEUE_MAX_WAIT_MS` 25s) instead of 429. Configurable in Settings → AI provider. |
 | Logging | `lib/logger.ts`, `lib/app-log.ts` | Structured JSON to stdout (pm2 → file). Errors/warnings/security events also into `app_logs` → in-app System Logs (`log@read`). Retention 30d. |
 | AI | `lib/ai-provider.ts`, `lib/rag.ts`, `lib/ai-db-tools.ts` | Settings-driven provider (openai-compatible); RAG = pgvector + Postgres FTS fused with RRF; read-only SQL guard for AI DB access. |
 | Settings | `lib/settings-service.ts` | Dotted keys (`ai.model`), DB → env → default, 30s cache, secrets masked write-only. |

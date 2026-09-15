@@ -1,7 +1,6 @@
-import { useRef } from "react";
 import { useIntl } from "react-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Printer } from "lucide-react";
+import { Download, Loader2, Printer } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -17,11 +16,12 @@ import {
   ReportTable,
   type ReportTableColumn,
 } from "../../../components/reports/ReportTable";
+import { printReport } from "../../../components/reports/useReportExport";
 import {
-  exportExcel,
-  printReport,
-  type ExportColumn,
-} from "../../../components/reports/useReportExport";
+  useWorkbookExport,
+  type WorkbookColumn,
+} from "../../../lib/export/useWorkbookExport";
+import { ReportPrintSheet } from "../../../components/reports/ReportPrintSheet";
 import { AiReportNarrate } from "../../../components/AiReportNarrate";
 import type { ReportFilterValue } from "../../../components/reports/ReportFilters";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,6 @@ interface CollectionReportProps {
 export const CollectionReport = ({ filters }: CollectionReportProps) => {
   const intl = useIntl();
   const { currencyCode } = useGeneralSettings();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const query = useQuery({
     queryKey: ["reporting.collection", filters],
@@ -100,7 +99,7 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
     },
   ];
 
-  const exportColumns: ExportColumn[] = [
+  const exportColumns: WorkbookColumn[] = [
     {
       key: "name",
       header: intl.formatMessage({
@@ -108,20 +107,76 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
         defaultMessage: "Customer",
       }),
     },
-    { key: "outstanding", header: "Outstanding", format: (v) => Number(v) },
-    { key: "collected", header: "Collected", format: (v) => Number(v) },
+    {
+      key: "outstanding",
+      header: intl.formatMessage({
+        id: "report.table.outstanding_col",
+        defaultMessage: "Outstanding",
+      }),
+      format: (v) => Number(v),
+    },
+    {
+      key: "collected",
+      header: intl.formatMessage({
+        id: "report.table.collected_col",
+        defaultMessage: "Collected",
+      }),
+      format: (v) => Number(v),
+    },
   ];
 
+  const { exportWorkbook, isExporting } = useWorkbookExport();
+
   const onExport = () =>
-    exportExcel(
-      byCustomer as Record<string, unknown>[],
-      exportColumns,
-      "collections.xlsx",
-    );
-  const onPrint = () => printReport(printRef as React.RefObject<HTMLElement>);
+    exportWorkbook({
+      prefix: "collections",
+      sheetName: intl.formatMessage({
+        id: "report.tab.collection",
+        defaultMessage: "Collection",
+      }),
+      columns: exportColumns,
+      rows: byCustomer as Record<string, unknown>[],
+      summary: {
+        sheetName: intl.formatMessage({
+          id: "reports.print.summary",
+          defaultMessage: "Summary",
+        }),
+        rows: [
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.outstanding",
+              defaultMessage: "Outstanding AR",
+            }),
+            value: data?.outstandingTotal ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.collected",
+              defaultMessage: "Collected",
+            }),
+            value: data?.collectedTotal ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.collection_rate",
+              defaultMessage: "Collection rate",
+            }),
+            value: data?.collectionRatePercent ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.revenue",
+              defaultMessage: "Revenue (approved)",
+            }),
+            value: data?.totalBilled ?? 0,
+          },
+        ],
+      },
+    });
+  const onPrint = () => printReport();
 
   return (
-    <div className="flex flex-col gap-5 print-area" ref={printRef}>
+    <div className="flex flex-col gap-5">
       <div className="no-print flex justify-end gap-2">
         <AiReportNarrate
           reportType="collection"
@@ -135,12 +190,30 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
             byCustomer,
           }}
         />
-        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onExport}>
-          <Download className="size-3.5" aria-hidden />
-          {intl.formatMessage({
-            id: "report.export.excel",
-            defaultMessage: "Export Excel",
-          })}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 px-2.5"
+          onClick={onExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Download className="size-3.5" aria-hidden />
+          )}
+          {intl.formatMessage(
+            isExporting
+              ? {
+                  id: "reports.export.loading",
+                  defaultMessage: "Preparing export…",
+                }
+              : {
+                  id: "report.export.excel",
+                  defaultMessage: "Export Excel",
+                },
+          )}
         </Button>
         <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onPrint}>
           <Printer className="size-3.5" aria-hidden />
@@ -252,6 +325,21 @@ export const CollectionReport = ({ filters }: CollectionReportProps) => {
           </Card>
         </>
       )}
+
+      <ReportPrintSheet
+        title={intl.formatMessage({
+          id: "report.tab.collection",
+          defaultMessage: "Collection",
+        })}
+        dateFrom={filters.dateFrom}
+        dateTo={filters.dateTo}
+        columns={tableColumns}
+        rows={byCustomer as Record<string, unknown>[]}
+        emptyMessage={intl.formatMessage({
+          id: "report.empty",
+          defaultMessage: "No data for the selected filters.",
+        })}
+      />
     </div>
   );
 };

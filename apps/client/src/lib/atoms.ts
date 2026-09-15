@@ -39,10 +39,21 @@ export const userPermissionsAtom = atom((get) => {
   return user?.permissions ?? [];
 });
 
+// All-access signal: the "System Admin" role is seeded with pattern "*" (full
+// system access) and is the codebase's existing admin fallback (server libs
+// resolve all-access via this role name; server hasPermission honors the same
+// flag). A literal "*" in the permission list is honored too, so expanded and
+// wildcard grants behave identically on the client.
+const ALL_ACCESS_ROLE_NAME = "System Admin";
+const ALL_ACCESS_WILDCARD = "*";
+
 // Helper to check if user has permission
 export const hasPermissionAtom = atom(
   (get) => (permission: string | string[]) => {
-    const permissions = get(userPermissionsAtom);
+    const user = get(authUserAtom);
+    if (user?.roleName === ALL_ACCESS_ROLE_NAME) return true;
+    const permissions = user?.permissions ?? [];
+    if (permissions.includes(ALL_ACCESS_WILDCARD)) return true;
     const required = Array.isArray(permission) ? permission : [permission];
 
     return required.some((requiredPermission) =>

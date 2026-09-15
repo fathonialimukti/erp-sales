@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, Wallet, Hash, FileText } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from "@/components/AiFillButton";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -71,6 +74,12 @@ export const BudgetTypeFormPage = () => {
     name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
     description: (v: unknown) => form.setFieldValue("description" as never, String(v) as never),
   });
+
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [live.name, live.code, live.description].filter(
+    (v) => String(v ?? "").trim().length > 0,
+  ).length;
 
   useEffect(() => {
     if (isEdit && data) {
@@ -175,6 +184,33 @@ export const BudgetTypeFormPage = () => {
         }
       />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="budgetType"
+            icon={Wallet}
+            title={live.name}
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={filled}
+            total={3}
+            rows={[
+              {
+                icon: Hash,
+                label: intl.formatMessage({ id: "budget_type.form.field_code", defaultMessage: "Code" }),
+                value: live.code,
+              },
+              {
+                icon: FileText,
+                label: intl.formatMessage({
+                  id: "budget_type.form.field_description",
+                  defaultMessage: "Description",
+                }),
+                value: live.description,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -185,6 +221,9 @@ export const BudgetTypeFormPage = () => {
         <AiFillButton section="budget-type-form" context={{ isEdit, id: id ?? null }} />
 
         <FormSection
+          icon={Wallet}
+          step={1}
+          tone="budgetType"
           title={intl.formatMessage({ id: "budget_type.form.section_basic", defaultMessage: "Basic information" })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -246,7 +285,7 @@ export const BudgetTypeFormPage = () => {
           </div>
         </FormSection>
 
-        <div className="flex items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5 font-semibold"
@@ -260,8 +299,9 @@ export const BudgetTypeFormPage = () => {
             )}
             {intl.formatMessage({ id: "budget_type.form.save_button", defaultMessage: "Save" })}
           </Button>
-        </div>
+        </FormFooter>
       </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

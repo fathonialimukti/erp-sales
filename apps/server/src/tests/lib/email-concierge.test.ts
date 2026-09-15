@@ -3,11 +3,42 @@ import { randomUUID } from 'crypto';
 import {
   applyConciergeResult,
   isStaleRunning,
+  MAX_AGENT_STEPS,
+  runEmailConcierge,
+  shouldForceFinalize,
   STALE_RUNNING_MS,
   validateConciergeResult,
 } from '../../lib/email-concierge.js';
 import type { ConciergeRunState } from '../../lib/email-concierge-tools.js';
 import { prisma } from '../../lib/prisma.js';
+
+// The agent loop is the only caller of the AI SDK. Mock the single AI entry
+// point so the tool-loop-exhaustion regression below is deterministic while
+// every other `ai` export (tool, stepCountIs, …) stays real.
+vi.mock('ai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ai')>();
+  return { ...actual, generateText: vi.fn() };
+});
+
+vi.mock('../../lib/email-smtp.js', () => ({
+  sendSmtpEmail: vi.fn(async () => ({ messageId: `<smtp-test-${randomUUID()}@aetherglo.com>` })),
+  createSmtpTransport: vi.fn(),
+  generateMessageId: vi.fn(() => '<smtp-test@aetherglo.com>'),
+}));
+
+// generateText is mocked, so the provider/model is never invoked. Stub the
+// factory to keep the test offline and independent of AI env config.
+vi.mock('../../lib/ai-provider.js', () => ({
+  getChatModel: vi.fn(async () => ({})),
+}));
+
+import { generateText } from 'ai';
+
+type MockTool = { execute: (input: Record<string, unknown>) => Promise<unknown> };
+type MockGenerateOptions = {
+  prepareStep?: (opts: { stepNumber: number }) => unknown;
+  tools: Record<string, MockTool>;
+};
 
 // Real-DB convention (matches every other integration test in this suite):
 // applyConciergeResult writes via prisma.$transaction, so the conversation
@@ -161,5 +192,73 @@ describe('applyConciergeResult', () => {
     );
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.subject).toBe('Re: test');
+  });
+});
+
+describe('shouldForceFinalize', () => {
+  it('does not force finalize while steps remain', () => {
+    expect(shouldForceFinalize(0)).toBe(false);
+    expect(shouldForceFinalize(MAX_AGENT_STEPS - 2)).toBe(false);
+  });
+
+  it('forces finalize on the final allowed step', () => {
+    expect(shouldForceFinalize(MAX_AGENT_STEPS - 1)).toBe(true);
+  });
+});
+
+describe('runEmailConcierge agent loop', () => {
+  it('sends outbound even when the model spends every step on tools (no linked customer)', async () => {
+    // Regression for prod conversation 01M2HVDFB7600RYH6F2WF231QV:
+    // customerId:null → the model keeps exploring tools, exhausts its step
+    // budget and never calls finalizeCustomerReply, so the run was marked
+    // FAILED/missing_finalize and no OUTBOUND row was ever written.
+    const conversation = await prisma.emailConversation.create({
+      data: {
+        email: `agent-${randomUUID()}@example.com`,
+        subject: 'Quote',
+        lastMessageAt: new Date(),
+      },
+    });
+    try {
+      await prisma.emailMessage.createMany({
+        data: [
+          { conversationId: conversation.id, direction: 'INBOUND', body: 'try again' },
+          { conversationId: conversation.id, direction: 'INBOUND', body: 'try again' },
+        ],
+      });
+
+      // Emulate the prod loop: a non-finalize tool every step, no finalize on
+      // its own. Only the caller's prepareStep override can force finalize.
+      vi.mocked(generateText).mockImplementation(async (options) => {
+        const opts = options as unknown as MockGenerateOptions;
+        for (let stepNumber = 0; stepNumber < MAX_AGENT_STEPS; stepNumber++) {
+          const prepared = (await opts.prepareStep?.({ stepNumber })) as
+            | { toolChoice?: { type: string; toolName: string } }
+            | undefined;
+          if (prepared?.toolChoice?.type === 'tool') {
+            await opts.tools[prepared.toolChoice.toolName]?.execute({
+              htmlBody: '<p>Sorry for the delay — here is our reply.</p>',
+            });
+            return undefined as never;
+          }
+        }
+        return undefined as never;
+      });
+
+      await runEmailConcierge(conversation.id);
+
+      const conv = await prisma.emailConversation.findUnique({ where: { id: conversation.id } });
+      expect(conv?.agentStatus).toBe('SENT');
+      expect(conv?.agentError).toBeNull();
+      expect(conv?.lastOutboundAt).toBeTruthy();
+
+      const outbound = await prisma.emailMessage.findFirst({
+        where: { conversationId: conversation.id, direction: 'OUTBOUND' },
+      });
+      expect(outbound?.sendStatus).toBe('SENT');
+      expect(outbound?.body).toContain('Sorry for the delay');
+    } finally {
+      await prisma.emailConversation.delete({ where: { id: conversation.id } }).catch(() => {});
+    }
   });
 });

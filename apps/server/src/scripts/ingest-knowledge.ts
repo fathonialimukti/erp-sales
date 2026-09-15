@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import {
   embedKnowledgeChunksBestEffort,
   ensureKnowledgeEmbeddingHnswIndex,
+  getEmbeddingDimensions,
   isEmbeddingConfigured,
 } from '../lib/ai-embedding.js';
 import { prisma } from '../lib/prisma.js';
@@ -70,9 +71,12 @@ async function ensureVectorReadyColumns() {
     // ignore — column add still works if extension is installed
   }
 
+  // Match the configured embedding model's native dimensions (e.g. Upstage
+  // solar-embedding-2-query = 1024) so inserts are not rejected by pgvector.
+  const dimensions = await getEmbeddingDimensions(prisma);
   await prisma.$executeRawUnsafe(`
     ALTER TABLE knowledge_chunks
-    ADD COLUMN IF NOT EXISTS embedding vector(1536)
+    ADD COLUMN IF NOT EXISTS embedding vector(${dimensions})
   `);
   await prisma.$executeRawUnsafe(`
     ALTER TABLE knowledge_chunks

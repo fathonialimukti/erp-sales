@@ -1,44 +1,20 @@
-import * as XLSX from 'xlsx';
-
-export interface ExportColumn {
-  key: string;
-  header: string;
-  /** Optional formatter for cell values. */
-  format?: (value: unknown) => string | number;
-}
+/**
+ * Report print helper. Workbook export is delegated to the shared util
+ * `lib/export/useWorkbookExport.ts` (used by the report tabs, budget pages,
+ * and the activity log page) — this file only owns the report print flow.
+ */
 
 /**
- * Build a worksheet from rows + columns and trigger an .xlsx download.
+ * Print the active report tab's purpose-built print sheet. Adds a body class
+ * that `styles/report-print.css` keys off: the app shell is hidden in print
+ * and the portaled `ReportPrintSheet` becomes the only printed content.
  */
-export function exportExcel(rows: Record<string, unknown>[], columns: ExportColumn[], filename: string) {
-  const data = rows.map((row) =>
-    columns.reduce<Record<string, string | number>>((acc, col) => {
-      const raw = row[col.key];
-      acc[col.header] = col.format ? col.format(raw) : (raw as string | number);
-      return acc;
-    }, {}),
-  );
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
-  XLSX.writeFile(workbook, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
-}
-
-/**
- * Print a specific DOM node. Hides the rest of the app via a body class that
- * the print stylesheet keys off of.
- */
-export function printReport(ref: React.RefObject<HTMLElement>) {
-  const previous = document.body.className;
-  document.body.classList.add('printing-report');
-  const node = ref.current;
-  if (node) node.classList.add('print-area');
+export function printReport() {
+  document.body.classList.add("printing-report");
   const cleanup = () => {
-    document.body.classList.remove('printing-report');
-    if (node) node.classList.remove('print-area');
-    window.removeEventListener('afterprint', cleanup);
-    document.body.className = previous;
+    document.body.classList.remove("printing-report");
+    window.removeEventListener("afterprint", cleanup);
   };
-  window.addEventListener('afterprint', cleanup);
+  window.addEventListener("afterprint", cleanup);
   window.print();
 }

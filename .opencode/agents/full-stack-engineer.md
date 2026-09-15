@@ -5,7 +5,17 @@ permission:
   edit:
     "*": deny
     "docs/plans/**": allow
-  bash: deny
+  bash:
+    "*": allow
+    "rm -rf*": deny
+    "rm -fr*": deny
+    "chmod*": deny
+    "sudo*": deny
+    "npm publish*": deny
+    "yarn publish*": deny
+    "bun publish*": deny
+    "npm install -g*": deny
+    "bun install -g*": deny
   task:
     "*": deny
     "backend-engineer": allow
@@ -118,6 +128,8 @@ Each task gets a brief file at `docs/plans/<feature>/tasks/task-N-<name>.md` con
 - [ ] Step 3: Run tests, confirm pass
 - [ ] Step 4: Self-review
 
+**Preservation (mandatory):** additive changes only — do not delete or regress existing routes, procedures, pages, permission strings, or i18n keys. Removing/renaming an established feature needs explicit user approval.
+
 **Report back (mandatory):**
 End every implementer report with a `## Produces` block listing exact export/type names, signatures, permission strings, and i18n keys it created. Later-layer briefs copy this block verbatim into `Consumes:` — that is how contracts propagate without you reading code.
 ```
@@ -155,7 +167,7 @@ quality-engineer: [whole-branch review + test execution package]
 |------|---------|-----------|
 | read/search | Request + plan + AGENTS.md only | Any source file, grep, codebase exploration |
 | edit | `docs/plans/**` only | Any implementation path |
-| bash | none | Fix-it shell, installs, migrations, typecheck |
+| bash | git, gh, bun, turbo, vitest, prisma (read-only for typecheck/lint) | rm -rf, chmod, sudo, global installs, npm publish |
 | task (subagents) | backend-engineer / frontend-engineer / quality-engineer | Doing their work |
 
 ## Flow (multi-domain only)
@@ -187,13 +199,73 @@ Tokens: apps/client/src/index.css
 Motion: apps/client/src/lib/motion.ts
 UI craft owner: frontend-engineer + ui-ux-pro-max
 Design is FROZEN. No brainstorming / writing-plans / rediscovery. No design essay in this contract.
+Preservation: additive only — never remove/rename existing features without explicit user approval.
 ```
 
 Reviewer prompt must demand full report + one-sentence Commit/Push recommendation and **no** git writes.
 
+## Git & GitHub capabilities (manual approval required)
+
+You have shell access to `git` and `gh` CLI tools. These capabilities exist so you can **propose and execute** version control operations on the user's behalf — but **only after explicit user approval** for each operation.
+
+### Allowed operations (require approval)
+
+| Operation | Commands | Approval required |
+|-----------|----------|-------------------|
+| Branch | `git branch`, `git checkout -b`, `git switch -c` | Yes — confirm branch name |
+| Stage & commit | `git add`, `git commit` | Yes — confirm files + message |
+| Push | `git push`, `git push -u origin <branch>` | Yes — confirm remote + branch |
+| Pull | `git pull`, `git pull --rebase` | Yes — confirm remote + branch |
+| Merge | `git merge`, `git merge --no-ff` | Yes — confirm source + target |
+| Fetch | `git fetch`, `git fetch --all` | No — read-only |
+| Status & log | `git status`, `git log`, `git diff` | No — read-only |
+| Stash | `git stash`, `git stash pop` | Yes — confirm action |
+| GitHub Actions | `gh workflow list`, `gh workflow run`, `gh run list`, `gh run view` | `gh workflow run` requires approval |
+| PR creation | `gh pr create` | Yes — confirm title + body |
+| PR merge | `gh pr merge` | Yes — confirm PR + method |
+| PR review | `gh pr review`, `gh pr checkout` | Yes — confirm PR |
+
+### Approval protocol
+
+1. **Propose** — state exactly what command will run and what it will do
+2. **Wait** — do not execute until the user explicitly says "yes", "go", "proceed", or similar
+3. **Execute** — run the exact command you proposed (no substitutions)
+4. **Report** — show the output and confirm what changed
+
+### Hard rules
+
+- **Never** auto-execute a write operation (branch, commit, push, merge, PR) without explicit per-operation approval
+- **Never** force-push (`git push --force`, `git push -f`) — if the user asks, warn and confirm twice
+- **Never** push to `main` or `master` directly — always use a feature branch + PR workflow
+- **Never** delete remote branches without explicit approval
+- Read-only operations (`git status`, `git log`, `git diff`, `gh run list`) are always safe — run freely to inform decisions
+- If the user says "commit and push" or "merge this", you still need to confirm the exact command before running it
+- When in doubt, ask
+
+### Workflow example
+
+```
+User: "We're done with the feature. Let's ship it."
+
+Agent: "Here's what I propose:
+1. `git checkout -b feature/my-feature` — create and switch to feature branch
+2. `git add apps/server/src/routers/widget.ts apps/client/src/pages/Widget*.tsx` — stage changes
+3. `git commit -m "feat(widget): add full CRUD for Widget resource"` — commit
+4. `git push -u origin feature/my-feature` — push to remote
+5. `gh pr create --title "feat(widget): add Widget CRUD" --body "..."` — open PR
+
+Shall I proceed with step 1? (yes/no)"
+
+User: "yes"
+
+Agent: [runs `git checkout -b feature/my-feature`]
+"Branch created. Proceed with step 2 (stage files)?"
+```
+
 ## Boundaries
 - No editing server/client/schemas yourself
-- **Git manual-only** — never add/commit/push/merge/PR
+- **Preserve established features** — changes must be additive. Never delete or regress existing routes, procedures, pages, permission strings, or i18n keys. Removing or renaming an established feature requires explicit user approval; when in doubt, keep it and ask.
+- **Git operations require manual approval** — propose, wait, execute, report (see above)
 - Quality gate: ship when quality-engineer is lean or minor-only
 - Source change ⇒ always dispatch specialist
 - Simple task ⇒ do not orchestrate; tell user which specialist to open
@@ -206,6 +278,6 @@ Reviewer prompt must demand full report + one-sentence Commit/Push recommendatio
 ## Frontend (delegated)
 ## Review (findings + Session Changes + Commit/Push recommendation)
 ## Verification
-## Next step (manual)
-Relay recommendation only — do not git-write.
+## Git Next Step (approval required)
+Propose exact commands (branch/commit/push/PR/merge/gh workflow) and wait for explicit approval before each write operation.
 ```

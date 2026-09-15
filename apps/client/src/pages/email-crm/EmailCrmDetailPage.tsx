@@ -4,6 +4,7 @@ import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   Bot,
   ChevronRight,
   Inbox,
@@ -11,6 +12,8 @@ import {
   MessageSquare,
   Paperclip,
   Pencil,
+  SearchX,
+  ShieldAlert,
   ShoppingCart,
   Sparkles,
   Trash2,
@@ -20,6 +23,7 @@ import {
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
+import { EmptyState } from "../../components/EmptyState";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -111,6 +115,150 @@ const sanitizeOutboundHtml = (html: string): string | null => {
 const MAX_ATTACH_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACH_IMAGES = 4;
 
+/**
+ * tRPC wire code (`error.data.code`: NOT_FOUND / FORBIDDEN / …).
+ * Missing → undefined (treated as generic failure).
+ */
+export const getEmailCrmDetailErrorCode = (error: unknown): string | undefined => {
+  if (typeof error !== "object" || error === null || !("data" in error)) {
+    return undefined;
+  }
+  const data = (error as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null || !("code" in data)) {
+    return undefined;
+  }
+  const code = (data as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
+};
+
+/**
+ * Never retry terminal id/permission failures — they would only delay the
+ * error state (looks like an infinite skeleton). Retry transient failures
+ * at most twice; the tRPC `retryLink` already skips non-5xx.
+ */
+export const shouldRetryEmailCrmDetail = (failureCount: number, error: unknown): boolean => {
+  const code = getEmailCrmDetailErrorCode(error);
+  if (
+    code === "NOT_FOUND" ||
+    code === "BAD_REQUEST" ||
+    code === "FORBIDDEN" ||
+    code === "UNAUTHORIZED"
+  ) {
+    return false;
+  }
+  return failureCount < 2;
+};
+
+export type EmailCrmDetailErrorState = "not-found" | "forbidden" | "load-failed";
+
+/** Maps a tRPC wire code to the error state the detail page renders. */
+export const resolveEmailCrmDetailErrorState = (
+  code: string | undefined,
+): EmailCrmDetailErrorState => {
+  if (code === "NOT_FOUND" || code === "BAD_REQUEST") return "not-found";
+  if (code === "FORBIDDEN" || code === "UNAUTHORIZED") return "forbidden";
+  return "load-failed";
+};
+
+interface DetailErrorStateProps {
+  id?: string;
+  state: "missing-id" | "not-found" | "forbidden" | "load-failed";
+  code?: string;
+  isRetrying: boolean;
+  onBack: () => void;
+  onRetry: () => void;
+}
+
+const DetailErrorState = ({ id, state, code, isRetrying, onBack, onRetry }: DetailErrorStateProps) => {
+  const intl = useIntl();
+  const eyebrow = intl.formatMessage({
+    id: "emailCrm.detail.title",
+    defaultMessage: "Email conversation",
+  });
+  const backLabel = intl.formatMessage({ id: "common.action.back", defaultMessage: "Back" });
+  const retryLabel = intl.formatMessage({ id: "common.action.retry", defaultMessage: "Retry" });
+
+  const copy =
+    state === "not-found" || state === "missing-id"
+      ? {
+          title: intl.formatMessage({
+            id: "emailCrm.detail.not_found",
+            defaultMessage: "Conversation not found",
+          }),
+          description:
+            state === "missing-id"
+              ? intl.formatMessage({
+                  id: "emailCrm.detail.missing_id_description",
+                  defaultMessage: "No conversation id was provided in the URL.",
+                })
+              : intl.formatMessage({
+                  id: "emailCrm.detail.not_found_description",
+                  defaultMessage:
+                    "It may have been deleted or the link is incorrect. Check the id and try again.",
+                }),
+          icon: <SearchX className="size-6" aria-hidden />,
+        }
+      : state === "forbidden"
+        ? {
+            title: intl.formatMessage({
+              id: "emailCrm.detail.forbidden",
+              defaultMessage: "Access denied",
+            }),
+            description: intl.formatMessage({
+              id: "emailCrm.detail.forbidden_description",
+              defaultMessage: "You don't have permission to view this conversation.",
+            }),
+            icon: <ShieldAlert className="size-6" aria-hidden />,
+          }
+        : {
+            title: intl.formatMessage({
+              id: "emailCrm.detail.load_failed",
+              defaultMessage: "Failed to load conversation",
+            }),
+            description: intl.formatMessage({
+              id: "emailCrm.detail.load_failed_description",
+              defaultMessage: "Something went wrong. Please try again.",
+            }),
+            icon: <AlertTriangle className="size-6" aria-hidden />,
+          };
+
+  return (
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({ section: "email-crm-detail", state, id, code })}
+    >
+      <div className="flex flex-col gap-3">
+        <NavButtonGroup className="self-end" onBack={onBack} />
+        <PageHeader module="email" eyebrow={eyebrow} title={copy.title} description={copy.description} />
+      </div>
+      <EmptyState
+        module="email"
+        icon={copy.icon}
+        title={copy.title}
+        description={copy.description}
+        action={
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button type="button" variant="outline" onClick={onBack} className="min-h-[44px]">
+              {backLabel}
+            </Button>
+            {state === "load-failed" ? (
+              <Button
+                type="button"
+                onClick={onRetry}
+                disabled={isRetrying}
+                className="min-h-[44px]"
+              >
+                {isRetrying ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                {retryLabel}
+              </Button>
+            ) : null}
+          </div>
+        }
+      />
+    </section>
+  );
+};
+
 type PendingImage = { filename?: string; mediaType: string; url: string };
 
 const readFileAsDataUrl = (file: File) =>
@@ -141,9 +289,10 @@ export const EmailCrmDetailPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["emailCrmDetail", id],
     enabled: Boolean(id),
+    retry: shouldRetryEmailCrmDetail,
     queryFn: () => trpcClient.emailCrm.detail.query({ id: id ?? "" }),
     refetchInterval: (query) => {
       const status = (query.state.data as EmailCrmDetail | undefined)?.agentStatus;
@@ -318,6 +467,17 @@ export const EmailCrmDetailPage = () => {
     return priority;
   };
 
+  if (!id) {
+    return (
+      <DetailErrorState
+        state="missing-id"
+        onBack={() => navigate("/email-crm")}
+        onRetry={() => {}}
+        isRetrying={false}
+      />
+    );
+  }
+
   if (isLoading) {
     return (
       <section
@@ -331,23 +491,30 @@ export const EmailCrmDetailPage = () => {
     );
   }
 
+  if (isError) {
+    const code = getEmailCrmDetailErrorCode(error);
+    const state = resolveEmailCrmDetailErrorState(code);
+    return (
+      <DetailErrorState
+        id={id}
+        state={state}
+        code={code}
+        isRetrying={isFetching}
+        onBack={() => navigate("/email-crm")}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
   if (!conversation) {
     return (
-      <section
-        className="flex flex-col gap-6 pt-2 pb-8"
-        data-ai-context={JSON.stringify({ section: "email-crm-detail", notFound: true })}
-      >
-        <div className="flex flex-col gap-3">
-          <NavButtonGroup className="self-end" onBack={() => navigate("/email-crm")} />
-          <PageHeader
-            module="email"
-            title={intl.formatMessage({
-              id: "emailCrm.detail.not_found",
-              defaultMessage: "Conversation not found",
-            })}
-          />
-        </div>
-      </section>
+      <DetailErrorState
+        id={id}
+        state="not-found"
+        onBack={() => navigate("/email-crm")}
+        onRetry={() => void refetch()}
+        isRetrying={false}
+      />
     );
   }
 

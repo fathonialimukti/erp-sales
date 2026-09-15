@@ -20,11 +20,14 @@ import {
 import { prisma } from '../../lib/prisma.js';
 
 
-vi.mock('../../lib/email-smtp.js', () => ({
-  sendSmtpEmail: vi.fn(async () => ({ messageId: `<smtp-test@aetherglo.com>` })),
-  createSmtpTransport: vi.fn(),
-  generateMessageId: vi.fn(() => '<smtp-test@aetherglo.com>'),
-}));
+vi.mock('../../lib/email-smtp.js', async () => {
+  const { randomUUID } = await import('crypto');
+  return {
+    sendSmtpEmail: vi.fn(async () => ({ messageId: `<smtp-${randomUUID()}@example.com>` })),
+    createSmtpTransport: vi.fn(),
+    generateMessageId: vi.fn(() => `<smtp-${randomUUID()}@example.com>`),
+  };
+});
 
 vi.mock('../../lib/email-concierge.js', () => ({
   enqueueEmailConcierge: vi.fn(),
@@ -183,8 +186,36 @@ describe('emailCrm router', () => {
       code: 'FORBIDDEN',
     });
 
+    await expect(
+      denied.emailCrm.detail({ id: '01M2HVDFB7600RYH6F2WF231QV' }),
+    ).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+
     await deleteTestUser(user.id);
     await deleteTestRole(role.id);
+  });
+
+  it('detail rejects missing/invalid ids with typed errors (never hangs, never null)', async () => {
+    // Regression for prod /email-crm/01M2HVDFB7600RYH6F2WF231QV loading forever:
+    // a missing row must reject NOT_FOUND (typed error the FE can render), not null/hang.
+    const prodId = '01M2HVDFB7600RYH6F2WF231QV';
+    await prisma.emailConversation.delete({ where: { id: prodId } }).catch(() => {});
+    await expect(caller.emailCrm.detail({ id: prodId })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+
+    await expect(
+      caller.emailCrm.detail({ id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    // Blank ids can never match a ULID row — BAD_REQUEST, not NOT_FOUND.
+    await expect(caller.emailCrm.detail({ id: '' })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+    await expect(caller.emailCrm.detail({ id: '   ' })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
   });
 
   it('sendMessage creates OUTBOUND with sendStatus SENT via SMTP', async () => {
@@ -222,6 +253,29 @@ describe('emailCrm router', () => {
 
     const conv = await prisma.emailConversation.findUnique({ where: { id: created.id } });
     expect(conv?.lastOutboundAt).toBeTruthy();
+  });
+
+  it('sendMessage clears stale FAILED/missing_finalize (manual finalize)', async () => {
+    const created = await caller.emailCrm.create({
+      email: `finalize-${randomUUID()}@example.com`,
+      subject: 'Finalize me',
+    });
+    createdConversationIds.push(created.id);
+
+    await prisma.emailConversation.update({
+      where: { id: created.id },
+      data: { agentStatus: 'FAILED', agentError: 'missing_finalize' },
+    });
+
+    const message = await caller.emailCrm.sendMessage({
+      conversationId: created.id,
+      body: 'Manual reply after agent failure.',
+    });
+    expect(message.sendStatus).toBe('SENT');
+
+    const conv = await prisma.emailConversation.findUnique({ where: { id: created.id } });
+    expect(conv?.agentStatus).toBe('SENT');
+    expect(conv?.agentError).toBeNull();
   });
 
   it('retryAgent enqueues concierge', async () => {

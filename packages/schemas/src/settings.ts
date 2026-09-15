@@ -7,10 +7,9 @@ export const appSettingsSchema = z.object({
     apiKey: z.string().optional(), // write-only: empty = keep existing
     model: z.string().optional(),
     multimodalEnabled: z.boolean().optional(),
-    // Rate limits (requests per minute). Requests queue instead of being
-    // rejected; globalRpm should match the provider's hard per-key quota.
-    userRpm: z.number().int().min(1).max(600).optional(),
-    globalRpm: z.number().int().min(1).max(600).optional(),
+    // Rate limit (requests per minute) for the shared API key. Requests queue
+    // instead of being rejected; unset = unlimited.
+    globalRpm: z.number().int().min(1).max(600).nullable().optional(),
     embeddingBaseUrl: z.string().url().or(z.literal('')).optional(),
     embeddingApiKey: z.string().optional(), // write-only: empty = keep existing
     embeddingModel: z.string().optional(),
@@ -19,6 +18,10 @@ export const appSettingsSchema = z.object({
   smtp: z.object({
     host: z.string().optional(),
     port: z.number().int().min(1).max(65535).optional(),
+    // Explicit transport encryption. 'ssl'/'tls' = implicit TLS (e.g. 465),
+    // 'starttls' = upgrade on the plain port (587/2525), 'none' = plain.
+    // Unset = infer from the port (465 → ssl, otherwise starttls).
+    secure: z.enum(['none', 'starttls', 'ssl', 'tls']).optional(),
     user: z.string().optional(),
     pass: z.string().optional(), // write-only
     from: z.string().optional(),
@@ -70,3 +73,54 @@ export const userSettingsSchema = z.object({
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 export type UserSettings = z.infer<typeof userSettingsSchema>;
+
+// ── Settings feature (Task 1) ──────────────────────────────────────────────
+
+export const AppSettingsSchema = z.object({
+  companyName: z.string(),
+  logoUrl: z.string().nullable(),
+  defaultLanguage: z.enum(['en', 'id']),
+  timezone: z.string(),
+  dateFormat: z.string(),
+  numberFormat: z.string(),
+  defaultCurrency: z.string(),
+  defaultTheme: z.enum(['light', 'dark', 'system']),
+  accentColor: z.string(),
+  sidebarCollapsed: z.boolean(),
+  emailNotifications: z.boolean(),
+  defaultNotificationFrequency: z.enum(['realtime', 'daily', 'weekly']),
+  announcement: z.string().nullable(),
+  sessionTimeout: z.number().int().min(5).max(1440),
+  minPasswordLength: z.number().int().min(8).max(128),
+  enforceTwoFactor: z.boolean(),
+  allowedLoginMethods: z.array(z.string()),
+});
+
+export const UpdateAppSettingsSchema = AppSettingsSchema.partial();
+
+export const UserSettingsSchema = z.object({
+  displayName: z.string(),
+  avatarUrl: z.string().nullable(),
+  email: z.string(),
+  phone: z.string().nullable(),
+  bio: z.string().nullable(),
+  themeOverride: z.enum(['light', 'dark', 'system']).nullable(),
+  languageOverride: z.enum(['en', 'id']).nullable(),
+  timezone: z.string().nullable(),
+  dateFormat: z.string().nullable(),
+  currency: z.string().nullable(),
+  tableDensity: z.enum(['compact', 'comfortable']),
+  emailNotifications: z.boolean(),
+  pushNotifications: z.boolean(),
+  inAppNotifications: z.boolean(),
+  digestFrequency: z.enum(['realtime', 'daily', 'weekly']),
+  mutedCategories: z.array(z.string()),
+  twoFactorEnabled: z.boolean(),
+});
+
+export const UpdateUserSettingsSchema = UserSettingsSchema.partial();
+
+export type AppSettingsInput = z.infer<typeof AppSettingsSchema>;
+export type UpdateAppSettingsInput = z.infer<typeof UpdateAppSettingsSchema>;
+export type UserSettingsInput = z.infer<typeof UserSettingsSchema>;
+export type UpdateUserSettingsInput = z.infer<typeof UpdateUserSettingsSchema>;

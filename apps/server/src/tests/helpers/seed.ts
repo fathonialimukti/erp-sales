@@ -51,6 +51,7 @@ export const seedTestUser = async (options: {
   email?: string;
   name?: string;
   password?: string;
+  description?: string;
 }) => {
   const user = await prisma.user.create({
     data: {
@@ -58,6 +59,7 @@ export const seedTestUser = async (options: {
       email: options.email ?? `${randomName('TEST_USER')}@example.com`,
       password: options.password ?? 'Test1234!',
       roleId: options.roleId,
+      description: options.description ?? null,
     },
   });
 

@@ -19,8 +19,8 @@ const envSchema = z.object({
     DB_POOL_MAX: z.coerce.number().int().positive().default(10),
     DB_POOL_IDLE_MS: z.coerce.number().int().nonnegative().default(10000),
     DB_POOL_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
-    AI_USER_RPM: z.coerce.number().int().positive().default(10),
-    AI_GLOBAL_RPM: z.coerce.number().int().positive().default(10),
+    // Optional: shared AI API-key cap (req/min). Unset = unlimited.
+    AI_GLOBAL_RPM: z.coerce.number().int().positive().optional(),
     AI_QUEUE_MAX_WAIT_MS: z.coerce.number().int().positive().default(25000),
 });
 

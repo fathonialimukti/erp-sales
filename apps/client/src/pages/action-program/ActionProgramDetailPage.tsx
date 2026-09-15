@@ -3,7 +3,7 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, FileText, MapPin, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, FileText, MapPin, Pencil, Printer, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -12,6 +12,15 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { PageHeader } from "../../components/PageHeader";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiSummarizeButton } from "../../components/AiSummarizeButton";
+import { PdfDocumentModal } from "../../components/pdf/PdfDocumentModal";
+import { sanitizePdfFileName } from "../../lib/pdf/usePdfDocument";
+import {
+  actionProgramDocNumber,
+  buildActionProgramPdfBuildKey,
+  buildActionProgramPdfLabels,
+  buildActionProgramPdfSpec,
+  type ActionProgramPdfRecord,
+} from "./actionProgramPdf";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -51,6 +60,23 @@ export const ActionProgramDetailPage = () => {
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Client-side PDF (J-T2): the "Print / PDF" button opens the frozen
+  // PdfDocumentModal — blob preview in the browser's native PDF viewer,
+  // then Print (scoped to the PDF) or Download. No direct window.print.
+  const [pdfOpen, setPdfOpen] = useState(false);
+
+  const t = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, string | number | boolean>,
+  ) =>
+    intl.formatMessage(
+      { id, defaultMessage },
+      values as Record<string, string>,
+    );
+  // Pre-resolved document labels — the page owns i18n; the mapping module
+  // and the renderer receive finished strings only.
+  const pdfLabels = buildActionProgramPdfLabels(t);
 
   const { data, isLoading } = useQuery({
     queryKey: ["actionProgramDetail", id],
@@ -59,6 +85,8 @@ export const ActionProgramDetailPage = () => {
   });
 
   const actionProgram = data as ActionProgramDetail | undefined;
+  // Raw tRPC output for the PDF mapping (full line rows + updatedAt).
+  const pdfRecord = data as ActionProgramPdfRecord | undefined;
 
   const handleDelete = async () => {
     if (!actionProgram || isDeleting) return;
@@ -131,6 +159,19 @@ export const ActionProgramDetailPage = () => {
             id={actionProgram.id}
             context={{ name: actionProgram.name, outletCount: actionProgram.outlets?.length ?? 0 }}
           />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPdfOpen(true)}
+            className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <Printer className="size-3.5" aria-hidden />
+            {intl.formatMessage({
+              id: "action_program.detail.print",
+              defaultMessage: "Print / PDF",
+            })}
+          </Button>
           {canUpdate ? (
             <Button
               type="button"
@@ -279,6 +320,25 @@ export const ActionProgramDetailPage = () => {
         loading={isDeleting}
         onConfirm={handleDelete}
       />
+
+      {/* PDF preview modal (frozen pipeline, J-T2): buildKey gates the
+       * build on the loaded record state (<id>:<updatedAt>); the spec is
+       * mapped by the pure module with the page-owned labels. The cast
+       * mirrors the page's existing `data as ActionProgramDetail`
+       * boundary: the raw tRPC output type is too deep for a structural
+       * prop (TS2589). */}
+      {pdfRecord ? (
+        <PdfDocumentModal
+          open={pdfOpen}
+          onOpenChange={setPdfOpen}
+          title={pdfLabels.title}
+          buildKey={buildActionProgramPdfBuildKey(pdfRecord)}
+          buildSpec={(identity) =>
+            buildActionProgramPdfSpec(pdfRecord, identity, pdfLabels)
+          }
+          fileName={sanitizePdfFileName(actionProgramDocNumber(pdfRecord))}
+        />
+      ) : null}
     </section>
   );
 };

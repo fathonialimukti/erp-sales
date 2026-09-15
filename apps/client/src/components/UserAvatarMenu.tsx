@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { ChevronUp, LogOut, Settings, User } from "lucide-react";
+import { ChevronUp, LogOut, Settings, User, type LucideIcon } from "lucide-react";
 import { useIntl } from "react-intl";
 import { useNavigate } from "react-router";
 
@@ -10,6 +10,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -26,6 +27,26 @@ interface UserAvatarMenuProps {
   compact?: boolean;
   className?: string;
 }
+
+/** Azure icon plate for menu rows; soft destructive for the logout row. */
+const MenuIconPlate = ({
+  icon: Icon,
+  tone = "default",
+}: {
+  icon: LucideIcon;
+  tone?: "default" | "destructive";
+}) => (
+  <span
+    className={cn(
+      "inline-flex size-7 items-center justify-center rounded-lg",
+      tone === "destructive"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-primary/10 text-primary",
+    )}
+  >
+    <Icon className="size-3.5" aria-hidden />
+  </span>
+);
 
 /**
  * P12 single-surface avatar menu.
@@ -53,8 +74,8 @@ export const UserAvatarMenu = ({
     navigate("/users");
   };
 
-  const handleSettings = () => {
-    navigate("/settings");
+  const handlePersonalSettings = () => {
+    navigate("/setting");
   };
 
   const handleLogout = async () => {
@@ -137,31 +158,30 @@ export const UserAvatarMenu = ({
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          className="cursor-pointer gap-2.5 px-2.5 py-2 text-sm font-medium"
-          onSelect={handleProfile}
-        >
-          <span className="inline-flex size-7 items-center justify-center rounded-lg bg-violet-500 text-white">
-            <User className="size-3.5" aria-hidden />
-          </span>
-          {intl.formatMessage({
-            id: "user.menu.profile",
-            defaultMessage: "Profile",
-          })}
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 px-2.5 py-2 text-sm font-medium"
+            onSelect={handleProfile}
+          >
+            <MenuIconPlate icon={User} />
+            {intl.formatMessage({
+              id: "user.menu.profile",
+              defaultMessage: "Profile",
+            })}
+          </DropdownMenuItem>
 
-        <DropdownMenuItem
-          className="cursor-pointer gap-2.5 px-2.5 py-2 text-sm font-medium"
-          onSelect={handleSettings}
-        >
-          <span className="inline-flex size-7 items-center justify-center rounded-lg bg-blue-500 text-white">
-            <Settings className="size-3.5" aria-hidden />
-          </span>
-          {intl.formatMessage({
-            id: "user.menu.settings",
-            defaultMessage: "Settings",
-          })}
-        </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 px-2.5 py-2 text-sm font-medium"
+            onSelect={handlePersonalSettings}
+          >
+            <MenuIconPlate icon={Settings} />
+            {intl.formatMessage({
+              id: "user.menu.settings_personal",
+              defaultMessage: "Personal settings",
+            })}
+          </DropdownMenuItem>
+
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
@@ -172,9 +192,7 @@ export const UserAvatarMenu = ({
             void handleLogout();
           }}
         >
-          <span className="inline-flex size-7 items-center justify-center rounded-lg bg-red-500 text-white">
-            <LogOut className="size-3.5" aria-hidden />
-          </span>
+          <MenuIconPlate icon={LogOut} tone="destructive" />
           {intl.formatMessage({
             id: "nav.logout",
             defaultMessage: "Log out",

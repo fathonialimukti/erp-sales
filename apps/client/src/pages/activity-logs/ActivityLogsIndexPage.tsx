@@ -4,7 +4,7 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { Eye, MoreHorizontal } from "lucide-react";
+import { Eye, Download, Loader2, MoreHorizontal } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { PageHeader } from "../../components/PageHeader";
@@ -14,6 +14,11 @@ import { EmptyState } from "../../components/EmptyState";
 import { DatePicker } from "../../components/DatePicker";
 import { useMeta } from "../../lib/useMeta";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { useToast } from "../../components/useToast";
+import {
+  useWorkbookExport,
+  type WorkbookColumn,
+} from "../../lib/export/useWorkbookExport";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -31,18 +36,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Pagination } from "../../components/Pagination";
-
-type ActivityLogRow = {
-  id: string;
-  createdAt: string;
-  action: string;
-  resource: string;
-  resourceId: string;
-  userId: string;
-  user: { id: string; name: string | null; email: string };
-  detail: string | null;
-  message?: string | null;
-};
+import {
+  fetchAllLogsForExport,
+  formatDetailCell,
+  toExportRow,
+  EXPORT_PAGE_SIZE,
+  EXPORT_ROW_CAP,
+  type ActivityLogListPayload,
+  type ActivityLogRow,
+} from "./activityLogExport";
 
 type AdminUserRow = { id: string; name: string | null; email: string };
 
@@ -169,13 +171,7 @@ export const ActivityLogsIndexPage = () => {
     enabled: !isAdmin,
   });
 
-  // Explicit payload type — a union of the two tRPC query outputs trips
-  // "Type instantiation is excessively deep" (each output is a large inferred
-  // Prisma shape). Both procedures return { data, pagination }.
-  type ActivityLogListPayload = {
-    data?: ActivityLogRow[];
-    pagination?: { totalPages?: number; total?: number };
-  };
+  // Payload shape shared by both list endpoints — see ./activityLogExport.
   const payload = isAdmin
     ? (adminData as ActivityLogListPayload | undefined)
     : (myData as ActivityLogListPayload | undefined);
@@ -194,6 +190,147 @@ export const ActivityLogsIndexPage = () => {
   const rows = (payload?.data ?? []) as ActivityLogRow[];
   const totalPages = payload?.pagination?.totalPages ?? 1;
   const totalRows = payload?.pagination?.total ?? 0;
+
+  // ── Excel export (mirrors the report sections' export pattern) ────────────
+  const toast = useToast();
+  const { exportWorkbook, isExporting } = useWorkbookExport();
+  const [isPreparingExport, setIsPreparingExport] = useState(false);
+  const isExportBusy = isExporting || isPreparingExport;
+
+  const exportColumns: WorkbookColumn[] = [
+    {
+      key: "createdAt",
+      header: intl.formatMessage({
+        id: "activity_log.index.header_timestamp",
+        defaultMessage: "Timestamp",
+      }),
+      // Same on-screen date/time convention as the table cell.
+      format: (v) => new Date(String(v)).toLocaleString("id-ID"),
+    },
+    {
+      key: "userName",
+      header: intl.formatMessage(
+        isAdmin
+          ? {
+              id: "activity_log.index.header_user",
+              defaultMessage: "User",
+            }
+          : {
+              id: "activity_log.index.header_user_me",
+              defaultMessage: "Me",
+            },
+      ),
+    },
+    {
+      key: "userEmail",
+      header: intl.formatMessage({
+        id: "activity_log.export.header_email",
+        defaultMessage: "Email",
+      }),
+    },
+    {
+      key: "action",
+      header: intl.formatMessage({
+        id: "activity_log.index.header_action",
+        defaultMessage: "Action",
+      }),
+    },
+    {
+      key: "resource",
+      header: intl.formatMessage({
+        id: "activity_log.index.header_resource",
+        defaultMessage: "Resource",
+      }),
+    },
+    {
+      key: "resourceId",
+      header: intl.formatMessage({
+        id: "activity_log.export.header_resource_id",
+        defaultMessage: "Resource ID",
+      }),
+    },
+    {
+      key: "message",
+      header: intl.formatMessage({
+        id: "activity_log.export.header_message",
+        defaultMessage: "Message",
+      }),
+    },
+    {
+      key: "detail",
+      header: intl.formatMessage({
+        id: "activity_log.export.header_detail",
+        defaultMessage: "Detail",
+      }),
+      format: formatDetailCell,
+    },
+  ];
+
+  // Paginated fetch-all over the SAME endpoint + filters the table uses.
+  // Inline literals (not a spread variable) so tRPC contextually types them —
+  // a pre-built input object trips "Type instantiation is excessively deep".
+  // Returns the raw promise cast through `unknown`: awaiting the tRPC output
+  // type eagerly in a value position trips TS2589 (the useQuery paths resolve
+  // it lazily instead), and the helper only needs the small payload shape.
+  const fetchExportPage = (page: number): Promise<ActivityLogListPayload> =>
+    isAdmin
+      ? (trpcClient.activityLog.adminList.query({
+          page,
+          limit: EXPORT_PAGE_SIZE,
+          search: search || undefined,
+          userId: userFilter || undefined,
+          action: actionFilter || undefined,
+          resource: resourceFilter || undefined,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+        }) as unknown as Promise<ActivityLogListPayload>)
+      : (trpcClient.activityLog.list.query({
+          page,
+          limit: EXPORT_PAGE_SIZE,
+          search: search || undefined,
+          action: actionFilter || undefined,
+          resource: resourceFilter || undefined,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+        }) as unknown as Promise<ActivityLogListPayload>);
+
+  const onExport = async () => {
+    setIsPreparingExport(true);
+    try {
+      const { rows: exportRows, truncated } = await fetchAllLogsForExport(fetchExportPage);
+      if (truncated) {
+        toast.warning(
+          intl.formatMessage(
+            {
+              id: "activity_log.export.truncated",
+              defaultMessage:
+                "Export is limited to the first {limit} logs. Narrow the filters to include older entries.",
+            },
+            { limit: EXPORT_ROW_CAP },
+          ),
+        );
+      }
+      const unknownUserLabel = intl.formatMessage({
+        id: "activity_log.export.unknown_user",
+        defaultMessage: "Unknown",
+      });
+      await exportWorkbook({
+        prefix: "activity-log",
+        sheetName: intl.formatMessage({
+          id: "activity_log.export.sheet_name",
+          defaultMessage: "Activity logs",
+        }),
+        columns: exportColumns,
+        rows: exportRows.map((row) => toExportRow(row, unknownUserLabel)),
+      });
+    } catch (error) {
+      // Fetch-all failures happen outside the shared hook — surface them here.
+      toast.error(error);
+    } finally {
+      setIsPreparingExport(false);
+    }
+  };
+
 
   const columns = useMemo<ColumnDef<ActivityLogRow>[]>(
     () => [
@@ -330,6 +467,33 @@ export const ActivityLogsIndexPage = () => {
               },
               { count: totalRows },
             )}
+            actions={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 px-2.5"
+                onClick={onExport}
+                disabled={isExportBusy}
+              >
+                {isExportBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <Download className="size-3.5" aria-hidden />
+                )}
+                {intl.formatMessage(
+                  isExportBusy
+                    ? {
+                        id: "activity_log.export.loading",
+                        defaultMessage: "Preparing export…",
+                      }
+                    : {
+                        id: "activity_log.export.excel",
+                        defaultMessage: "Export Excel",
+                      },
+                )}
+              </Button>
+            }
             filters={
               <>
                 {isAdmin ? (

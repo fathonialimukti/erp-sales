@@ -29,7 +29,11 @@ export function formatAttachmentNote(payload: EmailInboundPayload): string {
 
 export function shouldSkipInbound(payload: EmailInboundPayload): string | null {
   const from = normalizeEmail(payload.from);
-  if (/^(noreply@|no-reply@|mailer-daemon@|postmaster@|bounce@)/.test(from)) {
+  // Automated senders + VERP bounce addresses. `bounces?[+-]` catches
+  // Brevo-style `bounces-<digits>-<digits>@mail.<domain>` and `bounce+tag@…`
+  // local parts; anchoring to the prefix keeps real customers such as
+  // `bouncer@` / `mybounce@` (bounce as a substring) from being skipped.
+  if (/^(noreply@|no-reply@|mailer-daemon@|postmaster@|bounces?[+-]|bounces?@)/.test(from)) {
     return 'noreply_sender';
   }
   // Match worker.txt auto-reply subject filter

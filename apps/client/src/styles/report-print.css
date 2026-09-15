@@ -1,0 +1,155 @@
+/*
+ * Report print sheet — purpose-built print output for the report tabs
+ * (Reports hub). Pairs with `ReportPrintSheet.tsx`, which portals the sheet to
+ * `document.body`; `printReport()` toggles the `printing-report` body class.
+ *
+ * Print ink hexes: KEEP IN SYNC with apps/server/src/lib/print-palette.ts
+ * (PRINT_INK #080D16 · PRINT_MUTED #003B67 · PRINT_BORDER #D6DFE7 ·
+ * PRINT_PAPER #FFFFFF · PRINT_PRIMARY #0069A6 · PRINT_WASH_SOFT #F4F7F9 ·
+ * PRINT_WASH_PRIMARY #E6F0F6 · PRINT_WASH_DESTRUCTIVE #FDE6E7).
+ * Hardcoded hex is correct here: live CSS variables would leak dark-mode
+ * values onto paper.
+ */
+
+/* Screen: the sheet never renders inline — it exists only for print. */
+.report-print-sheet {
+  display: none;
+  color: #080d16; /* PRINT_INK */
+  background: #ffffff; /* PRINT_PAPER */
+}
+
+.report-print-sheet,
+.report-print-sheet * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.report-print-letterhead,
+.report-print-title,
+.report-print-subtitle,
+.report-print-table tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-print-letterhead {
+  padding-bottom: 8pt;
+  border-bottom: 1.5pt solid #080d16; /* PRINT_INK */
+}
+
+.report-print-company-name {
+  margin: 0;
+  font-size: 14pt;
+  font-weight: 700;
+  color: #080d16; /* PRINT_INK */
+}
+
+.report-print-company-meta {
+  margin: 2pt 0 0;
+  font-size: 9pt;
+  color: #003b67; /* PRINT_MUTED */
+}
+
+.report-print-address-line {
+  display: block;
+}
+
+.report-print-title {
+  margin: 12pt 0 2pt;
+  font-size: 16pt;
+  font-weight: 700;
+  color: #080d16; /* PRINT_INK */
+}
+
+.report-print-subtitle {
+  margin: 0;
+  font-size: 9.5pt;
+  color: #003b67; /* PRINT_MUTED */
+}
+
+.report-print-empty {
+  margin: 12pt 0 0;
+  font-size: 10pt;
+  color: #003b67; /* PRINT_MUTED */
+}
+
+.report-print-table {
+  width: 100%;
+  margin-top: 10pt;
+  border-collapse: collapse;
+}
+
+.report-print-table th {
+  background: #e6f0f6; /* PRINT_WASH_PRIMARY */
+  border: 0.75pt solid #d6dfe7; /* PRINT_BORDER */
+  padding: 5pt 6pt;
+  font-size: 8.5pt;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #080d16; /* PRINT_INK */
+}
+
+.report-print-table td {
+  border: 0.75pt solid #d6dfe7; /* PRINT_BORDER */
+  padding: 4pt 6pt;
+  font-size: 9.5pt;
+  text-align: left;
+  vertical-align: top;
+  color: #080d16; /* PRINT_INK */
+}
+
+/* Quiet stripe for row scanning (design-law light wash, not gray). */
+.report-print-table tbody tr:nth-child(even) td {
+  background: #f4f7f9; /* PRINT_WASH_SOFT */
+}
+
+.report-print-left {
+  text-align: left;
+}
+
+.report-print-right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-print-center {
+  text-align: center;
+}
+
+@media print {
+  /* A4 target. */
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  /* Light-ink reset so dark-mode tokens cannot produce white-on-white paper. */
+  body.printing-report {
+    background: #ffffff !important; /* PRINT_PAPER */
+    color: #080d16 !important; /* PRINT_INK */
+  }
+
+  /* Hide the app shell — sidebar, topbar, cards, action buttons. The sheet is
+     a direct child of body, so dropping #root leaves only the report. */
+  body.printing-report #root {
+    display: none !important;
+  }
+
+  /* Buttons/controls elsewhere (defensive; #root is already hidden). */
+  body.printing-report .no-print {
+    display: none !important;
+  }
+
+  /* Reveal only the report sheet, in normal flow so page breaks are real. */
+  body.printing-report .print-area,
+  body.printing-report .report-print-sheet {
+    display: block !important;
+  }
+
+  /* Repeat the table header on every page. */
+  body.printing-report .report-print-table thead {
+    display: table-header-group;
+  }
+}

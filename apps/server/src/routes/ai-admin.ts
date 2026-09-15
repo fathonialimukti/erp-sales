@@ -4,15 +4,19 @@ import {
     createUIMessageStream,
     pipeUIMessageStreamToResponse,
     convertToModelMessages,
-    stepCountIs,
-    tool,
 } from 'ai';
-import * as z from 'zod';
 import { getChatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
 import { prisma } from '../lib/prisma.js';
 import { withAuth } from '../lib/express-auth.js';
+import {
+    createConfirmationTool,
+    createFormInputTool,
+    createWidgetStopCondition,
+    isWidgetContinuationTurn,
+    renderStructuredTurns,
+} from '../lib/ai-widgets.js';
 import {
     analyzeImageTool,
     hasImageParts,
@@ -39,7 +43,11 @@ const ROUTE_CATALOG = `
 
 const MAX_HISTORY_TURNS = 20;
 
-// ---- DDL keywords blocked for admin queries ----
+// ---- SQL shape guard for the request_confirmation gate ----
+// The direct-execute path (queryDatabaseAdmin) was removed in favour of the
+// confirmation gate (SPEC §1/§5: ALL admin SQL goes through request_confirmation
+// cards); these guardrails survive as the gate's validateSql hook so DDL and
+// multi-statement proposals are rejected at card creation, before any gate row.
 const BLOCKED_DDL_KEYWORDS = [
     'DROP TABLE',
     'ALTER TABLE',
@@ -120,78 +128,10 @@ function validateAdminSql(sql: string): { valid: boolean; reason?: string } {
     return { valid: true };
 }
 
-function formatAdminQueryResult(data: unknown, rowCount: number): string {
-    return JSON.stringify(
-        {
-            success: true,
-            rowCount,
-            data,
-        },
-        (_key, value) => {
-            if (value && typeof value === 'object' && typeof (value as any).toNumber === 'function') {
-                return (value as any).toNumber();
-            }
-            if (typeof value === 'bigint') return value.toString();
-            if (typeof value === 'string' && value.length > 500) {
-                return value.slice(0, 500) + '... [truncated]';
-            }
-            return value;
-        },
-    );
-}
-
-const queryDatabaseAdmin = tool({
-    description:
-        'Execute a SQL query against the database with full read-write access. ' +
-        'Supports SELECT, INSERT, UPDATE, and DELETE. ' +
-        'DDL operations (DROP TABLE, ALTER TABLE, CREATE TABLE, TRUNCATE, etc.) are BLOCKED. ' +
-        'WARNING: Write operations are IRREVERSIBLE. Always confirm with the user before executing INSERT/UPDATE/DELETE. ' +
-        'Use PostgreSQL syntax with snake_case table and column names. ' +
-        'Show the SQL to the user before calling this tool for any write operation. ' +
-        'CRM tables use the prefix "crm_" (e.g. crm_sales_orders, crm_customers, crm_outlets). ' +
-        'All IDs are ULID strings (26 characters).',
-    inputSchema: z.object({
-        sql: z
-            .string()
-            .describe(
-                'SQL query (SELECT, INSERT, UPDATE, or DELETE). ' +
-                'Use PostgreSQL syntax with snake_case identifiers. ' +
-                'Example: UPDATE crm_sales_orders SET approval_status = \'APPROVED\' WHERE id = \'01J...\'',
-            ),
-    }),
-    execute: async ({ sql }) => {
-        const validation = validateAdminSql(sql);
-        if (!validation.valid) {
-            return { success: false, error: 'Query rejected', message: validation.reason };
-        }
-
-        try {
-            const result = await prisma.$queryRawUnsafe(sql);
-            const upper = sql.trim().toUpperCase();
-
-            if (upper.startsWith('SELECT') || upper.startsWith('WITH') || upper.startsWith('EXPLAIN')) {
-                const rows = Array.isArray(result) ? result : [];
-                return JSON.parse(formatAdminQueryResult(rows, rows.length));
-            }
-
-            // For INSERT/UPDATE/DELETE, return affected row count
-            const affectedRows = typeof result === 'number' ? result : (Array.isArray(result) ? result.length : 0);
-            return {
-                success: true,
-                operation: upper.split(/\s+/)[0]!,
-                affectedRows,
-                message: `${upper.split(/\s+/)[0]} executed successfully. ${affectedRows} row(s) affected.`,
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: 'Query failed',
-                message: error instanceof Error ? error.message : 'Unknown error',
-                hint: 'Check SQL syntax. Ensure table and column names match the database schema. Use snake_case for all identifiers.',
-            };
-        }
-    },
-});
+// M-1 (SPEC §5): ALL admin SQL goes through request_confirmation cards — the
+// direct-execution queryDatabase client tool is deliberately not exposed here
+// (it stays available to the general assistant in routes/ai.ts).
+const { queryDatabase: _queryDatabase, ...adminClientTools } = clientTools;
 
 const extractUserMessageText = (message: unknown): string => {
     if (!message || typeof message !== 'object') return '';
@@ -264,10 +204,9 @@ function buildAdminSystemPrompt(
     return `You are an AI System Administrator embedded in a Sales ERP (CRM + Sales Order) Management System.
 You have FULL read-write access to the entire database (except DDL operations that change table structure).
 
-⚠️ DANGER ZONE: You can INSERT, UPDATE, and DELETE data. These operations are IRREVERSIBLE.
-ALWAYS ask the user for explicit confirmation before executing any write operation.
-ALWAYS show the SQL query you plan to execute before running it.
-NEVER execute a write query without the user's affirmative confirmation.
+⚠️ DANGER ZONE: You can propose INSERT, UPDATE, and DELETE. These operations are IRREVERSIBLE.
+You NEVER run SQL yourself. Every SQL statement — read or write — must be sent through a
+request_confirmation card; the server executes it only after the user confirms the card.
 
 ## Current User
 - Name: ${userName}
@@ -281,12 +220,10 @@ ${ROUTE_CATALOG}
 - Use Markdown formatting for all responses — tables, bulleted/numbered lists, headings, and fenced code blocks are encouraged whenever they improve clarity.
 - The current user's permissions are listed above. Do not ask the user for their permissions; use what is provided here.
 - Be concise, practical, and step-by-step in your guidance.
-- For read queries (SELECT), you may execute them immediately using queryDatabaseAdmin.
-- For write queries (INSERT/UPDATE/DELETE), you MUST:
-  1. Show the user the exact SQL you plan to execute in a fenced code block.
-  2. Explain what the operation will do and how many rows it may affect.
-  3. Ask for explicit confirmation (e.g., "Shall I proceed with this update?").
-  4. Only execute after the user confirms.
+- ALWAYS call request_confirmation before ANY SQL (reads and writes alike). Never run SQL through any other path and never re-emit SQL for execution yourself — the server executes exactly the confirmed snapshot.
+- Exactly ONE SQL statement per confirmation card. If you need multiple statements, emit a sequence of separate confirmation cards, one per statement.
+- Set readOnly: true only for SELECT/EXPLAIN/WITH...SELECT. Everything else is a write with readOnly: false — the card will require the user to acknowledge the backup.
+- Describe what the SQL will do in the card title/description; the card itself shows the exact SQL.
 - Permission format is always resource@action (e.g. sales-order@approve, region@create).
 - Use snake_case for table and column names (e.g., crm_sales_orders, crm_outlets, skus).
 - All IDs are ULID strings (26 characters).
@@ -299,14 +236,15 @@ ${ROUTE_CATALOG}
 - Prefer **Relevant Documentation** (injected) for how-to, process, permission, navigation, form fields, and schema questions.
 - Call **searchKnowledge** before answering documentation questions when injected context is empty, thin, or missing the topic.
 - When answering from documentation or tool hits, cite the documentation **title** and **source**.
-- Use **queryDatabaseAdmin** for live data reads/writes only — not for product documentation.
+- Use **request_confirmation** cards for live data reads/writes only — not for product documentation.
 - Keep navigation/SQL tools available; do not refuse non-doc ERP tasks.
 
-## Database Query Tool
-You have access to queryDatabaseAdmin — a server-side SQL tool with full read-write access.
-Use it for ALL live data operations: SELECT, INSERT, UPDATE, DELETE.
-The tool will validate your SQL and block DDL operations.
-Results are returned as JSON with row counts and affected row counts for write operations.${contextSection}`;
+## SQL Gate & Result Feedback
+- Live data SQL (SELECT/INSERT/UPDATE/DELETE) goes ONLY through request_confirmation cards; execution is performed by the server after the user confirms the card. DDL operations are blocked.
+- After an action_result turn ALWAYS restate and analyze the outcome: say what ran, interpret the row count and the sample rows, and flag surprises (e.g. 0 rows affected may mean your WHERE clause matched nothing — offer to inspect). For writes, suggest a verification SELECT; that SELECT needs its own new confirmation card.
+- NEVER claim success without a matching action_result. Emitting a card is not an execution — only the action_result tells you what actually happened.
+- The request_form_input tool renders an inline form card for structured user input (several related values, a choice from a list, a date, a number). Field labels must already be written in the user's language; select fields MUST include options.
+- A widget card ENDS your turn: stop and wait — the user's response arrives as a structured form_response / confirmation / action_result turn, and you continue from there.${contextSection}`;
 }
 
 export const aiAdminChatHandler = withAuth(
@@ -320,6 +258,16 @@ export const aiAdminChatHandler = withAuth(
     const { messages, id: chatId } = req.body as { messages: unknown[]; id?: string };
     if (!Array.isArray(messages)) {
         res.status(400).json({ error: 'messages must be an array' });
+        return;
+    }
+
+    // --- Pause enforcement (SPEC §5.2) ---
+    // A widget tool call ended the previous turn; the client's
+    // sendAutomaticallyWhen fires a continuation POST once the widget output is
+    // available. That continuation must not generate anything — wait for the
+    // user's structured response instead.
+    if (isWidgetContinuationTurn(messages)) {
+        res.status(204).end();
         return;
     }
 
@@ -339,7 +287,10 @@ export const aiAdminChatHandler = withAuth(
     const relevantContext = await retrieveRelevantChunks(userText);
 
     // --- Stream ---
-    const modelMessages = await convertToModelMessages(trimmedMessages as any);
+    // Structured widget turns (form_response / confirmation / action_result
+    // metadata) render as tagged JSON blocks in the model context (SPEC §5.3/§8).
+    const preparedMessages = renderStructuredTurns(trimmedMessages);
+    const modelMessages = await convertToModelMessages(preparedMessages as any);
 
     // Only expose the image-analysis tool when the conversation actually contains
     // image parts, so the model cannot call it gratuitously on text-only chats.
@@ -349,9 +300,19 @@ export const aiAdminChatHandler = withAuth(
     // (other errors still propagate to the AI SDK's tool-error path).
     const imageTool = hasImages ? analyzeImageTool(prisma) : null;
     const tools = {
-        ...clientTools,
+        ...adminClientTools,
         ...serverTools,
-        queryDatabaseAdmin,
+        // Server-executed widget tools (SPEC §8): the model supplies the payload,
+        // the server assigns the widget id/status/confirmationId. The SQL gate
+        // keeps the old direct-execution guardrails via validateAdminSql — DDL and
+        // multi-statement proposals are rejected at card creation.
+        request_form_input: createFormInputTool(),
+        request_confirmation: createConfirmationTool({
+            db: prisma,
+            userId: user.userId,
+            chatId: chatId ?? '',
+            validateSql: validateAdminSql,
+        }),
         ...(imageTool
             ? {
                   analyzeImage: {
@@ -381,7 +342,8 @@ export const aiAdminChatHandler = withAuth(
                 // serverTools.searchKnowledge executes on the server (docs chip).
                 // clientTools stay client-executed via onToolCall.
                 tools,
-                stopWhen: stepCountIs(5),
+                // A widget tool call ends the generation turn (SPEC §5.2).
+                stopWhen: createWidgetStopCondition(),
             });
             writer.merge(result.toUIMessageStream());
         },

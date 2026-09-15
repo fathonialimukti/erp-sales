@@ -1,13 +1,26 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
 import "./SalesOrder.css";
+import { SOIcon } from "./SalesOrderIcons";
+import { API_BASE_URL } from "@/lib/api-base";
+import { trpcClient } from "@/lib/trpc";
 
 /**
  * SalesOrderPrint — print-friendly sales order document.
  *
- * Hidden on screen via @media screen, shown only when printing.
- * The browser's native print dialog handles "Save as PDF" automatically
- * — this is the iOS-native approach (system print sheet) and adds no
- * extra deps.
+ * Hidden on screen via display:none; revealed only by the @media print
+ * rules scoped with `body:has(.so-print)` in SalesOrder.css. The sheet is
+ * portaled to <body> so the print CSS can hide the rest of the app with
+ * display:none and let the sheet flow as a static document that fragments
+ * naturally across pages. The browser's native print dialog handles
+ * "Save as PDF" automatically — this is the iOS-native approach (system
+ * print sheet) and adds no extra deps.
+ *
+ * The letterhead pulls the issuing company identity from the
+ * `settings.companyIdentity` tRPC route and degrades to generic product
+ * branding while loading or on failure.
  *
  * Usage:
  *   <SalesOrderPrint record={data} />  — anywhere in the React tree
@@ -46,11 +59,55 @@ export interface SalesOrderPrintRecord {
 
 export const printOrder = () => window.print();
 
+/**
+ * Mirrors the Task 1 server contract: `settings.companyIdentity` response —
+ * `{ name, addressLines, phone, taxId }`, no input, no extra permission.
+ */
+type CompanyIdentity = Awaited<
+  ReturnType<typeof trpcClient.settings.companyIdentity.query>
+>;
+
+/** Approval status → i18n label (same keys as the approval StatusChip pages). */
+const STATUS_LABELS: Record<string, { id: string; defaultMessage: string }> = {
+  DRAFT: { id: "sales_order.detail.status.draft", defaultMessage: "Draft" },
+  AI_VALIDATED: {
+    id: "sales_order.detail.status.ai_validated",
+    defaultMessage: "Validated",
+  },
+  PROPOSED: {
+    id: "sales_order.detail.status.proposed",
+    defaultMessage: "Pending Approval",
+  },
+  APPROVED: {
+    id: "sales_order.detail.status.approved",
+    defaultMessage: "Approved",
+  },
+  REJECTED: {
+    id: "sales_order.detail.status.rejected",
+    defaultMessage: "Rejected",
+  },
+  VALIDATING: {
+    id: "sales_order.detail.status.validating",
+    defaultMessage: "AI Processing",
+  },
+};
+
+const titleCase = (value: string) =>
+  value
+    .toLowerCase()
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+/** Currency digits convention: IDR has no minor unit, every other currency uses 2. */
+const currencyDigits = (currency: string) => (currency === "IDR" ? 0 : 2);
+
 const formatCurrency = (v: number, currency: string) =>
   new Intl.NumberFormat(currency === "IDR" ? "id-ID" : "en-US", {
     style: "currency",
     currency,
-    maximumFractionDigits: 0,
+    maximumFractionDigits: currencyDigits(currency),
   }).format(v);
 
 const formatDate = (iso: string | null | undefined) => {
@@ -80,18 +137,56 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
   const t = (id: string, defaultMessage: string, values?: Record<string, string | number | boolean>) =>
     intl.formatMessage({ id, defaultMessage }, values as any);
 
-  return (
+  const { data: identity } = useQuery({
+    queryKey: ["companyIdentity"],
+    queryFn: () => trpcClient.settings.companyIdentity.query(),
+    staleTime: 300_000,
+  });
+
+  const statusLabel = (status: string) => {
+    const entry = STATUS_LABELS[status.toUpperCase()];
+    return entry ? t(entry.id, entry.defaultMessage) : titleCase(status);
+  };
+
+  const brandName =
+    identity?.name ||
+    intl.formatMessage({ id: "nav.brand_name", defaultMessage: "B2B CRM" });
+  const brandInitial = (identity?.name?.trim()?.charAt(0) || "S").toUpperCase();
+  const addressLines = (identity?.addressLines ?? []).slice(0, 2);
+  const contactBits: string[] = [];
+  if (identity?.phone) {
+    contactBits.push(
+      `${t("sales_order.print.company_phone", "Phone")}: ${identity.phone}`,
+    );
+  }
+  if (identity?.taxId) {
+    contactBits.push(
+      `${t("sales_order.print.company_tax_id", "Tax ID")}: ${identity.taxId}`,
+    );
+  }
+
+  return createPortal(
     <article className="so-print" aria-hidden="true">
       <header className="so-print__header">
         <div className="so-print__brand">
-          <div className="so-print__brand-mark" aria-hidden="true">S</div>
+          <div className="so-print__brand-mark" aria-hidden="true">
+            {brandInitial}
+          </div>
           <div className="so-print__brand-text">
-            <div className="so-print__brand-title">
-              {intl.formatMessage({ id: "nav.erp_sales", defaultMessage: "CRM" })}
-            </div>
-            <div className="so-print__brand-sub">
-              {intl.formatMessage({ id: "nav.brand_sub", defaultMessage: "Sales OS" })}
-            </div>
+            <div className="so-print__brand-title">{brandName}</div>
+            {addressLines.map((line, i) => (
+              <div key={i} className="so-print__brand-line">
+                {line}
+              </div>
+            ))}
+            {contactBits.length > 0 && (
+              <div className="so-print__brand-line">{contactBits.join(" · ")}</div>
+            )}
+            {!identity && (
+              <div className="so-print__brand-sub">
+                {intl.formatMessage({ id: "nav.brand_sub", defaultMessage: "Sales OS" })}
+              </div>
+            )}
           </div>
         </div>
         <div className="so-print__title-block">
@@ -102,7 +197,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
             {record.documentNumber ?? `SO #${record.id.slice(0, 8).toUpperCase()}`}
           </div>
           <div className={`so-print__status so-print__status--${record.approvalStatus.toLowerCase()}`}>
-            {record.approvalStatus}
+            {statusLabel(record.approvalStatus)}
           </div>
         </div>
       </header>
@@ -118,7 +213,7 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
         />
         <MetaCell
           label={t("sales_order.print.meta_status", "Status")}
-          value={record.approvalStatus}
+          value={statusLabel(record.approvalStatus)}
         />
         <MetaCell
           label={t("sales_order.print.meta_currency", "Currency")}
@@ -183,32 +278,40 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
             </tr>
           </thead>
           <tbody>
-            {record.items.map((it) => (
-              <tr key={it.id}>
-                <td className="so-print__td so-print__td--sku">
-                  {it.sku.code ?? "—"}
-                </td>
-                <td className="so-print__td so-print__td--product">
-                  <div className="so-print__product-name">{it.sku.name}</div>
-                  {it.notes && <div className="so-print__product-note">{it.notes}</div>}
-                </td>
-                <td className="so-print__td so-print__td--num">
-                  {it.quantity} {it.sku.baseUnit}
-                </td>
-                <td className="so-print__td so-print__td--num">
-                  {formatCurrency(it.unitPrice, record.currency)}
-                </td>
-                <td className="so-print__td so-print__td--num">
-                  {it.discountPercent ?? 0}%
-                </td>
-                <td className="so-print__td so-print__td--num">
-                  {it.taxPercent ?? 0}%
-                </td>
-                <td className="so-print__td so-print__td--num so-print__td--strong">
-                  {formatCurrency(it.lineTotal, record.currency)}
+            {record.items.length === 0 ? (
+              <tr className="so-print__empty-row">
+                <td colSpan={7}>
+                  {t("sales_order.print.empty_items", "No line items.")}
                 </td>
               </tr>
-            ))}
+            ) : (
+              record.items.map((it) => (
+                <tr key={it.id}>
+                  <td className="so-print__td so-print__td--sku">
+                    {it.sku.code ?? "—"}
+                  </td>
+                  <td className="so-print__td so-print__td--product">
+                    <div className="so-print__product-name">{it.sku.name}</div>
+                    {it.notes && <div className="so-print__product-note">{it.notes}</div>}
+                  </td>
+                  <td className="so-print__td so-print__td--num">
+                    {it.quantity} {it.sku.baseUnit}
+                  </td>
+                  <td className="so-print__td so-print__td--num">
+                    {formatCurrency(it.unitPrice, record.currency)}
+                  </td>
+                  <td className="so-print__td so-print__td--num">
+                    {it.discountPercent ?? 0}%
+                  </td>
+                  <td className="so-print__td so-print__td--num">
+                    {it.taxPercent ?? 0}%
+                  </td>
+                  <td className="so-print__td so-print__td--num so-print__td--strong">
+                    {formatCurrency(it.lineTotal, record.currency)}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
           <tfoot>
             <tr>
@@ -235,16 +338,18 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                 {formatCurrency(record.taxTotal ?? 0, record.currency)}
               </td>
             </tr>
-            <tr className="so-print__grand">
-              <td colSpan={6} className="so-print__total-label so-print__total-label--grand">
-                {t("sales_order.print.totals_grand", "Grand total")}
-              </td>
-              <td className="so-print__total-value so-print__total-value--grand">
-                {formatCurrency(record.grandTotal ?? 0, record.currency)}
-              </td>
-            </tr>
           </tfoot>
         </table>
+        {/* Grand total lives OUTSIDE the table: Chrome repeats <tfoot> on
+         * every fragmented page when a long table breaks across pages. */}
+        <div className="so-print__grand-band">
+          <span className="so-print__grand-band-label">
+            {t("sales_order.print.totals_grand", "Grand total")}
+          </span>
+          <span className="so-print__grand-band-value">
+            {formatCurrency(record.grandTotal ?? 0, record.currency)}
+          </span>
+        </div>
       </section>
 
       {record.notes && (
@@ -283,7 +388,8 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
           )}
         </div>
       </footer>
-    </article>
+    </article>,
+    document.body,
   );
 };
 
@@ -309,13 +415,10 @@ const SignatureBlock = ({ label, name }: { label: string; name: string }) => (
  * with zoom / print / download controls provided by the browser.
  *
  * The PDF is fetched as a blob with `credentials: 'include'` so the
- * httpOnly auth cookie is sent (no token in the URL).
+ * httpOnly auth cookie is sent (no token in the URL). The `locale`
+ * query param carries the current intl locale so the server renders
+ * the document in the user's language (en | id, defaults to en).
  */
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { SOIcon } from "./SalesOrderIcons";
-import { API_BASE_URL } from "@/lib/api-base";
-
 const PDF_BASE_URL = API_BASE_URL;
 
 interface SalesOrderPdfPreviewProps {
@@ -325,6 +428,7 @@ interface SalesOrderPdfPreviewProps {
 
 export const SalesOrderPdfPreview = ({ orderId, onClose }: SalesOrderPdfPreviewProps) => {
   const intl = useIntl();
+  const locale = (intl.locale[0] ?? "en").toLowerCase();
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -336,7 +440,10 @@ export const SalesOrderPdfPreview = ({ orderId, onClose }: SalesOrderPdfPreviewP
     setBlobUrl(null);
     setError(null);
 
-    fetch(`${PDF_BASE_URL}/api/sales-order/${orderId}/pdf`, { credentials: "include" })
+    fetch(
+      `${PDF_BASE_URL}/api/sales-order/${orderId}/pdf?locale=${encodeURIComponent(locale)}`,
+      { credentials: "include" },
+    )
       .then(async (res) => {
         if (!res.ok) {
           const body = await res.json().catch(() => null);
@@ -358,7 +465,7 @@ export const SalesOrderPdfPreview = ({ orderId, onClose }: SalesOrderPdfPreviewP
       cancelled = true;
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [orderId]);
+  }, [orderId, locale]);
 
   if (!orderId) return null;
 

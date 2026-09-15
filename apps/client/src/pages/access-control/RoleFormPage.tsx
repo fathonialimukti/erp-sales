@@ -2,13 +2,16 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Loader2, Save } from "lucide-react";
+import { ChevronDown, Loader2, Save, ShieldCheck, UserRound, KeyRound } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
@@ -263,6 +266,33 @@ const InnerForm = ({
           }
         />
 
+        <FormLayout
+        sidebar={
+          <FormPreview
+            module="user"
+            icon={ShieldCheck}
+            title={formState.name}
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={
+              (formState.name.trim() ? 1 : 0) + (formState.description.trim() ? 1 : 0)
+            }
+            total={2}
+            rows={[
+              {
+                icon: KeyRound,
+                label: intl.formatMessage({
+                  id: "roles.form.permissions",
+                  defaultMessage: "Permissions",
+                }),
+                value: intl.formatMessage(
+                  { id: "form.preview.permissions", defaultMessage: "{count} permissions" },
+                  { count: formState.permissions.length },
+                ),
+              },
+            ]}
+          />
+        }
+      >
         <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         <AiFillButton
           section="access-control-form"
@@ -273,6 +303,9 @@ const InnerForm = ({
         />
 
         <FormSection
+          icon={UserRound}
+          step={1}
+          tone="user"
           title={intl.formatMessage({ id: "roles.form.identity", defaultMessage: "Identity" })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -308,6 +341,9 @@ const InnerForm = ({
         </FormSection>
 
         <FormSection
+          icon={KeyRound}
+          step={2}
+          tone="user"
           title={intl.formatMessage({
             id: "roles.form.permissions",
             defaultMessage: "Permissions",
@@ -413,7 +449,7 @@ const InnerForm = ({
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button size="sm" className="h-8 gap-1.5 px-2.5" type="submit" disabled={isPending || Boolean(nameError)}>
               {isPending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
@@ -424,8 +460,9 @@ const InnerForm = ({
                 ? intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })
                 : intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <Dialog
         open={modalStage === "loading" || modalStage === "success" || modalStage === "error"}

@@ -3,13 +3,12 @@
  *
  * Login attempts use a fixed window and are rejected when exceeded.
  *
- * AI requests use rolling (sliding-window) counters and **queue instead of
- * drop**: `acquireAiSlot()` waits for capacity — bounded by AI_QUEUE_MAX_WAIT_MS
- * (default 25s, below the 30s request timeout) — and only 429s as a last
- * resort. Limits come from app settings (DB → env → default) so admins can
- * tune them in the Settings page:
- *  - ai.globalRpm  → upstream provider per-key quota (hard 10 req/min)
- *  - ai.userRpm    → per-user fairness cap, prevents one user hogging the quota
+ * AI requests use a rolling (sliding-window) global counter and **queue
+ * instead of drop**: `acquireAiSlot()` waits for capacity — bounded by
+ * AI_QUEUE_MAX_WAIT_MS (default 25s, below the 30s request timeout) — and only
+ * 429s as a last resort. The cap (`ai.globalRpm`, DB → env `AI_GLOBAL_RPM`)
+ * mirrors the shared API key's per-minute quota; **unset = unlimited**.
+ * Configurable in Settings → AI provider.
  */
 
 import { getSettingValue } from './settings-service.js';
@@ -61,13 +60,6 @@ function hit(
     return { allowed: true, remaining: max - existing.count, resetAt: existing.resetAt };
 }
 
-function readPositiveIntEnv(name: string, fallback: number): number {
-    const raw = process.env[name];
-    if (!raw) return fallback;
-    const parsed = Number.parseInt(raw, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
 // ---- Login attempts per IP (fixed window, reject on exceed) ----
 
 const MAX_ATTEMPTS = 5;
@@ -99,98 +91,59 @@ class SlidingWindow {
         }
         return { ok: false, retryAt: this.timestamps[0]! + AI_WINDOW_MS };
     }
-
-    /** True when no request in the window is still counting (fully drained). */
-    idle(now: number): boolean {
-        const last = this.timestamps[this.timestamps.length - 1];
-        return last === undefined || last <= now - AI_WINDOW_MS;
-    }
 }
 
 const globalWindow = new SlidingWindow();
-const userWindows = new Map<string, SlidingWindow>();
 
-function userWindow(userId: string): SlidingWindow {
-    let window = userWindows.get(userId);
-    if (!window) {
-        window = new SlidingWindow();
-        userWindows.set(userId, window);
-    }
-    return window;
-}
-
-// Bound per-user map growth: prune users whose windows went fully idle.
-let userPruneTimer: ReturnType<typeof setInterval> | null = null;
-function startUserWindowPrune() {
-    if (userPruneTimer !== null) return;
-    userPruneTimer = setInterval(() => {
-        const now = Date.now();
-        for (const [userId, window] of userWindows) {
-            if (window.idle(now)) userWindows.delete(userId);
-        }
-    }, CLEANUP_INTERVAL_MS);
-    userPruneTimer.unref();
-}
-
-async function readAiNumberSetting(key: string, env: string, fallback: number): Promise<number> {
+/**
+ * Effective global cap (req/min): DB → env. `null` = unlimited.
+ */
+async function readGlobalRpm(): Promise<number | null> {
     try {
-        const value = await getSettingValue(prisma, key);
-        if (typeof value === 'number' && Number.isFinite(value) && value > 0) return Math.floor(value);
+        const value = await getSettingValue(prisma, 'ai.globalRpm');
+        if (value === null) return null;
+        if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+            return Math.floor(value);
+        }
     } catch {
         // Settings unavailable (e.g. boot) — fall through to env.
     }
-    return readPositiveIntEnv(env, fallback);
+    const raw = process.env['AI_GLOBAL_RPM'];
+    if (!raw) return null;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
 function queueMaxWaitMs(): number {
-    return readPositiveIntEnv('AI_QUEUE_MAX_WAIT_MS', 25_000);
+    const raw = process.env['AI_QUEUE_MAX_WAIT_MS'];
+    if (!raw) return 25_000;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 25_000;
 }
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
- * Acquire an AI request slot for `userId`, **waiting for capacity** instead of
- * dropping the request. Checks the per-user cap first (anti-hogging: a user at
- * their cap waits even when global capacity exists), then the global cap that
- * mirrors the upstream provider's hard per-key quota.
+ * Acquire an AI request slot, **waiting for capacity** instead of dropping the
+ * request. The global cap is shared by all users because it mirrors the
+ * upstream API key's per-minute quota. Unset cap → no limiting.
  *
  * Returns `{ ok: true }` when the slot is acquired, or `{ ok: false, retryAfter }`
  * only when the queue wait budget (`AI_QUEUE_MAX_WAIT_MS`) is exhausted.
  */
-export async function acquireAiSlot(userId: string): Promise<{ ok: true } | { ok: false; retryAfter: number }> {
-    startUserWindowPrune();
+export async function acquireAiSlot(): Promise<{ ok: true } | { ok: false; retryAfter: number }> {
+    const globalRpm = await readGlobalRpm();
+    if (globalRpm === null) return { ok: true }; // unlimited
 
     const deadline = Date.now() + queueMaxWaitMs();
 
-    // Re-read limits each attempt (settings-service caches 30s) so admin
-    // changes apply without a restart.
-    let globalRetryAt = Infinity;
-
     while (true) {
-        const userRpm = await readAiNumberSetting('ai.userRpm', 'AI_USER_RPM', 10);
-        const globalRpm = await readAiNumberSetting('ai.globalRpm', 'AI_GLOBAL_RPM', 10);
+        const slot = globalWindow.tryAcquire(globalRpm);
+        if (slot.ok) return { ok: true };
 
-        const userSlot = userWindow(userId).tryAcquire(userRpm);
-        if (!userSlot.ok) {
-            if (Date.now() >= deadline) {
-                return { ok: false, retryAfter: Math.max(1, Math.ceil((userSlot.retryAt - Date.now()) / 1000)) };
-            }
-            await sleep(Math.min(userSlot.retryAt - Date.now(), deadline - Date.now(), 1000));
-            continue;
+        if (Date.now() >= deadline) {
+            return { ok: false, retryAfter: Math.max(1, Math.ceil((slot.retryAt - Date.now()) / 1000)) };
         }
-
-        const globalSlot = globalWindow.tryAcquire(globalRpm);
-        if (!globalSlot.ok) {
-            // The user slot is held for this request — it will be consumed by
-            // the actual upstream call once global capacity frees up.
-            globalRetryAt = globalSlot.retryAt;
-            if (Date.now() >= deadline) {
-                return { ok: false, retryAfter: Math.max(1, Math.ceil((globalRetryAt - Date.now()) / 1000)) };
-            }
-            await sleep(Math.min(globalSlot.retryAt - Date.now(), deadline - Date.now(), 1000));
-            continue;
-        }
-
-        return { ok: true };
+        await sleep(Math.min(slot.retryAt - Date.now(), deadline - Date.now(), 1000));
     }
 }

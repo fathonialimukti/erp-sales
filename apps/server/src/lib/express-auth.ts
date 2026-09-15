@@ -12,11 +12,11 @@
 import type { Request, Response } from 'express';
 import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
+import { logApp } from './app-log.js';
 import { getJwtSecret } from './jwt-secret.js';
 import { isBlacklisted } from './token-blacklist.js';
 import { prisma } from './prisma.js';
 import { acquireAiSlot } from './rate-limiter.js';
-import { logger } from './logger.js';
 
 const JWT_SECRET = getJwtSecret();
 
@@ -92,7 +92,7 @@ type AuthedHandler = (req: Request, res: Response, user: AuthedUser) => Promise<
 interface AuthOptions {
     /** Required `resource@action` permission(s) — any-of. 403 when missing. */
     permission?: string | string[];
-    /** Queue for an AI slot (global provider quota + per-user cap) before running. */
+    /** Queue for an AI slot (global API-key quota) before running. */
     aiRateLimit?: boolean;
 }
 
@@ -111,7 +111,7 @@ export function withAuth(options: AuthOptions, handler: AuthedHandler) {
         }
 
         if (options.aiRateLimit) {
-            const slot = await acquireAiSlot(user.userId);
+            const slot = await acquireAiSlot();
             if (!slot.ok) {
                 res.status(429).json({ error: 'AI service is busy, please try again shortly', retryAfter: slot.retryAfter });
                 return;
@@ -121,9 +121,16 @@ export function withAuth(options: AuthOptions, handler: AuthedHandler) {
         try {
             await handler(req, res, user);
         } catch (error) {
-            logger.error('Unhandled error in API route', {
-                error: error instanceof Error ? error.message : String(error),
-                path: req.path,
+            // logApp writes stdout AND the app_logs table (System Logs viewer).
+            logApp({
+                level: 'ERROR',
+                module: 'api',
+                message: `Unhandled error in API route ${req.method} ${req.path}: ${
+                    (error instanceof Error ? error.message : String(error)).slice(0, 500)
+                }`,
+                detail: { stack: error instanceof Error ? error.stack : String(error) },
+                requestId: (req as any).requestId,
+                userId: user.userId,
             });
             if (!res.headersSent) {
                 res.status(500).json({ error: 'Internal server error' });

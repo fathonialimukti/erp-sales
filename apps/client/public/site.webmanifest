@@ -1,6 +1,6 @@
 {
-  "name": "ERP Sales",
-  "short_name": "ERP Sales",
+  "name": "B2B CRM",
+  "short_name": "B2B CRM",
   "description": "Sales management platform for field teams and back-office.",
   "start_url": "/",
   "scope": "/",

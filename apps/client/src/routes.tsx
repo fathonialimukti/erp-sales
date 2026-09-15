@@ -60,6 +60,7 @@ const RoleDetailPage = lazyNamed(() => import('./pages/access-control/RoleDetail
 const RoleFormPage = lazyNamed(() => import('./pages/access-control/RoleFormPage'), 'RoleFormPage');
 const ActivityLogsIndexPage = lazyNamed(() => import('./pages/activity-logs/ActivityLogsIndexPage'), 'ActivityLogsIndexPage');
 const ActivityLogDetailPage = lazyNamed(() => import('./pages/activity-logs/ActivityLogDetailPage'), 'ActivityLogDetailPage');
+const ApplicationLogIndexPage = lazyNamed(() => import('./pages/application-log/ApplicationLogIndexPage'), 'ApplicationLogIndexPage');
 const SystemLogsIndexPage = lazyNamed(() => import('./pages/system-logs/SystemLogsIndexPage'), 'SystemLogsIndexPage');
 const BackupIndexPage = lazyNamed(() => import('./pages/backup/BackupIndexPage'), 'BackupIndexPage');
 const NotificationsPage = lazyNamed(() => import('./pages/notifications/NotificationsPage'), 'NotificationsPage');
@@ -71,8 +72,8 @@ const EmailCrmAgentFailuresPage = lazyNamed(() => import('./pages/email-crm/Emai
 const KnowledgeBaseIndexPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseIndexPage'), 'KnowledgeBaseIndexPage');
 const KnowledgeBaseDetailPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseDetailPage'), 'KnowledgeBaseDetailPage');
 const KnowledgeBaseFormPage = lazyNamed(() => import('./pages/knowledge-base/KnowledgeBaseFormPage'), 'KnowledgeBaseFormPage');
-const SettingsPage = lazyNamed(() => import('./pages/settings/SettingsPage'), 'SettingsPage');
 const AppSettingsPage = lazyNamed(() => import('./pages/settings/AppSettingsPage'), 'AppSettingsPage');
+const UserSettingsPage = lazyNamed(() => import('./pages/settings/UserSettingsPage'), 'UserSettingsPage');
 const BudgetTypeIndexPage = lazyNamed(() => import('./pages/budget-type/BudgetTypeIndexPage'), 'BudgetTypeIndexPage');
 const BudgetTypeDetailPage = lazyNamed(() => import('./pages/budget-type/BudgetTypeDetailPage'), 'BudgetTypeDetailPage');
 const BudgetTypeFormPage = lazyNamed(() => import('./pages/budget-type/BudgetTypeFormPage'), 'BudgetTypeFormPage');
@@ -344,6 +345,11 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        path: 'application-logs',
+        element: <RequirePermission permission="applicationLog@read" />,
+        children: [{ index: true, element: <ApplicationLogIndexPage /> }],
+      },
+      {
         path: 'system-logs',
         element: (
           <RequirePermission permission="log@read">
@@ -384,11 +390,16 @@ export const router = createBrowserRouter([
       },
       {
         path: 'settings',
-        element: <RequirePermission permission="settings@read" />,
-        children: [
-          { index: true, element: <SettingsPage /> },
-          { path: 'app-settings', element: <AppSettingsPage /> },
-        ],
+        element: (
+          <RequirePermission permission="settings@app@read">
+            <AppSettingsPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        // User Settings standalone — auth-only, reached from user avatar menu.
+        path: 'setting',
+        element: <UserSettingsPage />,
       },
       {
         path: '*',

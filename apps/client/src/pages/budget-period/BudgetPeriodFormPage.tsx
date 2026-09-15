@@ -3,19 +3,21 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Save, X, Calendar } from "lucide-react";
+import { ArrowLeft, Save, X, CalendarRange, Hash, CalendarDays } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
+import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type BudgetPeriodFormData = {
   code: string;
@@ -127,6 +129,13 @@ export const BudgetPeriodFormPage = () => {
 
   const isLoading = isEdit && isLoadingDetail;
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const filled = [formData.name, formData.code, formData.startDate, formData.endDate].filter(
+    (v) => String(v ?? "").trim().length > 0,
+  ).length;
+  const dateRange =
+    formData.startDate && formData.endDate
+      ? `${formData.startDate} → ${formData.endDate}`
+      : (formData.startDate || formData.endDate || "");
 
   if (isLoading) {
     return (
@@ -155,15 +164,45 @@ export const BudgetPeriodFormPage = () => {
         }
       />
       <div className="flex-1 overflow-auto p-6">
-        <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{intl.formatMessage({ id: "budget_period.form.basic_info", defaultMessage: "Basic Information" })}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="code">{intl.formatMessage({ id: "budget_period.form.code", defaultMessage: "Code" })}</Label>
+        <FormLayout
+          sidebar={
+            <FormPreview
+              module="budgetPeriod"
+              icon={CalendarRange}
+              title={formData.name}
+              status={formData.status}
+              filled={filled}
+              total={4}
+              rows={[
+                {
+                  icon: Hash,
+                  label: intl.formatMessage({ id: "budget_period.form.code", defaultMessage: "Code" }),
+                  value: formData.code,
+                },
+                {
+                  icon: CalendarDays,
+                  label: intl.formatMessage({ id: "budget_period.form.period", defaultMessage: "Period" }),
+                  value: dateRange,
+                },
+              ]}
+            />
+          }
+        >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <FormSection
+              icon={CalendarRange}
+              step={1}
+              tone="budgetPeriod"
+              title={intl.formatMessage({
+                id: "budget_period.form.basic_info",
+                defaultMessage: "Basic Information",
+              })}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="code">
+                    {intl.formatMessage({ id: "budget_period.form.code", defaultMessage: "Code" })}
+                  </Label>
                   <Input
                     id="code"
                     value={formData.code}
@@ -172,13 +211,15 @@ export const BudgetPeriodFormPage = () => {
                     disabled={isEdit}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">{intl.formatMessage({ id: "budget_period.form.status", defaultMessage: "Status" })}</Label>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="status">
+                    {intl.formatMessage({ id: "budget_period.form.status", defaultMessage: "Status" })}
+                  </Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="status">
                       <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select status" })} />
                     </SelectTrigger>
                     <SelectContent>
@@ -187,19 +228,23 @@ export const BudgetPeriodFormPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">{intl.formatMessage({ id: "budget_period.form.name", defaultMessage: "Name" })} *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder={intl.formatMessage({ id: "budget_period.form.name_placeholder", defaultMessage: "Enter period name" })}
-                />
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">{intl.formatMessage({ id: "budget_period.form.start_date", defaultMessage: "Start Date" })} *</Label>
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <Label htmlFor="name">
+                    {intl.formatMessage({ id: "budget_period.form.name", defaultMessage: "Name" })}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder={intl.formatMessage({ id: "budget_period.form.name_placeholder", defaultMessage: "Enter period name" })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="startDate">
+                    {intl.formatMessage({ id: "budget_period.form.start_date", defaultMessage: "Start Date" })}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="startDate"
                     type="date"
@@ -207,8 +252,11 @@ export const BudgetPeriodFormPage = () => {
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">{intl.formatMessage({ id: "budget_period.form.end_date", defaultMessage: "End Date" })} *</Label>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="endDate">
+                    {intl.formatMessage({ id: "budget_period.form.end_date", defaultMessage: "End Date" })}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="endDate"
                     type="date"
@@ -217,22 +265,22 @@ export const BudgetPeriodFormPage = () => {
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </FormSection>
 
-          <div className="flex justify-end gap-4 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              <X className="size-4 mr-2" />
-              {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              <Save className="size-4 mr-2" />
-              {isSubmitting
-                ? intl.formatMessage({ id: "common.action.saving", defaultMessage: "Saving..." })
-                : intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })}
-            </Button>
-          </div>
-        </form>
+            <FormFooter>
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                <X className="size-4 mr-2" />
+                {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                <Save className="size-4 mr-2" />
+                {isSubmitting
+                  ? intl.formatMessage({ id: "common.action.saving", defaultMessage: "Saving..." })
+                  : intl.formatMessage({ id: "common.action.save", defaultMessage: "Save" })}
+              </Button>
+            </FormFooter>
+          </form>
+        </FormLayout>
       </div>
     </div>
   );

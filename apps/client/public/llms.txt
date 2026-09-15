@@ -1,6 +1,6 @@
-# ERP Sales — Sales Management Platform
+# B2B CRM — Sales Management Platform
 
-> ERP Sales is a sales management platform for field teams and back-office operations. Manage customers, outlets, sales orders, visits, approvals, and real-time insights in one platform.
+> B2B CRM is a sales management platform for field teams and back-office operations. Manage customers, outlets, sales orders, visits, approvals, and real-time insights in one platform.
 
 ## Key Pages
 

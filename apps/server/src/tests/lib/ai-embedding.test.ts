@@ -41,9 +41,28 @@ async function resetSettings(keys: string[]) {
   await setAppSettings(prisma, {} as AppSettingsPatch, 'test');
 }
 
-const AI_KEYS = ['ai.baseUrl', 'ai.model', 'ai.apiKey', 'ai.embeddingDimensions'];
+const AI_KEYS = [
+  'ai.baseUrl',
+  'ai.model',
+  'ai.apiKey',
+  'ai.embeddingDimensions',
+  'ai.embeddingBaseUrl',
+  'ai.embeddingModel',
+  'ai.embeddingApiKey',
+];
+
+// The suite shares one database with the running app — snapshot real ai.*
+// rows before the first wipe and restore them after, so tests never destroy
+// the configured provider (a previous delete-only reset nuked live settings).
+let settingsSnapshot: Array<{ key: string; value: unknown }> = [];
 
 beforeEach(async () => {
+  if (settingsSnapshot.length === 0) {
+    settingsSnapshot = await prisma.appSetting.findMany({
+      where: { key: { in: AI_KEYS } },
+      select: { key: true, value: true },
+    });
+  }
   stashEnv();
   await resetSettings([...AI_KEYS, 'embedding.similarityThreshold']);
 });
@@ -52,10 +71,17 @@ afterEach(() => {
   restoreEnv();
 });
 
-// beforeEach resets settings before each test; this sweeps whatever the LAST test
-// created so no ai.* / embedding.* rows outlive the suite.
 afterAll(async () => {
-  await resetSettings([...AI_KEYS, 'embedding.similarityThreshold']);
+  for (const row of settingsSnapshot) {
+    await prisma.appSetting.upsert({
+      where: { key: row.key },
+      create: { key: row.key, value: row.value as never, updatedBy: 'test' },
+      update: { value: row.value as never, updatedBy: 'test' },
+    });
+  }
+  // Sweep only keys that did not exist before the suite.
+  const restoreKeys = AI_KEYS.filter((k) => !settingsSnapshot.some((s) => s.key === k));
+  await resetSettings([...restoreKeys, 'embedding.similarityThreshold']);
 });
 
 describe('isEmbeddingConfigured', () => {

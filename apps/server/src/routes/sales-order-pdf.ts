@@ -1,14 +1,15 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { streamSalesOrderPdf, type SalesOrderPdfRecord } from '../lib/sales-order-pdf.js';
+import { parsePdfLocale, streamSalesOrderPdf, type SalesOrderPdfRecord } from '../lib/sales-order-pdf.js';
 import { withAuth } from '../lib/express-auth.js';
 
 /**
- * GET /api/sales-order/:id/pdf
+ * GET /api/sales-order/:id/pdf?locale=en|id
  *
  * Streams a sales-order PDF inline so the browser's native PDF
  * viewer renders it (preview + print + download). Auth is enforced
  * via the shared cookie/bearer middleware (same scheme as tRPC).
+ * Missing or invalid `locale` defaults to `en`.
  */
 export const salesOrderPdfHandler = withAuth(
     { permission: 'sales-order@read' },
@@ -65,6 +66,6 @@ export const salesOrderPdfHandler = withAuth(
         })),
     };
 
-    streamSalesOrderPdf(res, pdfRecord);
+    streamSalesOrderPdf(res, pdfRecord, parsePdfLocale(req.query.locale));
     }
 );

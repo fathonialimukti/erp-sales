@@ -1,4 +1,4 @@
-# erp-sales
+# B2B CRM
 
 A B2B field-sales / CRM ERP: regions → areas → customers → outlets → SKU visits → sales orders, with approval workflows, budgeting, reporting, and AI woven into daily ops (order extraction, customer chat, email concierge, knowledge base).
 
@@ -85,7 +85,7 @@ Tests run sequentially against a real database (see `src/tests/helpers/seed.ts`)
 - `apps/server/.env.example` — API: DB, JWT, CORS, pool, AI provider + rate limits, SMTP, email webhook secret
 - `apps/client/.env.example` — `VITE_TRPC_URL`
 
-Never commit real `.env` files or provider keys. The upstream AI provider key has a hard 10 req/min quota — enforce with `AI_GLOBAL_RPM` (default 10).
+Never commit real `.env` files or provider keys. Set `AI_GLOBAL_RPM` to your AI provider's per-key quota (req/min, shared by all users) — unset means unlimited.
 
 ## Conventions
 

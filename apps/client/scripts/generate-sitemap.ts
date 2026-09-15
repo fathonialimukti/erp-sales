@@ -1,5 +1,5 @@
 /**
- * Generate sitemap.xml for ERP Sales.
+ * Generate sitemap.xml for B2B CRM.
  * Run: bun scripts/generate-sitemap.ts
  * Output: dist/sitemap.xml (Vite build output)
  */

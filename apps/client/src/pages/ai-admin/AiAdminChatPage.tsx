@@ -18,6 +18,12 @@ import {
   X,
 } from "lucide-react";
 import { aiFormFillAtom, authUserAtom } from "../../lib/atoms";
+import {
+  ChatWidgetPart,
+  WIDGET_TOOL_NAMES,
+  createWidgetTurnHandlers,
+  lastAssistantStepHasWidgetTool,
+} from "@/components/ai/ChatWidgetWiring";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -265,8 +271,6 @@ const TOOL_META: Record<string, { label: string }> = {
   navigateTo: { label: "Navigate" },
   fillFormFields: { label: "Fill form" },
   getPageContext: { label: "Read page" },
-  queryDatabase: { label: "Query DB" },
-  queryDatabaseAdmin: { label: "Query DB (Admin)" },
   searchKnowledge: { label: "Knowledge" },
 };
 
@@ -440,9 +444,12 @@ const AiAdminChatPage = () => {
         credentials: "include" as RequestCredentials,
       }),
     }),
-    sendAutomaticallyWhen: (messages) => {
+    sendAutomaticallyWhen: ({ messages }) => {
       if (pendingToolCallsRef.current.size > 0) return false;
-      return lastAssistantMessageIsCompleteWithToolCalls(messages);
+      // Widget tool calls END the turn (SPEC §5.2) — the user's structured
+      // response resumes it; never auto-continue from a card.
+      if (lastAssistantStepHasWidgetTool(messages)) return false;
+      return lastAssistantMessageIsCompleteWithToolCalls({ messages });
     },
     onToolCall: ({ toolCall }) => {
       const toolName = String(toolCall.toolName);
@@ -450,7 +457,16 @@ const AiAdminChatPage = () => {
     },
   });
 
+  // Widget interaction handlers (SPEC §5.3): persist status onto the widget
+  // tool-part output and append the structured turns that resume the AI.
+  const widgetTurns = createWidgetTurnHandlers(setMessages, sendMessage);
+
   const runTool = (toolName: string, toolCallId: string, toolInput: unknown) => {
+    // Widget tools (request_form_input / request_confirmation) render as cards,
+    // never executed client-side — and never "Unknown tool", whose addToolOutput
+    // fallback would clobber the widget output (SPEC §7).
+    if (WIDGET_TOOL_NAMES.has(toolName)) return;
+
     const alreadyHandled = handledToolCallsRef.current.has(toolCallId);
     if (alreadyHandled) {
       // deliver output even on dedup
@@ -499,108 +515,6 @@ const AiAdminChatPage = () => {
     if (toolName === "getPageContext") {
       const context = collectPageContext();
       addToolOutput({ tool: "getPageContext", toolCallId, output: context });
-      return;
-    }
-
-    if (toolName === "queryDatabase") {
-      if (!toolInput || typeof toolInput !== "object") {
-        addToolOutput({
-          tool: "queryDatabase",
-          toolCallId,
-          output: JSON.stringify({ error: "No input" }),
-        });
-        return;
-      }
-      const { sql, limit = 100 } = toolInput as { sql?: string; limit?: number };
-      if (!sql) {
-        addToolOutput({
-          tool: "queryDatabase",
-          toolCallId,
-          output: JSON.stringify({ error: "No SQL provided" }),
-        });
-        return;
-      }
-
-      pendingToolCallsRef.current.add(toolCallId);
-      setPendingToolCallsVersion((v) => v + 1);
-
-      fetch(`${API_BASE_URL}/api/ai/query`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sql, limit }),
-      })
-        .then((res) => res.json())
-        .then((result) => {
-          pendingToolCallsRef.current.delete(toolCallId);
-          addToolOutput({ tool: "queryDatabase", toolCallId, output: JSON.stringify(result) });
-          setPendingToolCallsVersion((v) => v + 1);
-        })
-        .catch((err) => {
-          pendingToolCallsRef.current.delete(toolCallId);
-          addToolOutput({
-            tool: "queryDatabase",
-            toolCallId,
-            output: JSON.stringify({
-              error: "Query failed",
-              message: err instanceof Error ? err.message : "Unknown error",
-            }),
-          });
-          setPendingToolCallsVersion((v) => v + 1);
-        });
-      return;
-    }
-
-    if (toolName === "queryDatabaseAdmin") {
-      if (!toolInput || typeof toolInput !== "object") {
-        addToolOutput({
-          tool: "queryDatabaseAdmin",
-          toolCallId,
-          output: JSON.stringify({ error: "No input" }),
-        });
-        return;
-      }
-      const { sql, limit = 100 } = toolInput as { sql?: string; limit?: number };
-      if (!sql) {
-        addToolOutput({
-          tool: "queryDatabaseAdmin",
-          toolCallId,
-          output: JSON.stringify({ error: "No SQL provided" }),
-        });
-        return;
-      }
-
-      pendingToolCallsRef.current.add(toolCallId);
-      setPendingToolCallsVersion((v) => v + 1);
-
-      fetch(`${API_BASE_URL}/api/ai/query`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sql, limit }),
-      })
-        .then((res) => res.json())
-        .then((result) => {
-          pendingToolCallsRef.current.delete(toolCallId);
-          addToolOutput({
-            tool: "queryDatabaseAdmin",
-            toolCallId,
-            output: JSON.stringify(result),
-          });
-          setPendingToolCallsVersion((v) => v + 1);
-        })
-        .catch((err) => {
-          pendingToolCallsRef.current.delete(toolCallId);
-          addToolOutput({
-            tool: "queryDatabaseAdmin",
-            toolCallId,
-            output: JSON.stringify({
-              error: "Query failed",
-              message: err instanceof Error ? err.message : "Unknown error",
-            }),
-          });
-          setPendingToolCallsVersion((v) => v + 1);
-        });
       return;
     }
 
@@ -832,9 +746,11 @@ const AiAdminChatPage = () => {
             if (message.role !== "user" && message.role !== "assistant") return null;
             const isUser = message.role === "user";
 
+            // Structured widget turns (form_response/confirmation/action_result)
+            // carry only an empty text part + metadata — they render nothing.
             const hasVisible = message.parts.some(
               (p) =>
-                p.type === "text" ||
+                (p.type === "text" && p.text.trim() !== "") ||
                 (p.type === "file" && multimodalEnabled) ||
                 p.type.startsWith("tool-") ||
                 p.type === "dynamic-tool"
@@ -925,6 +841,26 @@ const AiAdminChatPage = () => {
                       part.type === "dynamic-tool"
                         ? String(p.toolName)
                         : part.type.slice("tool-".length);
+
+                    // Widget tool parts render as cards below the text (SPEC §7) —
+                    // never as a raw tool chip. Malformed payloads render nothing.
+                    if (WIDGET_TOOL_NAMES.has(toolName) && String(p.state ?? "") === "output-available") {
+                      elements.push(
+                        <ChatWidgetPart
+                          key={`widget-${partIdx}`}
+                          part={part}
+                          chatId={chatId}
+                          messages={messages}
+                          disabled={isLoading}
+                          onSubmitted={widgetTurns.onSubmitted}
+                          onCancelled={widgetTurns.onCancelled}
+                          onStatusChange={widgetTurns.onStatusChange}
+                          onResult={widgetTurns.onResult}
+                        />,
+                      );
+                      return;
+                    }
+
                     elements.push(
                       <ToolChip key={`tool-${partIdx}`} toolName={toolName} part={p} />,
                     );

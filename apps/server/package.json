@@ -11,7 +11,7 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "db:all": "bun prisma generate && bun prisma db push --force-reset && bun prisma db seed && bun src/scripts/ingest-knowledge.ts",
+    "db:all": "bun prisma generate && bun prisma db push --force-reset && bun prisma db seed && bun src/scripts/ensure-knowledge-vector-columns.ts && bun src/scripts/ingest-knowledge.ts",
     "db:deploy": "prisma migrate deploy",
     "seed:ph": "bun src/prisma/seed/index.ts",
     "ai:ingest": "bun src/scripts/ingest-knowledge.ts",

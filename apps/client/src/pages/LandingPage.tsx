@@ -327,7 +327,7 @@ export const LandingPage = () => {
       // ── Site ──
       {
         '@type': 'WebSite',
-        name: 'ERP Sales',
+        name: 'B2B CRM',
         url: BASE,
         description:
           'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL.',
@@ -397,7 +397,7 @@ export const LandingPage = () => {
       // ── App ──
       {
         '@type': 'SoftwareApplication',
-        name: 'ERP Sales',
+        name: 'B2B CRM',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web, Windows, macOS, Linux',
         url: BASE,
@@ -425,7 +425,7 @@ export const LandingPage = () => {
       // ── HowTo (AEO: step-by-step) ──
       {
         '@type': 'HowTo',
-        name: 'How to Manage Your Sales Operation with ERP Sales',
+        name: 'How to Manage Your Sales Operation with B2B CRM',
         description:
           'Set up your territory, register customers and outlets, log visits, process orders, and gain insights — all in one platform.',
         totalTime: 'P1D',
@@ -478,7 +478,7 @@ export const LandingPage = () => {
       className="flex flex-1 flex-col"
       data-ai-context={JSON.stringify({
         section: 'landing',
-        site: 'ERP Sales — Sales Management Platform',
+        site: 'B2B CRM — Sales Management Platform',
         description:
           'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL for field teams and back-office. Includes AI-powered approval workflow, email-to-order automation, and real-time analytics.',
         features: [

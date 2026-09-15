@@ -151,13 +151,15 @@ export async function searchKnowledgeChunksFts(
         content,
         ts_rank(
             to_tsvector('english', title || ' ' || content),
-            plainto_tsquery('english', ${JSON.stringify(query)})
+            plainto_tsquery('english', $1)
         )::float8 AS rank
      FROM knowledge_chunks
      ${where}
-     ${where ? 'AND' : 'WHERE'} to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', ${JSON.stringify(query)})
+     ${where ? 'AND' : 'WHERE'} to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)
      ORDER BY rank DESC
-     LIMIT ${limit}`,
+     LIMIT $2`,
+    query,
+    limit,
   );
 
   return chunks.map((c) => ({

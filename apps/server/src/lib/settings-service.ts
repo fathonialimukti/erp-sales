@@ -1,4 +1,4 @@
-import type { Prisma } from '../prisma/generated/client';
+import { Prisma } from '../prisma/generated/client';
 import type { DbClient } from './prisma.js';
 import type { AppSettings, UserSettings } from '@repo/schemas/settings';
 
@@ -33,14 +33,15 @@ const APP_SETTING_FALLBACKS: Record<string, EnvFallback> = {
   'ai.apiKey': { env: 'AI_API_KEY', default: '' },
   'ai.model': { env: 'AI_MODEL', default: 'chatbot' },
   'ai.multimodalEnabled': { env: 'AI_MULTIMODAL_ENABLED', default: false },
-  'ai.userRpm': { env: 'AI_USER_RPM', default: 10 },
-  'ai.globalRpm': { env: 'AI_GLOBAL_RPM', default: 10 },
+  'ai.globalRpm': { env: 'AI_GLOBAL_RPM', default: null },
   'ai.embeddingBaseUrl': { env: 'AI_EMBEDDING_BASE_URL', default: '' },
   'ai.embeddingApiKey': { env: 'AI_EMBEDDING_API_KEY', default: '' },
   'ai.embeddingModel': { env: 'AI_EMBEDDING_MODEL', default: '' },
   'ai.embeddingDimensions': { env: 'AI_EMBEDDING_DIMENSIONS', default: 1536 },
-  'smtp.host': { env: 'SMTP_HOST', default: 'smtp-relay.brevo.com' },
+  'smtp.host': { env: 'SMTP_HOST', default: '' },
   'smtp.port': { env: 'SMTP_PORT', default: 587 },
+  // Explicit encryption mode (none|starttls|ssl). Unset = infer from port.
+  'smtp.secure': { env: 'SMTP_SECURE', default: undefined },
   'smtp.user': { env: 'SMTP_USER', default: '' },
   'smtp.pass': { env: 'SMTP_PASS', default: '' },
   'smtp.from': { env: 'SMTP_FROM', default: 'AetherGlo Sales <info@aetherglo.com>' },
@@ -113,6 +114,12 @@ function envValue(fallback: EnvFallback): unknown {
     const n = Number(raw);
     return Number.isFinite(n) ? n : def;
   }
+  if (def === null) {
+    // Nullable numeric setting (e.g. ai.globalRpm): valid env number wins,
+    // anything else stays unlimited.
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+  }
   if (typeof def === 'boolean') return raw === 'true' || raw === '1';
   return raw;
 }
@@ -152,6 +159,15 @@ export async function getSecretValue(db: DbClient, key: string): Promise<string>
   return typeof value === 'string' ? value : '';
 }
 
+/**
+ * The OpenAI-compatible provider appends `/chat/completions` or `/embeddings`
+ * to the base URL, so a value that already ends with an endpoint path would
+ * double it (→ 404). Strip any trailing endpoint path or slash.
+ */
+export function normalizeOpenAiBaseUrl(url: string): string {
+  return url.replace(/\/(chat\/completions|embeddings)?\/?$/, '');
+}
+
 // --- App settings ---
 
 /**
@@ -178,8 +194,7 @@ export async function getAppSettings(db: DbClient): Promise<MaskedAppSettings> {
       apiKey: secret('ai.apiKey'),
       model: read('ai.model') as string,
       multimodalEnabled: read('ai.multimodalEnabled') as boolean,
-      userRpm: read('ai.userRpm') as number,
-      globalRpm: read('ai.globalRpm') as number,
+      globalRpm: read('ai.globalRpm') as number | null,
       embeddingBaseUrl: read('ai.embeddingBaseUrl') as string,
       embeddingApiKey: secret('ai.embeddingApiKey'),
       embeddingModel: read('ai.embeddingModel') as string,
@@ -188,6 +203,7 @@ export async function getAppSettings(db: DbClient): Promise<MaskedAppSettings> {
     smtp: {
       host: read('smtp.host') as string,
       port: read('smtp.port') as number,
+      secure: read('smtp.secure') as 'none' | 'starttls' | 'ssl' | 'tls' | undefined,
       user: read('smtp.user') as string,
       pass: secret('smtp.pass'),
       from: read('smtp.from') as string,
@@ -235,10 +251,11 @@ export async function setAppSettings(
     if (isSecretKey(key)) {
       if (typeof value !== 'string' || value === '') continue; // keep existing
     }
+    const jsonValue = value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
     await db.appSetting.upsert({
       where: { key },
-      create: { key, value: value as Prisma.InputJsonValue, updatedBy },
-      update: { value: value as Prisma.InputJsonValue, updatedBy },
+      create: { key, value: jsonValue, updatedBy },
+      update: { value: jsonValue, updatedBy },
     });
   }
   cacheInvalidate();

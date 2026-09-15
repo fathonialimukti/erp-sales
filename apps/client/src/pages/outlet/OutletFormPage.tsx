@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Save } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Save, Store, Hash, Building2, MapPinned, MapPin, UserRound, Phone } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -124,6 +127,20 @@ export const OutletFormPage = () => {
     latitude: (v: unknown) => form.setFieldValue("latitude" as never, Number(v) as never),
     longitude: (v: unknown) => form.setFieldValue("longitude" as never, Number(v) as never),
   });
+
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [
+    live.name,
+    live.code,
+    live.customerId,
+    live.areaId,
+    live.address,
+    live.contactName,
+    live.contactPhone,
+  ].filter((v) => String(v ?? "").trim().length > 0).length;
+  const customerName = customers.find((c) => c.id === live.customerId)?.name ?? "";
+  const areaName = areas.find((a) => a.id === live.areaId)?.name ?? "";
 
   useEffect(() => {
     if (isEdit && data) {
@@ -243,6 +260,62 @@ export const OutletFormPage = () => {
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="outlet"
+            icon={Store}
+            title={live.name}
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={filled}
+            total={7}
+            rows={[
+              {
+                icon: Hash,
+                label: intl.formatMessage({ id: "outlet.form.field_code", defaultMessage: "Code" }),
+                value: live.code,
+              },
+              {
+                icon: Building2,
+                label: intl.formatMessage({
+                  id: "outlet.form.field_customer",
+                  defaultMessage: "Customer",
+                }),
+                value: customerName,
+              },
+              {
+                icon: MapPinned,
+                label: intl.formatMessage({ id: "outlet.form.field_area", defaultMessage: "Area" }),
+                value: areaName,
+              },
+              {
+                icon: MapPin,
+                label: intl.formatMessage({
+                  id: "outlet.form.field_address",
+                  defaultMessage: "Address",
+                }),
+                value: live.address,
+              },
+              {
+                icon: UserRound,
+                label: intl.formatMessage({
+                  id: "outlet.form.field_contact_name",
+                  defaultMessage: "Contact name",
+                }),
+                value: live.contactName,
+              },
+              {
+                icon: Phone,
+                label: intl.formatMessage({
+                  id: "outlet.form.field_contact_phone",
+                  defaultMessage: "Contact phone",
+                }),
+                value: live.contactPhone,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -260,6 +333,9 @@ export const OutletFormPage = () => {
         />
 
         <FormSection
+          icon={Store}
+          step={1}
+          tone="outlet"
           title={intl.formatMessage({
             id: "outlet.form.section_basic",
             defaultMessage: "Basic information",
@@ -457,7 +533,7 @@ export const OutletFormPage = () => {
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
@@ -471,8 +547,9 @@ export const OutletFormPage = () => {
               )}
               {intl.formatMessage({ id: "outlet.form.save_button", defaultMessage: "Save" })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

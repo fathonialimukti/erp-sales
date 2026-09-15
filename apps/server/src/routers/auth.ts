@@ -10,7 +10,7 @@ import { checkRateLimit } from '../lib/rate-limiter.js';
 import { addToBlacklist } from '../lib/token-blacklist.js';
 import { publicProcedure, protectedProcedure, router } from '../trpc.js';
 import { getMessage } from '../lib/locale.js';
-import { loginSchema } from '@repo/schemas/auth';
+import { demoLoginInputSchema, demoLoginOutputSchema, listDemoUsersOutputSchema, loginSchema } from '@repo/schemas/auth';
 import { getJwtSecret } from '../lib/jwt-secret.js';
 import { logApp } from '../lib/app-log.js';
 
@@ -43,7 +43,134 @@ const clearAuthCookie = () =>
         maxAge: 0,
     });
 
+const assertDemoLoginEnabled = () => {
+    if (process.env.DEMO_LOGIN_ENABLED !== 'true') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Demo login is disabled.' });
+    }
+};
+
+// ponytail: email deny-list (no User flag) keeps service accounts out of demo login.
+export const SYSTEM_EXCLUDED_EMAILS = [
+    process.env.AI_SYSTEM_EMAIL ?? 'ai-system@mail.com',
+    process.env.ERP_INTEGRATION_EMAIL ?? 'n8n@mail.com',
+];
+
 export const authRouter = router({
+    // ponytail: listDemoUsers + demoLogin are intentionally PUBLIC with no
+    // hasPermission() check — the DEMO_LOGIN_ENABLED env gate replaces auth so
+    // visitors can one-click login without credentials. Never enable in
+    // production with real data.
+    listDemoUsers: publicProcedure
+        .output(listDemoUsersOutputSchema)
+        .query(async ({ ctx }) => {
+            assertDemoLoginEnabled();
+
+            const users = await ctx.db.user.findMany({
+                where: { email: { notIn: SYSTEM_EXCLUDED_EMAILS } },
+                orderBy: { email: 'asc' },
+                include: {
+                    role: {
+                        include: {
+                            permissions: {
+                                include: {
+                                    permission: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            return users.map((user) => ({
+                id: user.id,
+                email: user.email,
+                name: user.name ?? user.email,
+                role: user.role?.name ?? '',
+                description: user.description ?? null,
+                capabilities: user.role?.permissions.map((p) => p.permission.name) ?? [],
+            }));
+        }),
+
+    demoLogin: publicProcedure
+        .input(demoLoginInputSchema)
+        .output(demoLoginOutputSchema)
+        .mutation(async ({ ctx, input }) => {
+            assertDemoLoginEnabled();
+
+            const user = await ctx.db.user.findUnique({
+                where: { id: input.userId },
+                include: {
+                    role: {
+                        include: {
+                            permissions: {
+                                include: {
+                                    permission: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!user) {
+                logApp({
+                    level: 'WARN',
+                    module: 'auth',
+                    message: 'Demo login failed: unknown user',
+                    detail: { userId: input.userId },
+                });
+                throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found.' });
+            }
+
+            if (SYSTEM_EXCLUDED_EMAILS.includes(user.email)) {
+                logApp({
+                    level: 'WARN',
+                    module: 'auth',
+                    message: 'Demo login failed: excluded account',
+                    detail: { userId: input.userId },
+                });
+                throw new TRPCError({ code: 'FORBIDDEN', message: 'Demo login is disabled.' });
+            }
+
+            // Mirror of login token creation + expiry logic (session cookie: no rememberMe).
+            const token = jwt.sign(
+                {
+                    userId: user.id,
+                    email: user.email,
+                    name: user.name,
+                },
+                JWT_SECRET,
+                { expiresIn: '7d', jwtid: randomUUID() }
+            );
+
+            const decoded = jwt.decode(token) as jwt.JwtPayload | null;
+            const tokenExpiresAt = decoded?.exp ? decoded.exp * 1000 : null;
+
+            ctx.res.setHeader('Set-Cookie', createAuthCookie(token));
+
+            await logActivity(ctx.db, {
+                action: 'LOGIN',
+                userId: user.id,
+                resource: 'user',
+                resourceId: user.id,
+                message: `User ${user.name} logged in via demo login`,
+            });
+
+            return {
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name ?? user.email,
+                    roles: user.role ? [{
+                        id: user.role.id,
+                        name: user.role.name,
+                        permissions: user.role.permissions.map((p) => p.permission.name),
+                    }] : [],
+                },
+                tokenExpiresAt,
+            };
+        }),
+
     login: publicProcedure
         .input(loginSchema)
         .mutation(async ({ ctx, input }) => {

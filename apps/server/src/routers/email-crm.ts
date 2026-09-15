@@ -91,9 +91,15 @@ export const emailCrmRouter = router({
   detail: protectedProcedure
     .use(hasPermission('email-crm@read'))
     .input(emailConversationIdSchema)
-    .query(async ({ input }) => {
-      const record = await prisma.emailConversation.findUnique({
-        where: { id: input.id },
+    .query(async ({ input, ctx }) => {
+      // ponytail: blank ids can never match a ULID row — fail fast with a typed
+      // BAD_REQUEST so callers render an error instead of spinning (task-7).
+      const id = input.id.trim();
+      if (!id) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Email conversation id is required.' });
+      }
+      const record = await ctx.db.emailConversation.findUnique({
+        where: { id },
         include: {
           customer: { select: { id: true, name: true, code: true } },
           messages: { orderBy: { createdAt: 'asc' } },
@@ -563,6 +569,11 @@ export const emailCrmRouter = router({
           data: {
             lastMessageAt: now,
             lastOutboundAt: now,
+            // Manual send is a human finalize: clear any stale agent failure
+            // (e.g. FAILED/missing_finalize) so the customer-visible error
+            // does not stick after the reply was actually sent.
+            agentStatus: 'SENT',
+            agentError: null,
           },
         });
         return created;

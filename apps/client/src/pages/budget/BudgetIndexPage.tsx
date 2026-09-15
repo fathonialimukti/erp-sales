@@ -4,12 +4,21 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
+import { Download, Loader2, MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
+import {
+  useWorkbookExport,
+  type WorkbookColumn,
+} from "../../lib/export/useWorkbookExport";
+import {
+  EXPORT_PAGE_SIZE,
+  fetchAllPages,
+  toBudgetExportRow,
+} from "./budget-export";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable } from "../../components/DataTable";
@@ -61,6 +70,8 @@ export const BudgetIndexPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<BudgetRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExportingAll, setIsExportingAll] = useState(false);
+  const { exportWorkbook } = useWorkbookExport();
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -245,6 +256,90 @@ export const BudgetIndexPage = () => {
     }
   };
 
+  const onExport = async () => {
+    setIsExportingAll(true);
+    try {
+      // Export the whole filtered dataset, not just the loaded page.
+      const allRows = await fetchAllPages((page) =>
+        trpcClient.budget.list.query({
+          page,
+          limit: EXPORT_PAGE_SIZE,
+          search: search || undefined,
+        }),
+      );
+      await exportWorkbook({
+        prefix: "budgets",
+        sheetName: intl.formatMessage({
+          id: "budget_line.index.title",
+          defaultMessage: "Budget Lines",
+        }),
+        columns: [
+          {
+            key: "budgetType",
+            header: intl.formatMessage({ id: "budget_line.index.header_budget_type", defaultMessage: "Budget Type" }),
+          },
+          {
+            key: "period",
+            header: intl.formatMessage({ id: "budget_line.index.header_period", defaultMessage: "Period" }),
+          },
+          {
+            key: "scope",
+            header: intl.formatMessage({ id: "budget_line.index.header_scope", defaultMessage: "Scope" }),
+          },
+          {
+            key: "regionArea",
+            header: intl.formatMessage({ id: "budget_line.index.header_region_area", defaultMessage: "Region / Area" }),
+          },
+          {
+            key: "currency",
+            header: intl.formatMessage({ id: "budget_line.index.header_currency", defaultMessage: "Currency" }),
+          },
+          {
+            key: "allocated",
+            header: intl.formatMessage({ id: "budget_line.index.header_allocated", defaultMessage: "Allocated" }),
+            format: (v) => Number(v),
+          },
+          {
+            key: "committed",
+            header: intl.formatMessage({ id: "budget_line.index.header_committed", defaultMessage: "Committed" }),
+            format: (v) => Number(v),
+          },
+          {
+            key: "spent",
+            header: intl.formatMessage({ id: "budget_line.index.header_spent", defaultMessage: "Spent" }),
+            format: (v) => Number(v),
+          },
+          {
+            key: "remaining",
+            header: intl.formatMessage({ id: "budget_line.index.header_remaining", defaultMessage: "Remaining" }),
+            format: (v) => Number(v),
+          },
+          {
+            key: "programs",
+            header: intl.formatMessage({ id: "budget_line.index.header_programs", defaultMessage: "Programs" }),
+            format: (v) => Number(v),
+          },
+          {
+            key: "proposals",
+            header: intl.formatMessage({ id: "budget_line.index.header_proposals", defaultMessage: "Proposals" }),
+            format: (v) => Number(v),
+          },
+        ] satisfies WorkbookColumn[],
+        rows: allRows.map((row) => toBudgetExportRow(row, getScopeLabel)),
+      });
+    } catch {
+      // Fetch errors land here; workbook errors are already toasted by the hook.
+      toast.error(
+        intl.formatMessage({
+          id: "budget_line.index.export_failed",
+          defaultMessage: "Export failed. Please try again.",
+        }),
+      );
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full gap-3">
       <PageHeader
@@ -265,6 +360,33 @@ export const BudgetIndexPage = () => {
         search={searchInput}
         onSearchChange={setSearchInput}
         searchPlaceholder={intl.formatMessage({ id: "common.search.placeholder", defaultMessage: "Search..." })}
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 px-2.5"
+            onClick={onExport}
+            disabled={isExportingAll}
+          >
+            {isExportingAll ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            ) : (
+              <Download className="size-3.5" aria-hidden />
+            )}
+            {intl.formatMessage(
+              isExportingAll
+                ? {
+                    id: "budget_line.index.export_loading",
+                    defaultMessage: "Preparing export…",
+                  }
+                : {
+                    id: "budget_line.index.export_excel",
+                    defaultMessage: "Export Excel",
+                  },
+            )}
+          </Button>
+        }
       />
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">

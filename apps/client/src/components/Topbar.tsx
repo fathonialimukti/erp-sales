@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Clock, Languages, Menu, Moon, Sun } from "lucide-react";
+import { Bell, Clock, Languages, Menu, Moon, Server, Sun } from "lucide-react";
 
 import { UserAvatarMenu } from "@/components/UserAvatarMenu";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
+import { NAV_MENU, ROUTE_META, type NavMenuItem } from "@/constants/nav-menu";
 import {
+  hasPermissionAtom,
   notificationsOpenAtom,
   sidebarOpenAtom,
   themeModeAtom,
@@ -56,6 +57,10 @@ const findPageMeta = (
   if (cur === "/dashboard") {
     return { kicker: "Workspace", title: "nav.dashboard" };
   }
+  // Utility routes reached outside the sidebar (user modal destinations)
+  // still get real breadcrumb metadata instead of the generic fallback.
+  const utility = ROUTE_META[cur];
+  if (utility) return utility;
   return walk(NAV_MENU) ?? { kicker: "Workspace", title: "Page" };
 };
 
@@ -67,6 +72,8 @@ export const Topbar = () => {
   const sidebarOpen = useAtomValue(sidebarOpenAtom);
   const [notifsOpen, setNotifsOpen] = useAtom(notificationsOpenAtom);
   const { locale, setLocale } = useLocale();
+  const navigate = useNavigate();
+  const hasPermission = useAtomValue(hasPermissionAtom);
   const isLgUp = useMediaQuery("(min-width: 1024px)");
   // Desktop: avatar lives in the sidebar (expanded or collapsed). Mobile: topbar.
   const showAvatarInSidebar = isLgUp;
@@ -233,6 +240,22 @@ export const Topbar = () => {
             </Badge>
           )}
         </Button>
+
+        {hasPermission("settings@app@read") && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={intl.formatMessage({
+              id: "user.menu.app_settings",
+              defaultMessage: "App settings",
+            })}
+            onClick={() => navigate("/settings")}
+            className="size-9 rounded-full"
+          >
+            <Server className="size-4" aria-hidden />
+          </Button>
+        )}
 
         <Button
           type="button"

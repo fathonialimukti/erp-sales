@@ -1,4 +1,4 @@
-import { generateText, stepCountIs } from 'ai';
+import { generateText, hasToolCall, stepCountIs } from 'ai';
 import { getChatModel } from './ai-provider.js';
 import {
   createEmailConciergeTools,
@@ -16,6 +16,15 @@ const MIN_JOB_GAP_MS = 1_200;
 /** Stuck RUNNING older than this is treated as crashed and may re-enter. */
 export const STALE_RUNNING_MS = 5 * 60 * 1000;
 const MAX_SUBJECT_LEN = 200;
+/** Tool the agent MUST call last to produce the outbound reply. */
+export const FINALIZE_TOOL_NAME = 'finalizeCustomerReply';
+/**
+ * Agent step budget. The final step is reserved for a forced finalize: a
+ * tool-heavy run (e.g. a conversation with no linked customer, where customer
+ * tools keep erroring) can otherwise exhaust its budget and end with no
+ * finalize — the run is then marked FAILED/missing_finalize and nothing is sent.
+ */
+export const MAX_AGENT_STEPS = 20;
 /**
  * Max chars for the untrusted email thread fed to the model. Keeps the prompt
  * well under the model context window even for long conversations. Configurable
@@ -38,6 +47,15 @@ export function isStaleRunning(
   now = Date.now(),
 ): boolean {
   return agentStatus === 'RUNNING' && now - updatedAt.getTime() >= STALE_RUNNING_MS;
+}
+
+/**
+ * True on the final allowed agent step. `runEmailConcierge` forces the model to
+ * call {@link FINALIZE_TOOL_NAME} there, so a run that spends every step on
+ * tools still ends with a sendable reply instead of `missing_finalize`.
+ */
+export function shouldForceFinalize(stepNumber: number): boolean {
+  return stepNumber >= MAX_AGENT_STEPS - 1;
 }
 
 export type ConciergeApplyInput = {
@@ -262,7 +280,13 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
     await generateText({
       model: await getChatModel(prisma),
       tools,
-      stopWhen: stepCountIs(10),
+      // Stop as soon as the reply is finalized; otherwise cap the loop and let
+      // prepareStep force the mandatory finalize on the last allowed step.
+      stopWhen: [hasToolCall(FINALIZE_TOOL_NAME), stepCountIs(MAX_AGENT_STEPS)],
+      prepareStep: ({ stepNumber }) =>
+        shouldForceFinalize(stepNumber)
+          ? { toolChoice: { type: 'tool', toolName: FINALIZE_TOOL_NAME } }
+          : {},
       instructions: system,
       prompt: promptParts.join('\n\n'),
       temperature: 0.7,

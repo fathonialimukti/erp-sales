@@ -27,6 +27,19 @@ const normalizePermission = (permission: string) => {
     return `${permission.slice(0, sepIndex)}@${permission.slice(sepIndex + 1)}`;
 };
 
+// ponytail: sys-admin bypass — a literal "*" grant (seed's System Admin
+// pattern) passes every gate; "resource@*" passes every action on that
+// resource. Mirrors matchesPattern() in prisma/seed.ts.
+const matchesGranted = (required: string, granted: string) => {
+    if (granted === '*') return true;
+    const normalizedGranted = normalizePermission(granted);
+    if (normalizedGranted === required) return true;
+    if (normalizedGranted.endsWith('@*')) {
+        return required.startsWith(`${normalizedGranted.slice(0, -2)}@`);
+    }
+    return false;
+};
+
 // 30s TTL cache of userId -> permission strings. Avoids a user+role+permission
 // join on every gated call. Tradeoff: permission/role changes take effect
 // within 30s; mutation routers call clearPermissionCache() to apply instantly.
@@ -75,7 +88,9 @@ const hasPermission = (requiredPermissions: string | string[]) => {
 
         const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
         const normalizedRequired = permissions.map(normalizePermission);
-        const hasRequiredPermission = normalizedRequired.some((perm) => userPermissions.includes(perm));
+        const hasRequiredPermission = normalizedRequired.some((perm) =>
+            userPermissions.some((granted) => matchesGranted(perm, granted)),
+        );
 
         if (!hasRequiredPermission) {
             throw new TRPCError({ code: 'FORBIDDEN', message: getMessage(ctx.locale, 'auth.insufficientPermissions') });

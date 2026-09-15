@@ -2427,9 +2427,7 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
+  background: color-mix(in srgb, var(--foreground) 55%, transparent);
   animation: soModalFadeIn 0.18s var(--ease-out) both;
   isolation: isolate;
 }
@@ -2474,7 +2472,7 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  background: #F1F5F9;
+  background: var(--muted);
 }
 
 .so-pdf-modal__iframe {
@@ -2501,11 +2499,11 @@
 }
 
 .so-pdf-modal__error {
-  color: #B91C1C;
+  color: var(--destructive);
 }
 
 .so-pdf-modal__error svg {
-  color: #B91C1C;
+  color: var(--destructive);
 }
 
 @media (max-width: 640px) {
@@ -2514,10 +2512,22 @@
 }
 
 /* ============================================================
- * 12. PRINT — iOS-style printable sales order document.
- *     Hidden on screen, shown when printing.
- *     Uses @page for A4 paper and native browser print dialog
- *     handles "Save as PDF" automatically.
+ * 12. PRINT — printable sales order document.
+ *     Hidden on screen, revealed only when the browser prints
+ *     while a .so-print sheet is mounted (portaled to <body>).
+ *
+ *     KEEP IN SYNC with apps/server/src/lib/print-palette.ts —
+ *     the hex values below mirror that palette so the server
+ *     PDF and this HTML sheet share one printed brand. Print
+ *     output must hardcode hex: live CSS variables would leak
+ *     dark-mode values onto paper.
+ *
+ *     PRINT_INK   #080D16 · PRINT_MUTED #003B67 · PRINT_BORDER #D6DFE7
+ *     PRINT_PAPER #FFFFFF · PRINT_PRIMARY #0069A6 (Aurora Azure)
+ *     PRINT_SUCCESS #00A859 · PRINT_WARNING #EF9900 · PRINT_DESTRUCTIVE #E7000B
+ *     PRINT_WASH_NEUTRAL #EAEFF3 · PRINT_WASH_SOFT #F4F7F9
+ *     PRINT_WASH_PRIMARY #E6F0F6 · PRINT_WASH_SUCCESS #D9F2E6
+ *     PRINT_WASH_DESTRUCTIVE #FDE6E7
  * ============================================================ */
 
 .so-print {
@@ -2525,32 +2535,45 @@
 }
 
 @media print {
-  /* Hide the entire app chrome when printing */
-  body * {
-    visibility: hidden;
+  /* Scope the hide-everything rule to pages that actually mount a
+   * print sheet — printing any other page is completely unaffected.
+   * The sheet is portaled to <body>, so hiding the remaining body
+   * children with display:none leaves it as the only flowing content
+   * (unlike visibility:hidden, hidden chrome keeps no blank space). */
+  body:has(.so-print) > *:not(.so-print) {
+    display: none !important;
   }
 
-  /* Reveal the printable document */
-  .so-print,
-  .so-print * {
-    visibility: visible;
+  /* Paper white — never leak the app's dark canvas onto the sheet. */
+  body:has(.so-print) {
+    background: #FFFFFF !important; /* PRINT_PAPER */
   }
 
+  /* Static positioning so long documents flow in normal order and
+   * fragment naturally across pages (no absolute/inset one-page trap). */
   .so-print {
-    display: block;
-    position: absolute;
-    inset: 0;
-    padding: 16mm 14mm;
-    color: #0B0B14;
-    background: #FFFFFF;
+    display: block !important;
+    position: static;
+    color: #080D16; /* PRINT_INK */
+    background: #FFFFFF; /* PRINT_PAPER */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
     font-family: var(--font-sans, -apple-system, "SF Pro Text", Inter, sans-serif);
     font-size: 10pt;
     line-height: 1.45;
   }
 
+  /* Keep rows whole when the items table fragments across pages. */
+  .so-print tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Real page margins on EVERY page — padding on the sheet itself
+   * would only apply to the first and last page of a fragmented doc. */
   @page {
     size: A4;
-    margin: 0;
+    margin: 14mm 12mm;
   }
 
   /* ---------- Header ---------- */
@@ -2558,14 +2581,15 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding-bottom: 8mm;
-    border-bottom: 0.5pt solid #0B0B14;
+    gap: 12pt;
+    padding-bottom: 6mm;
+    border-bottom: 0.5pt solid #080D16; /* PRINT_INK */
     margin-bottom: 8mm;
   }
 
   .so-print__brand {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8pt;
   }
 
@@ -2573,27 +2597,34 @@
     width: 36pt;
     height: 36pt;
     border-radius: 9pt;
-    background: linear-gradient(135deg, #2563EB 0%, #0EA5E9 50%, #6366F1 100%);
-    color: #FFFFFF;
+    background: #0069A6; /* PRINT_PRIMARY — single brand with the server PDF */
+    color: #FFFFFF; /* PRINT_PAPER */
     font-weight: 800;
     font-size: 18pt;
     display: flex;
     align-items: center;
     justify-content: center;
     letter-spacing: -0.02em;
+    flex-shrink: 0;
   }
 
   .so-print__brand-text {
     display: flex;
     flex-direction: column;
-    line-height: 1.1;
+    line-height: 1.3;
   }
 
   .so-print__brand-title {
-    font-size: 16pt;
+    font-size: 14pt;
     font-weight: 800;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
     letter-spacing: -0.02em;
+  }
+
+  .so-print__brand-line {
+    font-size: 7.5pt;
+    font-weight: 400;
+    color: #003B67; /* PRINT_MUTED */
   }
 
   .so-print__brand-sub {
@@ -2601,7 +2632,7 @@
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    color: #0369A1;
+    color: #0069A6; /* PRINT_PRIMARY */
     margin-top: 2pt;
   }
 
@@ -2618,7 +2649,7 @@
     font-size: 24pt;
     font-weight: 800;
     letter-spacing: -0.02em;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
     line-height: 1;
   }
 
@@ -2626,11 +2657,13 @@
     font-family: var(--font-mono, "SF Mono", Menlo, monospace);
     font-size: 10pt;
     font-weight: 700;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
     letter-spacing: -0.005em;
     margin-top: 2pt;
   }
 
+  /* Status pill — mirrors PRINT_STATUS_COLORS (label always paired,
+   * unknown statuses fall back to the neutral plate). */
   .so-print__status {
     display: inline-block;
     padding: 2pt 8pt;
@@ -2640,12 +2673,16 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-top: 2pt;
+    background: #EAEFF3; /* PRINT_WASH_NEUTRAL — default/unknown */
+    color: #080D16; /* PRINT_INK */
   }
 
-  .so-print__status--draft    { background: #E2E8F0; color: #0B0B14; }
-  .so-print__status--proposed { background: #DBEAFE; color: #1D4ED8; }
-  .so-print__status--approved { background: #D1FAE5; color: #047857; }
-  .so-print__status--rejected { background: #FEE2E2; color: #B91C1C; }
+  .so-print__status--draft        { background: #EAEFF3; color: #080D16; } /* PRINT_WASH_NEUTRAL / PRINT_INK */
+  .so-print__status--ai_validated { background: #E6F0F6; color: #0069A6; } /* PRINT_WASH_PRIMARY / PRINT_PRIMARY */
+  .so-print__status--validating   { background: #E6F0F6; color: #0069A6; } /* PRINT_WASH_PRIMARY / PRINT_PRIMARY */
+  .so-print__status--proposed     { background: #E6F0F6; color: #0069A6; } /* PRINT_WASH_PRIMARY / PRINT_PRIMARY */
+  .so-print__status--approved     { background: #D9F2E6; color: #00A859; } /* PRINT_WASH_SUCCESS / PRINT_SUCCESS */
+  .so-print__status--rejected     { background: #FDE6E7; color: #E7000B; } /* PRINT_WASH_DESTRUCTIVE / PRINT_DESTRUCTIVE */
 
   /* ---------- Meta grid ---------- */
   .so-print__meta-grid {
@@ -2666,13 +2703,13 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #0369A1;
+    color: #003B67; /* PRINT_MUTED */
   }
 
   .so-print__meta-value {
     font-size: 10pt;
     font-weight: 600;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
   }
 
   /* ---------- Section ---------- */
@@ -2686,7 +2723,7 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
   }
 
   /* ---------- Items table ---------- */
@@ -2697,15 +2734,15 @@
   }
 
   .so-print__th {
-    background: #F1F5F9;
-    color: #0B0B14;
+    background: #EAEFF3; /* PRINT_WASH_NEUTRAL — mirrors the server PDF item header wash */
+    color: #080D16; /* PRINT_INK */
     font-size: 7pt;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     padding: 4pt 6pt;
-    border-top: 0.5pt solid #CBD5E1;
-    border-bottom: 0.5pt solid #CBD5E1;
+    border-top: 0.5pt solid #D6DFE7; /* PRINT_BORDER */
+    border-bottom: 0.5pt solid #D6DFE7; /* PRINT_BORDER */
     text-align: left;
   }
 
@@ -2717,9 +2754,9 @@
 
   .so-print__td {
     padding: 6pt;
-    border-bottom: 0.5pt solid #E2E8F0;
+    border-bottom: 0.5pt solid #D6DFE7; /* PRINT_BORDER */
     font-size: 9.5pt;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
     vertical-align: top;
     word-wrap: break-word;
   }
@@ -2729,19 +2766,31 @@
   .so-print__td--sku { font-family: var(--font-mono, "SF Mono", Menlo, monospace); font-size: 8.5pt; }
 
   .so-print__product-name { font-weight: 600; }
-  .so-print__product-note { font-size: 8pt; color: #0369A1; margin-top: 2pt; }
+  .so-print__product-note { font-size: 8pt; color: #003B67; margin-top: 2pt; } /* PRINT_MUTED */
+
+  /* Guard row — an order without line items prints an explicit
+   * "no items" row instead of a bare header + zero totals. */
+  .so-print__empty-row td {
+    padding: 10pt 6pt;
+    background: #F4F7F9; /* PRINT_WASH_SOFT */
+    color: #003B67; /* PRINT_MUTED */
+    font-size: 9.5pt;
+    font-style: italic;
+    text-align: center;
+    border-bottom: 0.5pt solid #D6DFE7; /* PRINT_BORDER */
+  }
 
   /* ---------- Totals ---------- */
   tfoot .so-print__total-label,
   tfoot .so-print__total-value {
     padding: 4pt 6pt;
-    border-top: 0.5pt solid #CBD5E1;
+    border-top: 0.5pt solid #D6DFE7; /* PRINT_BORDER */
     font-size: 9.5pt;
   }
 
   tfoot .so-print__total-label {
     text-align: right;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
     font-weight: 600;
   }
 
@@ -2749,30 +2798,49 @@
     text-align: right;
     font-variant-numeric: tabular-nums;
     font-weight: 700;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
   }
 
-  .so-print__grand .so-print__total-label {
-    border-top: 1pt solid #0B0B14;
-    color: #0B0B14;
+  /* Grand total sits OUTSIDE the <table>: Chrome repeats <tfoot> on
+   * every fragmented page of a long table, and a black grand-total
+   * band stamped on every page reads as a printing mistake. */
+  .so-print__grand-band {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8pt;
+    padding: 6pt 8pt;
+    background: #080D16; /* PRINT_INK */
+    color: #FFFFFF; /* PRINT_PAPER */
+    /* Ink border fallback: the band stays outlined and visible if the
+     * browser suppresses background graphics despite print-color-adjust. */
+    border: 1pt solid #080D16; /* PRINT_INK */
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
-  .so-print__grand .so-print__total-value {
-    border-top: 1pt solid #0B0B14;
-    background: #0B0B14;
-    color: #FFFFFF;
-    font-size: 11pt;
+  .so-print__grand-band-label {
+    font-size: 10pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .so-print__grand-band-value {
+    font-size: 12pt;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
   }
 
   /* ---------- Notes ---------- */
   .so-print__notes {
     margin: 0;
     padding: 6pt 8pt;
-    background: #F8FAFC;
-    border-left: 2pt solid #CBD5E1;
+    background: #F4F7F9; /* PRINT_WASH_SOFT */
+    border-left: 2pt solid #D6DFE7; /* PRINT_BORDER */
     border-radius: 2pt;
     font-size: 9.5pt;
-    color: #1F2937;
+    color: #080D16; /* PRINT_INK */
     white-space: pre-wrap;
   }
 
@@ -2796,14 +2864,14 @@
   .so-print__signature-line {
     width: 100%;
     height: 0;
-    border-top: 0.5pt solid #0B0B14;
+    border-top: 0.5pt solid #080D16; /* PRINT_INK */
     margin-bottom: 4pt;
   }
 
   .so-print__signature-name {
     font-size: 9pt;
     font-weight: 700;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
   }
 
   .so-print__signature-label {
@@ -2811,7 +2879,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #0369A1;
+    color: #003B67; /* PRINT_MUTED */
   }
 
   /* ---------- Footer ---------- */
@@ -2820,13 +2888,13 @@
     align-items: center;
     justify-content: space-between;
     padding-top: 6pt;
-    border-top: 0.5pt solid #CBD5E1;
+    border-top: 0.5pt solid #D6DFE7; /* PRINT_BORDER */
     font-size: 8pt;
-    color: #0369A1;
+    color: #003B67; /* PRINT_MUTED */
   }
 
   .so-print__footer-thanks {
     font-weight: 600;
-    color: #0B0B14;
+    color: #080D16; /* PRINT_INK */
   }
 }

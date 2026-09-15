@@ -10,7 +10,7 @@ Include: affected endpoint/module, reproduction steps, and impact assessment. Yo
 
 - Auth: JWT (httpOnly, SameSite=Lax cookie; `Authorization: Bearer` fallback), bcrypt password hashing
 - Authorization: every tRPC procedure and mutation is gated by `hasPermission('resource@action')` middleware; every mutation is activity-logged
-- Rate limiting: login (5/min/IP), AI endpoints (global upstream-key cap `AI_GLOBAL_RPM`, per-user `AI_USER_RPM`)
+- Rate limiting: login (5/min/IP), AI endpoints (single global cap `AI_GLOBAL_RPM` shared by all users — mirrors the API key's per-minute quota; unset = unlimited)
 - AI guardrails: read-only SQL validation for AI DB queries; email webhook endpoints require a timing-safe shared secret
 - Uploads: data-URL based, mime allow-list, path-traversal-safe serving
 - Secrets: `.env` files are gitignored; AI/SMTP secrets stored in DB are write-only/masked over the API

@@ -2,7 +2,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { embed, embedMany } from 'ai';
 import { prisma } from './prisma.js';
 import { logger } from './logger.js';
-import { getSecretValue, getSettingValue } from './settings-service.js';
+import { getSecretValue, getSettingValue, normalizeOpenAiBaseUrl } from './settings-service.js';
 import type { DbClient } from './prisma.js';
 
 /**
@@ -14,6 +14,12 @@ import type { DbClient } from './prisma.js';
 export const EMBEDDING_COLUMN_DIMENSIONS = 1536;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.5;
 const EMBED_BATCH_SIZE = 32;
+/** Upstream embedding gateways flap intermittently — retry to ride out blips. */
+const EMBED_MAX_RETRIES = 3;
+const EMBED_BATCH_ATTEMPTS = 3;
+const EMBED_BATCH_RETRY_MS = 4_000;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** True when embedding base URL + model are set (API key optional). */
 export async function isEmbeddingConfigured(db: DbClient): Promise<boolean> {
@@ -66,12 +72,10 @@ async function requireEmbeddingConfig(db: DbClient): Promise<{
   baseURL: string;
   apiKey: string;
   modelId: string;
-  dimensions: number;
 }> {
   const embeddingBaseUrl = String(await getSettingValue(db, 'ai.embeddingBaseUrl')).trim();
-  const baseURL = (embeddingBaseUrl || String(await getSettingValue(db, 'ai.baseUrl')).trim()).replace(
-    /\/$/,
-    '',
+  const baseURL = normalizeOpenAiBaseUrl(
+    embeddingBaseUrl || String(await getSettingValue(db, 'ai.baseUrl')).trim(),
   );
   const modelId = await getEmbeddingModelId(db);
   if (!baseURL || !modelId) {
@@ -84,10 +88,15 @@ async function requireEmbeddingConfig(db: DbClient): Promise<{
     baseURL,
     apiKey: embeddingApiKey || (await getSecretValue(db, 'ai.apiKey')).trim() || 'not-set',
     modelId,
-    dimensions: await getEmbeddingDimensions(db),
   };
 }
 
+/**
+ * The model returns its native vector size; we only use the configured
+ * `ai.embeddingDimensions` to size the `knowledge_chunks.embedding` column.
+ * We deliberately do NOT send a `dimensions` request param — Upstage Solar
+ * (`solar-embedding-2-query`, 1024-dim) rejects it with invalid_value.
+ */
 async function getEmbeddingModel(db: DbClient) {
   const { baseURL, apiKey, modelId } = await requireEmbeddingConfig(db);
   const provider = createOpenAICompatible({
@@ -98,13 +107,6 @@ async function getEmbeddingModel(db: DbClient) {
   return provider.embeddingModel(modelId);
 }
 
-function providerOptionsForDimensions(dimensions: number) {
-  return {
-    embedding: { dimensions },
-    openaiCompatible: { dimensions },
-  } as const;
-}
-
 /** Generate a single embedding vector. Throws if unconfigured or the provider fails. */
 export async function generateEmbedding(db: DbClient, text: string): Promise<number[]> {
   const value = text.trim();
@@ -112,11 +114,10 @@ export async function generateEmbedding(db: DbClient, text: string): Promise<num
     throw new Error('generateEmbedding: text is empty');
   }
 
-  const { dimensions } = await requireEmbeddingConfig(db);
   const result = await embed({
     model: await getEmbeddingModel(db),
     value,
-    providerOptions: providerOptionsForDimensions(dimensions),
+    maxRetries: EMBED_MAX_RETRIES,
   });
 
   if (!result.embedding?.length) {
@@ -133,7 +134,6 @@ export async function generateEmbeddings(db: DbClient, values: string[]): Promis
   }
   if (cleaned.length === 0) return [];
 
-  const { dimensions } = await requireEmbeddingConfig(db);
   const model = await getEmbeddingModel(db);
   const out: number[][] = [];
 
@@ -142,7 +142,7 @@ export async function generateEmbeddings(db: DbClient, values: string[]): Promis
     const result = await embedMany({
       model,
       values: batch,
-      providerOptions: providerOptionsForDimensions(dimensions),
+      maxRetries: EMBED_MAX_RETRIES,
     });
     if (result.embeddings.length !== batch.length) {
       throw new Error(
@@ -275,35 +275,47 @@ export async function embedKnowledgeChunksBestEffort(
 
   for (let i = 0; i < rows.length; i += EMBED_BATCH_SIZE) {
     const batch = rows.slice(i, i + EMBED_BATCH_SIZE);
-    try {
-      const embeddings = await generateEmbeddings(
-        db,
-        batch.map((r) => buildEmbedText(r.title, r.content)),
-      );
-      for (let j = 0; j < batch.length; j++) {
-        const row = batch[j]!;
-        const emb = embeddings[j]!;
-        try {
-          await setChunkEmbeddingStatus(row.id, 'pending');
-          await upsertChunkEmbedding(row.id, emb, modelId);
-          await setChunkEmbeddingStatus(row.id, 'done');
-          succeeded += 1;
-        } catch (err) {
-          logger.warn(`[embedding] persist failed for ${row.id}`, {
-            error: err instanceof Error ? err.message : String(err),
-          });
-          try {
-            await setChunkEmbeddingStatus(row.id, 'failed');
-          } catch {
-            /* best-effort: never throw out of this function */
-          }
+    let embeddings: number[][] | null = null;
+
+    for (let attempt = 1; attempt <= EMBED_BATCH_ATTEMPTS && !embeddings; attempt++) {
+      try {
+        embeddings = await generateEmbeddings(
+          db,
+          batch.map((r) => buildEmbedText(r.title, r.content)),
+        );
+      } catch (err) {
+        logger.warn(`[embedding] batch failed (${batch.length} rows, attempt ${attempt})`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        if (attempt < EMBED_BATCH_ATTEMPTS) {
+          await sleep(EMBED_BATCH_RETRY_MS * attempt);
         }
       }
-    } catch (err) {
-      logger.warn(`[embedding] batch failed (${batch.length} rows)`, {
-        error: err instanceof Error ? err.message : String(err),
-      });
+    }
+
+    if (!embeddings) {
       for (const row of batch) {
+        try {
+          await setChunkEmbeddingStatus(row.id, 'failed');
+        } catch {
+          /* best-effort: never throw out of this function */
+        }
+      }
+      continue;
+    }
+
+    for (let j = 0; j < batch.length; j++) {
+      const row = batch[j]!;
+      const emb = embeddings[j]!;
+      try {
+        await setChunkEmbeddingStatus(row.id, 'pending');
+        await upsertChunkEmbedding(row.id, emb, modelId);
+        await setChunkEmbeddingStatus(row.id, 'done');
+        succeeded += 1;
+      } catch (err) {
+        logger.warn(`[embedding] persist failed for ${row.id}`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
         try {
           await setChunkEmbeddingStatus(row.id, 'failed');
         } catch {

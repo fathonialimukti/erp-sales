@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Printer } from "lucide-react";
+import { Download, Loader2, Printer } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -19,11 +19,12 @@ import {
   ReportTable,
   type ReportTableColumn,
 } from "../../../components/reports/ReportTable";
+import { printReport } from "../../../components/reports/useReportExport";
 import {
-  exportExcel,
-  printReport,
-  type ExportColumn,
-} from "../../../components/reports/useReportExport";
+  useWorkbookExport,
+  type WorkbookColumn,
+} from "../../../lib/export/useWorkbookExport";
+import { ReportPrintSheet } from "../../../components/reports/ReportPrintSheet";
 import { AiReportNarrate } from "../../../components/AiReportNarrate";
 import type { ReportFilterValue } from "../../../components/reports/ReportFilters";
 import { Button } from "@/components/ui/button";
@@ -79,7 +80,6 @@ interface SalesReportProps {
 export const SalesReport = ({ filters }: SalesReportProps) => {
   const intl = useIntl();
   const { currencyCode } = useGeneralSettings();
-  const printRef = useRef<HTMLDivElement>(null);
   const [dimension, setDimension] = useState<
     "region" | "area" | "outlet" | "customer" | "sku"
   >("region");
@@ -143,7 +143,7 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
     },
   ];
 
-  const exportColumns: ExportColumn[] = [
+  const exportColumns: WorkbookColumn[] = [
     {
       key: "label",
       header: intl.formatMessage({
@@ -151,9 +151,30 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
         defaultMessage: "Group",
       }),
     },
-    { key: "revenue", header: "Revenue", format: (v) => Number(v) },
-    { key: "orders", header: "Orders", format: (v) => Number(v) },
-    { key: "quantity", header: "Quantity", format: (v) => Number(v) },
+    {
+      key: "revenue",
+      header: intl.formatMessage({
+        id: "report.table.revenue",
+        defaultMessage: "Revenue",
+      }),
+      format: (v) => Number(v),
+    },
+    {
+      key: "orders",
+      header: intl.formatMessage({
+        id: "report.table.orders",
+        defaultMessage: "Orders",
+      }),
+      format: (v) => Number(v),
+    },
+    {
+      key: "quantity",
+      header: intl.formatMessage({
+        id: "report.table.quantity",
+        defaultMessage: "Quantity",
+      }),
+      format: (v) => Number(v),
+    },
   ];
 
   const dimensionLabel = intl.formatMessage({
@@ -161,19 +182,61 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
     defaultMessage: dimension,
   });
 
+  const { exportWorkbook, isExporting } = useWorkbookExport();
+
   const onExport = () =>
-    exportExcel(
-      dimRows as Record<string, unknown>[],
-      exportColumns,
-      `sales-by-${dimension}.xlsx`,
-    );
-  const onPrint = () => printReport(printRef as React.RefObject<HTMLElement>);
+    exportWorkbook({
+      prefix: `sales-by-${dimension}`,
+      sheetName: intl.formatMessage({
+        id: "report.tab.sales",
+        defaultMessage: "Sales",
+      }),
+      columns: exportColumns,
+      rows: dimRows as Record<string, unknown>[],
+      summary: {
+        sheetName: intl.formatMessage({
+          id: "reports.print.summary",
+          defaultMessage: "Summary",
+        }),
+        rows: [
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.revenue",
+              defaultMessage: "Revenue (approved)",
+            }),
+            value: summary?.revenue ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.orders",
+              defaultMessage: "Orders",
+            }),
+            value: summary?.orderCount ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.aov",
+              defaultMessage: "Avg order value",
+            }),
+            value: summary?.aov ?? 0,
+          },
+          {
+            label: intl.formatMessage({
+              id: "report.kpi.quantity",
+              defaultMessage: "Quantity",
+            }),
+            value: summary?.quantity ?? 0,
+          },
+        ],
+      },
+    });
+  const onPrint = () => printReport();
 
   const loading =
     summaryQuery.isLoading || trendQuery.isLoading || dimQuery.isLoading;
 
   return (
-    <div className="flex flex-col gap-5 print-area" ref={printRef}>
+    <div className="flex flex-col gap-5">
       <div className="no-print flex justify-end gap-2">
         <AiReportNarrate
           reportType="sales"
@@ -187,12 +250,30 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
             deltaPercent: summary?.deltaPercent,
           }}
         />
-        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onExport}>
-          <Download className="size-3.5" aria-hidden />
-          {intl.formatMessage({
-            id: "report.export.excel",
-            defaultMessage: "Export Excel",
-          })}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 px-2.5"
+          onClick={onExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Download className="size-3.5" aria-hidden />
+          )}
+          {intl.formatMessage(
+            isExporting
+              ? {
+                  id: "reports.export.loading",
+                  defaultMessage: "Preparing export…",
+                }
+              : {
+                  id: "report.export.excel",
+                  defaultMessage: "Export Excel",
+                },
+          )}
         </Button>
         <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onPrint}>
           <Printer className="size-3.5" aria-hidden />
@@ -389,6 +470,21 @@ export const SalesReport = ({ filters }: SalesReportProps) => {
           </Card>
         </>
       )}
+
+      <ReportPrintSheet
+        title={intl.formatMessage({
+          id: "report.tab.sales",
+          defaultMessage: "Sales",
+        })}
+        dateFrom={filters.dateFrom}
+        dateTo={filters.dateTo}
+        columns={tableColumns}
+        rows={dimRows as Record<string, unknown>[]}
+        emptyMessage={intl.formatMessage({
+          id: "report.empty",
+          defaultMessage: "No data for the selected filters.",
+        })}
+      />
     </div>
   );
 };

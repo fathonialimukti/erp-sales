@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2, Plus, Save, Trash2, Flag, CalendarRange, MapPinned, UserRound, Store, Wallet } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -12,6 +12,9 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
+import { FormLayout } from "../../components/FormLayout";
+import { FormFooter } from "../../components/FormFooter";
+import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SelectSearch } from "../../components/SelectSearch";
 import { AiFillButton } from '@/components/AiFillButton';
@@ -143,6 +146,26 @@ export const ActionProgramFormPage = () => {
     },
     budgetLineId: (v: unknown) => form.setFieldValue("budgetLineId" as never, String(v) as never),
   });
+
+  // Live values drive the preview rail — re-renders on every keystroke.
+  const live = useStore(form.store, (s) => s.values) as FormValues;
+  const filled = [
+    live.name,
+    live.actionTypeId,
+    live.startDate,
+    live.endDate,
+    live.areaId,
+    live.picId,
+    live.outlets.length > 0 ? "x" : "",
+  ].filter((v) => String(v ?? "").trim().length > 0).length;
+  const actionTypeName =
+    (actionTypes?.data ?? []).find((at) => at.id === live.actionTypeId)?.name ?? "";
+  const areaName = (areas?.data ?? []).find((a) => a.id === live.areaId)?.name ?? "";
+  const picName = (users?.data ?? []).find((u) => u.id === live.picId)?.name ?? "";
+  const dateRange =
+    live.startDate && live.endDate
+      ? `${live.startDate} → ${live.endDate}`
+      : (live.startDate || live.endDate || "");
 
   const { data: budgetLines } = useQuery({
     queryKey: ["budgetLineOptions", form.state.values.areaId],
@@ -291,6 +314,64 @@ export const ActionProgramFormPage = () => {
           }
         />
 
+      <FormLayout
+        sidebar={
+          <FormPreview
+            module="planning"
+            icon={Flag}
+            title={live.name}
+            subtitle={actionTypeName || undefined}
+            status={!isEdit ? "DRAFT" : undefined}
+            filled={filled}
+            total={7}
+            rows={[
+              {
+                icon: CalendarRange,
+                label: intl.formatMessage({
+                  id: "action_program.preview.period",
+                  defaultMessage: "Period",
+                }),
+                value: dateRange,
+              },
+              {
+                icon: MapPinned,
+                label: intl.formatMessage({
+                  id: "action_program.form.field_area",
+                  defaultMessage: "Area",
+                }),
+                value: areaName,
+              },
+              {
+                icon: UserRound,
+                label: intl.formatMessage({
+                  id: "action_program.form.field_pic",
+                  defaultMessage: "PIC",
+                }),
+                value: picName,
+              },
+              {
+                icon: Store,
+                label: intl.formatMessage({
+                  id: "action_program.preview.outlets",
+                  defaultMessage: "Outlets",
+                }),
+                value: intl.formatMessage(
+                  { id: "form.preview.outlets", defaultMessage: "{count} outlets" },
+                  { count: live.outlets.length },
+                ),
+              },
+              {
+                icon: Wallet,
+                label: intl.formatMessage({
+                  id: "action_program.form.field_currency",
+                  defaultMessage: "Currency",
+                }),
+                value: live.budgetCurrency,
+              },
+            ]}
+          />
+        }
+      >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -312,6 +393,9 @@ export const ActionProgramFormPage = () => {
         />
 
         <FormSection
+          icon={Flag}
+          step={1}
+          tone="planning"
           title={intl.formatMessage({
             id: "action_program.form.section_basic",
             defaultMessage: "Basic information",
@@ -668,7 +752,7 @@ export const ActionProgramFormPage = () => {
           </div>
         </FormSection>
       
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+        <FormFooter>
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
@@ -685,8 +769,9 @@ export const ActionProgramFormPage = () => {
                 defaultMessage: "Save",
               })}
             </Button>
-        </div>
-</form>
+        </FormFooter>
+      </form>
+      </FormLayout>
 
       <ConfirmDialog
         open={modalStage === "confirm"}

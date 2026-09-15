@@ -1,4 +1,4 @@
-# ERP Sales Management System Overview
+# B2B CRM Management System Overview
 
 This is a Sales ERP (Customer Relationship Management + Sales Order) system for managing the sales field force, customers, outlets, products (SKUs), sales orders, visit logs, and promotional programs.
 
