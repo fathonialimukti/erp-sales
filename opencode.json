@@ -1,5 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "webfetch": "allow",
+    "websearch": "allow"
+  },
   "mcp": {
     "context7": {
       "type": "remote",

@@ -30,6 +30,9 @@ module.exports = {
         NODE_ENV: 'development',
         OPENCODE_SERVER_USERNAME: 'fathoni',
         OPENCODE_SERVER_PASSWORD: 'Fathoni8A;',
+        // Enables the built-in websearch tool for non-OpenCode providers
+        // (e.g. routers9). Backend is OpenCode's hosted search, no extra key.
+        OPENCODE_ENABLE_EXA: '1',
       },
     },
   ],
