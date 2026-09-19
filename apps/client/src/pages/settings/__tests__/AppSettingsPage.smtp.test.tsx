@@ -97,7 +97,12 @@ vi.mock("@/lib/hooks/useSettings", () => ({
     isLoading: false,
     isError: false,
   }),
-  useUpdateAppSettings: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateAppSettings: () => ({
+    // Real hook resolves the mutation then runs onSuccess, which is where the
+    // legacy SMTP store (`settings.update`) is persisted — mirror that here.
+    mutate: vi.fn((_input, opts) => opts?.onSuccess?.()),
+    isPending: false,
+  }),
   useUserSettings: () => ({ data: undefined, isLoading: false, isError: false }),
   useUpdateUserSettings: () => ({ mutate: vi.fn(), isPending: false }),
 }));
@@ -141,6 +146,17 @@ const encryptionTrigger = () => {
   return el;
 };
 
+/**
+ * The shared "Save changes" button is gated on the app-settings form being
+ * dirty (`isDirty`), so an SMTP-only edit leaves it disabled. Dirty the app
+ * form the way a user would so the button becomes clickable.
+ */
+const dirtyAppForm = () => {
+  fireEvent.change(screen.getByLabelText(/^company name$/i), {
+    target: { value: "Acme Corp (smtp test)" },
+  });
+};
+
 beforeEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -176,7 +192,8 @@ describe("AppSettingsPage SMTP form", () => {
     fireEvent.change(screen.getByLabelText(/^host$/i), {
       target: { value: "smtp.mailgun.org" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    dirtyAppForm();
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => expect(mocks.legacyUpdate).toHaveBeenCalledTimes(1));
     const patch = mocks.legacyUpdate.mock.calls[0]?.[0];
@@ -190,7 +207,8 @@ describe("AppSettingsPage SMTP form", () => {
     fireEvent.change(await screen.findByLabelText(/^host$/i), {
       target: { value: "smtp.example.net" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    dirtyAppForm();
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => expect(mocks.legacyUpdate).toHaveBeenCalledTimes(1));
     const patch = mocks.legacyUpdate.mock.calls[0]?.[0];
@@ -210,7 +228,8 @@ describe("AppSettingsPage SMTP form", () => {
 
     expect(encryptionTrigger()).toHaveTextContent("SSL/TLS");
 
-    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    dirtyAppForm();
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
     await waitFor(() => expect(mocks.legacyUpdate).toHaveBeenCalledTimes(1));
     const patch = mocks.legacyUpdate.mock.calls[0]?.[0];
     expect(patch.smtp).toMatchObject({ port: 465, secure: "ssl" });

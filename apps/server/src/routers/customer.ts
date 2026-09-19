@@ -68,7 +68,7 @@ export const customerRouter = router({
         resource: 'customer',
         resourceId: created.id,
         message: `Created customer ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -90,7 +90,7 @@ export const customerRouter = router({
         resource: 'customer',
         resourceId: updated.id,
         message: `Updated customer ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -111,7 +111,7 @@ export const customerRouter = router({
         resource: 'customer',
         resourceId: existing.id,
         message: `Deleted customer ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };
@@ -131,7 +131,7 @@ export const customerRouter = router({
         resource: 'customer_contact',
         resourceId: contact.id,
         message: `Added contact ${contact.name} for customer`,
-        detail: buildCreateLogDetail(contact as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(contact),
       });
 
       return contact;
@@ -153,7 +153,7 @@ export const customerRouter = router({
         resource: 'customer_contact',
         resourceId: updated.id,
         message: `Updated contact ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -174,7 +174,7 @@ export const customerRouter = router({
         resource: 'customer_contact',
         resourceId: existing.id,
         message: `Removed contact ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

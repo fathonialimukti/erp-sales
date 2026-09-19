@@ -77,12 +77,11 @@ describe("settings move to user modal", () => {
     ).toEqual([]);
   });
 
-  it("orders the menu Profile → Personal settings → App settings → Log out", async () => {
+  it("orders the menu Profile → Personal settings → Log out", async () => {
     const items = await openMenu(["settings@app@read"]);
     expect(items.map((el) => el.textContent)).toEqual([
       "Profile",
       "Personal settings",
-      "App settings",
       "Log out",
     ]);
   });
@@ -98,20 +97,27 @@ describe("settings move to user modal", () => {
     );
   });
 
-  it("navigates to app settings (/settings) from the modal", async () => {
-    await openMenu(["settings@app@read"]);
-    fireEvent.click(screen.getByRole("menuitem", { name: "App settings" }));
+  it("navigates to personal settings (/setting) without requiring settings@app@read", async () => {
+    await openMenu([]);
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Personal settings" }),
+    );
 
     await waitFor(() =>
-      expect(screen.getByTestId("pathname")).toHaveTextContent(/^\/settings$/),
+      expect(screen.getByTestId("pathname")).toHaveTextContent(/^\/setting$/),
     );
   });
 
-  it("shows the app settings entry when the user has settings@app@read", async () => {
-    await openMenu(["settings@app@read"]);
+  it("renders no App settings entry even when the user has settings@app@read", async () => {
+    const items = await openMenu(["settings@app@read"]);
+    expect(items.map((el) => el.textContent)).toEqual([
+      "Profile",
+      "Personal settings",
+      "Log out",
+    ]);
     expect(
-      screen.getByRole("menuitem", { name: "App settings" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("menuitem", { name: "App settings" }),
+    ).not.toBeInTheDocument();
   });
 
   it("hides the app settings entry when the user lacks settings@app@read", async () => {

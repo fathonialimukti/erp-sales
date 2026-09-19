@@ -109,7 +109,7 @@ export const backupRouter = router({
         resource: 'backup',
         resourceId: created.id,
         message: `Created backup ${created.filename}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -131,7 +131,7 @@ export const backupRouter = router({
         resource: 'backup',
         resourceId: existing.id,
         message: `Deleted backup ${existing.filename}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

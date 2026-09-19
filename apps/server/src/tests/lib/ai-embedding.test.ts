@@ -9,8 +9,20 @@ import {
 import { prisma } from '../../lib/prisma.js';
 import { setAppSettings, type AppSettingsPatch } from '../../lib/settings-service.js';
 
-// AI provider env vars consumed by settings-service fallbacks.
-const ENV_KEYS = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'AI_EMBEDDING_DIMENSIONS'] as const;
+// AI provider env vars consumed by settings-service fallbacks. The live .env
+// holds real provider config, and getSettingValue resolves DB row -> env ->
+// default, so wiping the DB rows alone still leaves the env vars in charge.
+// Clear the full AI_* set per test for a clean slate; the env-reading tests
+// set exactly the vars they need.
+const ENV_KEYS = [
+  'AI_BASE_URL',
+  'AI_API_KEY',
+  'AI_MODEL',
+  'AI_EMBEDDING_BASE_URL',
+  'AI_EMBEDDING_API_KEY',
+  'AI_EMBEDDING_MODEL',
+  'AI_EMBEDDING_DIMENSIONS',
+] as const;
 const saved: Partial<Record<(typeof ENV_KEYS)[number], string | undefined>> = {};
 
 function stashEnv() {
@@ -64,6 +76,8 @@ beforeEach(async () => {
     });
   }
   stashEnv();
+  // start each test from a clean AI env — restoreEnv() in afterEach puts them back
+  for (const key of ENV_KEYS) delete process.env[key];
   await resetSettings([...AI_KEYS, 'embedding.similarityThreshold']);
 });
 

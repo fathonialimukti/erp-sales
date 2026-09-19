@@ -54,7 +54,7 @@ export const knowledgeBaseRouter = router({
         resource: 'knowledge-base',
         resourceId: created.id,
         message: `Created knowledge entry ${created.title}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       // Mark pending before fire-and-forget embed — never fail the mutation.
@@ -84,7 +84,7 @@ export const knowledgeBaseRouter = router({
         resource: 'knowledge-base',
         resourceId: updated.id,
         message: `Updated knowledge entry ${updated.title}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       const contentChanged =
@@ -122,7 +122,7 @@ export const knowledgeBaseRouter = router({
         resource: 'knowledge-base',
         resourceId: existing.id,
         message: `Deleted knowledge entry ${existing.title}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

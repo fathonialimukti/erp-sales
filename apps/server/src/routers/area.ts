@@ -65,7 +65,7 @@ export const areaRouter = router({
         resource: 'area',
         resourceId: created.id,
         message: `Created area ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -93,7 +93,7 @@ export const areaRouter = router({
         resource: 'area',
         resourceId: updated.id,
         message: `Updated area ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -114,7 +114,7 @@ export const areaRouter = router({
         resource: 'area',
         resourceId: existing.id,
         message: `Deleted area ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

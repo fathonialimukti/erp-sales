@@ -30,46 +30,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/api-base";
+import { isAcceptableImage } from "@/lib/attach-limits";
+import { normalizeRoutePath } from "@/lib/route-aliases";
 import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 
-const ROUTE_ALIASES: Record<string, string> = {
-  "/": "/dashboard",
-  "/sku": "/skus",
-  "/sku/new": "/skus/new",
-  "/sku/create": "/skus/new",
-  "/warehouses": "/warehouse",
-  "/warehouses/new": "/warehouse/new",
-  "/users/create": "/users/new",
-  "/roles": "/access-control/roles",
-  "/roles/new": "/access-control/roles/new",
-  "/access-control": "/access-control/roles",
-  "/stock-movements": "/stock-movement",
-  "/receiving-transactions": "/inbound-transaction",
-  "/receiving-transactions/new": "/inbound-transaction/receiving/new",
-  "/shipments": "/outbound-transaction",
-  "/shipments/new": "/outbound-transaction/shipment/new",
-  "/disposals": "/outbound-transaction",
-  "/disposals/new": "/outbound-transaction/disposal/new",
-  "/loss-transactions": "/outbound-transaction",
-  "/loss-transactions/new": "/outbound-transaction/loss/new",
-  "/found-transactions": "/inbound-transaction",
-  "/found-transactions/new": "/inbound-transaction/found/new",
-  "/rma-receipts": "/inbound-transaction",
-  "/rma-receipts/new": "/inbound-transaction/rma-receipt/new",
-  "/wip-completions": "/inbound-transaction",
-  "/wip-completions/new": "/inbound-transaction/wip-completion/new",
-  "/wip-issues": "/outbound-transaction",
-  "/wip-issues/new": "/outbound-transaction/wip-issue/new",
-  "/return-to-supplier": "/outbound-transaction",
-  "/return-to-supplier/new": "/outbound-transaction/return-to-supplier/new",
-};
 
-const normalizeRoutePath = (path: string) => {
-  const trimmedPath = path.trim();
-  return ROUTE_ALIASES[trimmedPath] ?? trimmedPath;
-};
 
-const MAX_ATTACH_SIZE_BYTES = 5 * 1024 * 1024;
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -625,7 +591,7 @@ const AiAdminChatPage = () => {
     let skippedCount = 0;
     const accepted: File[] = [];
     for (const file of files) {
-      if (file.type.startsWith("image/") && file.size <= MAX_ATTACH_SIZE_BYTES) {
+      if (isAcceptableImage(file)) {
         accepted.push(file);
       } else {
         skippedCount += 1;

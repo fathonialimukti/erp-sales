@@ -6,7 +6,7 @@ type JsonCompatible = Prisma.InputJsonValue;
  * Build a log detail object for a CREATE action.
  * Captures the full created record for audit trail.
  */
-export function buildCreateLogDetail(record: Record<string, unknown>): JsonCompatible {
+export function buildCreateLogDetail(record: object): JsonCompatible {
   return { created: record } as unknown as JsonCompatible;
 }
 
@@ -15,14 +15,16 @@ export function buildCreateLogDetail(record: Record<string, unknown>): JsonCompa
  * Captures original values and changed values, plus the list of changed field names.
  */
 export function buildUpdateLogDetail(
-  before: Record<string, unknown>,
-  after: Record<string, unknown>,
+  before: object,
+  after: object,
 ): JsonCompatible {
+  const beforeObj = before as Record<string, unknown>;
+  const afterObj = after as Record<string, unknown>;
   const changes: Record<string, { from: unknown; to: unknown }> = {};
 
-  for (const key of Object.keys(after)) {
-    const beforeVal = before[key];
-    const afterVal = after[key];
+  for (const key of Object.keys(afterObj)) {
+    const beforeVal = beforeObj[key];
+    const afterVal = afterObj[key];
 
     if (JSON.stringify(beforeVal) !== JSON.stringify(afterVal)) {
       changes[key] = { from: beforeVal, to: afterVal };
@@ -30,8 +32,8 @@ export function buildUpdateLogDetail(
   }
 
   return {
-    before: { id: before.id, name: (before as { name?: string }).name },
-    after: { id: after.id, name: (after as { name?: string }).name },
+    before: { id: beforeObj.id, name: beforeObj.name as string | undefined },
+    after: { id: afterObj.id, name: afterObj.name as string | undefined },
     changes,
   } as unknown as JsonCompatible;
 }
@@ -40,6 +42,7 @@ export function buildUpdateLogDetail(
  * Build a log detail object for a DELETE action.
  * Captures what was deleted.
  */
-export function buildDeleteLogDetail(record: Record<string, unknown>): JsonCompatible {
-  return { deleted: { id: record.id, name: (record as { name?: string }).name } } as unknown as JsonCompatible;
+export function buildDeleteLogDetail(record: object): JsonCompatible {
+  const r = record as Record<string, unknown>;
+  return { deleted: { id: r.id, name: r.name as string | undefined } } as unknown as JsonCompatible;
 }

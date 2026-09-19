@@ -144,7 +144,7 @@ export const emailCrmRouter = router({
         resource: 'email-crm',
         resourceId: created.id,
         message: `Created email conversation ${created.email}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -182,8 +182,8 @@ export const emailCrmRouter = router({
         resourceId: updated.id,
         message: `Updated email conversation ${updated.email}`,
         detail: buildUpdateLogDetail(
-          existing as unknown as Record<string, unknown>,
-          updated as unknown as Record<string, unknown>,
+          existing,
+          updated,
         ),
       });
 
@@ -205,7 +205,7 @@ export const emailCrmRouter = router({
         resource: 'email-crm',
         resourceId: existing.id,
         message: `Deleted email conversation ${existing.email}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };
@@ -249,7 +249,7 @@ export const emailCrmRouter = router({
         resource: 'email-crm',
         resourceId: conversation.id,
         message: `Added ${message.direction} message to ${conversation.email}`,
-        detail: buildCreateLogDetail(message as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(message),
       });
 
       return message;
@@ -397,7 +397,7 @@ export const emailCrmRouter = router({
           resource: 'email-crm',
           resourceId: conversation.id,
           message: `Saved AI suggested reply for ${conversation.email}`,
-          detail: buildCreateLogDetail(saved as unknown as Record<string, unknown>),
+          detail: buildCreateLogDetail(saved),
         });
       }
 
@@ -481,7 +481,7 @@ export const emailCrmRouter = router({
         resource: 'email-crm',
         resourceId: conversation.id,
         message: `Created draft sales order ${order.documentNumber ?? order.id} from email conversation`,
-        detail: buildCreateLogDetail(order as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(order),
       });
 
       return order;
@@ -593,7 +593,7 @@ export const emailCrmRouter = router({
         resource: 'email-crm',
         resourceId: conversation.id,
         message: `Sent outbound email to ${conversation.email}`,
-        detail: buildCreateLogDetail(message as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(message),
       });
 
       return message;

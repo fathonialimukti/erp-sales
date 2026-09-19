@@ -39,7 +39,7 @@ export const permissionRouter = router({
         resource: 'permission',
         resourceId: created.id,
         message: `Created permission ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -59,10 +59,7 @@ export const permissionRouter = router({
         resource: 'permission',
         resourceId: updated.id,
         message: `Updated permission ${updated.name}`,
-        detail: buildUpdateLogDetail(
-          (existing ?? {}) as unknown as Record<string, unknown>,
-          updated as unknown as Record<string, unknown>,
-        ),
+        detail: buildUpdateLogDetail(existing ?? {}, updated),
       });
 
       return updated;
@@ -81,7 +78,7 @@ export const permissionRouter = router({
         resource: 'permission',
         resourceId: input.id,
         message: `Deleted permission ${existing?.name ?? input.id}`,
-        detail: buildDeleteLogDetail((existing ?? {}) as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing ?? {}),
       });
 
       return { success: true };

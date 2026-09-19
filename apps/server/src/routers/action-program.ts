@@ -156,7 +156,7 @@ export const actionProgramRouter = router({
         resource: 'action_program',
         resourceId: created.id,
         message: `Created action program ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -272,7 +272,7 @@ export const actionProgramRouter = router({
         resource: 'action_program',
         resourceId: updated.id,
         message: `Updated action program ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -293,7 +293,7 @@ export const actionProgramRouter = router({
         resource: 'action_program',
         resourceId: existing.id,
         message: `Deleted action program ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };
@@ -315,7 +315,7 @@ export const actionProgramRouter = router({
         });
       }
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'AI Validation',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -327,7 +327,7 @@ export const actionProgramRouter = router({
           where: { id: input.id, approvalStatus: 'DRAFT' },
           data: {
             approvalStatus: 'VALIDATING',
-            approvalHistory: history as any,
+            approvalHistory: history,
           },
         });
         if (result.count === 0) {
@@ -360,7 +360,7 @@ export const actionProgramRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Action program not found.' });
       if (existing.approvalStatus !== 'VALIDATING') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING programs can start approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Area Manager',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -374,7 +374,7 @@ export const actionProgramRouter = router({
             approvalStatus: 'PROPOSED',
             areaManagerApprovedById: ctx.user.userId,
             areaManagerApprovedAt: new Date(),
-            approvalHistory: history as any,
+            approvalHistory: history,
           },
         });
         if (result.count === 0) {
@@ -409,7 +409,7 @@ export const actionProgramRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
       if (existing.approvalStatus !== 'PROPOSED' || !existing.areaManagerApprovedAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Area Manager approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Regional Manager',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -419,7 +419,7 @@ export const actionProgramRouter = router({
       const updated = await prisma.$transaction(async (tx) => {
         const result = await tx.actionProgram.updateMany({
           where: { id: idInput.id, regionManagerApprovedAt: null, areaManagerApprovedAt: { not: null } },
-          data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history as any },
+          data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Area Manager approval.' });
@@ -453,7 +453,7 @@ export const actionProgramRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
       if (!existing.regionManagerApprovedAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Region Manager approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Finance PIC',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -463,7 +463,7 @@ export const actionProgramRouter = router({
       const updated = await prisma.$transaction(async (tx) => {
         const result = await tx.actionProgram.updateMany({
           where: { id: idInput.id, financeManagerApprovedAt: null, regionManagerApprovedAt: { not: null } },
-          data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history as any },
+          data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Region Manager approval.' });
@@ -497,7 +497,7 @@ export const actionProgramRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
       if (!existing.financeManagerApprovedAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Finance approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Director',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -507,7 +507,7 @@ export const actionProgramRouter = router({
       const updated = await prisma.$transaction(async (tx) => {
         const result = await tx.actionProgram.updateMany({
           where: { id: idInput.id, approvalStatus: 'PROPOSED', financeManagerApprovedAt: { not: null } },
-          data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history as any },
+          data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Finance approval.' });
@@ -541,7 +541,7 @@ export const actionProgramRouter = router({
       const existing = await prisma.actionProgram.findUnique({ where: { id: idInput.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Reject',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -552,7 +552,7 @@ export const actionProgramRouter = router({
         // Rejectable while in-flight (VALIDATING or PROPOSED), not after full approval.
         const result = await tx.actionProgram.updateMany({
           where: { id: idInput.id, approvalStatus: { in: ['VALIDATING', 'PROPOSED'] } },
-          data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+          data: { approvalStatus: 'REJECTED', approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only in-review programs can be rejected.' });

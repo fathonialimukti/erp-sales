@@ -170,7 +170,7 @@ export const eventProposalRouter = router({
         resource: 'event_proposal',
         resourceId: created.id,
         message: `Created event proposal ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -298,7 +298,7 @@ export const eventProposalRouter = router({
         resource: 'event_proposal',
         resourceId: updated.id,
         message: `Updated event proposal ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -319,7 +319,7 @@ export const eventProposalRouter = router({
         resource: 'event_proposal',
         resourceId: existing.id,
         message: `Deleted event proposal ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };
@@ -341,7 +341,7 @@ export const eventProposalRouter = router({
         });
       }
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'AI Validation',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -353,7 +353,7 @@ export const eventProposalRouter = router({
           where: { id: input.id, approvalStatus: 'DRAFT' },
           data: {
             approvalStatus: 'VALIDATING',
-            approvalHistory: history as any,
+            approvalHistory: history,
           },
         });
         if (result.count === 0) {
@@ -386,7 +386,7 @@ export const eventProposalRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
       if (existing.approvalStatus !== 'VALIDATING') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING proposals can start approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Area Manager',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -396,7 +396,7 @@ export const eventProposalRouter = router({
       const updated = await prisma.$transaction(async (tx) => {
         const result = await tx.eventProposal.updateMany({
           where: { id: idInput.id, approvalStatus: 'VALIDATING', areaManagerApprovedAt: null },
-          data: { approvalStatus: 'PROPOSED', areaManagerApprovedById: ctx.user.userId, areaManagerApprovedAt: new Date(), approvalHistory: history as any },
+          data: { approvalStatus: 'PROPOSED', areaManagerApprovedById: ctx.user.userId, areaManagerApprovedAt: new Date(), approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING proposals can start approval.' });
@@ -430,7 +430,7 @@ export const eventProposalRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
       if (existing.approvalStatus !== 'PROPOSED' || !existing.areaManagerApprovedAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Area Manager approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Regional Manager',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -440,7 +440,7 @@ export const eventProposalRouter = router({
       const updated = await prisma.$transaction(async (tx) => {
         const result = await tx.eventProposal.updateMany({
           where: { id: idInput.id, regionManagerApprovedAt: null, areaManagerApprovedAt: { not: null } },
-          data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history as any },
+          data: { regionManagerApprovedById: ctx.user.userId, regionManagerApprovedAt: new Date(), approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Area Manager approval.' });
@@ -474,7 +474,7 @@ export const eventProposalRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
       if (!existing.regionManagerApprovedAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Region Manager approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Finance PIC',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -484,7 +484,7 @@ export const eventProposalRouter = router({
       const updated = await prisma.$transaction(async (tx) => {
         const result = await tx.eventProposal.updateMany({
           where: { id: idInput.id, financeManagerApprovedAt: null, regionManagerApprovedAt: { not: null } },
-          data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history as any },
+          data: { financeManagerApprovedById: ctx.user.userId, financeManagerApprovedAt: new Date(), approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Region Manager approval.' });
@@ -518,7 +518,7 @@ export const eventProposalRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
       if (!existing.financeManagerApprovedAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Finance approval.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Director',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -528,7 +528,7 @@ export const eventProposalRouter = router({
       const updated = await prisma.$transaction(async (tx) => {
         const result = await tx.eventProposal.updateMany({
           where: { id: idInput.id, approvalStatus: 'PROPOSED', financeManagerApprovedAt: { not: null } },
-          data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history as any },
+          data: { approvalStatus: 'APPROVED', directorApprovedById: ctx.user.userId, directorApprovedAt: new Date(), approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Waiting for Finance approval.' });
@@ -562,7 +562,7 @@ export const eventProposalRouter = router({
       const existing = await prisma.eventProposal.findUnique({ where: { id: idInput.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Reject',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -573,7 +573,7 @@ export const eventProposalRouter = router({
         // Rejectable while in-flight (VALIDATING or PROPOSED), not after full approval.
         const result = await tx.eventProposal.updateMany({
           where: { id: idInput.id, approvalStatus: { in: ['VALIDATING', 'PROPOSED'] } },
-          data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+          data: { approvalStatus: 'REJECTED', approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only in-review proposals can be rejected.' });

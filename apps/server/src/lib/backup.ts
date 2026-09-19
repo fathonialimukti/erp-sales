@@ -103,7 +103,7 @@ function extractForeignKeyEdges(schemaText: string): Map<string, string[]> {
 
 // ponytail: delegates are accessed by lowerFirst(modelName) via the client map
 function tableDelegate(db: DbClient, name: string): TableDelegate {
-    const delegate = (db as unknown as Record<string, unknown>)[name.charAt(0).toLowerCase() + name.slice(1)];
+    const delegate = (db as Record<string, unknown>)[name.charAt(0).toLowerCase() + name.slice(1)];
     if (!delegate) throw new Error(`UNKNOWN_TABLE: ${name}`);
     return delegate as TableDelegate;
 }

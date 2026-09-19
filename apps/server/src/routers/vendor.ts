@@ -48,7 +48,7 @@ export const vendorRouter = router({
         resource: 'vendor',
         resourceId: created.id,
         message: `Created vendor ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -73,7 +73,7 @@ export const vendorRouter = router({
         resource: 'vendor',
         resourceId: updated.id,
         message: `Updated vendor ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -94,7 +94,7 @@ export const vendorRouter = router({
         resource: 'vendor',
         resourceId: existing.id,
         message: `Deleted vendor ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

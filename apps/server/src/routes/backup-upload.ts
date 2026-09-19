@@ -52,7 +52,7 @@ export const backupUploadHandler = withAuth({ permission: 'backup@restore' }, as
         resource: 'backup',
         resourceId: created.id,
         message: `Uploaded backup ${created.filename}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
     });
 
     res.status(201).json({ backup: created });

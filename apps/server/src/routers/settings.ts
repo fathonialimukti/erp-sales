@@ -137,8 +137,8 @@ export const settingsRouter = router({
           resourceId: 'app',
           message: 'Updated app settings',
           detail: buildUpdateLogDetail(
-            { ...APP_SETTINGS_DEFAULTS, ...beforeMap } as unknown as Record<string, unknown>,
-            { ...APP_SETTINGS_DEFAULTS, ...afterMap } as unknown as Record<string, unknown>,
+            { ...APP_SETTINGS_DEFAULTS, ...beforeMap },
+            { ...APP_SETTINGS_DEFAULTS, ...afterMap },
           ),
         });
 
@@ -190,8 +190,8 @@ export const settingsRouter = router({
           resourceId: `user:${userId}`,
           message: 'Updated user settings',
           detail: buildUpdateLogDetail(
-            { ...USER_SETTINGS_DEFAULTS, ...beforeMap } as unknown as Record<string, unknown>,
-            { ...USER_SETTINGS_DEFAULTS, ...afterMap } as unknown as Record<string, unknown>,
+            { ...USER_SETTINGS_DEFAULTS, ...beforeMap },
+            { ...USER_SETTINGS_DEFAULTS, ...afterMap },
           ),
         });
 

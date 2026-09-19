@@ -74,7 +74,7 @@ export const visitLogRouter = router({
         resource: 'visit_log',
         resourceId: created.id,
         message: `Created visit log at ${created.date.toISOString()}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -104,7 +104,7 @@ export const visitLogRouter = router({
         resource: 'visit_log',
         resourceId: updated.id,
         message: `Updated visit log`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -125,7 +125,7 @@ export const visitLogRouter = router({
         resource: 'visit_log',
         resourceId: existing.id,
         message: `Deleted visit log`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

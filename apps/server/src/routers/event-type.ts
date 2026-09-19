@@ -43,7 +43,7 @@ export const eventTypeRouter = router({
         resource: 'event_type',
         resourceId: created.id,
         message: `Created event type ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -68,7 +68,7 @@ export const eventTypeRouter = router({
         resource: 'event_type',
         resourceId: updated.id,
         message: `Updated event type ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -89,7 +89,7 @@ export const eventTypeRouter = router({
         resource: 'event_type',
         resourceId: existing.id,
         message: `Deleted event type ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

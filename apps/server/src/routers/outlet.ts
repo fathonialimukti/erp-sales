@@ -71,7 +71,7 @@ export const outletRouter = router({
         resource: 'outlet',
         resourceId: created.id,
         message: `Created outlet ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -93,7 +93,7 @@ export const outletRouter = router({
         resource: 'outlet',
         resourceId: updated.id,
         message: `Updated outlet ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -114,7 +114,7 @@ export const outletRouter = router({
         resource: 'outlet',
         resourceId: existing.id,
         message: `Deleted outlet ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

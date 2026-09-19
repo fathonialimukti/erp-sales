@@ -156,7 +156,7 @@ export const budgetLineRouter = router({
         resource: 'budget_line',
         resourceId: created.id,
         message: `Created budget line ${created.scope} ${created.amount}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -201,7 +201,7 @@ export const budgetLineRouter = router({
         resource: 'budget_line',
         resourceId: updated.id,
         message: `Updated budget line ${updated.scope} ${updated.amount}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -222,7 +222,7 @@ export const budgetLineRouter = router({
         resource: 'budget_line',
         resourceId: existing.id,
         message: `Deleted budget line ${existing.scope}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

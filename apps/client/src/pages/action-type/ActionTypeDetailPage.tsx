@@ -75,10 +75,10 @@ export const ActionTypeDetailPage = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "APPROVED": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{intl.formatMessage({ id: "common.status.approved", defaultMessage: "Approved" })}</span>;
-      case "DRAFT": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{intl.formatMessage({ id: "common.status.draft", defaultMessage: "Draft" })}</span>;
-      case "VALIDATING": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{intl.formatMessage({ id: "common.status.validating", defaultMessage: "Validating" })}</span>;
-      default: return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{status}</span>;
+      case "APPROVED": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success text-success-foreground">{intl.formatMessage({ id: "common.status.approved", defaultMessage: "Approved" })}</span>;
+      case "DRAFT": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{intl.formatMessage({ id: "common.status.draft", defaultMessage: "Draft" })}</span>;
+      case "VALIDATING": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{intl.formatMessage({ id: "common.status.validating", defaultMessage: "Validating" })}</span>;
+      default: return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{status}</span>;
     }
   };
 

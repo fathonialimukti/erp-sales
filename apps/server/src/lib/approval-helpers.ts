@@ -1,6 +1,6 @@
 import { prisma } from './prisma.js';
 import type { DbClient } from './prisma.js';
-import type { NotificationTargetType, NotificationType } from '../prisma/generated/client';
+import type { NotificationTargetType, NotificationType, Prisma } from '../prisma/generated/client';
 
 // Standard approval history entry: { process, name, dateTime, message }
 export interface ApprovalHistoryEntry {
@@ -13,9 +13,9 @@ export interface ApprovalHistoryEntry {
 export function pushApprovalHistory(
   existingHistory: unknown,
   entry: ApprovalHistoryEntry,
-): ApprovalHistoryEntry[] {
+): Prisma.InputJsonValue {
   const prev = Array.isArray(existingHistory) ? existingHistory : [];
-  return [...prev, entry];
+  return [...prev, entry] as unknown as Prisma.InputJsonValue;
 }
 
 export async function sendApprovalNotification(params: {

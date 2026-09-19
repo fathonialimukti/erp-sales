@@ -164,7 +164,7 @@ export const skuCategoryRouter = router({
         resource: 'sku_category',
         resourceId: created.id,
         message: `Created product category ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -186,7 +186,7 @@ export const skuCategoryRouter = router({
         resource: 'sku_category',
         resourceId: updated.id,
         message: `Updated product category ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -207,7 +207,7 @@ export const skuCategoryRouter = router({
         resource: 'sku_category',
         resourceId: existing.id,
         message: `Deleted product category ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

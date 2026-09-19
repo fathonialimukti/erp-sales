@@ -203,7 +203,7 @@ export const salesOrderRouter = router({
           resource: 'sales_order',
           resourceId: order.id,
           message: `Created sales order ${order.documentNumber ?? order.id}`,
-          detail: buildCreateLogDetail(order as unknown as Record<string, unknown>),
+          detail: buildCreateLogDetail(order),
         });
 
         return order;
@@ -285,7 +285,7 @@ export const salesOrderRouter = router({
           resource: 'sales_order',
           resourceId: order.id,
           message: `Updated sales order ${order.documentNumber ?? order.id}`,
-          detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, order as unknown as Record<string, unknown>),
+          detail: buildUpdateLogDetail(existing, order),
         });
 
         return order;
@@ -310,7 +310,7 @@ export const salesOrderRouter = router({
           resource: 'sales_order',
           resourceId: existing.id,
           message: `Deleted sales order ${existing.documentNumber ?? existing.id}`,
-          detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+          detail: buildDeleteLogDetail(existing),
         });
       });
 
@@ -333,7 +333,7 @@ export const salesOrderRouter = router({
         });
       }
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'AI Validation',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -347,7 +347,7 @@ export const salesOrderRouter = router({
           data: {
             approvalStatus: 'PROPOSED',
             proposedAt: new Date(),
-            approvalHistory: history as any,
+            approvalHistory: history,
           },
         });
         if (result.count === 0) {
@@ -416,7 +416,7 @@ export const salesOrderRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
       if (existing.approvalStatus !== 'DRAFT' && existing.approvalStatus !== 'REJECTED') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT or REJECTED orders can be proposed.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Submit',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -428,7 +428,7 @@ export const salesOrderRouter = router({
           where: { id: idInput.id, approvalStatus: { in: ['DRAFT', 'REJECTED'] } },
           data: {
             approvalStatus: 'VALIDATING',
-            approvalHistory: history as any,
+            approvalHistory: history,
           },
         });
         if (result.count === 0) {
@@ -462,7 +462,7 @@ export const salesOrderRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
       if (existing.approvalStatus !== 'PROPOSED') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only PROPOSED orders can be approved.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Approve',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -476,7 +476,7 @@ export const salesOrderRouter = router({
             approvalStatus: 'APPROVED',
             approvedById: ctx.user.userId,
             approvedAt: new Date(),
-            approvalHistory: history as any,
+            approvalHistory: history,
           },
         });
         if (result.count === 0) {
@@ -518,7 +518,7 @@ export const salesOrderRouter = router({
       const existing = await prisma.salesOrder.findUnique({ where: { id: idInput.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Reject',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
@@ -529,7 +529,7 @@ export const salesOrderRouter = router({
         // PROPOSED or VALIDATING (manager can reject while AI validation runs).
         const result = await tx.salesOrder.updateMany({
           where: { id: idInput.id, approvalStatus: { in: ['PROPOSED', 'VALIDATING'] } },
-          data: { approvalStatus: 'REJECTED', approvalHistory: history as any },
+          data: { approvalStatus: 'REJECTED', approvalHistory: history },
         });
         if (result.count === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only PROPOSED or VALIDATING orders can be rejected.' });

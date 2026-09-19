@@ -7,8 +7,6 @@ export const baseListInputSchema = z.object({
   search: z.string().optional(),
 });
 
-export const basePaginationInputSchema = baseListInputSchema.omit({ search: true });
-
 export function createListInputSchema(): z.ZodOptional<typeof baseListInputSchema>;
 export function createListInputSchema<T extends z.ZodRawShape>(
   extraShape: T,
@@ -21,17 +19,4 @@ export function createListInputSchema<T extends z.ZodRawShape>(extraShape?: T) {
   return baseListInputSchema.extend(extraShape).optional();
 }
 
-export function createPaginationInputSchema(): z.ZodOptional<typeof basePaginationInputSchema>;
-export function createPaginationInputSchema<T extends z.ZodRawShape>(
-  extraShape: T,
-): z.ZodOptional<ReturnType<typeof basePaginationInputSchema.extend<T>>>;
-export function createPaginationInputSchema<T extends z.ZodRawShape>(extraShape?: T) {
-  if (!extraShape) {
-    return basePaginationInputSchema.optional();
-  }
-
-  return basePaginationInputSchema.extend(extraShape).optional();
-}
-
 export type BaseListInput = z.infer<typeof baseListInputSchema>;
-export type BasePaginationInput = z.infer<typeof basePaginationInputSchema>;

@@ -46,7 +46,7 @@ export const regionRouter = router({
         resource: 'region',
         resourceId: created.id,
         message: `Created region ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -71,7 +71,7 @@ export const regionRouter = router({
         resource: 'region',
         resourceId: updated.id,
         message: `Updated region ${updated.name}`,
-        detail: buildUpdateLogDetail(existing as unknown as Record<string, unknown>, updated as unknown as Record<string, unknown>),
+        detail: buildUpdateLogDetail(existing, updated),
       });
 
       return updated;
@@ -92,7 +92,7 @@ export const regionRouter = router({
         resource: 'region',
         resourceId: existing.id,
         message: `Deleted region ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

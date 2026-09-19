@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
+import { isAcceptableImage } from "@/lib/attach-limits";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
 import { EmptyState } from "../../components/EmptyState";
@@ -112,7 +113,6 @@ const sanitizeOutboundHtml = (html: string): string | null => {
   return cleaned.length > 0 ? cleaned : null;
 };
 
-const MAX_ATTACH_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACH_IMAGES = 4;
 
 /**
@@ -374,7 +374,7 @@ export const EmailCrmDetailPage = () => {
     let skippedCount = 0;
     const accepted: File[] = [];
     for (const file of files) {
-      if (file.type.startsWith("image/") && file.size <= MAX_ATTACH_SIZE_BYTES) {
+      if (isAcceptableImage(file)) {
         if (pendingImages.length + accepted.length >= MAX_ATTACH_IMAGES) {
           skippedCount += 1;
         } else {

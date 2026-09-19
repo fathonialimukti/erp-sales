@@ -115,7 +115,7 @@ export const BudgetPeriodIndexPage = () => {
           const isOpen = status === "OPEN";
           return (
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              isOpen ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+              isOpen ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
             }`}>
               {intl.formatMessage({ 
                 id: isOpen ? "budget_period.status.open" : "budget_period.status.closed", 

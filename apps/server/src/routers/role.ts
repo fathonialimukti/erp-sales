@@ -70,7 +70,7 @@ export const roleRouter = router({
         resource: 'role',
         resourceId: created.id,
         message: `Created role ${created.name}`,
-        detail: buildCreateLogDetail(created as unknown as Record<string, unknown>),
+        detail: buildCreateLogDetail(created),
       });
 
       return created;
@@ -114,8 +114,8 @@ export const roleRouter = router({
         resourceId: updated.id,
         message: `Updated role ${updated.name}`,
         detail: buildUpdateLogDetail(
-          existing as unknown as Record<string, unknown>,
-          updated as unknown as Record<string, unknown>,
+          existing,
+          updated,
         ),
       });
 
@@ -138,7 +138,7 @@ export const roleRouter = router({
         resource: 'role',
         resourceId: input.id,
         message: `Deleted role ${existing.name}`,
-        detail: buildDeleteLogDetail(existing as unknown as Record<string, unknown>),
+        detail: buildDeleteLogDetail(existing),
       });
 
       return { success: true };

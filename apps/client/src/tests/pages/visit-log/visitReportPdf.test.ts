@@ -159,7 +159,7 @@ describe("buildVisitReportPdfLabels", () => {
   it("resolves every label through the captured formatMessage", () => {
     const labels = buildVisitReportPdfLabels(t);
     expect(labels.title).toBe("Visit Report");
-    expect(labels.fallbackName).toBe("CRM");
+    expect(labels.fallbackName).toBe("B2B CRM");
     expect(labels.metaLinkedOrder).toBe("Linked sales order");
     expect(labels.signatureVisitedBy).toBe("Visited by");
   });

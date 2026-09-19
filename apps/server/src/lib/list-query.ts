@@ -1,6 +1,6 @@
 import type { Prisma } from '../prisma/generated/client';
 
-export type PaginationInput = {
+type PaginationInput = {
   page?: number;
   limit?: number;
   search?: string | undefined;

@@ -192,7 +192,7 @@ export const reportingRouter = router({
       });
 
       const ids = rows
-        .map((r) => (r as unknown as Record<string, string | null>)[field])
+        .map((r) => r[field])
         .filter((id): id is string => id !== null);
 
       let nameMap = new Map<string, string>();
@@ -224,7 +224,7 @@ export const reportingRouter = router({
       });
       const qtyByDim = new Map<string, number>();
       orders.forEach((o) => {
-        const rawKey = (o as unknown as Record<string, unknown>)[field];
+        const rawKey = (o)[field];
         const key = typeof rawKey === 'string' ? rawKey : null;
         if (key) {
           const qty = qtyByOrder.get((o as unknown as { id: string }).id) ?? 0;
@@ -233,7 +233,7 @@ export const reportingRouter = router({
       });
 
       return rows.map((r) => {
-        const id = (r as unknown as Record<string, string | null>)[field];
+        const id = r[field];
         return {
           id: id ?? 'unknown',
           label: id ? nameMap.get(id) ?? 'Unknown' : 'Unknown',

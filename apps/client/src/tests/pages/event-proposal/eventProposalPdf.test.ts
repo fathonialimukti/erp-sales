@@ -238,7 +238,7 @@ describe("buildEventProposalPdfLabels", () => {
   it("resolves every label through the captured formatMessage", () => {
     const labels = buildEventProposalPdfLabels(t);
     expect(labels.title).toBe("Event Proposal");
-    expect(labels.fallbackName).toBe("CRM");
+    expect(labels.fallbackName).toBe("B2B CRM");
     expect(labels.totalsGrand).toBe("Planned total");
   });
 
