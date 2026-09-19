@@ -6,6 +6,7 @@ import {
   formatKnowledgeHits,
   toKnowledgeSearchHits,
 } from './rag.js';
+import { checkCartonLines, cartonToolError, cartonBlockedSummary } from './carton-pack-size.js';
 import { prisma } from './prisma.js';
 import { getSettingValue } from './settings-service.js';
 
@@ -18,6 +19,12 @@ export type ConciergeFinalizedReply = {
 export type ConciergeRunState = {
   finalized?: ConciergeFinalizedReply;
   createdOrderDocNumbers: string[];
+  /**
+   * Set when createDraftOrder refused the lines (SPEC §2.1): no draft was
+   * written and the run ends with a buyer-facing question instead of an order,
+   * so the conversation is marked awaiting buyer confirmation rather than SENT.
+   */
+  cartonBlocked?: { kind: string; message: string };
 };
 
 async function nextSalesOrderDocumentNumber() {
@@ -228,7 +235,9 @@ export function createEmailConciergeTools(ctx: {
 
     createDraftOrder: tool({
       description:
-        'Create a DRAFT sales order linked to this email conversation (source EMAIL_CRM). Must be reviewed by staff.',
+        'Create a DRAFT sales order linked to this email conversation (source EMAIL_CRM). Must be reviewed by staff. ' +
+        'Quantities are in PIECES and must be a whole multiple of each product\'s pack size (whole cartons only) — ' +
+        'a non-multiple line is refused and you must reply to the buyer with the two nearest valid multiples instead.',
       inputSchema: z.object({
         customerId: z.string().describe('Customer ID from lookupCustomer'),
         outletId: z.string().describe('Outlet ID for delivery'),
@@ -236,7 +245,7 @@ export function createEmailConciergeTools(ctx: {
           .array(
             z.object({
               skuId: z.string().describe('Product SKU ID'),
-              quantity: z.number().positive().describe('Order quantity'),
+              quantity: z.number().positive().describe('Order quantity in PIECES — must be a whole multiple of the product pack size'),
               unitPrice: z.number().nonnegative().describe('Unit price'),
             }),
           )
@@ -260,12 +269,21 @@ export function createEmailConciergeTools(ctx: {
           return { error: 'Outlet does not belong to this customer' };
         }
 
+        // SPEC §2.1: the whole-carton gate runs BEFORE any write, so a broken
+        // line creates no draft at all. Report it back to the model as the
+        // buyer-facing question rather than failing the run.
+        const carton = await checkCartonLines(prisma, items);
+        if (!carton.ok) {
+          ctx.state.cartonBlocked = cartonBlockedSummary(carton);
+          return cartonToolError(carton);
+        }
+
         const createdById = await resolveSystemUserId();
         if (typeof createdById === 'object') return createdById;
 
         const documentNumber = await nextSalesOrderDocumentNumber();
         let subtotal = 0;
-        const itemData = items.map((item, idx) => {
+        const itemData = carton.lines.map((item, idx) => {
           const lineTotal = item.quantity * item.unitPrice;
           subtotal += lineTotal;
           return {
@@ -274,6 +292,8 @@ export function createEmailConciergeTools(ctx: {
             unitPrice: item.unitPrice,
             lineTotal,
             sortOrder: idx,
+            // SPEC §Data model: freeze the pack size the gate validated against.
+            packSize: item.packSize,
           };
         });
 

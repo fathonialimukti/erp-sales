@@ -32,6 +32,7 @@ import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { AiRejectionFixButton } from "../../components/AiRejectionFixButton";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { trpcClient } from "../../lib/trpc";
+import { cartonCount } from "@repo/schemas/sales-order";
 import { formatCurrency } from "@/lib/format";
 import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { useToast } from "../../components/useToast";
@@ -87,6 +88,9 @@ interface SalesOrderDetail {
     id: string;
     sku: { id: string; name: string; code: string | null; baseUnit: string };
     quantity: number;
+    /** Snapshot of Sku.packSize at line creation — the carton count is derived
+     * from THIS, never the live SKU, so a later repack can't rewrite history. */
+    packSize: number;
     unitPrice: number;
     discountPercent: number | null;
     taxPercent: number | null;
@@ -677,7 +681,16 @@ export const SalesOrderDetailPage = () => {
                     })}
                   </th>
                   <th className="px-3 py-3 text-right font-medium">
-                    {intl.formatMessage({ id: "sales_order.detail.qty", defaultMessage: "Qty" })}
+                    {intl.formatMessage({
+                      id: "sales_order.detail.qty_carton",
+                      defaultMessage: "Qty (carton)",
+                    })}
+                  </th>
+                  <th className="px-3 py-3 text-right font-medium">
+                    {intl.formatMessage({
+                      id: "sales_order.detail.qty_pcs",
+                      defaultMessage: "Qty (pcs)",
+                    })}
                   </th>
                   <th className="px-3 py-3 text-right font-medium">
                     {intl.formatMessage({
@@ -719,8 +732,10 @@ export const SalesOrderDetailPage = () => {
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">
-                      {item.quantity}{" "}
-                      <span className="text-foreground">{item.sku.baseUnit}</span>
+                      {cartonCount(item.quantity, item.packSize)}
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums">
+                      {item.quantity}
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">
                       {formatCurrency(item.unitPrice, recordCurrency)}

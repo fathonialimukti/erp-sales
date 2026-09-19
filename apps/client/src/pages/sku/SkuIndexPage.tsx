@@ -8,7 +8,7 @@ import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, packSizeLabel } from "@/lib/format";
 import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
@@ -32,6 +32,7 @@ type SkuRow = {
   code: string | null;
   name: string;
   basePrice: number | null;
+  packSize: number | null;
   _count: { salesOrderItems: number };
 };
 
@@ -107,6 +108,20 @@ export const SkuIndexPage = () => {
         cell: ({ row }) => (
           <span className="block text-right tabular-nums text-foreground">
             {row.original.basePrice != null ? formatCurrency(row.original.basePrice, currencyCode) : "—"}
+          </span>
+        ),
+      },
+      {
+        id: "packSize",
+        accessorKey: "packSize",
+        enableSorting: true,
+        header: intl.formatMessage({
+          id: "sku.index.header_pack_size",
+          defaultMessage: "Pack size",
+        }),
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums text-foreground">
+            {packSizeLabel(intl, row.original.packSize)}
           </span>
         ),
       },

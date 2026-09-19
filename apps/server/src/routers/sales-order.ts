@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import * as z from 'zod';
 import { createSalesOrderSchema, updateSalesOrderSchema, salesOrderIdSchema, salesOrderListInputSchema } from '@repo/schemas/sales-order';
+import { resolveCartonLines } from '../lib/carton-pack-size.js';
 import { pushApprovalHistory, sendApprovalNotification } from '../lib/approval-helpers.js';
 import { validateSalesOrder } from '../lib/ai-validation.js';
 import { findBestDiscount } from '../lib/action-program-discount.js';
@@ -132,6 +133,11 @@ export const salesOrderRouter = router({
       // Auto-generate document number if not provided
       const providedDocumentNumber = header.documentNumber;
 
+      // SPEC §Validation: whole-carton gate — resolve each line's pack size
+      // from the live SKU, reject non-multiples, snapshot packSize onto the
+      // line. Runs before the transaction so a bad line writes nothing.
+      const itemRows = await resolveCartonLines(prisma, items);
+
       const created = await prisma.$transaction(async (tx) => {
         let documentNumber = providedDocumentNumber;
         if (!documentNumber) {
@@ -184,7 +190,7 @@ export const salesOrderRouter = router({
         });
 
         await tx.salesOrderItem.createMany({
-          data: items.map((item, idx) => ({
+          data: itemRows.map((item, idx) => ({
             ...item,
             salesOrderId: order.id,
             sortOrder: idx,
@@ -240,6 +246,17 @@ export const salesOrderRouter = router({
         if (!outletInProgram) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Outlet is not part of the action program.' });
       }
 
+      // SPEC §Editing a line: keep each existing line's own packSize snapshot
+      // unless its sku is swapped, then re-snapshot from the live SKU.
+      const existingItems = await prisma.salesOrderItem.findMany({
+        where: { salesOrderId: currentId },
+        select: { skuId: true, packSize: true },
+      });
+      const existingSnapshots = new Map(existingItems.map((item) => [item.skuId, item.packSize]));
+
+      // SPEC §Validation: same whole-carton gate as create.
+      const itemRows = await resolveCartonLines(prisma, items, existingSnapshots);
+
       const updated = await prisma.$transaction(async (tx) => {
         const order = await tx.salesOrder.update({
           where: { id: currentId },
@@ -255,7 +272,7 @@ export const salesOrderRouter = router({
         // Replace items
         await tx.salesOrderItem.deleteMany({ where: { salesOrderId: currentId } });
         await tx.salesOrderItem.createMany({
-          data: items.map((item, idx) => ({
+          data: itemRows.map((item, idx) => ({
             ...item,
             salesOrderId: order.id,
             sortOrder: idx,

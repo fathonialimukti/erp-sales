@@ -1,5 +1,6 @@
 import { tool } from 'ai';
 import * as z from 'zod';
+import { checkCartonLines, cartonToolError } from './carton-pack-size.js';
 import { prisma } from './prisma.js';
 import { getSettingValue } from './settings-service.js';
 
@@ -85,7 +86,8 @@ export const customerAiTools = {
 
     createDraftOrder: tool({
         description:
-            'Create a draft sales order for customer review. Order starts as DRAFT status and must be reviewed by an employee before proposal.',
+            'Create a draft sales order for customer review. Order starts as DRAFT status and must be reviewed by an employee before proposal. ' +
+            'Quantities are in PIECES and must be a whole multiple of each product\'s pack size (whole cartons only) — a non-multiple is refused; tell the customer the pack size and the two nearest valid multiples.',
         inputSchema: z.object({
             customerId: z.string().describe('Customer ID from lookupCustomer'),
             outletId: z.string().describe('Outlet ID for delivery'),
@@ -93,7 +95,7 @@ export const customerAiTools = {
                 .array(
                     z.object({
                         skuId: z.string().describe('Product SKU ID'),
-                        quantity: z.number().positive().describe('Order quantity'),
+                        quantity: z.number().positive().describe('Order quantity in PIECES — must be a whole multiple of the product pack size'),
                         unitPrice: z.number().nonnegative().describe('Unit price'),
                     }),
                 )
@@ -165,9 +167,15 @@ export const customerAiTools = {
             }
             const documentNumber = `${prefix}${nextNum.toString().padStart(4, '0')}`;
 
+            // SPEC §Validation: the whole-carton gate runs before any write, so
+            // a broken line creates no draft. Report it to the assistant as the
+            // customer-facing question, never as a silent partial order.
+            const carton = await checkCartonLines(prisma, items);
+            if (!carton.ok) return cartonToolError(carton);
+
             // Calculate totals
             let subtotal = 0;
-            const itemData = items.map((item, idx) => {
+            const itemData = carton.lines.map((item, idx) => {
                 const lineTotal = item.quantity * item.unitPrice;
                 subtotal += lineTotal;
                 return {
@@ -176,6 +184,8 @@ export const customerAiTools = {
                     unitPrice: item.unitPrice,
                     lineTotal,
                     sortOrder: idx,
+                    // SPEC §Data model: snapshot the pack size the gate used.
+                    packSize: item.packSize,
                 };
             });
 

@@ -4,11 +4,12 @@ import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useStore } from "@tanstack/react-form";
-import { Loader2, Save, Package, Hash, Tags, BadgeDollarSign } from "lucide-react";
+import { Loader2, Save, Package, Hash, Tags, BadgeDollarSign, Boxes } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { packSizeLabel } from "@/lib/format";
 import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
@@ -46,6 +47,8 @@ interface FormValues {
   categoryId: string;
   basePrice: string;
   baseUnit: string;
+  /** pcs per carton — held as a string so the number input owns its own text (SPEC §Client) */
+  packSize: string;
   status: string;
 }
 
@@ -58,8 +61,19 @@ const defaults = (): FormValues => ({
   categoryId: "",
   basePrice: "",
   baseUnit: "pcs",
+  packSize: "1",
   status: "ACTIVE",
 });
+
+/**
+ * Coerce the raw pack-size input to the integer the wire payload expects.
+ * Invalid input falls back to piece-only (1) — the field's inline validator
+ * blocks submit first, so this only guards the payload shape, never a write.
+ */
+const packSizeFromInput = (raw: string): number => {
+  const parsed = Number(String(raw ?? "").trim());
+  return Number.isInteger(parsed) && parsed >= 1 ? parsed : 1;
+};
 
 export const SkuFormPage = () => {
   const intl = useIntl();
@@ -93,6 +107,7 @@ export const SkuFormPage = () => {
           categoryId: data.categoryId ?? "",
           basePrice: data.basePrice != null ? String(data.basePrice) : "",
           baseUnit: data.baseUnit,
+          packSize: data.packSize != null ? String(data.packSize) : "1",
           status: data.status,
         }
       : defaults()) as FormValues,
@@ -108,14 +123,20 @@ export const SkuFormPage = () => {
     categoryId: (v: unknown) => form.setFieldValue("categoryId" as never, String(v) as never),
     basePrice: (v: unknown) => form.setFieldValue("basePrice" as never, String(v) as never),
     baseUnit: (v: unknown) => form.setFieldValue("baseUnit" as never, String(v) as never),
+    packSize: (v: unknown) => form.setFieldValue("packSize" as never, String(v) as never),
     status: (v: unknown) => form.setFieldValue("status" as never, String(v) as never),
   });
 
   // Live values drive the preview rail — re-renders on every keystroke.
   const live = useStore(form.store, (s) => s.values) as FormValues;
-  const filled = [live.name, live.code, live.categoryId, live.basePrice, live.baseUnit].filter(
-    (v) => String(v ?? "").trim().length > 0,
-  ).length;
+  const filled = [
+    live.name,
+    live.code,
+    live.categoryId,
+    live.basePrice,
+    live.baseUnit,
+    live.packSize,
+  ].filter((v) => String(v ?? "").trim().length > 0).length;
   const categoryName =
     (categories?.data ?? []).find((c) => c.id === live.categoryId)?.name ?? "";
 
@@ -127,6 +148,7 @@ export const SkuFormPage = () => {
       form.setFieldValue("categoryId", data.categoryId ?? "");
       form.setFieldValue("basePrice", data.basePrice != null ? String(data.basePrice) : "");
       form.setFieldValue("baseUnit", data.baseUnit);
+      form.setFieldValue("packSize", data.packSize != null ? String(data.packSize) : "1");
       form.setFieldValue("status", data.status);
     }
     // ponytail: only seed when detail arrives
@@ -173,6 +195,9 @@ export const SkuFormPage = () => {
       ...values,
       basePrice: values.basePrice ? Number(values.basePrice) : null,
       categoryId: values.categoryId || null,
+      // Always send packSize explicitly: updateSkuSchema.packSize carries a
+      // .default(1), so an omitted field silently resets the SKU to piece-only.
+      packSize: packSizeFromInput(values.packSize),
     };
     if (isEdit && id) {
       updateMutation.mutate({ ...payload, currentId: id } as UpdateSkuInput);
@@ -246,7 +271,7 @@ export const SkuFormPage = () => {
             subtitle={categoryName || undefined}
             status={live.status}
             filled={filled}
-            total={5}
+            total={6}
             rows={[
               {
                 icon: Hash,
@@ -269,6 +294,14 @@ export const SkuFormPage = () => {
                   defaultMessage: "Category",
                 }),
                 value: categoryName,
+              },
+              {
+                icon: Boxes,
+                label: intl.formatMessage({
+                  id: "sku.form.field_pack_size",
+                  defaultMessage: "Pack size",
+                }),
+                value: packSizeLabel(intl, Number(live.packSize)),
               },
             ]}
           />
@@ -443,6 +476,71 @@ export const SkuFormPage = () => {
                       defaultMessage: "e.g. pcs",
                     })}
                   />
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="packSize"
+              validators={{
+                onChange: ({ value }) => {
+                  const raw = String(value ?? "").trim();
+                  if (!raw) {
+                    return intl.formatMessage({
+                      id: "sku.form.field_pack_size_error_min",
+                      defaultMessage: "Pack size must be at least 1",
+                    });
+                  }
+                  const parsed = Number(raw);
+                  if (!Number.isInteger(parsed)) {
+                    return intl.formatMessage({
+                      id: "sku.form.field_pack_size_error_integer",
+                      defaultMessage: "Pack size must be a whole number",
+                    });
+                  }
+                  if (parsed < 1) {
+                    return intl.formatMessage({
+                      id: "sku.form.field_pack_size_error_min",
+                      defaultMessage: "Pack size must be at least 1",
+                    });
+                  }
+                  return undefined;
+                },
+              }}
+            >
+              {(f) => (
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="sku-pack-size">
+                    {intl.formatMessage({
+                      id: "sku.form.field_pack_size",
+                      defaultMessage: "Pack size",
+                    })}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="sku-pack-size"
+                    type="number"
+                    min={1}
+                    step={1}
+                    inputMode="numeric"
+                    value={f.state.value ?? ""}
+                    onChange={(e) => f.handleChange(e.target.value)}
+                    aria-invalid={f.state.meta.errors.length > 0}
+                    placeholder={intl.formatMessage({
+                      id: "sku.form.field_pack_size_placeholder",
+                      defaultMessage: "e.g. 20",
+                    })}
+                  />
+                  {f.state.meta.errors.length > 0 ? (
+                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
+                  ) : (
+                    <p className="text-xs font-normal text-muted-foreground">
+                      {intl.formatMessage({
+                        id: "sku.form.field_pack_size_hint",
+                        defaultMessage: "pcs per carton",
+                      })}
+                    </p>
+                  )}
                 </div>
               )}
             </form.Field>

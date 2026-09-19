@@ -10,6 +10,8 @@ import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2, Store, Pack
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
+import { packSizeLabel } from "../../lib/format";
+import { cn } from "@/lib/utils";
 import { hasPermissionAtom } from "../../lib/atoms";
 import { DatePicker } from "../../components/DatePicker";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
@@ -42,7 +44,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface LineItem {
   skuId: string;
+  /** pcs per carton — client-side snapshot for carton display + pre-validation. */
+  packSize: number;
+  /** pieces — the stored and submitted unit (SPEC S1); cartons are derived. */
   quantity: number;
+  /** raw in-flight text of the carton input (typing tolerance); never submitted. */
+  cartonInput?: string;
   unitPrice: number;
   discountPercent: number | null;
   taxPercent: number | null;
@@ -82,6 +89,7 @@ interface DetailData {
   grandTotal: number | null;
   items: {
     sku: { id: string };
+    packSize: number | null;
     quantity: number;
     unitPrice: number;
     discountPercent: number | null;
@@ -91,9 +99,64 @@ interface DetailData {
   }[];
 }
 
+/* ----------------------------------------------------------------
+ * Carton derived-line helpers (SPEC §Line semantics / §Validation)
+ * `quantity` stays pieces on the wire, in storage, and in money math — the
+ * carton is the implicit order unit, derived as quantity / packSize. These
+ * are view-layer only: the server is the source of truth for the rule.
+ * ---------------------------------------------------------------- */
+
+export type SkuOption = {
+  id: string;
+  name: string;
+  basePrice?: number | null;
+  code?: string | null;
+  packSize?: number | null;
+};
+
+/** Coerce an SKU's pack size to a safe integer ≥ 1 (1 = piece-only escape hatch). */
+export const skuPackSize = (sku: SkuOption | undefined): number => {
+  const ps = Number(sku?.packSize);
+  return Number.isFinite(ps) && ps >= 1 ? Math.floor(ps) : 1;
+};
+
+/**
+ * Effective pack size for a line. The line's own snapshot wins (SPEC §Editing
+ * a line — a later repack must not rewrite what the rep entered); a line with
+ * no snapshot yet (untouched, or AI-filled before the SKU lookup resolved)
+ * falls back to the live SKU, then to 1.
+ */
+export const linePackSize = (item: LineItem, skus: SkuOption[]): number => {
+  if (Number.isFinite(item.packSize) && item.packSize >= 1) return Math.floor(item.packSize);
+  return skuPackSize(skus.find((s) => s.id === item.skuId));
+};
+
+/**
+ * Carton count the carton input shows: the rep's raw in-flight text while
+ * typing (so decimals like "2." survive), otherwise derived from pieces.
+ */
+export const lineCartonText = (item: LineItem, skus: SkuOption[]): string => {
+  if (item.cartonInput !== undefined) return item.cartonInput;
+  if (!(item.quantity > 0)) return "";
+  return String(Math.round((item.quantity / linePackSize(item, skus)) * 1e4) / 1e4);
+};
+
+/**
+ * Whole-carton rule for a line: pieces must be a positive multiple of the
+ * pack size. Flagged inline on the field before submit; a line with no SKU
+ * picked yet has no pack size to validate against.
+ */
+export const lineCartonInvalid = (item: LineItem, skus: SkuOption[]): boolean => {
+  if (!item.skuId) return false;
+  const packSize = linePackSize(item, skus);
+  return !(item.quantity > 0 && item.quantity % packSize === 0);
+};
+
 const emptyItem = (): LineItem => ({
   skuId: "",
-  quantity: 1,
+  packSize: 1,
+  quantity: 0,
+  cartonInput: undefined,
   unitPrice: 0,
   discountPercent: null,
   taxPercent: null,
@@ -116,7 +179,9 @@ const defaults = (): FormValues => ({
   items: [emptyItem()],
 });
 
-const recalcTotals = (items: LineItem[]) => {
+const recalcTotals = (
+  items: Pick<LineItem, "quantity" | "unitPrice" | "discountPercent" | "taxPercent">[],
+) => {
   let subtotal = 0;
   let discountTotal = 0;
   let taxTotal = 0;
@@ -150,7 +215,10 @@ const fromDetail = (d: DetailData): FormValues => ({
   grandTotal: d.grandTotal ?? 0,
   items: d.items.map((it) => ({
     skuId: it.sku.id,
+    // SPEC §Editing a line: keep each line's own packSize snapshot on edit.
+    packSize: it.packSize ?? 1,
     quantity: it.quantity,
+    cartonInput: undefined,
     unitPrice: it.unitPrice,
     discountPercent: it.discountPercent,
     taxPercent: it.taxPercent,
@@ -255,8 +323,7 @@ export const SalesOrderFormPage = () => {
   });
 
   const outletList = ((outlets as { data?: { id: string; name: string; customerName?: string; areaName?: string }[] } | undefined)?.data ?? []) as { id: string; name: string; customerName?: string; areaName?: string }[];
-  const skuList = ((skus as { data?: { id: string; name: string; basePrice?: number | null; code?: string | null }[] } | undefined)
-    ?.data ?? []) as { id: string; name: string; basePrice?: number | null; code?: string | null }[];
+  const skuList = ((skus as { data?: SkuOption[] } | undefined)?.data ?? []) as SkuOption[];
 
   const createMutation = useMutation<
     { id: string },
@@ -467,17 +534,33 @@ export const SalesOrderFormPage = () => {
     (idx: number, field: keyof LineItem, val: LineItem[keyof LineItem]) => {
       const current = ((form.state.values as FormValues).items ?? []) as LineItem[];
       const next = current.map((it, i) => (i === idx ? ({ ...it, [field]: val } as LineItem) : it));
+      const line = next[idx]!;
       if (field === "skuId") {
         const sku = skuList.find((s) => s.id === val);
-        if (sku?.basePrice) next[idx]!.unitPrice = Number(sku.basePrice);
+        if (sku?.basePrice) line.unitPrice = Number(sku.basePrice);
+        // SPEC §Editing a line: on SKU swap, re-snapshot the pack size from the
+        // new SKU so the entered carton count re-validates against it.
+        line.packSize = skuPackSize(sku);
+        const old = current[idx]!;
+        const pristine = !old.skuId && old.cartonInput === undefined && old.quantity === 0;
+        if (pristine) {
+          // Untouched line: seed 1 carton of the new pack size (always valid).
+          line.quantity = line.packSize;
+          line.cartonInput = "1";
+        } else {
+          // Keep the entered pieces; the carton count re-derives and re-validates.
+          line.cartonInput = undefined;
+        }
       }
-      const it = next[idx]!;
-      next[idx] = {
-        ...it,
-        lineTotal: Math.round(
-          it.quantity * it.unitPrice * (1 - (it.discountPercent ?? 0) / 100) * (1 + (it.taxPercent ?? 0) / 100),
-        ),
-      };
+      if (field === "cartonInput") {
+        // The rep types cartons; pieces = cartons × packSize. Wire stays pieces.
+        const packSize = linePackSize(line, skuList);
+        const cartons = Number(val as string);
+        line.quantity = Number.isFinite(cartons) && cartons > 0 ? cartons * packSize : 0;
+      }
+      line.lineTotal = Math.round(
+        line.quantity * line.unitPrice * (1 - (line.discountPercent ?? 0) / 100) * (1 + (line.taxPercent ?? 0) / 100),
+      );
       form.setFieldValue("items" as never, next as never);
       const totals = recalcTotals(next);
       form.setFieldValue("subtotal" as never, totals.subtotal as never);
@@ -558,7 +641,7 @@ export const SalesOrderFormPage = () => {
         section: "sales-order-form",
         mode: isEdit ? "edit" : "create",
         orderId: id ?? null,
-        availableSkus: skuList.map((s) => ({ id: s.id, name: s.name, basePrice: s.basePrice })),
+        availableSkus: skuList.map((s) => ({ id: s.id, name: s.name, basePrice: s.basePrice, packSize: s.packSize ?? 1 })),
       })}
     >
       <NavButtonGroup
@@ -810,9 +893,15 @@ export const SalesOrderFormPage = () => {
             <form.Subscribe selector={(s) => (s.values.items ?? []) as LineItem[]}>
               {(items) => (
                 <>
-                  {items.map((item, idx) => (
+                  {items.map((item, idx) => {
+                    // SPEC §Client: carton count + pcs are derived per line,
+                    // recomputed live from the line's pack-size snapshot.
+                    const packSize = linePackSize(item, skuList);
+                    const cartonText = lineCartonText(item, skuList);
+                    const cartonInvalid = lineCartonInvalid(item, skuList);
+                    return (
                     <div
-                      className="grid gap-2 rounded-md border border-border/70 bg-card p-2 lg:grid-cols-[1.4fr_0.6fr_0.8fr_0.6fr_0.6fr_0.9fr_auto]"
+                      className="grid gap-2 rounded-md border border-border/70 bg-card p-2 lg:grid-cols-[1.35fr_0.5fr_0.95fr_0.8fr_0.55fr_0.55fr_0.95fr_auto]"
                       key={idx}
                     >
                       <div>
@@ -839,18 +928,76 @@ export const SalesOrderFormPage = () => {
                       <div>
                         {idx === 0 && (
                           <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
-                            Qty
+                            {intl.formatMessage({
+                              id: "sales_order.form.field_qty_carton",
+                              defaultMessage: "Qty (carton)",
+                            })}
                           </div>
                         )}
                         <input
-                          className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs"
+                          className={cn(
+                            "flex h-8 w-full rounded-md border bg-transparent px-2.5 py-1 text-sm shadow-xs tabular-nums",
+                            cartonInvalid
+                              ? "border-destructive focus-visible:ring-destructive"
+                              : "border-input",
+                          )}
                           type="number"
                           min={1}
-                          value={String(item.quantity)}
+                          step="any"
+                          value={cartonText}
+                          aria-invalid={cartonInvalid}
+                          aria-describedby={
+                            cartonInvalid ? `so-item-${idx}-carton-error` : undefined
+                          }
                           onChange={(e) =>
-                            handleItemChange(idx, "quantity", Number(e.target.value) || 1)
+                            handleItemChange(idx, "cartonInput", e.target.value)
                           }
                         />
+                        {cartonInvalid ? (
+                          <p
+                            id={`so-item-${idx}-carton-error`}
+                            role="alert"
+                            className="mt-0.5 text-[11px] text-destructive"
+                          >
+                            {intl.formatMessage(
+                              {
+                                id: "sales_order.form.error_qty_not_multiple",
+                                defaultMessage: "Must be a multiple of {packSize}",
+                              },
+                              { packSize: packSize },
+                            )}
+                          </p>
+                        ) : item.skuId ? (
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {packSizeLabel(intl, packSize)}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        {idx === 0 && (
+                          <div className="mb-0.5 text-[11px] font-medium text-muted-foreground">
+                            {intl.formatMessage({
+                              id: "sales_order.form.field_qty_pcs",
+                              defaultMessage: "Qty (pcs)",
+                            })}
+                          </div>
+                        )}
+                        <div
+                          className="flex h-8 items-center overflow-hidden rounded-md border border-input bg-card px-2.5 text-xs font-normal tabular-nums text-foreground whitespace-nowrap"
+                          title={packSizeLabel(intl, packSize)}
+                        >
+                          {item.skuId ? (
+                            intl.formatMessage(
+                              {
+                                id: "sales_order.form.qty_pcs_calc",
+                                defaultMessage: "{carton} × {packSize} = {pcs}",
+                              },
+                              { carton: Number(cartonText) || 0, packSize, pcs: item.quantity },
+                            )
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </div>
                       </div>
                       <div>
                         {idx === 0 && (
@@ -950,7 +1097,8 @@ export const SalesOrderFormPage = () => {
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </form.Subscribe>

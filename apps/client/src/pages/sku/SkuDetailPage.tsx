@@ -7,7 +7,7 @@ import { Package, Pencil, Trash2 } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, packSizeLabel } from "@/lib/format";
 import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { useToast } from "../../components/useToast";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
@@ -24,6 +24,7 @@ type SkuDetail = {
   name: string;
   basePrice: number | null;
   baseUnit: string | null;
+  packSize: number | null;
   status: string;
   category: { id: string; name: string } | null;
   description: string | null;
@@ -186,6 +187,17 @@ export const SkuDetailPage = () => {
                 {intl.formatMessage({ id: "sku.detail.unit_label", defaultMessage: "Base unit" })}
               </dt>
               <dd className="text-sm font-normal text-foreground">{sku.baseUnit ?? "—"}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {intl.formatMessage({
+                  id: "sku.detail.pack_size_label",
+                  defaultMessage: "Pack size",
+                })}
+              </dt>
+              <dd className="text-sm font-normal tabular-nums text-foreground">
+                {packSizeLabel(intl, sku.packSize)}
+              </dd>
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">

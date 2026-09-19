@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
 import "./SalesOrder.css";
 import { SOIcon } from "./SalesOrderIcons";
+import { cartonCount } from "@repo/schemas/sales-order";
 import { API_BASE_URL } from "@/lib/api-base";
 import { trpcClient } from "@/lib/trpc";
 
@@ -49,6 +50,9 @@ export interface SalesOrderPrintRecord {
     id: string;
     sku: { id: string; name: string; code: string | null; baseUnit: string };
     quantity: number;
+    /** Snapshot of Sku.packSize at line creation — cartons are derived from
+     * THIS value so a repack never rewrites a printed invoice (SPEC §Data model). */
+    packSize: number;
     unitPrice: number;
     discountPercent: number | null;
     taxPercent: number | null;
@@ -295,7 +299,10 @@ export const SalesOrderPrint = ({ record }: SalesOrderPrintProps) => {
                     {it.notes && <div className="so-print__product-note">{it.notes}</div>}
                   </td>
                   <td className="so-print__td so-print__td--num">
-                    {it.quantity} {it.sku.baseUnit}
+                    {t("sales_order.print.qty_carton_pcs", "{carton} carton ({pcs} pcs)", {
+                      carton: cartonCount(it.quantity, it.packSize),
+                      pcs: it.quantity,
+                    })}
                   </td>
                   <td className="so-print__td so-print__td--num">
                     {formatCurrency(it.unitPrice, record.currency)}

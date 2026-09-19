@@ -4,6 +4,7 @@ import { hashSync } from "bcrypt";
 import { faker } from "@faker-js/faker";
 import { prisma } from "../lib/prisma.js";
 import { seedAppSettings } from "../lib/seed-app-settings.js";
+import { cartonCount } from "@repo/schemas/sales-order";
 
 const FAKER_SEED = Number(process.env.SEED_SEED) || 20260519;
 
@@ -548,17 +549,19 @@ async function seedCrmData() {
     prisma.skuCategory.create({ data: { code: "PRD", name: "Personal Care" } }),
   ]);
 
-  // SKUs
+  // SKUs — `packSize` is pcs per carton (SPEC §Data model). A packSize of 1 is
+  // the piece-only escape hatch; Mixed Nuts is the seeded degenerate path, the
+  // rest ship in trade cartons.
   const skuData = [
-    { code: "BEV-TEA-01", name: "Green Tea 500ml", categoryId: categories[0]!.id, basePrice: 5000 },
-    { code: "BEV-COF-01", name: "Instant Coffee 200g", categoryId: categories[0]!.id, basePrice: 25000 },
-    { code: "BEV-JUI-01", name: "Orange Juice 1L", categoryId: categories[0]!.id, basePrice: 15000 },
-    { code: "SNK-CHP-01", name: "Potato Chips 150g", categoryId: categories[1]!.id, basePrice: 12000 },
-    { code: "SNK-CKY-01", name: "Chocolate Cookies 200g", categoryId: categories[1]!.id, basePrice: 18000 },
-    { code: "SNK-NUT-01", name: "Mixed Nuts 100g", categoryId: categories[1]!.id, basePrice: 22000 },
-    { code: "PRD-SHP-01", name: "Shampoo 250ml", categoryId: categories[2]!.id, basePrice: 20000 },
-    { code: "PRD-SOP-01", name: "Bath Soap 100g", categoryId: categories[2]!.id, basePrice: 5000 },
-    { code: "PRD-THP-01", name: "Toothpaste 150g", categoryId: categories[2]!.id, basePrice: 15000 },
+    { code: "BEV-TEA-01", name: "Green Tea 500ml", categoryId: categories[0]!.id, basePrice: 5000, packSize: 20 },
+    { code: "BEV-COF-01", name: "Instant Coffee 200g", categoryId: categories[0]!.id, basePrice: 25000, packSize: 12 },
+    { code: "BEV-JUI-01", name: "Orange Juice 1L", categoryId: categories[0]!.id, basePrice: 15000, packSize: 12 },
+    { code: "SNK-CHP-01", name: "Potato Chips 150g", categoryId: categories[1]!.id, basePrice: 12000, packSize: 24 },
+    { code: "SNK-CKY-01", name: "Chocolate Cookies 200g", categoryId: categories[1]!.id, basePrice: 18000, packSize: 20 },
+    { code: "SNK-NUT-01", name: "Mixed Nuts 100g", categoryId: categories[1]!.id, basePrice: 22000, packSize: 1 },
+    { code: "PRD-SHP-01", name: "Shampoo 250ml", categoryId: categories[2]!.id, basePrice: 20000, packSize: 24 },
+    { code: "PRD-SOP-01", name: "Bath Soap 100g", categoryId: categories[2]!.id, basePrice: 5000, packSize: 48 },
+    { code: "PRD-THP-01", name: "Toothpaste 150g", categoryId: categories[2]!.id, basePrice: 15000, packSize: 12 },
   ];
   const skus = await Promise.all(skuData.map((s) => prisma.sku.create({ data: s })));
 
@@ -575,6 +578,7 @@ async function seedCrmData() {
   // Outlets — 2-3 per customer, spread across different areas
   const outletSuffixes = ["Main Store", "Branch A", "Branch B"];
   let outletCount = 0;
+  const seededOutlets: SeededOutlet[] = [];
   for (const customer of customers) {
     // Each customer gets outlets in 2-3 different areas
     const numOutlets = faker.number.int({ min: 2, max: 3 });
@@ -585,7 +589,7 @@ async function seedCrmData() {
     for (let i = 0; i < assignedAreas.length; i++) {
       const area = assignedAreas[i]!;
       outletCount++;
-      await prisma.outlet.create({
+      const outlet = await prisma.outlet.create({
         data: {
           customerId: customer.id,
           areaId: area.id,
@@ -598,12 +602,193 @@ async function seedCrmData() {
           longitude: faker.location.longitude(),
         },
       });
+      seededOutlets.push({
+        id: outlet.id,
+        customerId: customer.id,
+        areaId: area.id,
+        paymentTerms: customer.paymentTerms,
+      });
     }
   }
+
+  const seededSkus: SeededSku[] = skus.map((s) => ({
+    id: s.id,
+    name: s.name,
+    packSize: s.packSize,
+    basePrice: s.basePrice ? s.basePrice.toNumber() : 0,
+  }));
 
   console.log(
     `✓ CRM: ${regions.length} regions, ${areas.length} areas, ${categories.length} categories, ${skus.length} SKUs, ${customers.length} customers, ${outletCount} outlets`,
   );
+
+  await seedSalesOrders(seededSkus, seededOutlets);
+}
+
+// =============================================
+// SALES ORDERS — CARTON-MULTIPLE LINES
+// =============================================
+// SPEC §Line semantics: quantity is stored in pieces, the carton is the
+// implicit order unit. Every seeded line is built as cartons × packSize, so
+// the whole-carton rule (`quantity > 0 && quantity % packSize === 0`, SPEC
+// §Validation) holds by construction, and the line's `packSize` snapshot is
+// written explicitly — never left to the column default.
+
+/** PPN (Indonesian VAT) applied to every seeded line. */
+const SEED_TAX_PERCENT = 11;
+/** Trade discount off list price, uniform across the demo catalog. */
+const SEED_DISCOUNT_PERCENT = 5;
+/** Carton counts drawn for carton SKUs (packSize > 1). */
+const SEED_MAX_CARTONS = 8;
+
+type SeededSku = { id: string; name: string; packSize: number; basePrice: number };
+type SeededOutlet = { id: string; customerId: string; areaId: string; paymentTerms: string | null };
+type SeedApprovalStatus = "DRAFT" | "PROPOSED" | "APPROVED";
+
+/**
+ * Piece quantity for one line. Carton SKUs draw a whole carton count and
+ * convert to pieces; a piece-only SKU (packSize 1) degenerates to a plain
+ * piece count, still a positive multiple of its pack size.
+ */
+function cartonMultipleQuantity(packSize: number): number {
+  return packSize > 1
+    ? faker.number.int({ min: 1, max: SEED_MAX_CARTONS }) * packSize
+    : faker.number.int({ min: 1, max: 24 });
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value);
+}
+
+async function seedSalesOrders(skus: SeededSku[], outlets: SeededOutlet[]): Promise<void> {
+  console.log("🧾 Seeding sales orders (carton-multiple lines)...");
+
+  const createdBy = await prisma.user.findUnique({
+    where: { email: "admin@mail.com" },
+    select: { id: true },
+  });
+  if (!createdBy) throw new Error("Cannot seed sales orders: admin user is missing");
+
+  // Run-scoped counter. The `SO-SEED-####` range is deliberately outside the
+  // `SO-<YYYYMMDD>-####` range the router auto-generates, so a reseed can
+  // never collide with today's live counter.
+  let docSeq = 0;
+  let orderCount = 0;
+  let lineCount = 0;
+
+  for (const outlet of outlets) {
+    const ordersPerOutlet = faker.number.int({ min: 2, max: 3 });
+
+    for (let o = 0; o < ordersPerOutlet; o++) {
+      const date = faker.date.recent({ days: 45 });
+      const picked = faker.helpers.arrayElements(skus, faker.number.int({ min: 1, max: 3 }));
+
+      let subtotal = 0;
+      let discountTotal = 0;
+      let taxTotal = 0;
+      let grandTotal = 0;
+
+      const items = picked.map((sku, idx) => {
+        const quantity = cartonMultipleQuantity(sku.packSize);
+        const unitPrice = sku.basePrice;
+        const lineSubtotal = unitPrice * quantity;
+        const lineDiscount = (lineSubtotal * SEED_DISCOUNT_PERCENT) / 100;
+        const lineTax = ((lineSubtotal - lineDiscount) * SEED_TAX_PERCENT) / 100;
+        const lineTotal = roundMoney(lineSubtotal - lineDiscount + lineTax);
+
+        subtotal += lineSubtotal;
+        discountTotal += lineDiscount;
+        taxTotal += lineTax;
+        grandTotal += lineTotal;
+
+        return {
+          sortOrder: idx,
+          skuId: sku.id,
+          quantity,
+          unitPrice,
+          discountPercent: SEED_DISCOUNT_PERCENT,
+          taxPercent: SEED_TAX_PERCENT,
+          lineTotal,
+          // SPEC §Data model: freeze the SKU's pack size onto the line.
+          packSize: sku.packSize,
+        };
+      });
+
+      const roll = faker.number.int({ min: 0, max: 99 });
+      const approvalStatus: SeedApprovalStatus = roll < 60 ? "APPROVED" : roll < 85 ? "PROPOSED" : "DRAFT";
+      const approved = approvalStatus === "APPROVED";
+      docSeq += 1;
+
+      const order = await prisma.salesOrder.create({
+        data: {
+          documentNumber: `SO-SEED-${String(docSeq).padStart(4, "0")}`,
+          date,
+          outletId: outlet.id,
+          customerId: outlet.customerId,
+          areaId: outlet.areaId,
+          currency: "IDR",
+          paymentTerms: outlet.paymentTerms,
+          source: "MANUAL",
+          approvalStatus,
+          createdById: createdBy.id,
+          proposedAt: approvalStatus !== "DRAFT" ? date : null,
+          approvedById: approved ? createdBy.id : null,
+          approvedAt: approved ? date : null,
+          subtotal: roundMoney(subtotal),
+          discountTotal: roundMoney(discountTotal),
+          taxTotal: roundMoney(taxTotal),
+          grandTotal: roundMoney(grandTotal),
+        },
+      });
+
+      await prisma.salesOrderItem.createMany({
+        data: items.map((item) => ({ ...item, salesOrderId: order.id })),
+      });
+
+      orderCount += 1;
+      lineCount += items.length;
+    }
+  }
+
+  console.log(`✓ ${orderCount} sales orders, ${lineCount} carton-multiple lines`);
+}
+
+/**
+ * Self-review pass: read every seeded line back and assert the same invariant
+ * the server's create/update gate enforces (SPEC §Validation) — positive
+ * quantity, exact multiple of the line's snapshot, and the snapshot matching
+ * the SKU. A broken line would be rejected at write time by T4's check, so a
+ * seed that ships one is a bug, not a warning.
+ */
+async function verifyCartonRule(): Promise<void> {
+  const items = await prisma.salesOrderItem.findMany({
+    select: {
+      quantity: true,
+      packSize: true,
+      sku: { select: { name: true, packSize: true } },
+    },
+  });
+
+  let cartons = 0;
+  for (const item of items) {
+    const quantity = item.quantity.toNumber();
+
+    if (item.packSize !== item.sku.packSize) {
+      throw new Error(
+        `Seeded line for "${item.sku.name}" has packSize ${item.packSize}, expected the SKU snapshot ${item.sku.packSize}`,
+      );
+    }
+
+    const lineCartons = cartonCount(quantity, item.packSize);
+    if (quantity <= 0 || !Number.isInteger(lineCartons)) {
+      throw new Error(
+        `Seeded line for "${item.sku.name}" is ${quantity} pcs, not a positive multiple of its carton of ${item.packSize} pcs`,
+      );
+    }
+    cartons += lineCartons;
+  }
+
+  console.log(`✓ Carton rule holds: ${items.length} lines, ${cartons} cartons, all packSize snapshots explicit`);
 }
 
 // =============================================
@@ -753,6 +938,7 @@ async function main() {
 
     faker.seed(FAKER_SEED);
     await seedCrmData();
+    await verifyCartonRule();
     await seedBudgetingData();
 
     console.log("\n🎉 Database seeding completed successfully!");

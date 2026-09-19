@@ -193,6 +193,52 @@ describe('applyConciergeResult', () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.subject).toBe('Re: test');
   });
+
+  // SPEC §2.1: a run that refused a non-carton line sent its reply but created
+  // no order — the conversation is waiting on the buyer, not done.
+  it('marks the conversation AWAITING_BUYER_CONFIRMATION when the carton gate refused the order', async () => {
+    const send = vi.fn(async () => ({ messageId: `<x-${randomUUID()}@aetherglo.com>` }));
+    const r = await applyConciergeResult(
+      {
+        state: {
+          createdOrderDocNumbers: [],
+          cartonBlocked: {
+            kind: 'carton_multiple',
+            message: 'Product A is only sold per carton of 20 pcs',
+          },
+          finalized: {
+            htmlBody:
+              '<p>Product A is only sold per carton of 20 pcs. You asked for 50 — shall I make it 40 (2 carton) or 60 (3 carton)?</p>',
+          },
+        },
+        conversation: { id: 'c1', email: 'a@b.com', subject: 'Order' },
+      },
+      send as never,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.agentStatus).toBe('AWAITING_BUYER_CONFIRMATION');
+
+    const conv = await prisma.emailConversation.findUnique({ where: { id: 'c1' } });
+    expect(conv?.agentStatus).toBe('AWAITING_BUYER_CONFIRMATION');
+  });
+
+  it('marks the conversation SENT when an order was created alongside the reply', async () => {
+    const send = vi.fn(async () => ({ messageId: `<x-${randomUUID()}@aetherglo.com>` }));
+    const r = await applyConciergeResult(
+      {
+        state: {
+          createdOrderDocNumbers: ['SO-20260918-0001'],
+          finalized: {
+            htmlBody: '<p>Draft order <strong>SO-20260918-0001</strong> is ready.</p>',
+          },
+        },
+        conversation: { id: 'c2', email: 'a@b.com', subject: 'Order' },
+      },
+      send as never,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.agentStatus).toBe('SENT');
+  });
 });
 
 describe('shouldForceFinalize', () => {

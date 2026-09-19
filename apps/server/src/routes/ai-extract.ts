@@ -4,6 +4,7 @@ import { getChatModel } from '../lib/ai-provider.js';
 import { withAuth } from '../lib/express-auth.js';
 import { prisma } from '../lib/prisma.js';
 import { createSalesOrderSchema } from '@repo/schemas/sales-order';
+import { buildCartonPromptContext } from '../lib/carton-pack-size.js';
 
 const EXTRACT_SYSTEM = `You are a data-entry assistant for a Sales ERP system.
 You convert a free-text or pasted sales order description into a structured order object.
@@ -15,7 +16,13 @@ Rules:
 - Compute lineTotal = quantity * unitPrice when both are present; otherwise leave undefined.
 - currency defaults to "USD" when not specified.
 - Do NOT invent customerId/outletId ULIDs — leave them undefined unless the text contains an explicit ID.
-- Return only the structured object; do not add fields not in the schema.`;
+- Return only the structured object; do not add fields not in the schema.
+
+Carton rules:
+- Products are sold per carton only. The pack size (pcs per carton) of each product is listed in the PRODUCT PACK SIZES section of the prompt, read live from the product master.
+- quantity is in pieces. When the buyer states cartons ("2 carton", "2 dus"), multiply by that product's pack size.
+- When the stated quantity is NOT a whole multiple of the pack size, keep the exact stated quantity in quantity and record the mismatch in that item's notes (e.g. "requested 50 pcs; pack size 20 — needs a whole carton"). Never round or adjust it yourself.
+- When a product is not in PRODUCT PACK SIZES, leave skuId undefined, keep the product name in notes, and do not guess a pack size.`;
 
 export const aiExtractSalesOrderHandler = withAuth({ aiRateLimit: true }, async (req: Request, res: Response) => {
     const { text } = req.body as { text?: string };
@@ -25,10 +32,15 @@ export const aiExtractSalesOrderHandler = withAuth({ aiRateLimit: true }, async 
     }
 
     try {
+        // SPEC §Email CRM agent prompt / extraction: pack sizes are injected
+        // from live Sku records at prompt-build time so the extractor never
+        // quotes a stale pack size after a repack.
+        const cartonContext = await buildCartonPromptContext(prisma, text);
+
         const { object } = await generateObject({
             model: await getChatModel(prisma),
             instructions: EXTRACT_SYSTEM,
-            prompt: text,
+            prompt: `${text}\n\n${cartonContext}`,
             schema: createSalesOrderSchema,
             temperature: 0,
         });

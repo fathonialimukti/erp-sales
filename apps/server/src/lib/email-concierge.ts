@@ -4,6 +4,7 @@ import {
   createEmailConciergeTools,
   type ConciergeRunState,
 } from './email-concierge-tools.js';
+import { buildCartonPromptContext } from './carton-pack-size.js';
 import { htmlToText, sanitizeEmailHtml } from './email-html.js';
 import { sendSmtpEmail } from './email-smtp.js';
 import { prisma } from './prisma.js';
@@ -36,6 +37,14 @@ export const MAX_THREAD_CHARS = Number(process.env.EMAIL_CONCIERGE_MAX_THREAD_CH
 export const EMAIL_AGENT_NAME = process.env.EMAIL_AGENT_NAME || 'Andi';
 export const EMAIL_AGENT_TITLE = process.env.EMAIL_AGENT_TITLE || 'Sales Representative';
 export const EMAIL_AGENT_COMPANY = process.env.EMAIL_AGENT_COMPANY || 'AetherGlo';
+
+/**
+ * SPEC §2.1: conversation agentStatus once the agent has refused a non-carton
+ * order and asked the buyer to confirm a multiple. Reuses the existing
+ * agentStatus column — no new mechanism — and is not RUNNING, so the buyer's
+ * reply re-enters the normal agent loop and the draft is created then.
+ */
+export const AGENT_STATUS_AWAITING_BUYER_CONFIRMATION = 'AWAITING_BUYER_CONFIRMATION';
 
 let queue: Promise<void> = Promise.resolve();
 let lastJobStartedAt = 0;
@@ -70,8 +79,19 @@ export type ConciergeApplyInput = {
 };
 
 export type ConciergeApplyResult =
-  | { ok: true; subject: string; html: string; text: string; messageId: string }
+  | { ok: true; subject: string; html: string; text: string; messageId: string; agentStatus: string }
   | { ok: false; reason: string };
+
+/**
+ * SPEC §2.1: an outbound that created no order because a line was not a whole
+ * carton leaves the conversation waiting on the buyer, not done. Reuses the
+ * existing agentStatus column; the run is otherwise identical to a normal send.
+ */
+function nextAgentStatus(state: ConciergeRunState): string {
+  return state.createdOrderDocNumbers.length === 0 && state.cartonBlocked
+    ? AGENT_STATUS_AWAITING_BUYER_CONFIRMATION
+    : 'SENT';
+}
 
 /** Pure post-loop gate — testable without AI/SMTP. */
 export function validateConciergeResult(
@@ -123,6 +143,10 @@ export async function applyConciergeResult(
     .join(' ')
     .trim() || undefined;
 
+  // SPEC §2.1: computed once — SENT normally, AWAITING_BUYER_CONFIRMATION when
+  // the run refused a non-carton line and left the question with the buyer.
+  const agentStatus = nextAgentStatus(input.state);
+
   const { messageId } = await send({
     to: input.conversation.email,
     subject,
@@ -152,13 +176,20 @@ export async function applyConciergeResult(
       data: {
         lastMessageAt: now,
         lastOutboundAt: now,
-        agentStatus: 'SENT',
+        agentStatus,
         agentError: null,
       },
     });
   });
 
-  return { ok: true, subject, html: validated.html, text: validated.text, messageId };
+  return {
+    ok: true,
+    subject,
+    html: validated.html,
+    text: validated.text,
+    messageId,
+    agentStatus,
+  };
 }
 
 async function markFailed(conversationId: string, reason: string) {
@@ -193,8 +224,13 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
   if (conversation.agentStatus === 'RUNNING') return;
   if (
     conversation.lastOutboundAt &&
+    conversation.agentStatus !== AGENT_STATUS_AWAITING_BUYER_CONFIRMATION &&
     Date.now() - conversation.lastOutboundAt.getTime() < MIN_OUTBOUND_GAP_MS
   ) {
+    // The gap throttles a re-burst of the same inbound. A conversation waiting
+    // on the buyer's carton choice (SPEC §2.1) is expecting a *new* inbound —
+    // and inbound messages are already deduped by messageId before the enqueue,
+    // so a fresh reply here must not be sat on for 60s.
     return;
   }
 
@@ -247,6 +283,11 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
     '- Match the customer\'s language. If they write in Indonesian, reply in Indonesian.',
     '- Write HTML body — use <p> for paragraphs, <strong> for emphasis, nothing else.',
     '- TEST DETECTION: if the thread contains the code "Kopdes KDMP", the sender is a developer running a test, NOT a real customer. Acknowledge the test in your reply (e.g. "Ini adalah email uji coba dari developer") and still run the normal tools (lookup, discounts, createDraftOrder) so the flow can be verified end-to-end.',
+    '',
+    // SPEC §Email CRM agent prompt: pack sizes injected from live Sku records
+    // at prompt-build time, so a repack cannot leave the agent quoting a stale
+    // pack size. The createDraftOrder tool enforces the same gate on write.
+    await buildCartonPromptContext(prisma, thread),
   ].join('\n');
 
   const promptParts = [
@@ -269,6 +310,7 @@ export async function runEmailConcierge(conversationId: string): Promise<void> {
       'Then run the self-audit from the knowledge base before calling finalizeCustomerReply.',
       'Sign the reply as your configured identity — never invent a different name.',
       'If a draft SO was created, its document number MUST appear in the HTML body.',
+      'If a requested quantity was not a whole carton, NO draft was created — reply with the product, pack size, and the two nearest valid multiples, and leave the choice to the buyer.',
       'If the thread contains "Kopdes KDMP", the sender is a developer testing — acknowledge it as a test and still run the full flow.',
       'FINAL STEP — you are NOT done until you call finalizeCustomerReply with the complete HTML body.',
       'Ending without it fails the run (missing_finalize) and the customer receives nothing.',

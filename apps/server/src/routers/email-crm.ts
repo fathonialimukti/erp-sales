@@ -15,6 +15,7 @@ import {
 import { logActivity } from '../lib/activity-log.js';
 import { getChatModel } from '../lib/ai-provider.js';
 import { getMultimodalModelId, OnlyTextModelError } from '../lib/ai-multimodal.js';
+import { resolveCartonLines } from '../lib/carton-pack-size.js';
 import { getSettingValue, getSecretValue } from '../lib/settings-service.js';
 import { enqueueEmailConcierge } from '../lib/email-concierge.js';
 import {
@@ -434,8 +435,14 @@ export const emailCrmRouter = router({
       }
 
       const documentNumber = await nextSalesOrderDocumentNumber();
+
+      // SPEC §Validation: same whole-carton gate as salesOrder.create — every
+      // crm_sales_order_items row is carton-valid by construction, and the
+      // packSize snapshot is written from the SKU the gate validated against.
+      const itemRows = await resolveCartonLines(prisma, input.items);
+
       let subtotal = 0;
-      const itemData = input.items.map((item, idx) => {
+      const itemData = itemRows.map((item, idx) => {
         const lineTotal = item.quantity * item.unitPrice;
         subtotal += lineTotal;
         return {
@@ -444,6 +451,7 @@ export const emailCrmRouter = router({
           unitPrice: item.unitPrice,
           lineTotal,
           sortOrder: idx,
+          packSize: item.packSize,
         };
       });
 

@@ -23,7 +23,7 @@ const visitLogOrderResultSchema = z.object({
     notes: z.string().optional(),
 });
 
-const VISIT_LOG_ORDER_SYSTEM = `You turn a field salesperson's visit notes into a structured sales order draft. Rules: (1) Only use SKU ids, names, codes, and base prices from the provided SKU catalog. (2) Map spoken product names/codes to catalog SKUs; if ambiguous, pick the closest match and note it. (3) Use the visit log's outlet id for outletId — never invent one. (4) quantity and unitPrice must be positive when present; default unitPrice to the SKU basePrice when the notes don't state a price. (5) lineTotal = quantity * unitPrice rounded. (6) Do NOT invent SKUs not in the catalog. (7) Return only the structured object.`;
+const VISIT_LOG_ORDER_SYSTEM = `You turn a field salesperson's visit notes into a structured sales order draft. Rules: (1) Only use SKU ids, names, codes, and base prices from the provided SKU catalog. (2) Map spoken product names/codes to catalog SKUs; if ambiguous, pick the closest match and note it. (3) Use the visit log's outlet id for outletId — never invent one. (4) quantity and unitPrice must be positive when present; default unitPrice to the SKU basePrice when the notes don't state a price. (5) lineTotal = quantity * unitPrice rounded. (6) Do NOT invent SKUs not in the catalog. (7) Products are sold per carton only: quantity is in pieces and must be a positive whole multiple of the SKU's pack size as listed in the catalog. When the notes state cartons, multiply by the pack size. When the stated quantity is not a whole multiple, keep the exact quantity and record the mismatch in the item notes — never round it yourself. (8) Return only the structured object.`;
 
 export const aiVisitLogOrderHandler = withAuth({ aiRateLimit: true }, async (req: Request, res: Response) => {
 
@@ -49,7 +49,7 @@ export const aiVisitLogOrderHandler = withAuth({ aiRateLimit: true }, async (req
 
     const skus = await prisma.sku.findMany({
         where: { status: 'ACTIVE' },
-        select: { id: true, code: true, name: true, basePrice: true, baseUnit: true, status: true },
+        select: { id: true, code: true, name: true, basePrice: true, baseUnit: true, packSize: true, status: true },
     });
 
     const prompt = [
@@ -60,10 +60,10 @@ export const aiVisitLogOrderHandler = withAuth({ aiRateLimit: true }, async (req
         `- Purpose: ${visitLog.purpose ?? '(none)'}`,
         `- Notes: ${visitLog.notes ?? '(none)'}`,
         '',
-        `SKU catalog:`,
+        `SKU catalog (packSize = pcs per carton; quantity must be a whole multiple of it):`,
         ...skus.map(
             (sku) =>
-                `${sku.id} | ${sku.code ?? ''} | ${sku.name} | ${sku.basePrice?.toString() ?? ''} | ${sku.baseUnit}`
+                `${sku.id} | ${sku.code ?? ''} | ${sku.name} | ${sku.basePrice?.toString() ?? ''} | ${sku.baseUnit} | packSize ${sku.packSize}`
         ),
     ].join('\n');
 
