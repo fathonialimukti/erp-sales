@@ -21,6 +21,7 @@ import { FormSection } from "@/components/FormSection";
 import { FormLayout } from "@/components/FormLayout";
 import { FormFooter } from "@/components/FormFooter";
 import { FormPreview } from "@/components/FormPreview";
+import { FormField } from "@/components/FormField";
 import { SelectSearch } from "../../components/SelectSearch";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { AiFillButton } from '@/components/AiFillButton';
@@ -234,6 +235,9 @@ const formatCurrency = (v: number, currency: string) =>
     maximumFractionDigits: 0,
   }).format(v);
 
+/** Guided-journey section count (Outlet & Location → Line items → Additional). */
+const TOTAL_SECTIONS = 3;
+
 /* ----------------------------------------------------------------
  * Page
  * ---------------------------------------------------------------- */
@@ -262,6 +266,8 @@ export const SalesOrderFormPage = () => {
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode>("DRAFT");
   const [proposeMessage, setProposeMessage] = useState("");
   const [resultMessage, setResultMessage] = useState("");
+  // Timestamp of the last localStorage draft save — drives the footer indicator.
+  const [lastAutosavedAt, setLastAutosavedAt] = useState<Date | undefined>(undefined);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -460,6 +466,49 @@ export const SalesOrderFormPage = () => {
   // Compute grand total directly from items to ensure it's always in sync
   const computedTotals = recalcTotals(itemsVal);
   const grandTotal = computedTotals.grandTotal;
+
+  /* ----------------------------------------------------------------
+   * Guided-form journey state: per-section completion drives the
+   * FormSection checkmarks + PageHeader progress dots; the footer
+   * autosaves a localStorage draft once the rep pauses typing.
+   * ---------------------------------------------------------------- */
+
+  // Section 1 — required identity fields (outlet + order date).
+  const sectionInfoComplete = Boolean(formValues.outletId) && Boolean(formValues.date);
+  // Section 2 — at least one usable line, and every line whole-carton valid.
+  const sectionItemsComplete =
+    itemsVal.some((it) => it.skuId && it.quantity > 0) &&
+    itemsVal.every((it) => !lineCartonInvalid(it, skuList));
+  // Section 3 — optional info; treated as done once payment terms (its
+  // primary field) is filled.
+  const sectionExtraComplete = formValues.paymentTerms.trim().length > 0;
+
+  const sectionCompletion = [sectionInfoComplete, sectionItemsComplete, sectionExtraComplete];
+  const firstIncompleteSection = sectionCompletion.findIndex((complete) => !complete);
+  // Current section = first incomplete (1-based); when everything is done the
+  // journey rests on the last section.
+  const currentSection = firstIncompleteSection === -1 ? TOTAL_SECTIONS : firstIncompleteSection + 1;
+
+  // Debounced draft autosave (localStorage safety net). FormFooter re-arms its
+  // 1.5s debounce whenever this callback's identity changes — i.e. on every
+  // form update — so the draft lands once the rep pauses. Best-effort only.
+  const autosaveKey = `sales-order-form-draft:${id ?? "new"}`;
+  const hasDraftContent =
+    Boolean(formValues.outletId) ||
+    Boolean(formValues.documentNumber) ||
+    itemsVal.some((it) => it.skuId);
+  const autosaveDraft = useCallback(() => {
+    if (!hasDraftContent) return;
+    try {
+      window.localStorage.setItem(
+        autosaveKey,
+        JSON.stringify({ values: formValues, savedAt: new Date().toISOString() }),
+      );
+      setLastAutosavedAt(new Date());
+    } catch {
+      // Private mode / quota exceeded — autosave is a safety net, never a blocker.
+    }
+  }, [autosaveKey, formValues, hasDraftContent]);
 
   // When the user picks an outlet, do NOT auto-fill area (area is selected first)
   const handleOutletChange = useCallback(
@@ -670,9 +719,11 @@ export const SalesOrderFormPage = () => {
                 defaultMessage: "Create a new sales order with line items and customer details",
               })
         }
+        progress={{ current: currentSection, total: TOTAL_SECTIONS }}
       />
 
       <FormLayout
+        mode="complex"
         sidebar={
           <form.Subscribe selector={(s) => s.values as FormValues}>
             {(so) => {
@@ -811,20 +862,34 @@ export const SalesOrderFormPage = () => {
           tone="order"
           title="Outlet & Location"
           description="Select outlet to auto-fill customer and area"
+          completed={sectionInfoComplete}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="documentNumber">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium">Document Number</label>
+                <FormField
+                  id="so-document-number"
+                  label={intl.formatMessage({
+                    id: "sales_order.form.field_document_number",
+                    defaultMessage: "Document Number",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "sales_order.form.field_document_number_hint",
+                    defaultMessage: "Leave empty to auto-generate on save",
+                  })}
+                >
                   <input
+                    id="so-document-number"
                     className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs"
                     type="text"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
-                    placeholder="Auto-generated if empty"
+                    placeholder={intl.formatMessage({
+                      id: "sales_order.form.field_document_number_placeholder",
+                      defaultMessage: "Auto-generated if empty",
+                    })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -833,45 +898,90 @@ export const SalesOrderFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <SelectSearch
-                  label="Outlet"
+                <FormField
+                  label={intl.formatMessage({
+                    id: "sales_order.form.field_outlet",
+                    defaultMessage: "Outlet",
+                  })}
                   isRequired
-                  isInvalid={Boolean(f.state.meta.errors[0])}
-                  errorMessage={String(f.state.meta.errors[0] ?? "")}
-                  value={f.state.value}
-                  onChange={(v) => handleOutletChange(Array.isArray(v) ? v[0] ?? "" : v)}
-                  sourceData={async () => outletList}
-                  optionsKey="id"
-                  queryKeyBase="outletSelect"
-                  getOptionLabel={(o) => o.name}
-                  getOptionDescription={(o) => o.areaName}
-                  placeholder="Select outlet…"
-                  searchPlaceholder="Search outlets…"
-                  isLoading={outletsLoading}
-                />
+                  showValid={Boolean(f.state.value)}
+                  hint={intl.formatMessage({
+                    id: "sales_order.form.field_outlet_hint",
+                    defaultMessage: "Discount programs are matched to the selected outlet",
+                  })}
+                  error={
+                    f.state.meta.errors.length > 0
+                      ? String(f.state.meta.errors[0])
+                      : undefined
+                  }
+                >
+                  <SelectSearch
+                    ariaLabel={intl.formatMessage({
+                      id: "sales_order.form.field_outlet",
+                      defaultMessage: "Outlet",
+                    })}
+                    isInvalid={Boolean(f.state.meta.errors[0])}
+                    value={f.state.value}
+                    onChange={(v) => handleOutletChange(Array.isArray(v) ? v[0] ?? "" : v)}
+                    sourceData={async () => outletList}
+                    optionsKey="id"
+                    queryKeyBase="outletSelect"
+                    getOptionLabel={(o) => o.name}
+                    getOptionDescription={(o) => o.areaName}
+                    placeholder={intl.formatMessage({
+                      id: "sales_order.form.field_outlet_placeholder",
+                      defaultMessage: "Select outlet…",
+                    })}
+                    searchPlaceholder={intl.formatMessage({
+                      id: "sales_order.form.field_outlet_search",
+                      defaultMessage: "Search outlets…",
+                    })}
+                    isLoading={outletsLoading}
+                  />
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="date">
               {(f) => (
-                <DatePicker
-                  label="Order date"
-                  value={f.state.value ?? ""}
-                  onChange={(v) => f.handleChange(v as string)}
-                  placeholder="Select order date"
-                />
+                <FormField
+                  label={intl.formatMessage({
+                    id: "sales_order.form.field_order_date",
+                    defaultMessage: "Order date",
+                  })}
+                  isRequired
+                  showValid={Boolean(f.state.value)}
+                >
+                  <DatePicker
+                    value={f.state.value ?? ""}
+                    onChange={(v) => f.handleChange(v as string)}
+                    placeholder={intl.formatMessage({
+                      id: "sales_order.form.field_order_date_placeholder",
+                      defaultMessage: "Select order date",
+                    })}
+                  />
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="expectedDeliveryDate">
               {(f) => (
-                <DatePicker
-                  label="ETA"
-                  value={f.state.value ?? ""}
-                  onChange={(v) => f.handleChange(v as string)}
-                  placeholder="Select delivery date"
-                  min={f.state.value || undefined}
-                />
+                <FormField
+                  label={intl.formatMessage({
+                    id: "sales_order.form.field_eta",
+                    defaultMessage: "ETA",
+                  })}
+                >
+                  <DatePicker
+                    value={f.state.value ?? ""}
+                    onChange={(v) => f.handleChange(v as string)}
+                    placeholder={intl.formatMessage({
+                      id: "sales_order.form.field_eta_placeholder",
+                      defaultMessage: "Select delivery date",
+                    })}
+                    min={f.state.value || undefined}
+                  />
+                </FormField>
               )}
             </form.Field>
           </div>
@@ -882,6 +992,7 @@ export const SalesOrderFormPage = () => {
           step={2}
           tone="order"
           title="Line items"
+          completed={sectionItemsComplete}
           action={
             <Button type="button" variant="outline" size="sm" className="h-7" onClick={handleAddItem}>
               <Plus className="size-3.5" />
@@ -1121,7 +1232,13 @@ export const SalesOrderFormPage = () => {
           </div>
         </FormSection>
 
-        <FormSection icon={NotebookPen} step={3} tone="order" title="Additional information">
+        <FormSection
+          icon={NotebookPen}
+          step={3}
+          tone="order"
+          title="Additional information"
+          completed={sectionExtraComplete}
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="paymentTerms">
               {(f) => (
@@ -1152,7 +1269,13 @@ export const SalesOrderFormPage = () => {
           </div>
         </FormSection>
 
-        <FormFooter>
+        <FormFooter
+          autosave={{
+            enabled: true,
+            lastSaved: lastAutosavedAt,
+            onSave: autosaveDraft,
+          }}
+        >
           <Button
             type="button"
             variant="outline"

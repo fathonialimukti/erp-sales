@@ -11,6 +11,7 @@ import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FormSection } from "../../components/FormSection";
+import { FormField } from "../../components/FormField";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
@@ -136,17 +137,30 @@ export const BudgetPeriodFormPage = () => {
     formData.startDate && formData.endDate
       ? `${formData.startDate} → ${formData.endDate}`
       : (formData.startDate || formData.endDate || "");
+  // Section completion: all required fields filled AND the form's own
+  // date-order validation passes — completion is derived from real validation.
+  const sectionComplete =
+    formData.name.trim().length > 0 &&
+    Boolean(formData.startDate) &&
+    Boolean(formData.endDate) &&
+    new Date(formData.startDate) <= new Date(formData.endDate);
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div
+        className="flex-1 flex items-center justify-center"
+        data-ai-context={JSON.stringify({ section: "budget-period-form", loading: true })}
+      >
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({ section: "budget-period-form", isEdit, id: id ?? null })}
+    >
       <PageHeader
         module="budgetPeriod"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -165,6 +179,7 @@ export const BudgetPeriodFormPage = () => {
       />
       <div className="flex-1 overflow-auto p-6">
         <FormLayout
+          mode="standard"
           sidebar={
             <FormPreview
               module="budgetPeriod"
@@ -193,6 +208,7 @@ export const BudgetPeriodFormPage = () => {
               icon={CalendarRange}
               step={1}
               tone="budgetPeriod"
+              completed={sectionComplete}
               title={intl.formatMessage({
                 id: "budget_period.form.basic_info",
                 defaultMessage: "Basic Information",
@@ -228,42 +244,58 @@ export const BudgetPeriodFormPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex flex-col gap-1 sm:col-span-2">
-                  <Label htmlFor="name">
-                    {intl.formatMessage({ id: "budget_period.form.name", defaultMessage: "Name" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="name"
+                  className="sm:col-span-2"
+                  label={intl.formatMessage({ id: "budget_period.form.name", defaultMessage: "Name" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "budget_period.form.name_hint",
+                    defaultMessage: "A clear name like FY 2026 Q1 makes the period easy to pick later",
+                  })}
+                  showValid={formData.name.trim().length > 0}
+                >
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder={intl.formatMessage({ id: "budget_period.form.name_placeholder", defaultMessage: "Enter period name" })}
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="startDate">
-                    {intl.formatMessage({ id: "budget_period.form.start_date", defaultMessage: "Start Date" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                </FormField>
+                <FormField
+                  id="startDate"
+                  label={intl.formatMessage({ id: "budget_period.form.start_date", defaultMessage: "Start Date" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "budget_period.form.start_date_hint",
+                    defaultMessage: "First day of the budget period",
+                  })}
+                  showValid={Boolean(formData.startDate)}
+                >
                   <Input
                     id="startDate"
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="endDate">
-                    {intl.formatMessage({ id: "budget_period.form.end_date", defaultMessage: "End Date" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                </FormField>
+                <FormField
+                  id="endDate"
+                  label={intl.formatMessage({ id: "budget_period.form.end_date", defaultMessage: "End Date" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "budget_period.form.end_date_hint",
+                    defaultMessage: "Last day of the period — must be on or after the start date",
+                  })}
+                  showValid={Boolean(formData.endDate)}
+                >
                   <Input
                     id="endDate"
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                   />
-                </div>
+                </FormField>
               </div>
             </FormSection>
 

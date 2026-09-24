@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -14,6 +14,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
+import { FormField } from "../../components/FormField";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -22,7 +23,6 @@ import { AiKbWriter } from "@/components/AiKbWriter";
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -54,6 +54,7 @@ export const KnowledgeBaseFormPage = () => {
   const canSave = hasPermission(id ? "knowledge-base@update" : "knowledge-base@create");
 
   const isEdit = Boolean(id);
+  const DRAFT_KEY = `knowledge-base-form-draft:${isEdit ? `edit:${id}` : "new"}`;
   const [modalStage, setModalStage] = useState<ModalStage>("idle");
   const [resultMessage, setResultMessage] = useState("");
   // Tracks the id whose embedding status we are polling after a successful save.
@@ -65,6 +66,14 @@ export const KnowledgeBaseFormPage = () => {
   // Ticks to force the terminal-status effect to re-evaluate the timeout when status
   // stays `pending` past 30s (otherwise the effect would never re-run).
   const [pollingTick, setPollingTick] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(() => {
+    try {
+      const ts = localStorage.getItem(`${DRAFT_KEY}:ts`);
+      return ts ? new Date(ts) : undefined;
+    } catch {
+      return undefined;
+    }
+  });
   const toast = useToast();
 
   const { data, isLoading } = useQuery({
@@ -94,6 +103,38 @@ export const KnowledgeBaseFormPage = () => {
     (v) => String(v ?? "").trim().length > 0,
   ).length;
   const excerpt = (live.content ?? "").trim().replace(/\s+/g, " ").slice(0, 140);
+
+  // LocalStorage draft autosave — debounced via FormFooter's 1.5s timer.
+  // Content guard: don't persist a completely empty new-form draft.
+  const hasDraftContent = live.title.trim().length > 0 || live.content.trim().length > 0;
+  const saveDraft = useCallback(() => {
+    if (!hasDraftContent) return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form.state.values));
+      const now = new Date();
+      localStorage.setItem(`${DRAFT_KEY}:ts`, now.toISOString());
+      setLastSaved(now);
+    } catch {
+      // Private mode / quota exceeded — autosave is a safety net, never a blocker.
+    }
+  }, [DRAFT_KEY, form.state.values, hasDraftContent]);
+
+  // Restore draft on mount for new forms only (edit mode uses server data).
+  useEffect(() => {
+    if (isEdit) return;
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as Partial<FormValues>;
+      (Object.keys(parsed) as (keyof FormValues)[]).forEach((k) => {
+        if (parsed[k] != null && String(parsed[k]).trim() !== "")
+          form.setFieldValue(k as never, parsed[k] as never);
+      });
+    } catch {
+      // ignore corrupted draft
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isEdit && data) {
@@ -293,6 +334,7 @@ export const KnowledgeBaseFormPage = () => {
         />
 
       <FormLayout
+        mode="complex"
         sidebar={
           <FormPreview
             module="knowledge"
@@ -338,6 +380,7 @@ export const KnowledgeBaseFormPage = () => {
           icon={BookOpen}
           step={1}
           tone="knowledge"
+          completed={filled >= 3}
           title={intl.formatMessage({
             id: "knowledgeBase.form.section_basic",
             defaultMessage: "Basic information",
@@ -349,14 +392,20 @@ export const KnowledgeBaseFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="kb-title">
-                    {intl.formatMessage({
-                      id: "knowledgeBase.form.field_title",
-                      defaultMessage: "Title",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="kb-title"
+                  label={intl.formatMessage({
+                    id: "knowledgeBase.form.field_title",
+                    defaultMessage: "Title",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "knowledgeBase.form.field_title_hint",
+                    defaultMessage: "A short, descriptive title for this knowledge entry",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="kb-title"
                     value={f.state.value ?? ""}
@@ -367,10 +416,7 @@ export const KnowledgeBaseFormPage = () => {
                       defaultMessage: "Short title",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -379,14 +425,20 @@ export const KnowledgeBaseFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="kb-source">
-                    {intl.formatMessage({
-                      id: "knowledgeBase.form.field_source",
-                      defaultMessage: "Source",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="kb-source"
+                  label={intl.formatMessage({
+                    id: "knowledgeBase.form.field_source",
+                    defaultMessage: "Source",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "knowledgeBase.form.field_source_hint",
+                    defaultMessage: "Where this knowledge comes from — e.g. Policy, FAQ, SOP",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="kb-source"
                     value={f.state.value ?? ""}
@@ -397,10 +449,7 @@ export const KnowledgeBaseFormPage = () => {
                       defaultMessage: "Policy, FAQ, SOP…",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -409,14 +458,20 @@ export const KnowledgeBaseFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="kb-content">
-                    {intl.formatMessage({
-                      id: "knowledgeBase.form.field_content",
-                      defaultMessage: "Content",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="kb-content"
+                  label={intl.formatMessage({
+                    id: "knowledgeBase.form.field_content",
+                    defaultMessage: "Content",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "knowledgeBase.form.field_content_hint",
+                    defaultMessage: "The full text that the assistant will reference",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Textarea
                     id="kb-content"
                     rows={10}
@@ -428,23 +483,26 @@ export const KnowledgeBaseFormPage = () => {
                       defaultMessage: "Paste the knowledge text here",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>
         </FormSection>
       
-        <FormFooter>
+        <FormFooter
+          autosave={{
+            enabled: true,
+            lastSaved,
+            onSave: saveDraft,
+          }}
+        >
           <AiKbWriter />
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
             type="submit"
               disabled={!canSave || createMutation.isPending || updateMutation.isPending}
-            >
+          >
               {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (

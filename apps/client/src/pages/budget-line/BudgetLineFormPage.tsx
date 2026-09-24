@@ -11,6 +11,7 @@ import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { FormSection } from "../../components/FormSection";
+import { FormField } from "../../components/FormField";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
@@ -201,28 +202,39 @@ export const BudgetLineFormPage = () => {
       ? { id: "budget.scope.region", defaultMessage: "Region" }
       : { id: "budget.scope.area", defaultMessage: "Area" },
   );
-  const scopeFilled =
-    formData.scope === "REGION"
-      ? formData.regionId
-        ? 1
-        : 0
-      : formData.areaId
-        ? 1
-        : 0;
-  const filled =
-    [formData.budgetTypeId, formData.periodId, formData.amount].filter(Boolean).length +
-    scopeFilled;
+  // Validation-derived field states — section completion and the preview
+  // meter reflect real validity (amount > 0, scope target selected), not
+  // just "a value exists".
+  const amountValid = formData.amount.trim().length > 0 && Number(formData.amount) > 0;
+  const scopeTargetId = formData.scope === "REGION" ? formData.regionId : formData.areaId;
+  const sectionComplete =
+    Boolean(formData.budgetTypeId) &&
+    Boolean(formData.periodId) &&
+    amountValid &&
+    Boolean(scopeTargetId);
+  const filled = [
+    Boolean(formData.budgetTypeId),
+    Boolean(formData.periodId),
+    amountValid,
+    Boolean(scopeTargetId),
+  ].filter(Boolean).length;
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div
+        className="flex-1 flex items-center justify-center"
+        data-ai-context={JSON.stringify({ section: "budget-line-form", loading: true })}
+      >
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({ section: "budget-line-form", isEdit, id: id ?? null })}
+    >
       <PageHeader
         module="budgetLine"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -241,6 +253,7 @@ export const BudgetLineFormPage = () => {
       />
       <div className="flex-1 overflow-auto p-6">
         <FormLayout
+          mode="standard"
           sidebar={
             <FormPreview
               module="budgetLine"
@@ -273,17 +286,23 @@ export const BudgetLineFormPage = () => {
               icon={Coins}
               step={1}
               tone="budgetLine"
+              completed={sectionComplete}
               title={intl.formatMessage({
                 id: "budget_line.form.basic_info",
                 defaultMessage: "Basic Information",
               })}
             >
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="budgetTypeId">
-                    {intl.formatMessage({ id: "budget_line.form.budget_type", defaultMessage: "Budget Type" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="budgetTypeId"
+                  label={intl.formatMessage({ id: "budget_line.form.budget_type", defaultMessage: "Budget Type" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "budget_line.form.budget_type_hint",
+                    defaultMessage: "The expense category this allocation belongs to",
+                  })}
+                  showValid={Boolean(formData.budgetTypeId)}
+                >
                   <Select
                     value={formData.budgetTypeId}
                     onValueChange={(value) => setFormData({ ...formData, budgetTypeId: value })}
@@ -300,12 +319,17 @@ export const BudgetLineFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="periodId">
-                    {intl.formatMessage({ id: "budget_line.form.period", defaultMessage: "Budget Period" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                </FormField>
+                <FormField
+                  id="periodId"
+                  label={intl.formatMessage({ id: "budget_line.form.period", defaultMessage: "Budget Period" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "budget_line.form.period_hint",
+                    defaultMessage: "The budget period this amount is allocated to",
+                  })}
+                  showValid={Boolean(formData.periodId)}
+                >
                   <Select
                     value={formData.periodId}
                     onValueChange={(value) => setFormData({ ...formData, periodId: value })}
@@ -322,12 +346,18 @@ export const BudgetLineFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex flex-col gap-1 sm:col-span-2">
-                  <Label htmlFor="scope">
-                    {intl.formatMessage({ id: "budget_line.form.scope", defaultMessage: "Scope" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                </FormField>
+                <FormField
+                  id="scope"
+                  className="sm:col-span-2"
+                  label={intl.formatMessage({ id: "budget_line.form.scope", defaultMessage: "Scope" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "budget_line.form.scope_hint",
+                    defaultMessage: "Allocate to an entire region or to a specific area",
+                  })}
+                  showValid
+                >
                   <Select
                     value={formData.scope}
                     onValueChange={(value) => handleScopeChange(value as "REGION" | "AREA")}
@@ -344,12 +374,17 @@ export const BudgetLineFormPage = () => {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="regionId">
-                    {intl.formatMessage({ id: "budget_line.form.region", defaultMessage: "Region" })}{" "}
-                    {formData.scope === "REGION" && <span className="text-destructive">*</span>}
-                  </Label>
+                </FormField>
+                <FormField
+                  id="regionId"
+                  label={intl.formatMessage({ id: "budget_line.form.region", defaultMessage: "Region" })}
+                  isRequired={formData.scope === "REGION"}
+                  hint={intl.formatMessage({
+                    id: "budget_line.form.region_hint",
+                    defaultMessage: "Required when the scope is Region — covers every area inside it",
+                  })}
+                  showValid={formData.scope === "REGION" && Boolean(formData.regionId)}
+                >
                   <Select
                     value={formData.regionId}
                     onValueChange={(value) => setFormData({ ...formData, regionId: value })}
@@ -366,12 +401,17 @@ export const BudgetLineFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="areaId">
-                    {intl.formatMessage({ id: "budget_line.form.area", defaultMessage: "Area" })}{" "}
-                    {formData.scope === "AREA" && <span className="text-destructive">*</span>}
-                  </Label>
+                </FormField>
+                <FormField
+                  id="areaId"
+                  label={intl.formatMessage({ id: "budget_line.form.area", defaultMessage: "Area" })}
+                  isRequired={formData.scope === "AREA"}
+                  hint={intl.formatMessage({
+                    id: "budget_line.form.area_hint",
+                    defaultMessage: "Required when the scope is Area — the specific area receiving the budget",
+                  })}
+                  showValid={formData.scope === "AREA" && Boolean(formData.areaId)}
+                >
                   <Select
                     value={formData.areaId}
                     onValueChange={(value) => setFormData({ ...formData, areaId: value })}
@@ -388,12 +428,17 @@ export const BudgetLineFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="amount">
-                    {intl.formatMessage({ id: "budget_line.form.amount", defaultMessage: "Amount" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                </FormField>
+                <FormField
+                  id="amount"
+                  label={intl.formatMessage({ id: "budget_line.form.amount", defaultMessage: "Amount" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "budget_line.form.amount_hint",
+                    defaultMessage: "Total allocated for this scope during the selected period",
+                  })}
+                  showValid={amountValid}
+                >
                   <Input
                     id="amount"
                     type="number"
@@ -403,7 +448,7 @@ export const BudgetLineFormPage = () => {
                     min="0.01"
                     step="0.01"
                   />
-                </div>
+                </FormField>
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="currency">
                     {intl.formatMessage({ id: "budget_line.form.currency", defaultMessage: "Currency" })}

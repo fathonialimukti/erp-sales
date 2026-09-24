@@ -15,6 +15,7 @@ import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SelectSearch } from "../../components/SelectSearch";
 import { AiFillButton } from '@/components/AiFillButton';
@@ -149,7 +150,7 @@ export const ActionProgramFormPage = () => {
 
   // Live values drive the preview rail — re-renders on every keystroke.
   const live = useStore(form.store, (s) => s.values) as FormValues;
-  const filled = [
+  const requiredFields = [
     live.name,
     live.actionTypeId,
     live.startDate,
@@ -157,7 +158,9 @@ export const ActionProgramFormPage = () => {
     live.areaId,
     live.picId,
     live.outlets.length > 0 ? "x" : "",
-  ].filter((v) => String(v ?? "").trim().length > 0).length;
+  ];
+  const filled = requiredFields.filter((v) => String(v ?? "").trim().length > 0).length;
+  const sectionCompleted = requiredFields.every((v) => String(v ?? "").trim().length > 0);
   const actionTypeName =
     (actionTypes?.data ?? []).find((at) => at.id === live.actionTypeId)?.name ?? "";
   const areaName = (areas?.data ?? []).find((a) => a.id === live.areaId)?.name ?? "";
@@ -315,6 +318,7 @@ export const ActionProgramFormPage = () => {
         />
 
       <FormLayout
+        mode="standard"
         sidebar={
           <FormPreview
             module="planning"
@@ -396,6 +400,7 @@ export const ActionProgramFormPage = () => {
           icon={Flag}
           step={1}
           tone="planning"
+          completed={sectionCompleted}
           title={intl.formatMessage({
             id: "action_program.form.section_basic",
             defaultMessage: "Basic information",
@@ -407,24 +412,27 @@ export const ActionProgramFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ap-name">
-                    {intl.formatMessage({
-                      id: "action_program.form.field_name",
-                      defaultMessage: "Program name",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ap-name"
+                  label={intl.formatMessage({
+                    id: "action_program.form.field_name",
+                    defaultMessage: "Program name",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "action_program.form.hint_name",
+                    defaultMessage: "A descriptive name for this action program",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="ap-name"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -433,14 +441,20 @@ export const ActionProgramFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ap-actionTypeId">
-                    {intl.formatMessage({
-                      id: "action_program.form.field_type",
-                      defaultMessage: "Type",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ap-actionTypeId"
+                  label={intl.formatMessage({
+                    id: "action_program.form.field_type",
+                    defaultMessage: "Type",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "action_program.form.hint_type",
+                    defaultMessage: "The category that determines workflow and approval path",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -461,10 +475,7 @@ export const ActionProgramFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -491,14 +502,20 @@ export const ActionProgramFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ap-start">
-                    {intl.formatMessage({
-                      id: "action_program.form.field_start_date",
-                      defaultMessage: "Start date",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ap-start"
+                  label={intl.formatMessage({
+                    id: "action_program.form.field_start_date",
+                    defaultMessage: "Start date",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "action_program.form.hint_start_date",
+                    defaultMessage: "First day the program is active",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="ap-start"
                     type="date"
@@ -506,10 +523,7 @@ export const ActionProgramFormPage = () => {
                     onChange={(e) => f.handleChange(e.target.value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -518,14 +532,20 @@ export const ActionProgramFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ap-end">
-                    {intl.formatMessage({
-                      id: "action_program.form.field_end_date",
-                      defaultMessage: "End date",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ap-end"
+                  label={intl.formatMessage({
+                    id: "action_program.form.field_end_date",
+                    defaultMessage: "End date",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "action_program.form.hint_end_date",
+                    defaultMessage: "Last day the program is active",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="ap-end"
                     type="date"
@@ -533,10 +553,7 @@ export const ActionProgramFormPage = () => {
                     onChange={(e) => f.handleChange(e.target.value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -564,14 +581,20 @@ export const ActionProgramFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ap-area">
-                    {intl.formatMessage({
-                      id: "action_program.form.field_area",
-                      defaultMessage: "Area",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ap-area"
+                  label={intl.formatMessage({
+                    id: "action_program.form.field_area",
+                    defaultMessage: "Area",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "action_program.form.hint_area",
+                    defaultMessage: "Geographical region this program covers",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -592,10 +615,7 @@ export const ActionProgramFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -604,14 +624,20 @@ export const ActionProgramFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ap-pic">
-                    {intl.formatMessage({
-                      id: "action_program.form.field_pic",
-                      defaultMessage: "PIC",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ap-pic"
+                  label={intl.formatMessage({
+                    id: "action_program.form.field_pic",
+                    defaultMessage: "PIC",
+                  })}
+                  isRequired
+                  showValid
+                  hint={intl.formatMessage({
+                    id: "action_program.form.hint_pic",
+                    defaultMessage: "Person in charge of executing this program",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -632,10 +658,7 @@ export const ActionProgramFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 

@@ -1,11 +1,13 @@
 import type { CSSProperties, ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useIntl } from "react-intl";
+import { motion, useReducedMotion } from "motion/react";
 
 import { icons } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { moduleCssVar, type ModuleKey } from "@/types/module";
+import { pageEnter, getMotionProps } from "@/lib/motion";
 
 /** Default left plate icon per module key (nav Family A tiles). */
 const MODULE_ICON: Record<string, string> = {
@@ -43,6 +45,15 @@ interface PageHeaderProps {
   /** Decorative media — right side, after actions (optional; not default). */
   media?: ReactNode;
   className?: string;
+  /**
+   * Section progress indicator — renders animated dots below the description.
+   * `current` is 1-based. Dots animate in via `pageEnter` preset.
+   */
+  progress?: {
+    current: number;
+    total: number;
+    label?: string;
+  };
 }
 
 /**
@@ -60,8 +71,10 @@ export const PageHeader = ({
   icon,
   media,
   className,
+  progress,
 }: PageHeaderProps) => {
   const intl = useIntl();
+  const reduced = useReducedMotion();
   const accent = moduleCssVar(module);
   const isModuleHeader = Boolean(accent);
   const railColor = accent ?? "var(--primary)";
@@ -186,6 +199,55 @@ export const PageHeader = ({
               >
                 {description}
               </p>
+            ) : null}
+            {progress ? (
+              <motion.div
+                variants={pageEnter}
+                {...getMotionProps(reduced)}
+                className="flex items-center gap-2 pt-0.5"
+              >
+                <span className="flex items-center gap-1.5" role="presentation">
+                  {Array.from({ length: progress.total }).map((_, i) => {
+                    const isCompleted = i < progress.current - 1;
+                    const isCurrent = i === progress.current - 1;
+                    return (
+                      <span
+                        key={i}
+                        aria-hidden
+                        className={cn(
+                          "size-2 rounded-full",
+                          isCompleted && "bg-success/30",
+                          !isCompleted && !isCurrent && "bg-muted",
+                        )}
+                        style={
+                          isCurrent
+                            ? {
+                                backgroundColor: accent ?? "var(--primary)",
+                              }
+                            : undefined
+                        }
+                      />
+                    );
+                  })}
+                </span>
+                <span
+                  className={cn(
+                    "text-xs font-medium",
+                    isModuleHeader
+                      ? "text-white/80"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {progress.label ??
+                    intl.formatMessage(
+                      {
+                        id: "pageHeader.progress.label",
+                        defaultMessage: "Section {current} of {total}",
+                      },
+                      { current: progress.current, total: progress.total },
+                    )}
+                </span>
+              </motion.div>
             ) : null}
           </div>
         </div>

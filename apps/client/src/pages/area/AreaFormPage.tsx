@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm, useStore } from "@tanstack/react-form";
-import { Loader2, Save, Hash, MapPinned } from "lucide-react";
+import { useForm } from "@tanstack/react-form";
+import { Loader2, Save, MapPinned } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -14,7 +14,7 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
-import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -86,11 +86,7 @@ export const AreaFormPage = () => {
     name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
   });
 
-  // Live values drive the preview rail — re-renders on every keystroke.
-  const live = useStore(form.store, (s) => s.values) as FormValues;
-  const filled = [live.name, live.code, live.regionId].filter((v) => String(v ?? "").trim().length > 0).length;
-  const regionName =
-    (regions?.data ?? []).find((r) => r.id === live.regionId)?.name ?? "";
+
 
   useEffect(() => {
     if (isEdit && data) {
@@ -201,29 +197,7 @@ export const AreaFormPage = () => {
           }
         />
 
-      <FormLayout
-        sidebar={
-          <FormPreview
-            module="area"
-            icon={MapPinned}
-            title={live.name}
-            subtitle={regionName || undefined}
-            status={!isEdit ? "DRAFT" : undefined}
-            filled={filled}
-            total={3}
-            rows={[
-              {
-                icon: Hash,
-                label: intl.formatMessage({
-                  id: "area.form.field_code",
-                  defaultMessage: "Code",
-                }),
-                value: live.code,
-              },
-            ]}
-          />
-        }
-      >
+      <FormLayout mode="simple">
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -306,11 +280,18 @@ export const AreaFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor="area-name">
-                    {intl.formatMessage({ id: "area.form.field_name", defaultMessage: "Name" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  className="sm:col-span-2"
+                  id="area-name"
+                  label={intl.formatMessage({ id: "area.form.field_name", defaultMessage: "Name" })}
+                  hint={intl.formatMessage({
+                    id: "area.form.field_name_hint",
+                    defaultMessage: "Enter a unique area name",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="area-name"
                     value={f.state.value ?? ""}
@@ -321,10 +302,7 @@ export const AreaFormPage = () => {
                       defaultMessage: "Area name",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>

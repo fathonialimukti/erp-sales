@@ -1,8 +1,10 @@
 import { createElement, type CSSProperties, type ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import { CheckCircle2, type LucideIcon } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { pageEnter, getMotionProps } from "@/lib/motion";
 import { moduleCssVar, type ModuleKey } from "@/types/module";
 
 interface FormSectionProps {
@@ -18,6 +20,8 @@ interface FormSectionProps {
   step?: number;
   /** Module accent for the icon plate (allowed summary-plate surface). */
   tone?: ModuleKey;
+  /** When true, shows a completed success state (checkmark badge + success ring). */
+  completed?: boolean;
 }
 
 const renderIcon = (icon: LucideIcon) =>
@@ -39,6 +43,7 @@ export const FormSection = ({
   icon,
   step,
   tone,
+  completed = false,
 }: FormSectionProps) => {
   const accent = moduleCssVar(tone);
   const plateStyle = accent
@@ -47,16 +52,19 @@ export const FormSection = ({
         color: accent,
       } satisfies CSSProperties)
     : undefined;
+  const reduced = useReducedMotion();
 
   return (
     <Card
       size="default"
       className={cn(
         "gap-0 py-0 shadow-none ring-1 ring-border/70",
+        completed && "ring-success/30",
         className,
       )}
       data-slot="form-section"
       data-step={step}
+      data-completed={completed}
     >
       <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-start gap-3">
@@ -80,6 +88,15 @@ export const FormSection = ({
                 >
                   {step}
                 </span>
+              ) : null}
+              {completed ? (
+                <motion.span
+                  variants={pageEnter}
+                  {...getMotionProps(reduced)}
+                  className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm ring-2 ring-background"
+                >
+                  <CheckCircle2 className="size-3.5" aria-hidden />
+                </motion.span>
               ) : null}
             </span>
           ) : step !== undefined ? (

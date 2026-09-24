@@ -12,11 +12,11 @@ import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -267,6 +267,7 @@ const InnerForm = ({
         />
 
         <FormLayout
+        mode="standard"
         sidebar={
           <FormPreview
             module="user"
@@ -307,13 +308,20 @@ const InnerForm = ({
           step={1}
           tone="user"
           title={intl.formatMessage({ id: "roles.form.identity", defaultMessage: "Identity" })}
+          completed={!nameError}
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="role-name">
-                {intl.formatMessage({ id: "roles.form.name", defaultMessage: "Name" })}
-                <span className="text-destructive">*</span>
-              </Label>
+            <FormField
+              id="role-name"
+              label={intl.formatMessage({ id: "roles.form.name", defaultMessage: "Name" })}
+              isRequired
+              showValid={!nameError}
+              error={nameError ?? undefined}
+              hint={intl.formatMessage({
+                id: "roles.form.name_hint",
+                defaultMessage: "A clear, unique name like Sales Manager",
+              })}
+            >
               <Input
                 id="role-name"
                 value={formState.name}
@@ -321,22 +329,25 @@ const InnerForm = ({
                 placeholder="e.g. Sales Manager"
                 aria-invalid={Boolean(nameError)}
               />
-              {nameError ? <p className="text-xs text-destructive">{nameError}</p> : null}
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="role-description">
-                {intl.formatMessage({
-                  id: "roles.form.description",
-                  defaultMessage: "Description",
-                })}
-              </Label>
+            </FormField>
+            <FormField
+              id="role-description"
+              label={intl.formatMessage({
+                id: "roles.form.description",
+                defaultMessage: "Description",
+              })}
+              hint={intl.formatMessage({
+                id: "roles.form.description_hint",
+                defaultMessage: "Optional — what this role is used for",
+              })}
+            >
               <Input
                 id="role-description"
                 value={formState.description}
                 onChange={(e) => setFormState((p) => ({ ...p, description: e.target.value }))}
                 placeholder="What does this role do?"
               />
-            </div>
+            </FormField>
           </div>
         </FormSection>
 
@@ -348,6 +359,7 @@ const InnerForm = ({
             id: "roles.form.permissions",
             defaultMessage: "Permissions",
           })}
+          completed={formState.permissions.length > 0}
           description={
             <>
               <strong>{formState.permissions.length}</strong> / {allPermissions.length} permissions
@@ -382,6 +394,13 @@ const InnerForm = ({
           }
         >
           <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              {intl.formatMessage({
+                id: "roles.form.permissions_hint",
+                defaultMessage:
+                  "Pick what users with this role can do — the group checkbox selects every action for a module.",
+              })}
+            </p>
             {grouped.map(([resource, perms]) => {
               const selectedInGroup = perms.filter((p) => formState.permissions.includes(p.name));
               const selectedCount = selectedInGroup.length;

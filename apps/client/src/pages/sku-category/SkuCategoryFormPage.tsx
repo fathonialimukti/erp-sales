@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm, useStore } from "@tanstack/react-form";
-import { Loader2, Save, Tags, Hash, FileText } from "lucide-react";
+import { useForm } from "@tanstack/react-form";
+import { Loader2, Save, Tags, FileText } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -14,7 +14,7 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
-import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -74,12 +74,6 @@ export const SkuCategoryFormPage = () => {
     name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
     description: (v: unknown) => form.setFieldValue("description" as never, String(v) as never),
   });
-
-  // Live values drive the preview rail — re-renders on every keystroke.
-  const live = useStore(form.store, (s) => s.values) as FormValues;
-  const filled = [live.name, live.code, live.description].filter(
-    (v) => String(v ?? "").trim().length > 0,
-  ).length;
 
   useEffect(() => {
     if (isEdit && data) {
@@ -208,36 +202,7 @@ export const SkuCategoryFormPage = () => {
           }
         />
 
-      <FormLayout
-        sidebar={
-          <FormPreview
-            module="skuCategory"
-            icon={Tags}
-            title={live.name}
-            status={!isEdit ? "DRAFT" : undefined}
-            filled={filled}
-            total={3}
-            rows={[
-              {
-                icon: Hash,
-                label: intl.formatMessage({
-                  id: "sku_category.form.field_code",
-                  defaultMessage: "Code",
-                }),
-                value: live.code,
-              },
-              {
-                icon: FileText,
-                label: intl.formatMessage({
-                  id: "sku_category.form.field_description",
-                  defaultMessage: "Description",
-                }),
-                value: live.description,
-              },
-            ]}
-          />
-        }
-      >
+      <FormLayout mode="simple">
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -287,14 +252,20 @@ export const SkuCategoryFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-category-name">
-                    {intl.formatMessage({
-                      id: "sku_category.form.field_name",
-                      defaultMessage: "Name",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="sku-category-name"
+                  label={intl.formatMessage({
+                    id: "sku_category.form.field_name",
+                    defaultMessage: "Name",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "sku_category.form.field_name_hint",
+                    defaultMessage: "Enter a unique SKU category name",
+                  })}
+                  isRequired
+                  showValid={f.state.value?.length > 0}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="sku-category-name"
                     value={f.state.value ?? ""}
@@ -305,10 +276,7 @@ export const SkuCategoryFormPage = () => {
                       defaultMessage: "Category name",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>

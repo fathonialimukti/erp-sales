@@ -3,8 +3,8 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm, useStore } from "@tanstack/react-form";
-import { Loader2, Save, Hash, Map } from "lucide-react";
+import { useForm } from "@tanstack/react-form";
+import { Loader2, Save, Map } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -14,7 +14,6 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
-import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -71,10 +70,6 @@ export const RegionFormPage = () => {
     code: (v: unknown) => form.setFieldValue("code" as never, String(v) as never),
     name: (v: unknown) => form.setFieldValue("name" as never, String(v) as never),
   });
-
-  // Live values drive the preview rail — re-renders on every keystroke.
-  const live = useStore(form.store, (s) => s.values) as FormValues;
-  const filled = [live.name, live.code].filter((v) => String(v ?? "").trim().length > 0).length;
 
   useEffect(() => {
     if (isEdit && data) {
@@ -200,28 +195,7 @@ export const RegionFormPage = () => {
         }
       />
 
-      <FormLayout
-        sidebar={
-          <FormPreview
-            module="region"
-            icon={Map}
-            title={live.name}
-            status={!isEdit ? "DRAFT" : undefined}
-            filled={filled}
-            total={2}
-            rows={[
-              {
-                icon: Hash,
-                label: intl.formatMessage({
-                  id: "region.form.field_code",
-                  defaultMessage: "Code",
-                }),
-                value: live.code,
-              },
-            ]}
-          />
-        }
-      >
+      <FormLayout mode="simple">
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -278,6 +252,11 @@ export const RegionFormPage = () => {
                     defaultMessage: "Name",
                   })}
                   isRequired
+                  hint={intl.formatMessage({
+                    id: "region.form.field_name_hint",
+                    defaultMessage: "Enter a unique region name",
+                  })}
+                  showValid
                   error={
                     f.state.meta.errors.length > 0
                       ? String(f.state.meta.errors[0])

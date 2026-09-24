@@ -1,5 +1,8 @@
 import {
   createElement,
+  useEffect,
+  useRef,
+  useState,
   type CSSProperties,
   type ReactNode,
 } from "react";
@@ -78,6 +81,25 @@ export const FormPreview = ({
   const complete = total > 0 && filled >= total;
   const hasContent = title.trim().length > 0 || rows.some((r) => String(r.value ?? "").length > 0);
 
+  /* --- Animated value flash: track previous row values --- */
+  const prevValuesRef = useRef<string[]>([]);
+  const [flashRows, setFlashRows] = useState<boolean[]>([]);
+
+  useEffect(() => {
+    const current = rows.map((r) => String(r.value ?? ""));
+    const prev = prevValuesRef.current;
+    const next = current.map((val, i) => val.length > 0 && prev[i] !== undefined && prev[i] !== val);
+    prevValuesRef.current = current;
+    if (next.some(Boolean)) {
+      setFlashRows(next);
+      // Auto-clear flash after the fade animation completes
+      const timer = setTimeout(() => setFlashRows([]), 320);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
+
   return (
     <motion.div
       variants={pageEnter}
@@ -85,10 +107,19 @@ export const FormPreview = ({
       className={cn("flex flex-col gap-3", className)}
     >
       <Card
-        className="gap-0 overflow-hidden py-0 shadow-sm ring-1 ring-border/70"
+        className="relative gap-0 overflow-hidden py-0 shadow-sm ring-1 ring-border/70"
         data-slot="form-preview"
         data-module={module}
       >
+        {/* Completion accent border — 3px left strip filling vertically by pct */}
+        <motion.div
+          className="absolute inset-y-0 left-0 w-[3px] rounded-l"
+          style={accent ? { backgroundColor: accent } : undefined}
+          initial={false}
+          animate={{ height: `${pct}%` }}
+          transition={reduced ? { duration: 0 } : { duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+          aria-hidden
+        />
         {/* Header strip */}
         <div className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
           <span
@@ -137,6 +168,7 @@ export const FormPreview = ({
                 const value = String(row.value ?? "");
                 const empty = value.trim().length === 0;
                 const Icon = row.icon;
+                const flashing = flashRows[idx] ?? false;
                 return (
                   <li key={idx} className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0">
                     <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
@@ -146,14 +178,25 @@ export const FormPreview = ({
                     {empty ? (
                       <span className="text-xs text-muted-foreground">—</span>
                     ) : (
-                      <span
+                      <motion.span
                         className={cn(
-                          "max-w-[55%] truncate text-right text-sm font-semibold text-foreground",
+                          "max-w-[55%] truncate rounded px-1.5 py-0.5 text-right text-sm font-semibold text-foreground",
                           row.money && "tabular-nums",
                         )}
+                        initial={false}
+                        animate={{
+                          backgroundColor: flashing
+                            ? "color-mix(in srgb, var(--primary) 10%, transparent)"
+                            : "transparent",
+                        }}
+                        transition={
+                          reduced
+                            ? { duration: 0 }
+                            : { backgroundColor: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }
+                        }
                       >
                         {row.value}
-                      </span>
+                      </motion.span>
                     )}
                   </li>
                 );

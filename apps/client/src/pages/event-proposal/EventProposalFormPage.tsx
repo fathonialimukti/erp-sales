@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -16,11 +16,11 @@ import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { FormField } from "../../components/FormField";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -190,6 +190,29 @@ export const EventProposalFormPage = () => {
     live.currency,
     live.vendors.filter((v) => v.vendorId).length > 0 ? "x" : "",
   ].filter((v) => String(v ?? "").trim().length > 0).length;
+
+  // Section completion tracking (drives FormSection completed + PageHeader progress)
+  const section1Completed = Boolean(
+    live.name?.trim() && live.eventDate && live.areaId && live.currency?.trim(),
+  );
+  const section2Completed =
+    live.miscItems.length > 0 && live.miscItems.some((m) => m.name.trim());
+  const section3Completed =
+    live.vendors.length > 0 && live.vendors.some((v) => v.vendorId);
+  const currentSection = !section1Completed ? 1 : section2Completed && section3Completed ? 3 : !section2Completed ? 2 : 3;
+
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
+  const handleAutosave = useCallback(() => {
+    try {
+      localStorage.setItem(
+        `event-proposal-draft-${id ?? "new"}`,
+        JSON.stringify(form.state.values),
+      );
+      setLastSaved(new Date());
+    } catch {
+      // storage full or unavailable — ignore
+    }
+  }, [form.state.values, id]);
   const eventTypeName =
     (eventTypes?.data ?? []).find((et) => et.id === live.eventTypeId)?.name ?? "";
   const areaName = (areas?.data ?? []).find((a) => a.id === live.areaId)?.name ?? "";
@@ -334,9 +357,11 @@ export const EventProposalFormPage = () => {
                   defaultMessage: "Create a new geographical eventProposal",
                 })
           }
+          progress={{ current: currentSection, total: 3 }}
         />
 
       <FormLayout
+        mode="complex"
         sidebar={
           <FormPreview
             module="event"
@@ -436,9 +461,10 @@ export const EventProposalFormPage = () => {
           icon={PartyPopper}
           step={1}
           tone="event"
+          completed={section1Completed}
           title={intl.formatMessage({
             id: "event_proposal.form.section_basic",
-            defaultMessage: "Basic information",
+            defaultMessage: "Basic Information",
           })}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -447,42 +473,43 @@ export const EventProposalFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-name">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_name",
-                      defaultMessage: "Event name",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ep-name"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_name",
+                    defaultMessage: "Event name",
+                  })}
+                  isRequired
+                  showValid={Boolean(f.state.value) && f.state.meta.errors.length === 0}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_name_hint",
+                    defaultMessage: "Enter a descriptive name for this event",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
-                    id="ep-name"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="eventTypeId">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-eventTypeId">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_event_type",
-                      defaultMessage: "Event type",
-                    })}
-                  </Label>
+                <FormField
+                  id="ep-eventTypeId"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_event_type",
+                    defaultMessage: "Event type",
+                  })}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
                   >
                     <SelectTrigger
-                      id="ep-eventTypeId"
                       size="default"
                       aria-label={intl.formatMessage({ id: "event_proposal.form.field_event_type", defaultMessage: "Event type" })}
                     >
@@ -496,43 +523,46 @@ export const EventProposalFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="description">
               {(f) => (
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor="ep-description">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_description",
-                      defaultMessage: "Description",
-                    })}
-                  </Label>
+                <FormField
+                  id="ep-description"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_description",
+                    defaultMessage: "Description",
+                  })}
+                  className="sm:col-span-2"
+                >
                   <Textarea
-                    id="ep-description"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="venue">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-venue">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_venue",
-                      defaultMessage: "Venue",
-                    })}
-                  </Label>
+                <FormField
+                  id="ep-venue"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_venue",
+                    defaultMessage: "Venue",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_venue_hint",
+                    defaultMessage: "Building, room, or full address where the event takes place",
+                  })}
+                >
                   <Input
-                    id="ep-venue"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -541,80 +571,91 @@ export const EventProposalFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-date">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_event_date",
-                      defaultMessage: "Event date",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ep-date"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_event_date",
+                    defaultMessage: "Event date",
+                  })}
+                  isRequired
+                  showValid={Boolean(f.state.value) && f.state.meta.errors.length === 0}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_event_date_hint",
+                    defaultMessage: "First day of the event",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
-                    id="ep-date"
                     type="date"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="eventEndDate">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-end">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_event_end_date",
-                      defaultMessage: "Event end date",
-                    })}
-                  </Label>
+                <FormField
+                  id="ep-end"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_event_end_date",
+                    defaultMessage: "Event end date",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_event_end_date_hint",
+                    defaultMessage: "Last day — leave empty for single-day events",
+                  })}
+                >
                   <Input
-                    id="ep-end"
                     type="date"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="organizerName">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-org-name">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_organizer_name",
-                      defaultMessage: "Organizer name",
-                    })}
-                  </Label>
+                <FormField
+                  id="ep-org-name"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_organizer_name",
+                    defaultMessage: "Organizer name",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_organizer_name_hint",
+                    defaultMessage: "Person responsible for this event",
+                  })}
+                >
                   <Input
-                    id="ep-org-name"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="organizerContact">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-org-contact">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_organizer_contact",
-                      defaultMessage: "Organizer contact",
-                    })}
-                  </Label>
+                <FormField
+                  id="ep-org-contact"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_organizer_contact",
+                    defaultMessage: "Organizer contact",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_organizer_contact_hint",
+                    defaultMessage: "Phone or email for the organizer",
+                  })}
+                >
                   <Input
-                    id="ep-org-contact"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -623,21 +664,26 @@ export const EventProposalFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-area">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_area",
-                      defaultMessage: "Area",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ep-area"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_area",
+                    defaultMessage: "Area",
+                  })}
+                  isRequired
+                  showValid={Boolean(f.state.value) && f.state.meta.errors.length === 0}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_area_hint",
+                    defaultMessage: "Geographical area this event belongs to",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   >
                     <SelectTrigger
-                      id="ep-area"
                       size="default"
                       aria-label={intl.formatMessage({ id: "event_proposal.form.field_area", defaultMessage: "Area" })}
                     >
@@ -651,25 +697,21 @@ export const EventProposalFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="budgetLineId">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-budgetLine">
-                    Budget Line
-                  </Label>
+                <FormField
+                  id="ep-budgetLine"
+                  label="Budget Line"
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
                   >
                     <SelectTrigger
-                      id="ep-budgetLine"
                       size="default"
                       aria-label="Budget Line"
                     >
@@ -683,26 +725,30 @@ export const EventProposalFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="currency">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="ep-currency">
-                    {intl.formatMessage({
-                      id: "event_proposal.form.field_currency",
-                      defaultMessage: "Currency",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="ep-currency"
+                  label={intl.formatMessage({
+                    id: "event_proposal.form.field_currency",
+                    defaultMessage: "Currency",
+                  })}
+                  isRequired
+                  showValid={Boolean(f.state.value) && f.state.meta.errors.length === 0}
+                  hint={intl.formatMessage({
+                    id: "event_proposal.form.field_currency_hint",
+                    defaultMessage: "Currency for all amounts in this proposal",
+                  })}
+                >
                   <Input
-                    id="ep-currency"
                     value={f.state.value ?? ""}
                     onChange={(e) => f.handleChange(e.target.value)}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>
@@ -713,6 +759,7 @@ export const EventProposalFormPage = () => {
           icon={ListPlus}
           step={2}
           tone="event"
+          completed={section2Completed}
           title="Miscellaneous Items"
           action={
             <Button
@@ -804,6 +851,7 @@ export const EventProposalFormPage = () => {
           icon={Store}
           step={3}
           tone="event"
+          completed={section3Completed}
           title="Vendors"
           action={
             <Button
@@ -933,7 +981,13 @@ export const EventProposalFormPage = () => {
           </form.Field>
         </FormSection>
       
-        <FormFooter>
+        <FormFooter
+          autosave={{
+            enabled: true,
+            lastSaved,
+            onSave: handleAutosave,
+          }}
+        >
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

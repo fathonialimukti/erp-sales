@@ -14,10 +14,10 @@ import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -171,6 +171,7 @@ export const VendorFormPage = () => {
       />
       <div className="flex-1 overflow-auto p-6">
         <FormLayout
+          mode="standard"
           sidebar={
             <FormPreview
               module="vendor"
@@ -213,12 +214,17 @@ export const VendorFormPage = () => {
                 id: "vendor.form.basic_info",
                 defaultMessage: "Basic Information",
               })}
+              completed={!!formData.name.trim()}
             >
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="code">
-                    {intl.formatMessage({ id: "vendor.form.code", defaultMessage: "Code" })}
-                  </Label>
+                <FormField
+                  id="code"
+                  label={intl.formatMessage({ id: "vendor.form.code", defaultMessage: "Code" })}
+                  hint={intl.formatMessage({
+                    id: "vendor.form.code_hint",
+                    defaultMessage: "Optional unique identifier",
+                  })}
+                >
                   <Input
                     id="code"
                     value={formData.code}
@@ -226,11 +232,11 @@ export const VendorFormPage = () => {
                     placeholder={intl.formatMessage({ id: "vendor.form.code_placeholder", defaultMessage: "Optional code" })}
                     disabled={isEdit}
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="status">
-                    {intl.formatMessage({ id: "vendor.form.status", defaultMessage: "Status" })}
-                  </Label>
+                </FormField>
+                <FormField
+                  id="status"
+                  label={intl.formatMessage({ id: "vendor.form.status", defaultMessage: "Status" })}
+                >
                   <Select
                     value={formData.status}
                     onValueChange={(value) => setFormData({ ...formData, status: value })}
@@ -243,36 +249,51 @@ export const VendorFormPage = () => {
                       <SelectItem value="INACTIVE">{intl.formatMessage({ id: "vendor.status.inactive", defaultMessage: "Inactive" })}</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FormField>
               </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="name">
-                  {intl.formatMessage({ id: "vendor.form.name", defaultMessage: "Name" })}{" "}
-                  <span className="text-destructive">*</span>
-                </Label>
+              <FormField
+                id="name"
+                isRequired
+                showValid={!!formData.name.trim()}
+                label={intl.formatMessage({ id: "vendor.form.name", defaultMessage: "Name" })}
+                hint={intl.formatMessage({
+                  id: "vendor.form.name_hint",
+                  defaultMessage: "Legal name of the vendor",
+                })}
+              >
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder={intl.formatMessage({ id: "vendor.form.name_placeholder", defaultMessage: "Enter vendor name" })}
                 />
-              </div>
+              </FormField>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="contactName">
-                    {intl.formatMessage({ id: "vendor.form.contact_name", defaultMessage: "Contact Name" })}
-                  </Label>
+                <FormField
+                  id="contactName"
+                  label={intl.formatMessage({ id: "vendor.form.contact_name", defaultMessage: "Contact Name" })}
+                  hint={intl.formatMessage({
+                    id: "vendor.form.contact_name_hint",
+                    defaultMessage: "Primary contact person",
+                  })}
+                  showValid={!!formData.contactName.trim()}
+                >
                   <Input
                     id="contactName"
                     value={formData.contactName}
                     onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
                     placeholder={intl.formatMessage({ id: "vendor.form.contact_name_placeholder", defaultMessage: "Contact person name" })}
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="contactPhone">
-                    {intl.formatMessage({ id: "vendor.form.contact_phone", defaultMessage: "Contact Phone" })}
-                  </Label>
+                </FormField>
+                <FormField
+                  id="contactPhone"
+                  label={intl.formatMessage({ id: "vendor.form.contact_phone", defaultMessage: "Contact Phone" })}
+                  hint={intl.formatMessage({
+                    id: "vendor.form.contact_phone_hint",
+                    defaultMessage: "Include country code if overseas",
+                  })}
+                  showValid={!!formData.contactPhone.trim()}
+                >
                   <Input
                     id="contactPhone"
                     type="tel"
@@ -280,13 +301,14 @@ export const VendorFormPage = () => {
                     onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
                     placeholder={intl.formatMessage({ id: "vendor.form.contact_phone_placeholder", defaultMessage: "Phone number" })}
                   />
-                </div>
+                </FormField>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="email">
-                    {intl.formatMessage({ id: "vendor.form.email", defaultMessage: "Email" })}
-                  </Label>
+                <FormField
+                  id="email"
+                  label={intl.formatMessage({ id: "vendor.form.email", defaultMessage: "Email" })}
+                  showValid={!!formData.email.trim()}
+                >
                   <Input
                     id="email"
                     type="email"
@@ -294,23 +316,32 @@ export const VendorFormPage = () => {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder={intl.formatMessage({ id: "vendor.form.email_placeholder", defaultMessage: "Email address" })}
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="category">
-                    {intl.formatMessage({ id: "vendor.form.category", defaultMessage: "Category" })}
-                  </Label>
+                </FormField>
+                <FormField
+                  id="category"
+                  label={intl.formatMessage({ id: "vendor.form.category", defaultMessage: "Category" })}
+                  hint={intl.formatMessage({
+                    id: "vendor.form.category_hint",
+                    defaultMessage: "e.g., ORGANIZER, POS_MATERIAL, CATERING",
+                  })}
+                >
                   <Input
                     id="category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     placeholder={intl.formatMessage({ id: "vendor.form.category_placeholder", defaultMessage: "e.g., ORGANIZER, POS_MATERIAL, CATERING" })}
                   />
-                </div>
+                </FormField>
               </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="address">
-                  {intl.formatMessage({ id: "vendor.form.address", defaultMessage: "Address" })}
-                </Label>
+              <FormField
+                id="address"
+                label={intl.formatMessage({ id: "vendor.form.address", defaultMessage: "Address" })}
+                hint={intl.formatMessage({
+                  id: "vendor.form.address_hint",
+                  defaultMessage: "Full street address for billing & shipping",
+                })}
+                showValid={!!formData.address.trim()}
+              >
                 <Textarea
                   id="address"
                   value={formData.address}
@@ -318,7 +349,7 @@ export const VendorFormPage = () => {
                   placeholder={intl.formatMessage({ id: "vendor.form.address_placeholder", defaultMessage: "Vendor address" })}
                   rows={3}
                 />
-              </div>
+              </FormField>
             </FormSection>
 
             <FormFooter>

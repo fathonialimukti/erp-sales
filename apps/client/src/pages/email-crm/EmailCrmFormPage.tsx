@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -15,6 +15,7 @@ import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -146,6 +147,52 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
   const customerName =
     customers.find((c) => c.id === live.customerId)?.name ?? "";
 
+  // Section completion: the single section is "completed" once the required
+  // email field is filled with a valid address.
+  const sectionCompleted = live.email.trim().length > 0;
+
+  // LocalStorage draft autosave — debounced via FormFooter's 1.5s timer.
+  const DRAFT_KEY = `email-crm-form-draft:${isEdit ? `edit:${conversationId}` : "new"}`;
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(() => {
+    try {
+      const ts = localStorage.getItem(`${DRAFT_KEY}:ts`);
+      return ts ? new Date(ts) : undefined;
+    } catch {
+      return undefined;
+    }
+  });
+
+  // Content guard: don't persist a completely empty new-form draft.
+  const hasDraftContent = live.email.trim().length > 0;
+  const autosaveOnSave = useCallback(() => {
+    if (!hasDraftContent) return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form.state.values));
+      const now = new Date();
+      localStorage.setItem(`${DRAFT_KEY}:ts`, now.toISOString());
+      setLastSaved(now);
+    } catch {
+      // Private mode / quota exceeded — autosave is a safety net, never a blocker.
+    }
+  }, [DRAFT_KEY, form.state.values, hasDraftContent]);
+
+  // Restore draft on mount for new forms only (edit mode uses server data).
+  useEffect(() => {
+    if (isEdit) return;
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as Partial<FormValues>;
+      (Object.keys(parsed) as (keyof FormValues)[]).forEach((k) => {
+        if (parsed[k] != null && String(parsed[k]).trim() !== "")
+          form.setFieldValue(k as never, parsed[k] as never);
+      });
+    } catch {
+      // ignore corrupted draft
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const createMutation = useMutation({
     mutationFn: (d: FormValues) =>
       trpcClient.emailCrm.create.mutate({
@@ -269,6 +316,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
         />
 
       <FormLayout
+        mode="complex"
         sidebar={
           <FormPreview
             module="email"
@@ -325,6 +373,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
           icon={Mail}
           step={1}
           tone="email"
+          completed={sectionCompleted}
           title={intl.formatMessage({
             id: "emailCrm.form.section_basic",
             defaultMessage: "Conversation",
@@ -342,11 +391,17 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
               }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="email-crm-email">
-                    {intl.formatMessage({ id: "emailCrm.form.email", defaultMessage: "Email" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="email-crm-email"
+                  label={intl.formatMessage({ id: "emailCrm.form.email", defaultMessage: "Email" })}
+                  hint={intl.formatMessage({
+                    id: "emailCrm.form.email_hint",
+                    defaultMessage: "Primary contact address for this thread",
+                  })}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                  isRequired
+                  showValid
+                >
                   <Input
                     id="email-crm-email"
                     type="email"
@@ -358,10 +413,7 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
                       defaultMessage: "buyer@example.com",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -483,10 +535,14 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
 
             <form.Field name="tags">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="email-crm-tags">
-                    {intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" })}
-                  </Label>
+                <FormField
+                  id="email-crm-tags"
+                  label={intl.formatMessage({ id: "emailCrm.form.tags", defaultMessage: "Tags" })}
+                  hint={intl.formatMessage({
+                    id: "emailCrm.form.tags_hint",
+                    defaultMessage: "Categorize with comma-separated labels",
+                  })}
+                >
                   <Input
                     id="email-crm-tags"
                     value={f.state.value ?? ""}
@@ -496,13 +552,19 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
                       defaultMessage: "Comma-separated tags",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>
         </FormSection>
       
-        <FormFooter>
+        <FormFooter
+          autosave={{
+            enabled: true,
+            lastSaved,
+            onSave: autosaveOnSave,
+          }}
+        >
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

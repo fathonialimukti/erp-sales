@@ -14,6 +14,7 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
+import { FormField } from "../../components/FormField";
 import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
@@ -141,6 +142,9 @@ export const OutletFormPage = () => {
   ].filter((v) => String(v ?? "").trim().length > 0).length;
   const customerName = customers.find((c) => c.id === live.customerId)?.name ?? "";
   const areaName = areas.find((a) => a.id === live.areaId)?.name ?? "";
+  const sectionComplete = [live.customerId, live.areaId, live.name].every(
+    (v) => String(v ?? "").trim().length > 0,
+  );
 
   useEffect(() => {
     if (isEdit && data) {
@@ -261,6 +265,7 @@ export const OutletFormPage = () => {
         />
 
       <FormLayout
+        mode="standard"
         sidebar={
           <FormPreview
             module="outlet"
@@ -336,6 +341,7 @@ export const OutletFormPage = () => {
           icon={Store}
           step={1}
           tone="outlet"
+          completed={sectionComplete}
           title={intl.formatMessage({
             id: "outlet.form.section_basic",
             defaultMessage: "Basic information",
@@ -347,14 +353,20 @@ export const OutletFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="outlet-customer">
-                    {intl.formatMessage({
-                      id: "outlet.form.field_customer",
-                      defaultMessage: "Customer",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="outlet-customer"
+                  label={intl.formatMessage({
+                    id: "outlet.form.field_customer",
+                    defaultMessage: "Customer",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "outlet.form.hint_customer",
+                    defaultMessage: "Select the customer this outlet belongs to",
+                  })}
+                  isRequired
+                  showValid={Boolean(f.state.value)}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -375,10 +387,7 @@ export const OutletFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -387,11 +396,17 @@ export const OutletFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="outlet-area">
-                    {intl.formatMessage({ id: "outlet.form.field_area", defaultMessage: "Area" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="outlet-area"
+                  label={intl.formatMessage({ id: "outlet.form.field_area", defaultMessage: "Area" })}
+                  hint={intl.formatMessage({
+                    id: "outlet.form.hint_area",
+                    defaultMessage: "Area determines regional routing",
+                  })}
+                  isRequired
+                  showValid={Boolean(f.state.value)}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -412,10 +427,7 @@ export const OutletFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -443,11 +455,13 @@ export const OutletFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="outlet-name">
-                    {intl.formatMessage({ id: "outlet.form.field_name", defaultMessage: "Name" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="outlet-name"
+                  label={intl.formatMessage({ id: "outlet.form.field_name", defaultMessage: "Name" })}
+                  isRequired
+                  showValid={Boolean(f.state.value)}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="outlet-name"
                     value={f.state.value ?? ""}
@@ -458,10 +472,7 @@ export const OutletFormPage = () => {
                       defaultMessage: "Outlet name",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 

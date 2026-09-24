@@ -55,3 +55,6 @@ playwright-report/
 
 # Server backup files (database backup & restore)
 apps/server/backups/
+
+# Runtime logs (never commit)
+logs/

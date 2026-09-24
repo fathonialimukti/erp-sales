@@ -11,6 +11,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
+import { FormField } from "../../components/FormField";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
 import { ImageUploadField } from "../../components/ImageUploadField";
@@ -18,7 +19,6 @@ import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -209,6 +209,13 @@ const InnerForm = ({
   ).length;
   const roleName = roleOptions.find((r) => r.id === live.roleId)?.name ?? "";
 
+  // Identity section completion: all required fields valid
+  const identityCompleted =
+    live.name.trim().length > 0 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(live.email) &&
+    Boolean(live.roleId) &&
+    (isEdit || live.password.length >= 6);
+
   return (
     <section
       className="flex flex-col gap-3 pt-1 pb-6"
@@ -247,6 +254,7 @@ const InnerForm = ({
         />
 
       <FormLayout
+        mode="standard"
         sidebar={
           <FormPreview
             module="user"
@@ -295,6 +303,7 @@ const InnerForm = ({
             id: "users.form.identity_description",
             defaultMessage: "Display name and contact details.",
           })}
+          completed={identityCompleted}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
@@ -305,11 +314,17 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="user-name">
-                    {intl.formatMessage({ id: "users.form.name", defaultMessage: "Name" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="user-name"
+                  label={intl.formatMessage({ id: "users.form.name", defaultMessage: "Name" })}
+                  isRequired
+                  showValid={field.state.meta.errors.length === 0 && field.state.value.trim().length > 0}
+                  error={field.state.meta.errors[0] ?? undefined}
+                  hint={intl.formatMessage({
+                    id: "users.form.name_hint",
+                    defaultMessage: "Full display name shown across the system",
+                  })}
+                >
                   <Input
                     id="user-name"
                     value={field.state.value}
@@ -317,12 +332,7 @@ const InnerForm = ({
                     onBlur={field.handleBlur}
                     aria-invalid={field.state.meta.errors.length > 0}
                   />
-                  {field.state.meta.errors.map((error, i) => (
-                    <p key={i} className="text-xs text-destructive">
-                      {String(error)}
-                    </p>
-                  ))}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -336,11 +346,17 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="user-email">
-                    {intl.formatMessage({ id: "users.form.email", defaultMessage: "Email" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="user-email"
+                  label={intl.formatMessage({ id: "users.form.email", defaultMessage: "Email" })}
+                  isRequired
+                  showValid={field.state.meta.errors.length === 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.state.value)}
+                  error={field.state.meta.errors[0] ?? undefined}
+                  hint={intl.formatMessage({
+                    id: "users.form.email_hint",
+                    defaultMessage: "Used for login and notifications",
+                  })}
+                >
                   <Input
                     id="user-email"
                     type="email"
@@ -349,12 +365,7 @@ const InnerForm = ({
                     onBlur={field.handleBlur}
                     aria-invalid={field.state.meta.errors.length > 0}
                   />
-                  {field.state.meta.errors.map((error, i) => (
-                    <p key={i} className="text-xs text-destructive">
-                      {String(error)}
-                    </p>
-                  ))}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -369,11 +380,28 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="user-password">
-                    {intl.formatMessage({ id: "users.form.password", defaultMessage: "Password" })}
-                    {!isEdit ? <span className="text-destructive">*</span> : null}
-                  </Label>
+                <FormField
+                  id="user-password"
+                  label={intl.formatMessage({ id: "users.form.password", defaultMessage: "Password" })}
+                  isRequired={!isEdit}
+                  showValid={
+                    !isEdit
+                      ? field.state.meta.errors.length === 0 && field.state.value.length >= 6
+                      : field.state.value.length > 0 && field.state.meta.errors.length === 0
+                  }
+                  error={field.state.meta.errors[0] ?? undefined}
+                  hint={
+                    isEdit
+                      ? intl.formatMessage({
+                          id: "users.form.password_hint_edit",
+                          defaultMessage: "Leave blank to keep the current password",
+                        })
+                      : intl.formatMessage({
+                          id: "users.form.password_hint_create",
+                          defaultMessage: "At least 6 characters",
+                        })
+                  }
+                >
                   <Input
                     id="user-password"
                     type="password"
@@ -383,12 +411,7 @@ const InnerForm = ({
                     placeholder={isEdit ? "Leave blank to keep current" : ""}
                     aria-invalid={field.state.meta.errors.length > 0}
                   />
-                  {field.state.meta.errors.map((error, i) => (
-                    <p key={i} className="text-xs text-destructive">
-                      {String(error)}
-                    </p>
-                  ))}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -399,11 +422,17 @@ const InnerForm = ({
               }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="user-role">
-                    {intl.formatMessage({ id: "users.form.role", defaultMessage: "Role" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="user-role"
+                  label={intl.formatMessage({ id: "users.form.role", defaultMessage: "Role" })}
+                  isRequired
+                  showValid={field.state.meta.errors.length === 0 && Boolean(field.state.value)}
+                  error={field.state.meta.errors[0] ?? undefined}
+                  hint={intl.formatMessage({
+                    id: "users.form.role_hint",
+                    defaultMessage: "Determines permissions and access level",
+                  })}
+                >
                   <Select
                     value={field.state.value}
                     onValueChange={(value) => field.handleChange(value)}
@@ -424,12 +453,7 @@ const InnerForm = ({
                       ))}
                     </SelectContent>
                   </Select>
-                  {field.state.meta.errors.map((error, i) => (
-                    <p key={i} className="text-xs text-destructive">
-                      {String(error)}
-                    </p>
-                  ))}
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>
@@ -444,6 +468,7 @@ const InnerForm = ({
             id: "users.form.photo_description",
             defaultMessage: "Square image, at least 256×256px.",
           })}
+          completed={Boolean(live.photo)}
         >
           <form.Field name="photo">
             {(field) => (

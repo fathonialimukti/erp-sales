@@ -3,7 +3,7 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Save, X, Zap, Hash, FileText } from "lucide-react";
+import { ArrowLeft, Save, X, Zap } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -13,7 +13,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
-import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -115,9 +115,6 @@ export const ActionTypeFormPage = () => {
 
   const isLoading = isEdit && isLoadingDetail;
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-  const filled = [formData.name, formData.code, formData.description].filter(
-    (v) => String(v ?? "").trim().length > 0,
-  ).length;
 
   if (isLoading) {
     return (
@@ -146,33 +143,7 @@ export const ActionTypeFormPage = () => {
         }
       />
       <div className="flex-1 overflow-auto p-6">
-        <FormLayout
-          sidebar={
-            <FormPreview
-              module="actionType"
-              icon={Zap}
-              title={formData.name}
-              status={!isEdit ? "DRAFT" : undefined}
-              filled={filled}
-              total={3}
-              rows={[
-                {
-                  icon: Hash,
-                  label: intl.formatMessage({ id: "action_type.form.code", defaultMessage: "Code" }),
-                  value: formData.code,
-                },
-                {
-                  icon: FileText,
-                  label: intl.formatMessage({
-                    id: "action_type.form.description",
-                    defaultMessage: "Description",
-                  }),
-                  value: formData.description,
-                },
-              ]}
-            />
-          }
-        >
+        <FormLayout mode="simple">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <FormSection
               icon={Zap}
@@ -198,18 +169,23 @@ export const ActionTypeFormPage = () => {
                     className="font-mono"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="name">
-                    {intl.formatMessage({ id: "action_type.form.name", defaultMessage: "Name" })}{" "}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="name"
+                  label={intl.formatMessage({ id: "action_type.form.name", defaultMessage: "Name" })}
+                  hint={intl.formatMessage({
+                    id: "action_type.form.name_hint",
+                    defaultMessage: "Enter a unique action type name",
+                  })}
+                  showValid
+                  isRequired
+                >
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder={intl.formatMessage({ id: "action_type.form.name_placeholder", defaultMessage: "Enter action type name" })}
                   />
-                </div>
+                </FormField>
                 <div className="flex flex-col gap-1 sm:col-span-2">
                   <Label htmlFor="description">
                     {intl.formatMessage({ id: "action_type.form.description", defaultMessage: "Description" })}

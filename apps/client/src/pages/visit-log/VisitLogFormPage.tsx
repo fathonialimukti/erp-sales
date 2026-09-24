@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -14,13 +14,13 @@ import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
+import { FormField } from "../../components/FormField";
 import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -66,8 +66,17 @@ export const VisitLogFormPage = () => {
   const canSave = hasPermission(id ? "visitLog@update" : "visitLog@create");
 
   const isEdit = Boolean(id);
+  const DRAFT_KEY = `visit-log-form-draft:${isEdit ? `edit:${id}` : "new"}`;
   const [modalStage, setModalStage] = useState<ModalStage>("idle");
   const [resultMessage, setResultMessage] = useState("");
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(() => {
+    try {
+      const ts = localStorage.getItem(`${DRAFT_KEY}:ts`);
+      return ts ? new Date(ts) : undefined;
+    } catch {
+      return undefined;
+    }
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["visitLogDetail", id],
@@ -117,6 +126,38 @@ export const VisitLogFormPage = () => {
     (salesmen?.data ?? []).find((u) => u.id === live.salesmanId)?.name ?? "";
   const outletName =
     (outlets?.data ?? []).find((o) => o.id === live.outletId)?.name ?? "";
+
+  // LocalStorage draft autosave — debounced via FormFooter's 1.5s timer.
+  // Content guard: don't persist a completely empty new-form draft.
+  const hasDraftContent = Boolean(live.salesmanId) || Boolean(live.outletId) || Boolean(live.date);
+  const saveDraft = useCallback(() => {
+    if (!hasDraftContent) return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form.state.values));
+      const now = new Date();
+      localStorage.setItem(`${DRAFT_KEY}:ts`, now.toISOString());
+      setLastSaved(now);
+    } catch {
+      // Private mode / quota exceeded — autosave is a safety net, never a blocker.
+    }
+  }, [DRAFT_KEY, form.state.values, hasDraftContent]);
+
+  // Restore draft on mount for new forms only (edit mode uses server data).
+  useEffect(() => {
+    if (isEdit) return;
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as Partial<FormValues>;
+      (Object.keys(parsed) as (keyof FormValues)[]).forEach((k) => {
+        if (parsed[k] != null && String(parsed[k]).trim() !== "")
+          form.setFieldValue(k as never, parsed[k] as never);
+      });
+    } catch {
+      // ignore corrupted draft
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ponytail: keep original seed-via-defaultValues only (detail query gates render via isLoading)
 
@@ -236,6 +277,7 @@ export const VisitLogFormPage = () => {
         />
 
       <FormLayout
+        mode="complex"
         sidebar={
           <FormPreview
             module="visit"
@@ -302,6 +344,7 @@ export const VisitLogFormPage = () => {
           icon={Footprints}
           step={1}
           tone="visit"
+          completed={filled >= 4}
           title={intl.formatMessage({
             id: "visit_log.form.section_basic",
             defaultMessage: "Basic information",
@@ -313,14 +356,20 @@ export const VisitLogFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="visit-salesman">
-                    {intl.formatMessage({
-                      id: "visitLog.form.field_salesman",
-                      defaultMessage: "Salesman",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="visit-salesman"
+                  label={intl.formatMessage({
+                    id: "visitLog.form.field_salesman",
+                    defaultMessage: "Salesman",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "visitLog.form.field_salesman_hint",
+                    defaultMessage: "Select the salesman making this visit",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -341,10 +390,7 @@ export const VisitLogFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -353,14 +399,20 @@ export const VisitLogFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="visit-outlet">
-                    {intl.formatMessage({
-                      id: "visitLog.form.field_outlet",
-                      defaultMessage: "Outlet",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="visit-outlet"
+                  label={intl.formatMessage({
+                    id: "visitLog.form.field_outlet",
+                    defaultMessage: "Outlet",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "visitLog.form.field_outlet_hint",
+                    defaultMessage: "Select the outlet being visited",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -381,10 +433,7 @@ export const VisitLogFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -393,14 +442,20 @@ export const VisitLogFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="visit-date">
-                    {intl.formatMessage({
-                      id: "visitLog.form.field_date",
-                      defaultMessage: "Date",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="visit-date"
+                  label={intl.formatMessage({
+                    id: "visitLog.form.field_date",
+                    defaultMessage: "Date",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "visitLog.form.field_date_hint",
+                    defaultMessage: "Date of the visit",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="visit-date"
                     type="date"
@@ -408,22 +463,23 @@ export const VisitLogFormPage = () => {
                     onChange={(e) => f.handleChange(e.target.value)}
                     aria-invalid={f.state.meta.errors.length > 0}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="purpose">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="visit-purpose">
-                    {intl.formatMessage({
-                      id: "visitLog.form.field_purpose",
-                      defaultMessage: "Purpose",
-                    })}
-                  </Label>
+                <FormField
+                  id="visit-purpose"
+                  label={intl.formatMessage({
+                    id: "visitLog.form.field_purpose",
+                    defaultMessage: "Purpose",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "visitLog.form.field_purpose_hint",
+                    defaultMessage: "Brief description of the visit purpose",
+                  })}
+                >
                   <Input
                     id="visit-purpose"
                     value={f.state.value ?? ""}
@@ -433,19 +489,24 @@ export const VisitLogFormPage = () => {
                       defaultMessage: "Optional",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="notes">
               {(f) => (
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor="visit-notes">
-                    {intl.formatMessage({
-                      id: "visitLog.form.field_notes",
-                      defaultMessage: "Notes",
-                    })}
-                  </Label>
+                <FormField
+                  id="visit-notes"
+                  label={intl.formatMessage({
+                    id: "visitLog.form.field_notes",
+                    defaultMessage: "Notes",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "visitLog.form.field_notes_hint",
+                    defaultMessage: "Additional observations or notes",
+                  })}
+                  className="sm:col-span-2"
+                >
                   <Textarea
                     id="visit-notes"
                     value={f.state.value ?? ""}
@@ -455,13 +516,19 @@ export const VisitLogFormPage = () => {
                       defaultMessage: "Optional",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>
         </FormSection>
       
-        <FormFooter>
+        <FormFooter
+          autosave={{
+            enabled: true,
+            lastSaved,
+            onSave: saveDraft,
+          }}
+        >
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"

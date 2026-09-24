@@ -16,6 +16,7 @@ import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
+import { FormField } from "../../components/FormField";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
@@ -202,6 +203,7 @@ export const CustomerFormPage = () => {
         />
 
       <FormLayout
+        mode="standard"
         sidebar={
           <FormPreview
             module="customer"
@@ -243,6 +245,7 @@ export const CustomerFormPage = () => {
           icon={Building2}
           step={1}
           tone="customer"
+          completed={filled >= 2}
           title={intl.formatMessage({
             id: "customer.form.section_basic",
             defaultMessage: "Basic information",
@@ -273,11 +276,17 @@ export const CustomerFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="customer-name">
-                    {intl.formatMessage({ id: "customer.form.field_name", defaultMessage: "Name" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="customer-name"
+                  label={intl.formatMessage({ id: "customer.form.field_name", defaultMessage: "Name" })}
+                  isRequired
+                  hint={intl.formatMessage({
+                    id: "customer.form.field_name_hint",
+                    defaultMessage: "Enter a unique customer name",
+                  })}
+                  showValid={f.state.value?.trim().length > 0}
+                  error={f.state.meta.errors.length > 0 ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="customer-name"
                     value={f.state.value ?? ""}
@@ -288,10 +297,7 @@ export const CustomerFormPage = () => {
                       defaultMessage: "Customer name",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>

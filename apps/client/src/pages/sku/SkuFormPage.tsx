@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
@@ -14,6 +14,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { NavButtonGroup } from "../../components/NavButtonGroup";
 import { FormSection } from "../../components/FormSection";
 import { FormLayout } from "../../components/FormLayout";
+import { FormField } from "../../components/FormField";
 import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -21,7 +22,6 @@ import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -139,6 +139,37 @@ export const SkuFormPage = () => {
   ].filter((v) => String(v ?? "").trim().length > 0).length;
   const categoryName =
     (categories?.data ?? []).find((c) => c.id === live.categoryId)?.name ?? "";
+
+  /* --- LocalStorage draft autosave --- */
+  const DRAFT_KEY = `sku-form-draft:${isEdit ? `edit:${id}` : "new"}`;
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(() => {
+    const ts = localStorage.getItem(`${DRAFT_KEY}:ts`);
+    return ts ? new Date(ts) : undefined;
+  });
+
+  const saveDraft = useCallback(() => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(form.state.values));
+    const now = new Date();
+    localStorage.setItem(`${DRAFT_KEY}:ts`, now.toISOString());
+    setLastSaved(now);
+  }, [DRAFT_KEY, form.state.values]);
+
+  // Restore draft on first mount (only if no server data has loaded yet)
+  useEffect(() => {
+    if (isEdit && data) return; // server data wins in edit mode
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as Partial<FormValues>;
+      (Object.keys(parsed) as (keyof FormValues)[]).forEach((k) => {
+        if (parsed[k] != null) form.setFieldValue(k as never, parsed[k] as never);
+      });
+    } catch {
+      // ignore corrupted draft
+    }
+    // ponytail: once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isEdit && data) {
@@ -263,6 +294,7 @@ export const SkuFormPage = () => {
         />
 
       <FormLayout
+        mode="complex"
         sidebar={
           <FormPreview
             module="sku"
@@ -336,10 +368,15 @@ export const SkuFormPage = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field name="code">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-code">
-                    {intl.formatMessage({ id: "sku.form.field_code", defaultMessage: "Code" })}
-                  </Label>
+                <FormField
+                  id="sku-code"
+                  label={intl.formatMessage({ id: "sku.form.field_code", defaultMessage: "Code" })}
+                  hint={intl.formatMessage({
+                    id: "sku.form.field_code_hint",
+                    defaultMessage: "Optional unique identifier for this product",
+                  })}
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="sku-code"
                     value={f.state.value ?? ""}
@@ -349,7 +386,7 @@ export const SkuFormPage = () => {
                       defaultMessage: "Optional",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -358,11 +395,17 @@ export const SkuFormPage = () => {
               validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-name">
-                    {intl.formatMessage({ id: "sku.form.field_name", defaultMessage: "Name" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="sku-name"
+                  label={intl.formatMessage({ id: "sku.form.field_name", defaultMessage: "Name" })}
+                  hint={intl.formatMessage({
+                    id: "sku.form.field_name_hint",
+                    defaultMessage: "Displayed across catalogs and invoices",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="sku-name"
                     value={f.state.value ?? ""}
@@ -373,22 +416,21 @@ export const SkuFormPage = () => {
                       defaultMessage: "Product name",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : null}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="description">
               {(f) => (
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor="sku-description">
-                    {intl.formatMessage({
-                      id: "sku.form.field_description",
-                      defaultMessage: "Description",
-                    })}
-                  </Label>
+                <FormField
+                  id="sku-description"
+                  className="sm:col-span-2"
+                  label={intl.formatMessage({
+                    id: "sku.form.field_description",
+                    defaultMessage: "Description",
+                  })}
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="sku-description"
                     value={f.state.value ?? ""}
@@ -398,19 +440,24 @@ export const SkuFormPage = () => {
                       defaultMessage: "Optional",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="categoryId">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-category">
-                    {intl.formatMessage({
-                      id: "sku.form.field_category",
-                      defaultMessage: "Category",
-                    })}
-                  </Label>
+                <FormField
+                  id="sku-category"
+                  label={intl.formatMessage({
+                    id: "sku.form.field_category",
+                    defaultMessage: "Category",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "sku.form.field_category_hint",
+                    defaultMessage: "Groups this product in reports",
+                  })}
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -430,19 +477,24 @@ export const SkuFormPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="basePrice">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-price">
-                    {intl.formatMessage({
-                      id: "sku.form.field_base_price",
-                      defaultMessage: "Base price",
-                    })}
-                  </Label>
+                <FormField
+                  id="sku-price"
+                  label={intl.formatMessage({
+                    id: "sku.form.field_base_price",
+                    defaultMessage: "Base price",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "sku.form.field_base_price_hint",
+                    defaultMessage: "Selling price per base unit",
+                  })}
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="sku-price"
                     type="number"
@@ -453,20 +505,26 @@ export const SkuFormPage = () => {
                       defaultMessage: "Optional",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="baseUnit">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-unit">
-                    {intl.formatMessage({
-                      id: "sku.form.field_base_unit",
-                      defaultMessage: "Base unit",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="sku-unit"
+                  label={intl.formatMessage({
+                    id: "sku.form.field_base_unit",
+                    defaultMessage: "Base unit",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "sku.form.field_base_unit_hint",
+                    defaultMessage: "Unit this product is sold in",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="sku-unit"
                     value={f.state.value ?? ""}
@@ -476,7 +534,7 @@ export const SkuFormPage = () => {
                       defaultMessage: "e.g. pcs",
                     })}
                   />
-                </div>
+                </FormField>
               )}
             </form.Field>
 
@@ -509,14 +567,20 @@ export const SkuFormPage = () => {
               }}
             >
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-pack-size">
-                    {intl.formatMessage({
-                      id: "sku.form.field_pack_size",
-                      defaultMessage: "Pack size",
-                    })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="sku-pack-size"
+                  label={intl.formatMessage({
+                    id: "sku.form.field_pack_size",
+                    defaultMessage: "Pack size",
+                  })}
+                  hint={intl.formatMessage({
+                    id: "sku.form.field_pack_size_hint",
+                    defaultMessage: "pcs per carton",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Input
                     id="sku-pack-size"
                     type="number"
@@ -531,27 +595,23 @@ export const SkuFormPage = () => {
                       defaultMessage: "e.g. 20",
                     })}
                   />
-                  {f.state.meta.errors.length > 0 ? (
-                    <p className="text-xs text-destructive">{String(f.state.meta.errors[0])}</p>
-                  ) : (
-                    <p className="text-xs font-normal text-muted-foreground">
-                      {intl.formatMessage({
-                        id: "sku.form.field_pack_size_hint",
-                        defaultMessage: "pcs per carton",
-                      })}
-                    </p>
-                  )}
-                </div>
+                </FormField>
               )}
             </form.Field>
 
             <form.Field name="status">
               {(f) => (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="sku-status">
-                    {intl.formatMessage({ id: "sku.form.field_status", defaultMessage: "Status" })}
-                    <span className="text-destructive">*</span>
-                  </Label>
+                <FormField
+                  id="sku-status"
+                  label={intl.formatMessage({ id: "sku.form.field_status", defaultMessage: "Status" })}
+                  hint={intl.formatMessage({
+                    id: "sku.form.field_status_hint",
+                    defaultMessage: "Inactive products hide from new orders",
+                  })}
+                  isRequired
+                  showValid
+                  error={f.state.meta.errors[0] ? String(f.state.meta.errors[0]) : undefined}
+                >
                   <Select
                     value={f.state.value ?? ""}
                     onValueChange={(value) => f.handleChange(value)}
@@ -568,13 +628,19 @@ export const SkuFormPage = () => {
                       <SelectItem value="INACTIVE">INACTIVE</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FormField>
               )}
             </form.Field>
           </div>
         </FormSection>
       
-        <FormFooter>
+        <FormFooter
+          autosave={{
+            enabled: modalStage === "idle" || modalStage === "confirm",
+            lastSaved,
+            onSave: saveDraft,
+          }}
+        >
           <Button
             size="sm"
             className="h-8 gap-1.5 px-2.5"
