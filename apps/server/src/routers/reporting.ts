@@ -1,4 +1,3 @@
-import { TRPCError } from '@trpc/server';
 import type { Prisma } from '../prisma/generated/client';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import { prisma } from '../lib/prisma.js';
@@ -285,7 +284,6 @@ export const reportingRouter = router({
     .use(hasPermission('report@read'))
     .input(reportFilterSchema)
     .query(async ({ input }) => {
-      const where = buildReportWhere(input);
       const areaIds = input?.regionId ? await resolveAreaIdsForRegion(prisma, input.regionId) : undefined;
       type SalesmanGroup = { salesmanId: string | null; _count: { _all: number } };
 

@@ -6,7 +6,7 @@
 
 import { prisma } from "../../lib/prisma.js";
 import { PAYMENT_METHODS } from "./constants.js";
-import { mulberry32, type ApprovedOrderSeed } from "./sales-orders.js";
+import { type ApprovedOrderSeed } from "./sales-orders.js";
 
 export async function seedPayments(
   approvedOrders: ApprovedOrderSeed[],

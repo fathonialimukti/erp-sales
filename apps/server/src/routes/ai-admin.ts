@@ -131,7 +131,8 @@ function validateAdminSql(sql: string): { valid: boolean; reason?: string } {
 // M-1 (SPEC §5): ALL admin SQL goes through request_confirmation cards — the
 // direct-execution queryDatabase client tool is deliberately not exposed here
 // (it stays available to the general assistant in routes/ai.ts).
-const { queryDatabase: _queryDatabase, ...adminClientTools } = clientTools;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { queryDatabase: _unusedQueryDatabase, ...adminClientTools } = clientTools;
 
 const extractUserMessageText = (message: unknown): string => {
     if (!message || typeof message !== 'object') return '';

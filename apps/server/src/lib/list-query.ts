@@ -1,5 +1,3 @@
-import type { Prisma } from '../prisma/generated/client';
-
 type PaginationInput = {
   page?: number;
   limit?: number;

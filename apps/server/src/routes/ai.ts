@@ -115,7 +115,7 @@ function trimMessageHistory(messages: { role: string }[], maxTurns: number): typ
 export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, user) => {
     // --- Parse body ---
     // Accept both { messages } (legacy) and { id, messages } (resume-stream pattern)
-    const { messages, id: chatId } = req.body as { messages: unknown[]; id?: string };
+    const { messages } = req.body as { messages: unknown[]; id?: string };
     if (!Array.isArray(messages)) {
         res.status(400).json({ error: 'messages must be an array' });
         return;

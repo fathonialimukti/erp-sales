@@ -17,15 +17,6 @@ function fmtMoney(value: { toString(): string } | null | undefined): string | nu
     return value !== null && value !== undefined ? Number(value).toLocaleString('en-US') : null;
 }
 
-type NamedLink = { outlet?: { name?: string } | null; sku?: { name?: string } | null };
-
-function joinNames(values: NamedLink[]): string {
-    const names = values
-        .map((v) => v.outlet?.name ?? v.sku?.name ?? null)
-        .filter((n): n is string => Boolean(n));
-    return names.length > 0 ? `${names.length}: ${names.slice(0, 6).join(', ')}${names.length > 6 ? ', …' : ''}` : String(values.length);
-}
-
 async function buildSalesOrderContext(id: string): Promise<string> {
     const record = await prisma.salesOrder.findUnique({
         where: { id },

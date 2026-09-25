@@ -1,7 +1,3 @@
-import { tool } from 'ai';
-import * as z from 'zod';
-import { prisma } from './prisma.js';
-
 /**
  * Read-only SQL keywords allowed for AI database queries.
  * Any SQL containing forbidden write keywords is rejected before execution.

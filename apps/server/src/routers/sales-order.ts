@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { logActivity } from '../lib/activity-log.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
-import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere } from '../lib/list-query.js';
+import { buildPaginationMeta, buildPaginationParams } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import * as z from 'zod';

@@ -7,7 +7,7 @@
 
 import { prisma } from "../../lib/prisma.js";
 import { CHANNEL, CHANNEL_PAYMENT_TERMS, type ChannelTier } from "./constants.js";
-import { AREAS, type AreaSeed } from "./regions.js";
+import { AREAS } from "./regions.js";
 
 export type OutletSeed = {
   code: string;
@@ -202,7 +202,6 @@ export async function seedCustomersAndOutlets(): Promise<{
 
   const customerIds = new Map<string, string>();
   for (const [customerName, outlets] of customerGroups) {
-    const channel = outlets[0]!.channel;
     const created = await prisma.customer.upsert({
       where: { code: `CUST-${customerName.replace(/[^A-Za-z0-9]/g, "").slice(0, 12).toUpperCase()}` },
       update: {

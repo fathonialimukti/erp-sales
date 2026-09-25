@@ -339,7 +339,7 @@ export async function restoreFromBackup(
         // Strip the vector side-channel before createMany — Prisma rejects unknown fields, and
         // Unsupported columns are re-applied via raw SQL right after the insert.
         const data = rows.map((row) => {
-            const { [VECTOR_TEXT_KEY]: _vectorText, ...rest } = row;
+            const { [VECTOR_TEXT_KEY]: _unusedVectorText, ...rest } = row;
             return reviveDateFields(rest, dateFieldNames);
         });
         if (data.length > 0) {

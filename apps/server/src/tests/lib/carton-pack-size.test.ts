@@ -25,7 +25,7 @@ let outletId: string;
 let cartonSkuId: string;
 let pieceSkuId: string;
 let conversationId: string;
-let conversationIds: string[] = [];
+const conversationIds: string[] = [];
 
 beforeAll(async () => {
   const region = await prisma.region.create({

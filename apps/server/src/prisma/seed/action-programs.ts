@@ -10,7 +10,6 @@ import type { Prisma } from "../../prisma/generated/client";
 import {
   CURRENCY,
   DISPLAY_RENTAL_PER_MONTH,
-  DISPLAY_TYPES,
   nextActionProgramNumber,
   type DisplayType,
 } from "./constants.js";

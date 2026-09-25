@@ -51,7 +51,6 @@ export const aiDuplicateCheckHandler = withAuth({ aiRateLimit: true }, async (re
             lines = customers.map((c) => {
                 const contact = contactsByCustomer.get(c.id)?.[0];
                 const phone = contact?.phone ?? '';
-                const address = c.billingAddress ?? contact?.email ?? '';
                 return `${c.id} | ${c.name} | ${c.code ?? ''} | ${c.taxId ?? phone}`;
             });
         } else {

@@ -45,11 +45,9 @@ async function main() {
 
   // --- Customers + outlets ---
   let outletIds: Record<string, string> = {};
-  let outletsByChannel: Record<string, string[]> = { SARI_SARI: [], MODERN: [], CONVENIENCE: [] };
   if (ALL || has("--customers")) {
     const result = await seedCustomersAndOutlets();
     outletIds = result.outletIds;
-    outletsByChannel = result.outletsByChannel;
   }
 
   // --- Users ---

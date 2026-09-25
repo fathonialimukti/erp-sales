@@ -5,7 +5,7 @@
 // convenience 3/mo, × 12 months. Tied to route reps. Deterministic.
 
 import { prisma } from "../../lib/prisma.js";
-import { CHANNEL_VISITS_PER_MONTH, HISTORY_MONTHS, MONTH_SEASONALITY, type ChannelTier } from "./constants.js";
+import { CHANNEL_VISITS_PER_MONTH, HISTORY_MONTHS, MONTH_SEASONALITY } from "./constants.js";
 import { mulberry32, type OutletSeedForOrders } from "./sales-orders.js";
 
 const VISIT_PURPOSES = [
