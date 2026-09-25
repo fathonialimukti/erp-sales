@@ -58,3 +58,6 @@ apps/server/backups/
 
 # Runtime logs (never commit)
 logs/
+
+# Devcontainer secrets — never commit
+.devcontainer/.env

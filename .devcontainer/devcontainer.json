@@ -8,11 +8,12 @@
   "runArgs": ["--network=dev", "--name=erp_sales"],
   "forwardPorts": [10021, 10022, 10023],
   "appPort": [],
+  "envFile": ".devcontainer/.env",
   "containerEnv": {
     "HOST": "0.0.0.0",
     "NODE_ENV": "production",
     "VITE_TRPC_URL": "https://erp-sales-api.aetherglo.com",
-    "ROUTERS9_API_KEY": "9r-rbVZTp378QS5NUX4hw0UCJc7uNhiI3U4sKaYmZGLmcU"
+    "GITHUB_USERNAME": "fathonialimukti"
   },
   "portsAttributes": {
     "10021": {
