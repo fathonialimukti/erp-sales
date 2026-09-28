@@ -300,9 +300,25 @@ export const salesOrderRouter = router({
     .mutation(async ({ input, ctx }) => {
       const existing = await prisma.salesOrder.findUnique({ where: { id: input.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sales order not found.' });
+      // Delete is legal only in the states where the creator still holds the order —
+      // the same set `propose` accepts. Once an order is in the approval pipeline
+      // (VALIDATING/PROPOSED/APPROVED) it is a financial record: it can be rejected,
+      // never erased. Without this guard the UI hid Delete on proposed orders while
+      // the API still accepted it.
+      if (existing.approvalStatus !== 'DRAFT' && existing.approvalStatus !== 'REJECTED') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT or REJECTED orders can be deleted.' });
+      }
 
       await prisma.$transaction(async (tx) => {
-        await tx.salesOrder.delete({ where: { id: input.id } });
+        // Conditional delete, matching the TOCTOU guard used by validate/propose/approve/
+        // reject: a proposal landing between the read above and this write is rejected,
+        // not silently deleted.
+        const result = await tx.salesOrder.deleteMany({
+          where: { id: input.id, approvalStatus: { in: ['DRAFT', 'REJECTED'] } },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only DRAFT or REJECTED orders can be deleted.' });
+        }
 
         await logActivity(tx, {
           action: 'DELETE',

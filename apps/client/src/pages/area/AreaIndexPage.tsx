@@ -69,6 +69,8 @@ export const AreaIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "area.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
@@ -76,11 +78,15 @@ export const AreaIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "area.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
         id: "outlets",
+        accessorFn: (row) => row._count.outlets,
+        enableSorting: true,
         header: intl.formatMessage({ id: "area.index.header_outlets", defaultMessage: "Outlets" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-foreground">
@@ -90,6 +96,7 @@ export const AreaIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

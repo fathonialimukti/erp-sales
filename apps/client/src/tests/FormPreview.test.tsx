@@ -31,7 +31,7 @@ describe("FormPreview — completion accent border", () => {
     expect(container.querySelector(ACCENT_BORDER)).toBeInTheDocument();
   });
 
-  it("sets border height to 0% when nothing is filled", () => {
+  it("sets border fill to empty when nothing is filled", () => {
     const { container } = renderPreview(
       <FormPreview
         module="customer"
@@ -44,11 +44,11 @@ describe("FormPreview — completion accent border", () => {
     );
     const border = container.querySelector(ACCENT_BORDER);
     expect(border).toBeInTheDocument();
-    // motion sets style on the element; initial render should have height 0%
-    expect(border?.getAttribute("style")).toContain("height: 0%");
+    // motion sets transform on the element; empty fill collapses via scaleY(0)
+    expect(border?.getAttribute("style")).toContain("scaleY(0)");
   });
 
-  it("sets border height to 100% when fully filled", () => {
+  it("sets border fill to full when fully filled", () => {
     const { container } = renderPreview(
       <FormPreview
         module="customer"
@@ -60,7 +60,10 @@ describe("FormPreview — completion accent border", () => {
       />,
     );
     const border = container.querySelector(ACCENT_BORDER);
-    expect(border?.getAttribute("style")).toContain("height: 100%");
+    // motion elides identity transforms (build-transform: a scale equal to its
+    // default is dropped), so a full scaleY(1) fill serialises as "transform: none"
+    // rather than a literal scaleY(1). Assert the non-collapsed full fill.
+    expect(border?.getAttribute("style")).toContain("transform: none");
   });
 
   it("does not set a background color when module is unknown", () => {

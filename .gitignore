@@ -12,6 +12,9 @@ node_modules
 .env.test.local
 .env.production.local
 
+# pm2 process_env_file for the opencode app (server credentials)
+.env.opencode
+
 # Testing
 coverage
 
@@ -61,3 +64,6 @@ logs/
 
 # Devcontainer secrets — never commit
 .devcontainer/.env
+
+# Python bytecode cache (ui-ux-pro-max skill scripts)
+__pycache__/

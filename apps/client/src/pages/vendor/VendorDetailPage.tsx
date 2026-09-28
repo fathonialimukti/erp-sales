@@ -106,7 +106,7 @@ export const VendorDetailPage = () => {
         <div className="text-center">
           <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">
-            {intl.formatMessage({ id: "common.error.not_found", defaultMessage: "Vendor not found" })}
+            {intl.formatMessage({ id: "vendor.error.not_found", defaultMessage: "Vendor not found" })}
           </h3>
           <Button variant="outline" onClick={() => navigate("/vendor")} className="mt-4">
             <ArrowLeft className="size-4 mr-2" />
@@ -118,7 +118,17 @@ export const VendorDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "vendor-detail",
+        id: vendor.id,
+        name: vendor.name,
+        category: vendor.category,
+        status: vendor.status,
+        eventVendorCount: vendor._count.eventVendors,
+      })}
+    >
       <PageHeader
         module="vendor"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -274,7 +284,7 @@ export const VendorDetailPage = () => {
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete vendor?" })}
+        title={intl.formatMessage({ id: "vendor.confirm.delete_title", defaultMessage: "Delete vendor?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
         onConfirm={handleDelete}

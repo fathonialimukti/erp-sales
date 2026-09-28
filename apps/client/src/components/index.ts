@@ -4,6 +4,7 @@
 export { ConfirmDialog } from "./ConfirmDialog";
 export { DataTable } from "./DataTable";
 export { DatePicker } from "./DatePicker";
+export { DomainIcon } from "./DomainIcon";
 export { EmptyState } from "./EmptyState";
 export { EntityPhoto } from "./EntityPhoto";
 export { FilterBar } from "./FilterBar";
@@ -17,4 +18,4 @@ export { PageHeader } from "./PageHeader";
 export { Pagination } from "./Pagination";
 export { SelectSearch } from "./SelectSearch";
 export { StatusChip } from "./StatusChip";
-export { useToast, ToastContainer } from "./useToast";
+export { useToast } from "./useToast";

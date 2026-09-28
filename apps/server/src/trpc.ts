@@ -111,18 +111,35 @@ const transactional = t.middleware(async ({ ctx, next }) => {
     });
 });
 
-const csrfProtected = t.middleware(({ ctx, next }) => {
+const assertValidCsrfToken = (ctx: Context) => {
     const providedToken = ctx.req.headers[CSRF_HEADER]?.toString();
     if (!providedToken || !validateCsrfToken(providedToken, ctx.csrfToken)) {
         throw new TRPCError({ code: 'FORBIDDEN', message: getMessage(ctx.locale, 'auth.csrfTokenInvalid') });
     }
+};
 
+/**
+ * Central CSRF hook, applied once — see `protectedProcedure` below. That one
+ * line covers every state-changing call in all 32 routers, so no router carries
+ * its own CSRF annotation.
+ *
+ * Mutations are gated on the client echoing the httpOnly `csrf_token` cookie in
+ * CSRF_HEADER, which is why `auth.csrfToken` (public) exists: the value has to
+ * travel in a response body, the cookie itself is unreadable from the web
+ * origin. See docs/security-testing-report.md 9.3.
+ *
+ * login and demoLogin stay exempt by living on `publicProcedure`, which is
+ * required, not incidental: on a fresh visit `useAuthBootstrap` makes no tRPC
+ * call until a stored token exists, so a first-time visitor holds no CSRF token
+ * at login time and gating login would lock everyone out.
+ */
+export const csrfOnMutation = t.middleware(({ ctx, next, type }) => {
+    if (type === 'mutation') assertValidCsrfToken(ctx);
     return next();
 });
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
-export const protectedProcedure = t.procedure.use(isAuthed);
-export const csrfProtectedProcedure = protectedProcedure.use(csrfProtected);
+export const protectedProcedure = t.procedure.use(isAuthed).use(csrfOnMutation);
 export const transactionalProtectedProcedure = protectedProcedure.use(transactional);
 export { hasPermission, transactional };

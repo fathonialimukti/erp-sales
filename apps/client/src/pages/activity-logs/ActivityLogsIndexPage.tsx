@@ -4,7 +4,22 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { Eye, Download, Loader2, MoreHorizontal } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleDashed,
+  Download,
+  Eye,
+  Loader2,
+  LogIn,
+  LogOut,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { PageHeader } from "../../components/PageHeader";
@@ -21,6 +36,7 @@ import {
 } from "../../lib/export/useWorkbookExport";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -64,6 +80,63 @@ type ActivityAction = (typeof ACTION_OPTIONS)[number];
 
 const formatActionLabel = (action: string): string =>
   action.charAt(0) + action.slice(1).toLowerCase();
+
+/**
+ * Audit-trail verbs, in the UI language. The English title-case verb is the
+ * fallback for anything not in this map (an action added server-side later).
+ */
+const ACTION_LABEL_ID: Record<string, { id: string; defaultMessage: string }> = {
+  CREATE: { id: "activity_log.action.create", defaultMessage: "Create" },
+  UPDATE: { id: "activity_log.action.update", defaultMessage: "Update" },
+  DELETE: { id: "activity_log.action.delete", defaultMessage: "Delete" },
+  APPROVE: { id: "activity_log.action.approve", defaultMessage: "Approve" },
+  REJECT: { id: "activity_log.action.reject", defaultMessage: "Reject" },
+  LOGIN: { id: "activity_log.action.login", defaultMessage: "Log in" },
+  LOGOUT: { id: "activity_log.action.logout", defaultMessage: "Log out" },
+  EXPORT: { id: "activity_log.action.export", defaultMessage: "Export" },
+  IMPORT: { id: "activity_log.action.import", defaultMessage: "Import" },
+};
+
+/**
+ * Audit-trail action → chip tone. Approve/reject/delete read as the outcome
+ * they are (success / destructive), mutations are brand-soft, reads and
+ * session events stay neutral. Icon always rides along, never color alone.
+ */
+const ACTION_CHIP_TONE: Record<
+  string,
+  { icon: LucideIcon; className: string }
+> = {
+  CREATE: { icon: Plus, className: "border-primary/25 bg-primary/12 text-primary" },
+  UPDATE: { icon: Pencil, className: "border-primary/25 bg-primary/12 text-primary" },
+  APPROVE: { icon: CheckCircle2, className: "border-success/30 bg-success/15 text-success" },
+  REJECT: { icon: XCircle, className: "border-destructive/30 bg-destructive/12 text-destructive" },
+  DELETE: { icon: Trash2, className: "border-destructive/30 bg-destructive/12 text-destructive" },
+  EXPORT: { icon: Download, className: "border-primary/25 bg-primary/12 text-primary" },
+  IMPORT: { icon: Upload, className: "border-primary/25 bg-primary/12 text-primary" },
+  LOGIN: { icon: LogIn, className: "border-border/70 bg-muted text-foreground" },
+  LOGOUT: { icon: LogOut, className: "border-border/70 bg-muted text-foreground" },
+};
+
+const ACTION_CHIP_FALLBACK = {
+  icon: CircleDashed,
+  className: "border-border bg-muted text-foreground",
+};
+
+/** Icon + semantic plate + the action word — the audit trail needs both. */
+const ActionChip = ({ action }: { action: string }) => {
+  const intl = useIntl();
+  const tone = ACTION_CHIP_TONE[action] ?? ACTION_CHIP_FALLBACK;
+  const Icon = tone.icon;
+  const label = ACTION_LABEL_ID[action]
+    ? intl.formatMessage(ACTION_LABEL_ID[action])
+    : formatActionLabel(action);
+  return (
+    <Badge variant="outline" className={cn("gap-1 font-semibold shadow-sm", tone.className)}>
+      <Icon className="size-3" aria-hidden />
+      {label}
+    </Badge>
+  );
+};
 
 export const ActivityLogsIndexPage = () => {
   const intl = useIntl();
@@ -205,7 +278,7 @@ export const ActivityLogsIndexPage = () => {
         defaultMessage: "Timestamp",
       }),
       // Same on-screen date/time convention as the table cell.
-      format: (v) => new Date(String(v)).toLocaleString("id-ID"),
+      format: (v) => new Date(String(v)).toLocaleString(intl.locale),
     },
     {
       key: "userName",
@@ -336,26 +409,32 @@ export const ActivityLogsIndexPage = () => {
     () => [
       {
         id: "createdAt",
+        accessorFn: (row) => new Date(row.createdAt).getTime(),
+        enableSorting: true,
         header: intl.formatMessage({
           id: "activity_log.index.header_timestamp",
           defaultMessage: "Timestamp",
         }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
-            {new Date(row.original.createdAt).toLocaleString("id-ID")}
+            {new Date(row.original.createdAt).toLocaleString(intl.locale)}
           </span>
         ),
       },
       {
         id: "action",
+        accessorKey: "action",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "activity_log.index.header_action",
           defaultMessage: "Action",
         }),
-        cell: ({ row }) => <Badge variant="secondary">{row.original.action}</Badge>,
+        cell: ({ row }) => <ActionChip action={row.original.action} />,
       },
       {
         id: "user",
+        accessorFn: (row) => row.user.name ?? row.user.email,
+        enableSorting: true,
         header: intl.formatMessage({
           id: isAdmin
             ? "activity_log.index.header_user"
@@ -365,7 +444,11 @@ export const ActivityLogsIndexPage = () => {
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
-              {row.original.user.name ?? "Unknown"}
+              {row.original.user.name ??
+                intl.formatMessage({
+                  id: "activity_log.export.unknown_user",
+                  defaultMessage: "Unknown",
+                })}
             </p>
             <p className="truncate text-xs text-muted-foreground">{row.original.user.email}</p>
           </div>
@@ -373,6 +456,8 @@ export const ActivityLogsIndexPage = () => {
       },
       {
         id: "resource",
+        accessorKey: "resource",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "activity_log.index.header_resource",
           defaultMessage: "Resource",
@@ -390,6 +475,7 @@ export const ActivityLogsIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

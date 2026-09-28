@@ -69,6 +69,8 @@ export const SkuCategoryIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "sku_category.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
@@ -76,11 +78,15 @@ export const SkuCategoryIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "sku_category.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
         id: "skus",
+        accessorFn: (row) => row._count.skus,
+        enableSorting: true,
         header: intl.formatMessage({ id: "sku_category.index.header_skus", defaultMessage: "SKUs" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-foreground">
@@ -90,6 +96,7 @@ export const SkuCategoryIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

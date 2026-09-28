@@ -48,7 +48,7 @@ async function runValidation(orderId: string, userId: string) {
       aiValidationError: null,
     };
 
-    const history = pushApprovalHistory((order as any).approvalHistory, historyEntry);
+    const history = pushApprovalHistory((order as unknown as { approvalHistory: unknown }).approvalHistory, historyEntry);
 
     // Update order: auto-transition to PROPOSED if valid, otherwise back to DRAFT
     const newStatus = result.valid ? 'PROPOSED' : 'DRAFT';
@@ -58,7 +58,7 @@ async function runValidation(orderId: string, userId: string) {
       data: {
         approvalStatus: newStatus,
         proposedAt: result.valid ? new Date() : undefined,
-        approvalHistory: history as any,
+        approvalHistory: history,
       },
     });
 
@@ -101,15 +101,15 @@ async function runValidation(orderId: string, userId: string) {
         aiValidationError: error instanceof Error ? error.message : 'Unknown error',
       };
 
-      const history = pushApprovalHistory((order as any).approvalHistory, historyEntry);
+    const history = pushApprovalHistory((order as unknown as { approvalHistory: unknown }).approvalHistory, historyEntry);
 
-      // Update order with error
-      await prisma.salesOrder.update({
-        where: { id: orderId },
-        data: {
-          approvalHistory: history as any,
-        },
-      });
+    // Update order with error
+    await prisma.salesOrder.update({
+      where: { id: orderId },
+      data: {
+        approvalHistory: history,
+      },
+    });
     }
 
     // Log error

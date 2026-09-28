@@ -134,7 +134,7 @@ const InnerForm = ({
 
   const updateMutation = useMutation({
     mutationFn: (payload: {
-      id: string;
+      currentId: string;
       name?: string;
       email?: string;
       password?: string;
@@ -167,7 +167,7 @@ const InnerForm = ({
       const photo = value.photo || undefined;
       if (isEdit && userId) {
         updateMutation.mutate({
-          id: userId,
+          currentId: userId,
           name: value.name,
           email: value.email,
           roleId: value.roleId,
@@ -310,7 +310,12 @@ const InnerForm = ({
               name="name"
               validators={{
                 onChange: ({ value }) =>
-                  value && value.trim().length > 0 ? undefined : "Name is required.",
+                  value && value.trim().length > 0
+                    ? undefined
+                    : intl.formatMessage({
+                        id: "users.form.error_name_required",
+                        defaultMessage: "Name is required.",
+                      }),
               }}
             >
               {(field) => (
@@ -342,7 +347,10 @@ const InnerForm = ({
                 onChange: ({ value }) =>
                   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value ?? "")
                     ? undefined
-                    : "Invalid email address.",
+                    : intl.formatMessage({
+                        id: "users.form.error_email_invalid",
+                        defaultMessage: "Invalid email address.",
+                      }),
               }}
             >
               {(field) => (
@@ -374,7 +382,12 @@ const InnerForm = ({
               validators={{
                 onChange: ({ value }) => {
                   if (isEdit) return undefined;
-                  if (!value || value.length < 6) return "Password must be at least 6 characters.";
+                  if (!value || value.length < 6) {
+                    return intl.formatMessage({
+                      id: "users.form.error_password_min",
+                      defaultMessage: "Password must be at least 6 characters.",
+                    });
+                  }
                   return undefined;
                 },
               }}
@@ -418,7 +431,13 @@ const InnerForm = ({
             <form.Field
               name="roleId"
               validators={{
-                onChange: ({ value }) => (value ? undefined : "Role is required."),
+                onChange: ({ value }) =>
+                  value
+                    ? undefined
+                    : intl.formatMessage({
+                        id: "users.form.error_role_required",
+                        defaultMessage: "Role is required.",
+                      }),
               }}
             >
               {(field) => (

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { notificationsOpenAtom } from "@/lib/atoms";
+import { TONE_PLATE_CLASS } from "@/lib/status-color";
 import { trpcClient } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
@@ -60,23 +61,23 @@ const TYPE_ICON: Record<
 > = {
   INFO: {
     Icon: Info,
-    className: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+    className: TONE_PLATE_CLASS.info,
   },
   WARNING: {
     Icon: AlertTriangle,
-    className: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    className: TONE_PLATE_CLASS.warning,
   },
   SUCCESS: {
     Icon: CheckCircle2,
-    className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    className: TONE_PLATE_CLASS.success,
   },
   ERROR: {
     Icon: XCircle,
-    className: "bg-red-500/15 text-red-600 dark:text-red-400",
+    className: TONE_PLATE_CLASS.destructive,
   },
   APPROVAL: {
     Icon: CircleAlert,
-    className: "bg-primary/15 text-primary",
+    className: TONE_PLATE_CLASS.info,
   },
 };
 

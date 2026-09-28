@@ -1,7 +1,14 @@
 import type { CSSProperties } from "react";
-import { icons } from "../../assets/icons";
+import { DomainIcon, type DomainIconName } from "../../components/DomainIcon";
+import { moduleCssVar } from "../../types/module";
 
-const accent = { "--m-accent": "#34D399", "--m-accent-end": "#059669" } as React.CSSProperties;
+/** Module plate wash helper — `var(--module-*)` only, no hex (design law §2). */
+const outletAccent = (module: string) => {
+  const accent = moduleCssVar(module);
+  return accent ? ({ "--m-accent": accent, "--m-accent-end": accent } as CSSProperties) : undefined;
+};
+
+export { outletAccent };
 
 export type OutletIconName =
   | "back"
@@ -19,6 +26,23 @@ export type OutletIconName =
   | "phone"
   | "contact";
 
+const OUTLET_ICON_MAP: Record<OutletIconName, DomainIconName> = {
+  back: "actionBack",
+  edit: "actionEdit",
+  delete: "actionDelete",
+  plus: "actionPlus",
+  search: "actionSearch",
+  check: "actionCheck",
+  close: "actionClose",
+  "chevron-right": "actionChevronRight",
+  "menu-dots": "actionMenuDots",
+  eye: "actionEye",
+  store: "outletStore",
+  location: "outletLocation",
+  phone: "outletPhone",
+  contact: "outletContact",
+};
+
 interface OutletIconProps {
   name: OutletIconName;
   size?: number | string;
@@ -28,23 +52,7 @@ interface OutletIconProps {
   "aria-label"?: string;
 }
 
-const ICON_MAP: Record<OutletIconName, string> = {
-  back: icons.actionBack,
-  edit: icons.actionEdit,
-  delete: icons.actionDelete,
-  plus: icons.actionPlus,
-  search: icons.actionSearch,
-  check: icons.actionCheck,
-  close: icons.actionClose,
-  "chevron-right": icons.actionChevronRight,
-  "menu-dots": icons.actionMenuDots,
-  eye: icons.actionEye,
-  store: icons.outletStore,
-  location: icons.outletLocation,
-  phone: icons.outletPhone,
-  contact: icons.outletContact,
-};
-
+/** Re-export shim over shared DomainIcon — keeps existing imports working. */
 export const OutletIcon = ({
   name,
   size = 18,
@@ -53,14 +61,12 @@ export const OutletIcon = ({
   "aria-hidden": hidden,
   "aria-label": label,
 }: OutletIconProps) => (
-  <img
-    src={ICON_MAP[name]}
-    alt={label ?? ""}
-    width={size}
-    height={size}
-    aria-hidden={hidden ?? !label}
-    aria-label={label}
+  <DomainIcon
+    name={OUTLET_ICON_MAP[name]}
+    size={size}
     className={className}
     style={style}
+    aria-hidden={hidden}
+    aria-label={label}
   />
 );

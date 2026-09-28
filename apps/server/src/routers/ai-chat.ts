@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import * as z from 'zod';
 import { chatFormResponseSchema, type ChatActionResult } from '@repo/schemas/chatWidget';
 import { logActivity } from '../lib/activity-log.js';
+import { applyRowCap, capRowsByBytes } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
 import { type Prisma } from '../prisma/generated/client';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
@@ -73,12 +74,18 @@ export const aiChatRouter = router({
   /**
    * SPEC §5.3 — user confirms the SQL shown on a confirm-action card.
    * Writes demand backupAck: true (SPEC §3 refine: requiresBackupAck ⇔ !readOnly).
+   *
+   * Caller-scoped: `createdBy` is server-assigned from the authenticated user
+   * when the card is created, so scoping the lookup to it stops one admin from
+   * confirming (or rejecting, or executing) another admin's pending card.
    */
   confirmAction: protectedProcedure
     .use(hasPermission('ai-admin@access'))
     .input(confirmActionInputSchema)
     .mutation(async ({ input, ctx }) => {
-      const gate = await prisma.aiActionConfirmation.findUnique({ where: { id: input.confirmationId } });
+      const gate = await prisma.aiActionConfirmation.findUnique({
+        where: { id: input.confirmationId, createdBy: ctx.user.userId },
+      });
       if (!gate) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Confirmation not found.' });
       }
@@ -119,7 +126,9 @@ export const aiChatRouter = router({
     .use(hasPermission('ai-admin@access'))
     .input(confirmationIdInputSchema)
     .mutation(async ({ input, ctx }) => {
-      const gate = await prisma.aiActionConfirmation.findUnique({ where: { id: input.confirmationId } });
+      const gate = await prisma.aiActionConfirmation.findUnique({
+        where: { id: input.confirmationId, createdBy: ctx.user.userId },
+      });
       if (!gate) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Confirmation not found.' });
       }
@@ -156,6 +165,11 @@ export const aiChatRouter = router({
    * concurrent replay that lost the confirmed → executed claim) is refused with
    * a typed BAD_REQUEST. All raw SQL runs inside ONE ctx.db transaction so a
    * failure rolls back atomically; the failed status is then written fresh.
+   *
+   * Caller-scoped on `createdBy`, like confirmAction / rejectAction — the highest
+   * value of the three, since it is the one that actually runs the statement.
+   * A read is additionally wrapped by `applyRowCap` + `capRowsByBytes`; a write
+   * runs verbatim or not at all.
    */
   executeConfirmedAction: protectedProcedure
     .use(hasPermission('ai-admin@access'))
@@ -167,7 +181,9 @@ export const aiChatRouter = router({
       try {
         executed = await ctx.db.$transaction(
           async (tx) => {
-            const gate = await tx.aiActionConfirmation.findUnique({ where: { id: input.confirmationId } });
+            const gate = await tx.aiActionConfirmation.findUnique({
+              where: { id: input.confirmationId, createdBy: ctx.user.userId },
+            });
             if (!gate) {
               throw new TRPCError({ code: 'NOT_FOUND', message: 'Confirmation not found.' });
             }
@@ -181,17 +197,25 @@ export const aiChatRouter = router({
             const sqlStart = Date.now();
             let actionResult: ChatActionResult;
             if (gate.readOnly) {
-              // readOnly → capture rows.
-              const raw = await tx.$queryRawUnsafe<unknown[]>(gate.sqlText);
+              // readOnly → capture rows, under the SAME hard caps /api/ai/query
+              // uses. The model chose this statement, so the server — not the
+              // model — decides how much comes back: applyRowCap wraps it so a
+              // whole-schema SELECT cannot stream, and capRowsByBytes bounds the
+              // persisted snapshot. Writes are never wrapped (a subquery around
+              // an UPDATE is a different statement).
+              const sql = applyRowCap(gate.sqlText, RESULT_ROWS_STORED);
+              const raw = await tx.$queryRawUnsafe<unknown[]>(sql);
               const allRows = Array.isArray(raw) ? raw : [];
-              const rows = allRows.slice(0, RESULT_ROWS_STORED).map(sanitizeRow);
+              const { rows, truncated: sizeTruncated } = capRowsByBytes(allRows.map(sanitizeRow));
               actionResult = {
                 confirmationId: gate.id,
                 status: 'executed',
-                sql: gate.sqlText,
+                sql,
                 rowCount: allRows.length,
                 rows,
-                truncated: allRows.length > rows.length,
+                // `>= limit` mirrors formatQueryResult: the cap is satisfied, so
+                // there may be more rows than the snapshot shows.
+                truncated: sizeTruncated || allRows.length >= RESULT_ROWS_STORED,
                 durationMs: Date.now() - sqlStart,
               };
             } else {
@@ -223,7 +247,7 @@ export const aiChatRouter = router({
 
             return {
               actionResult,
-              sqlText: gate.sqlText,
+              sqlText: actionResult.sql,
               widgetId: gate.widgetId,
               chatId: gate.chatId,
               readOnly: gate.readOnly,
@@ -239,7 +263,9 @@ export const aiChatRouter = router({
 
         const message = error instanceof Error ? error.message : 'Unknown error';
         const durationMs = Date.now() - startedAt;
-        const gate = await prisma.aiActionConfirmation.findUnique({ where: { id: input.confirmationId } });
+        const gate = await prisma.aiActionConfirmation.findUnique({
+          where: { id: input.confirmationId, createdBy: ctx.user.userId },
+        });
         if (!gate) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Confirmation not found.' });
         }

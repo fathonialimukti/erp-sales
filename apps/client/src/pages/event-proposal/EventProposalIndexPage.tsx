@@ -74,6 +74,8 @@ export const EventProposalIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "documentNumber",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "event_proposal.index.header_code",
           defaultMessage: "Document",
@@ -86,6 +88,8 @@ export const EventProposalIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "event_proposal.index.header_name",
           defaultMessage: "Type",
@@ -96,6 +100,8 @@ export const EventProposalIndexPage = () => {
       },
       {
         id: "budget",
+        accessorFn: (row) => row._count.skus,
+        enableSorting: true,
         header: intl.formatMessage({
           id: "event_proposal.index.header_budget",
           defaultMessage: "Budget",
@@ -108,6 +114,7 @@ export const EventProposalIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

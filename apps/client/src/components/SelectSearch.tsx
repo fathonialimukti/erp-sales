@@ -60,6 +60,12 @@ interface SelectSearchProps<
   limit?: number;
   fullWidth?: boolean;
   multiple?: boolean;
+  /**
+   * Loading state of the data `sourceData` reads. Required when `sourceData`
+   * closes over a sibling query's data (`async () => outletList`) — the query
+   * key cannot see inside that closure, so the fetch has to wait for the parent
+   * to say the list is ready (see the `enabled` gate below).
+   */
   isLoading?: boolean;
 }
 
@@ -138,6 +144,14 @@ export const SelectSearch = <
       });
       return normalizeSourceResult<TOption>(result);
     },
+    // A `sourceData` that closes over a sibling query's data (`async () => outletList`)
+    // captures whatever that data was when the fetch ran, and the query key cannot see
+    // inside the closure — so the first run cached the pre-fetch empty list and served it
+    // for `staleTime`, opening the dropdown empty. Waiting for the parent to finish
+    // loading is the fix: the spinner is what renders meanwhile, and the fetch then reads
+    // the list that actually arrived. `staleTime` stays 30s so a remote source still does
+    // not refetch on every keystroke.
+    enabled: !propIsLoading,
     staleTime: 30_000,
     gcTime: 300_000,
   });

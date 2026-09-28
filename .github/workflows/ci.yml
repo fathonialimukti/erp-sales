@@ -10,6 +10,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Vulnerability audit
+        run: bun audit --audit-level=low
+
   quality:
     name: Lint · Types · Build
     runs-on: ubuntu-latest
@@ -72,6 +88,72 @@ jobs:
       - name: Run server tests
         run: bun run --cwd apps/server test
 
+  server-coverage:
+    name: Server coverage (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: erp_sales_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/erp_sales_test
+      JWT_SECRET: ci-only-secret-not-used-in-production-0123456789
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Push schema + seed
+        run: |
+          bun run --cwd apps/server prisma generate
+          bun run --cwd apps/server prisma db push
+          bun run --cwd apps/server prisma db seed
+
+      - name: Run server tests with coverage
+        run: bun run --cwd apps/server test -- --coverage --coverage.reportsDirectory=coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: apps/server/coverage
+          if-no-files-found: error
+          retention-days: 7
+
+  client-unit:
+    name: Client unit tests (vitest + jsdom)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # No Postgres service: the client suite renders components in jsdom and
+      # never opens a database connection (tRPC is mocked at the client edge).
+      - name: Run client unit tests
+        run: bun run --cwd apps/client test:unit
+
   e2e:
     name: Playwright e2e
     runs-on: ubuntu-latest
@@ -115,6 +197,7 @@ jobs:
 
       - name: Start API server
         run: bun run --cwd apps/server dev &
+        # Background job — the wait loop below polls /healthz
 
       - name: Wait for API
         run: |
@@ -139,3 +222,6 @@ jobs:
 
       - name: Check locale key drift
         run: bun scripts/check-i18n.mjs
+
+      - name: Verify locale files cover every id used in code
+        run: bun scripts/sync-i18n.mjs --check

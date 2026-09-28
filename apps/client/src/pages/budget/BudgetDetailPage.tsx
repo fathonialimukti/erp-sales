@@ -7,12 +7,13 @@ import { Eye, Pencil, Trash2, ArrowLeft, Tag, MapPin, AlertCircle } from "lucide
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { getRemainingColor } from "../../lib/status-color";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { Badge } from "@/components/ui/badge";
+import { StatusChip } from "../../components/StatusChip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,20 +98,7 @@ export const BudgetDetailPage = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "APPROVED": return <Badge variant="default">{intl.formatMessage({ id: "common.status.approved", defaultMessage: "Approved" })}</Badge>;
-      case "DRAFT": return <Badge variant="secondary">{intl.formatMessage({ id: "common.status.draft", defaultMessage: "Draft" })}</Badge>;
-      case "VALIDATING": return <Badge variant="outline">{intl.formatMessage({ id: "common.status.validating", defaultMessage: "Validating" })}</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const getRemainingColor = (remaining: number) => {
-    if (remaining < 0) return "text-destructive";
-    if (remaining === 0) return "text-orange-600";
-    return "text-green-600";
-  };
+  const getStatusBadge = (status: string) => <StatusChip status={status} />;
 
   if (isLoading) {
     return (
@@ -126,7 +114,7 @@ export const BudgetDetailPage = () => {
         <div className="text-center">
           <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">
-            {intl.formatMessage({ id: "common.error.not_found", defaultMessage: "Budget line not found" })}
+            {intl.formatMessage({ id: "budget.error.not_found", defaultMessage: "Budget line not found" })}
           </h3>
           <Button variant="outline" onClick={() => navigate("/budget")} className="mt-4">
             <ArrowLeft className="size-4 mr-2" />
@@ -138,7 +126,21 @@ export const BudgetDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "budget-detail",
+        id: budget.id,
+        budgetType: budget.budgetType?.name ?? null,
+        period: budget.period?.name ?? null,
+        scope: budget.scope,
+        region: budget.region?.name ?? budget.area?.name ?? null,
+        currency: budget.currency,
+        summary: budget.summary,
+        actionProgramCount: budget.actionPrograms.length,
+        eventProposalCount: budget.eventProposals.length,
+      })}
+    >
       <PageHeader
         module="budget"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -352,7 +354,7 @@ export const BudgetDetailPage = () => {
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete budget line?" })}
+        title={intl.formatMessage({ id: "budget.confirm.delete_title", defaultMessage: "Delete budget line?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
         onConfirm={handleDelete}

@@ -188,6 +188,7 @@ export const SalesOrderDetailPage = () => {
       queryClient.invalidateQueries({ queryKey: ["salesOrderDetail", id] });
       queryClient.invalidateQueries({ queryKey: ["salesOrderList"] });
       setValidateModalOpen(false);
+      setModalError(null);
       toast.success(
         intl.formatMessage({
           id: "sales_order.detail.validated_toast",
@@ -196,15 +197,10 @@ export const SalesOrderDetailPage = () => {
       );
     },
     onError: (e) => {
-      setValidateModalOpen(false);
-      toast.error(
-        e instanceof Error
-          ? `${intl.formatMessage({ id: "sales_order.detail.validate_failed", defaultMessage: "Validation failed" })}: ${e.message}`
-          : intl.formatMessage({
-              id: "sales_order.detail.validate_failed",
-              defaultMessage: "Validation failed",
-            }),
-      );
+      // The rule list ("Validation failed: Customer is required, …") is the whole
+      // answer here, so it belongs in the dialog the user is looking at, not only in
+      // a toast — the dialog stays open and the state chip still reads DRAFT.
+      setModalError(getFriendlyErrorMessage(e, "Validation failed"));
     },
   });
 
@@ -304,7 +300,20 @@ export const SalesOrderDetailPage = () => {
     );
   }
 
-  const editable = record.approvalStatus === "DRAFT" || record.approvalStatus === "REJECTED";
+  // Server-authoritative state map (mirrors routers/sales-order.ts). The order has three
+  // distinct ownership rules, not one: `propose` and `delete` accept the author-in-hands
+  // states, `update` accepts DRAFT only, and `reject` accepts the in-flight pipeline states.
+  // Conflating them is what made the affordances disagree with the API.
+  const authorHeld: string[] = ["DRAFT", "REJECTED"];
+  const updatable = record.approvalStatus === "DRAFT";
+  const editable = authorHeld.includes(record.approvalStatus);
+  const rejectable =
+    record.approvalStatus === "PROPOSED" || record.approvalStatus === "VALIDATING";
+  // `salesOrder.validate` is the rule-based DRAFT → PROPOSED transition (no LLM), and
+  // the only route to APPROVED that is deterministic. The server accepts it on a DRAFT
+  // only — which is exactly why it owns the primary slot there (one primary action per
+  // region, DESIGN.md) and Propose, the non-deterministic AI path, steps down beside it.
+  const canRuleValidate = canValidate && record.approvalStatus === "DRAFT";
   const statusOrder = ["DRAFT", "VALIDATING", "PROPOSED", "APPROVED", "REJECTED"];
   const currentIdx = statusOrder.indexOf(record.approvalStatus);
 
@@ -337,56 +346,56 @@ export const SalesOrderDetailPage = () => {
               defaultMessage: "Print",
             })}
           </Button>
-          {canUpdate && editable ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/sales-order/${record.id}/edit`)}
-                className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
-              >
-                <Pencil className="size-3.5" aria-hidden />
-                {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  navigate("/sales-order/create", {
-                    state: {
-                      duplicateFrom: {
-                        outletId: record.outlet.id,
-                        items: record.items.map((item) => ({
-                          skuId: item.sku.id,
-                          quantity: item.quantity,
-                          unitPrice: item.unitPrice,
-                          discountPercent: item.discountPercent,
-                          taxPercent: item.taxPercent,
-                          notes: item.notes,
-                        })),
-                        paymentTerms: record.paymentTerms,
-                        notes: record.notes,
-                      },
+          {canUpdate && updatable ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/sales-order/${record.id}/edit`)}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {intl.formatMessage({ id: "common.action.edit", defaultMessage: "Edit" })}
+            </Button>
+          ) : null}
+          {editable ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                navigate("/sales-order/create", {
+                  state: {
+                    duplicateFrom: {
+                      outletId: record.outlet.id,
+                      items: record.items.map((item) => ({
+                        skuId: item.sku.id,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        discountPercent: item.discountPercent,
+                        taxPercent: item.taxPercent,
+                        notes: item.notes,
+                      })),
+                      paymentTerms: record.paymentTerms,
+                      notes: record.notes,
                     },
-                  });
-                  toast.success(
-                    intl.formatMessage({
-                      id: "sales_order.detail.duplicated_toast",
-                      defaultMessage: "Order duplicated. Edit and save as new.",
-                    }),
-                  );
-                }}
-                className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
-              >
-                <Copy className="size-3.5" aria-hidden />
-                {intl.formatMessage({
-                  id: "sales_order.action.duplicate",
-                  defaultMessage: "Duplicate",
-                })}
-              </Button>
-            </>
+                  },
+                });
+                toast.success(
+                  intl.formatMessage({
+                    id: "sales_order.detail.duplicated_toast",
+                    defaultMessage: "Order duplicated. Edit and save as new.",
+                  }),
+                );
+              }}
+              className="h-8 gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Copy className="size-3.5" aria-hidden />
+              {intl.formatMessage({
+                id: "sales_order.action.duplicate",
+                defaultMessage: "Duplicate",
+              })}
+            </Button>
           ) : null}
           {canDelete && editable ? (
             <Button
@@ -412,8 +421,27 @@ export const SalesOrderDetailPage = () => {
 
       <div className="flex flex-wrap items-center gap-2">
         <StatusChip status={record.approvalStatus} />
+        {/* The rule-based validate, opened on the dialog below. A DRAFT only — the
+            server rejects it elsewhere — so this never competes with Retry Validation,
+            which is gated on VALIDATING + a failed AI run. */}
+        {canRuleValidate ? (
+          <Button
+            type="button"
+            onClick={() => {
+              setModalError(null);
+              setValidateModalOpen(true);
+            }}
+          >
+            <Check className="size-4" aria-hidden />
+            {intl.formatMessage({ id: "sales_order.detail.validate", defaultMessage: "Validate" })}
+          </Button>
+        ) : null}
         {canPropose && editable ? (
-          <Button type="button" onClick={() => setProposeModalOpen(true)}>
+          <Button
+            type="button"
+            variant={canRuleValidate ? "outline" : "default"}
+            onClick={() => setProposeModalOpen(true)}
+          >
             <Send className="size-4" />
             {intl.formatMessage({ id: "sales_order.detail.propose", defaultMessage: "Propose" })}
           </Button>
@@ -438,29 +466,31 @@ export const SalesOrderDetailPage = () => {
           </Button>
         ) : null}
         {canApprove && record.approvalStatus === "PROPOSED" ? (
-          <>
-            <Button
-              type="button"
-              onClick={() => {
-                setModalError(null);
-                setApproveModalOpen(true);
-              }}
-            >
-              <ThumbsUp className="size-4" />
-              {intl.formatMessage({ id: "sales_order.detail.approve", defaultMessage: "Approve" })}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => {
-                setModalError(null);
-                setRejectModalOpen(true);
-              }}
-            >
-              <ThumbsDown className="size-4" />
-              {intl.formatMessage({ id: "sales_order.detail.reject", defaultMessage: "Reject" })}
-            </Button>
-          </>
+          <Button
+            type="button"
+            onClick={() => {
+              setModalError(null);
+              setApproveModalOpen(true);
+            }}
+          >
+            <ThumbsUp className="size-4" />
+            {intl.formatMessage({ id: "sales_order.detail.approve", defaultMessage: "Approve" })}
+          </Button>
+        ) : null}
+        {/* Reject also covers VALIDATING: the server lets a manager reject while AI
+            validation is still in flight, so the affordance must be offered there too. */}
+        {canApprove && rejectable ? (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => {
+              setModalError(null);
+              setRejectModalOpen(true);
+            }}
+          >
+            <ThumbsDown className="size-4" />
+            {intl.formatMessage({ id: "sales_order.detail.reject", defaultMessage: "Reject" })}
+          </Button>
         ) : null}
         {record.approvalStatus === "REJECTED" ? (
           <AiRejectionFixButton salesOrderId={record.id} />
@@ -1094,7 +1124,13 @@ export const SalesOrderDetailPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={validateModalOpen} onOpenChange={setValidateModalOpen}>
+      <Dialog
+        open={validateModalOpen}
+        onOpenChange={(open) => {
+          setValidateModalOpen(open);
+          if (!open) setModalError(null);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
@@ -1113,6 +1149,7 @@ export const SalesOrderDetailPage = () => {
               )}
             </DialogDescription>
           </DialogHeader>
+          {modalError ? <p className="text-sm text-destructive">{modalError}</p> : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setValidateModalOpen(false)}>
               {intl.formatMessage({ id: "common.action.cancel", defaultMessage: "Cancel" })}

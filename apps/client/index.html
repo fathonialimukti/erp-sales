@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Seed <html lang> from the persisted locale before first paint (WCAG
+         3.1.1/3.1.2); App.tsx keeps it in sync at runtime. The cookie name is
+         LOCALE_COOKIE_NAME in src/lib/locale.ts. -->
+    <script>
+      document.documentElement.lang = document.cookie.includes("app-locale=id")
+        ? "id"
+        : "en";
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

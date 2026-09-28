@@ -9,8 +9,14 @@ export const createUserSchema = z.object({
   photo: z.string().optional(),
 });
 
+// Frozen T2 contract: every update*Schema requires `currentId` (19/20 domain
+// schemas already comply — this was the one outlier). `id` stays accepted as a
+// deprecated alias so the in-flight client call sites keep working.
+// ponytail: `currentId` is optional at the type level (client still sends `id`);
+// the router rejects a payload with neither (BAD_REQUEST, server-enforced).
 export const updateUserSchema = z.object({
-  id: z.string(),
+  currentId: z.string().optional(),
+  id: z.string().optional(),
   name: z.string().min(1, 'Name is required').optional(),
   email: z.email('Invalid email').optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),

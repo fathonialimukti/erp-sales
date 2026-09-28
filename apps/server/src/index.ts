@@ -59,12 +59,12 @@ app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     // Lock down browser features we don't use.
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
     // The API serves JSON/SSE/PDF only — deny everything scriptable.
-    // (The client is a separate Vite/Tauri origin with its own CSP.)
+    // This header covers the API origin only; the Vite/Tauri client is a
+    // separate origin and needs its own CSP.
     res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
     next();
 });

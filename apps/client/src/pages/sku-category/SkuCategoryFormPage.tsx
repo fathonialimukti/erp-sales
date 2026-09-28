@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
-import { useAtomValue } from "jotai";
+
+import { useRequiredMessage } from "@/lib/form-validation";import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
@@ -44,6 +45,7 @@ const defaults = (): FormValues => ({ code: "", name: "", description: "" });
 
 export const SkuCategoryFormPage = () => {
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -249,7 +251,7 @@ export const SkuCategoryFormPage = () => {
 
             <form.Field
               name="name"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField

@@ -2,9 +2,13 @@
   "$schema": "https://v2-10-1.turborepo.dev/schema.json",
   "ui": "tui",
   "globalEnv": [
+    "AI_API_KEY",
     "AI_BASE_URL",
     "AI_DEVTOOLS_ENABLED",
+    "AI_EMBEDDING_API_KEY",
+    "AI_EMBEDDING_BASE_URL",
     "AI_EMBEDDING_DIMENSIONS",
+    "AI_EMBEDDING_MODEL",
     "AI_GLOBAL_RPM",
     "AI_MODEL",
     "AI_QUEUE_MAX_WAIT_MS",
@@ -28,6 +32,12 @@
     "NODE_ENV",
     "PORT",
     "SEED_SEED",
+    "SMTP_FROM",
+    "SMTP_HOST",
+    "SMTP_PASS",
+    "SMTP_PORT",
+    "SMTP_SECURE",
+    "SMTP_USER",
     "TAURI_DEV_HOST",
     "VITEST",
     "VITE_API_BASE_URL",
@@ -47,6 +57,10 @@
     },
     "test": {
       "dependsOn": ["^test"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "test:unit": {
+      "dependsOn": ["^test:unit"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"]
     },
     "dev": {

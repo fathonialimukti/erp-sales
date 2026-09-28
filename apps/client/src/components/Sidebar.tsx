@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { BrandMark } from "@/components/BrandMark";
@@ -99,14 +99,25 @@ export const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
   const setSearchOpen = useSetAtom(searchOpenAtom);
   const isLgUp = useMediaQuery("(min-width: 1024px)");
+  const isMdUp = useMediaQuery("(min-width: 768px)");
   const reducedMotion = useReducedMotion();
+
+  // Below `md` the nav is an off-canvas drawer over the content, so the
+  // column keeps the full viewport width instead of being squeezed by a
+  // sidebar margin. Entering that mode (or loading on a phone) starts closed —
+  // the topbar toggle is the way in.
+  const isDrawer = !isMdUp;
+  useEffect(() => {
+    if (!isMdUp) setSidebarOpen(false);
+  }, [isMdUp, setSidebarOpen]);
 
   const [tooltip, setTooltip] = useState<{ label: string; top: number } | null>(
     null,
   );
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isCollapsed = !sidebarOpen;
+  // The phone drawer is always the expanded panel; only the ≥md rail collapses.
+  const isCollapsed = !isDrawer && !sidebarOpen;
   // Always keep the avatar in the desktop sidebar (compact when collapsed).
   const showAvatarInSidebar = isLgUp;
 
@@ -216,22 +227,48 @@ export const Sidebar = () => {
     id: "nav.search.open",
     defaultMessage: "Open search",
   });
+  const closeLabel = intl.formatMessage({
+    id: "common.action.close",
+    defaultMessage: "Close",
+  });
 
   return (
-    <motion.aside
-      aria-label="Sidebar"
-      data-collapsed={isCollapsed || undefined}
-      variants={fadeIn}
-      {...getMotionProps(reducedMotion)}
-      className={cn(
-        // z-40: above sticky topbar (z-30), below dialog/sheet overlays (z-50)
-        "fixed top-3 bottom-3 left-3 z-40 flex flex-col overflow-visible",
-        "rounded-2xl border border-border bg-sidebar shadow-sm",
-        "transition-[width] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
-        "motion-reduce:transition-none",
-        isCollapsed ? "w-20" : "w-68",
+    <>
+      {/* Phone drawer scrim — starts under the app bar so the topbar (and its
+          toggle) stay live; tapping the stage dismisses the nav. */}
+      {isDrawer && sidebarOpen && (
+        <div
+          className="fixed top-[4.25rem] right-0 bottom-0 left-0 z-30 bg-foreground/20 sm:top-[4.5rem] md:hidden"
+          aria-hidden
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
-    >
+
+      <motion.aside
+        aria-label="Sidebar"
+        data-collapsed={isCollapsed || undefined}
+        data-drawer={isDrawer || undefined}
+        variants={fadeIn}
+        {...getMotionProps(reducedMotion)}
+        className={cn(
+          // z-40: above sticky topbar (z-30), below dialog/sheet overlays (z-50)
+          "fixed left-3 z-40 flex flex-col overflow-visible",
+          // ≥md: a rail/panel that offsets the column (top-3 → bottom-3).
+          // <md: a drawer hanging under the app bar, translated off-canvas
+          // when closed so it never widens the document.
+          isDrawer
+            ? sidebarOpen
+              ? "top-[4.25rem] bottom-3 w-68 sm:top-[4.5rem]"
+              : // Off-canvas: translated out of the viewport, transparent and
+                // click-through. Not `invisible` — the nav must stay in the
+                // accessibility tree for the page's own landmarks.
+                "pointer-events-none top-[4.25rem] -translate-x-[calc(100%+1.5rem)] opacity-0 sm:top-[4.5rem]"
+            : cn("top-3 bottom-3", isCollapsed ? "w-20" : "w-68"),
+          "rounded-2xl border border-border bg-sidebar shadow-sm",
+          "transition-[width,transform,opacity] duration-250 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+          "motion-reduce:transition-none",
+        )}
+      >
       {/* Header — brand + search */}
       <header
         className={cn(
@@ -249,7 +286,7 @@ export const Sidebar = () => {
             className={isCollapsed ? "size-10" : "size-9"}
           />
           {!isCollapsed && (
-            <div className="min-w-0 leading-tight">
+            <div className="min-w-0 flex-1 leading-tight">
               <span className="block truncate font-heading text-sm font-semibold text-foreground">
                 {intl.formatMessage({
                   id: "nav.brand_name",
@@ -263,6 +300,16 @@ export const Sidebar = () => {
                 })}
               </span>
             </div>
+          )}
+          {isDrawer && (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              aria-label={closeLabel}
+              className="relative -mr-1 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
           )}
         </div>
 
@@ -362,7 +409,11 @@ export const Sidebar = () => {
                       active={active}
                       collapsed={isCollapsed}
                       module={HREF_MODULE[item.href]}
-                      onClick={() => navigate(item.href)}
+                      onClick={() => {
+                        navigate(item.href);
+                        // A phone drawer covers the stage, so a pick dismisses it.
+                        if (isDrawer) setSidebarOpen(false);
+                      }}
                       onMouseEnter={
                         isCollapsed
                           ? (el) => showTooltip(label, el)
@@ -415,6 +466,7 @@ export const Sidebar = () => {
         tabIndex={-1}
         aria-hidden
       />
-    </motion.aside>
+      </motion.aside>
+    </>
   );
 };

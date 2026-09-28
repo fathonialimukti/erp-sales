@@ -2,10 +2,11 @@ import type { CreateExpressContextOptions } from '@trpc/server/adapters/express'
 import { parseCookie, stringifySetCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { prisma, type DbClient } from './lib/prisma.js';
+import { appendSetCookie } from './lib/cookies.js';
 import { parseLocaleCookie, ServerLocale, DEFAULT_LOCALE } from './lib/locale.js';
 import { getJwtSecret } from './lib/jwt-secret.js';
 import { isBlacklisted } from './lib/token-blacklist.js';
-import { generateCsrfToken, CSRF_COOKIE_NAME } from './lib/csrf.js';
+import { generateCsrfToken, isValidCsrfToken, CSRF_COOKIE_NAME } from './lib/csrf.js';
 
 const JWT_SECRET = getJwtSecret();
 
@@ -69,10 +70,15 @@ export const createContext = async ({ req, res }: CreateExpressContextOptions) =
 
     const cookieHeader = req.headers.cookie;
     const cookies = cookieHeader ? parseCookie(cookieHeader) : {};
-    const csrfToken = cookies[CSRF_COOKIE_NAME] ?? generateCsrfToken();
+    // Re-mint on a missing, forged or expired cookie — reusing an expired one
+    // would wedge the caller, whose echo would never match the Set-Cookie value.
+    const cookieToken = cookies[CSRF_COOKIE_NAME];
+    const csrfToken = cookieToken && isValidCsrfToken(cookieToken) ? cookieToken : generateCsrfToken();
 
-    res.setHeader(
-        'Set-Cookie',
+    // Appended, not set: a resolver that mints its own cookie (auth.login /
+    // auth.logout) must not clobber this mint. See lib/cookies.ts.
+    appendSetCookie(
+        res,
         stringifySetCookie({
             name: CSRF_COOKIE_NAME,
             value: csrfToken,

@@ -34,8 +34,8 @@ export default defineConfig(async () => ({
           if (id.includes('node_modules/motion') || id.includes('node_modules/framer-motion')) {
             return 'vendor-motion';
           }
-          // Icon libraries
-          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/@gravity-ui')) {
+          // Lucide is the only icon library (DESIGN.md: chrome only)
+          if (id.includes('node_modules/lucide-react')) {
             return 'vendor-icons';
           }
           // Radix UI + shadcn

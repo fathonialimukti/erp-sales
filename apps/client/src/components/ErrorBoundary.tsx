@@ -1,5 +1,10 @@
 import { Component, type ReactNode } from 'react';
+import { IntlProvider, useIntl } from 'react-intl';
+
+import { Button } from '@/components/ui/button';
 import { API_BASE_URL } from '../lib/api-base';
+import { getLocaleMessages } from '../lib/i18n';
+import { useLocale } from '../lib/useLocale';
 
 interface Props {
   children: ReactNode;
@@ -30,6 +35,49 @@ function reportClientError(error: Error, info: React.ErrorInfo) {
   }
 }
 
+/** The crash screen. Functional so it can read the active locale like any page. */
+function CrashScreen() {
+  const intl = useIntl();
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="text-center">
+        <h1 className="text-xl font-bold text-foreground">
+          {intl.formatMessage({
+            id: 'error_boundary.title',
+            defaultMessage: 'Something went wrong',
+          })}
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          {intl.formatMessage({
+            id: 'error_generic',
+            defaultMessage: 'An unexpected error occurred.',
+          })}
+        </p>
+        <Button type="button" className="mt-4" onClick={() => window.location.reload()}>
+          {intl.formatMessage({
+            id: 'error_boundary.reload',
+            defaultMessage: 'Reload Application',
+          })}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * This boundary sits ABOVE <AppProviders>, so on a crash there is no
+ * IntlProvider in the tree to format with — the fallback brings its own, or an
+ * Indonesian user reads the crash screen in English.
+ */
+function LocalizedCrashScreen() {
+  const { locale } = useLocale();
+  return (
+    <IntlProvider locale={locale} messages={getLocaleMessages(locale)} defaultLocale="en">
+      <CrashScreen />
+    </IntlProvider>
+  );
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
@@ -42,27 +90,9 @@ export class ErrorBoundary extends Component<Props, State> {
     reportClientError(error, info);
   }
 
-  handleReload = () => {
-    this.setState({ hasError: false, error: undefined });
-    window.location.reload();
-  };
-
   render() {
     if (this.state.hasError) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
-          <div className="text-center">
-            <h1 className="text-xl font-bold text-foreground">Something went wrong</h1>
-            <p className="mt-2 text-muted-foreground">An unexpected error occurred.</p>
-            <button
-              onClick={this.handleReload}
-              className="mt-4 rounded-lg bg-primary px-4 py-2 text-primary-foreground"
-            >
-              Reload Application
-            </button>
-          </div>
-        </div>
-      );
+      return <LocalizedCrashScreen />;
     }
     return this.props.children;
   }

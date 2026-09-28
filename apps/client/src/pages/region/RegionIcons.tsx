@@ -1,14 +1,5 @@
 import type { CSSProperties } from "react";
-import { icons } from "../../assets/icons";
-
-/* ============================================================
- * RegionIcons — SVG icons for region pages
- *
- * All icons are imported from src/assets/icons and rendered as <img> tags.
- *
- * Usage:
- *   <RegionIcon name="back" size={18} />
- * ============================================================ */
+import { DomainIcon, type DomainIconName } from "../../components/DomainIcon";
 
 export type RegionIconName =
   | "back"
@@ -27,6 +18,24 @@ export type RegionIconName =
   | "area"
   | "building";
 
+const REGION_ICON_MAP: Record<RegionIconName, DomainIconName> = {
+  back: "actionBack",
+  edit: "actionEdit",
+  delete: "actionDelete",
+  plus: "actionPlus",
+  search: "actionSearch",
+  check: "actionCheck",
+  close: "actionClose",
+  "chevron-right": "actionChevronRight",
+  "chevron-down": "actionChevronDown",
+  "chevron-left": "actionChevronLeft",
+  "menu-dots": "actionMenuDots",
+  eye: "actionEye",
+  map: "regionMap",
+  area: "regionArea",
+  building: "regionBuilding",
+};
+
 interface RegionIconProps {
   name: RegionIconName;
   size?: number | string;
@@ -36,24 +45,7 @@ interface RegionIconProps {
   "aria-label"?: string;
 }
 
-const ICON_MAP: Record<RegionIconName, string> = {
-  back: icons.actionBack,
-  edit: icons.actionEdit,
-  delete: icons.actionDelete,
-  plus: icons.actionPlus,
-  search: icons.actionSearch,
-  check: icons.actionCheck,
-  close: icons.actionClose,
-  "chevron-right": icons.actionChevronRight,
-  "chevron-down": icons.actionChevronDown,
-  "chevron-left": icons.actionChevronLeft,
-  "menu-dots": icons.actionMenuDots,
-  eye: icons.actionEye,
-  map: icons.regionMap,
-  area: icons.regionArea,
-  building: icons.regionBuilding,
-};
-
+/** Re-export shim over shared DomainIcon — keeps existing imports working. */
 export const RegionIcon = ({
   name,
   size = 18,
@@ -62,14 +54,12 @@ export const RegionIcon = ({
   "aria-hidden": hidden,
   "aria-label": label,
 }: RegionIconProps) => (
-  <img
-    src={ICON_MAP[name]}
-    alt={label ?? ""}
-    width={size}
-    height={size}
-    aria-hidden={hidden ?? !label}
-    aria-label={label}
+  <DomainIcon
+    name={REGION_ICON_MAP[name]}
+    size={size}
     className={className}
     style={style}
+    aria-hidden={hidden}
+    aria-label={label}
   />
 );

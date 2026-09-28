@@ -4,10 +4,11 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, RefreshCw, Trash2, Eye } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { getRemainingColor } from "../../lib/status-color";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
@@ -17,6 +18,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Pagination } from "../../components/Pagination";
 import {
   DropdownMenu,
@@ -70,7 +72,7 @@ export const BudgetLineIndexPage = () => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["budgetLineList", pagination.pageIndex, pagination.pageSize, search],
     queryFn: () =>
       trpcClient.budgetLine.list.query({
@@ -96,16 +98,12 @@ export const BudgetLineIndexPage = () => {
     }
   };
 
-  const getRemainingColor = (remaining: number) => {
-    if (remaining < 0) return "text-destructive";
-    if (remaining === 0) return "text-orange-600";
-    return "text-green-600";
-  };
-
   const columns = useMemo<ColumnDef<BudgetLineRow>[]>(
     () => [
       {
         id: "budgetType",
+        accessorFn: (row) => row.budgetType?.name ?? "",
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_budget_type", defaultMessage: "Budget Type" }),
         cell: ({ row }) => (
           <span className="font-medium text-foreground">{row.original.budgetType?.name ?? "—"}</span>
@@ -113,6 +111,8 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "period",
+        accessorFn: (row) => row.period?.name ?? "",
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_period", defaultMessage: "Period" }),
         cell: ({ row }) => (
           <span className="text-sm text-foreground">{row.original.period?.name ?? "—"}</span>
@@ -120,6 +120,8 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "scope",
+        accessorKey: "scope",
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_scope", defaultMessage: "Scope" }),
         cell: ({ row }) => (
           <Badge variant="outline">{getScopeLabel(row.original.scope)}</Badge>
@@ -127,6 +129,8 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "regionArea",
+        accessorFn: (row) => row.region?.name ?? row.area?.name ?? "",
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_region_area", defaultMessage: "Region / Area" }),
         cell: ({ row }) => (
           <span className="text-sm text-foreground">
@@ -136,6 +140,8 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "allocated",
+        accessorFn: (row) => row.summary.allocated,
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_allocated", defaultMessage: "Allocated" }),
         cell: ({ row }) => (
           <span className="font-mono text-foreground">{formatCurrency(row.original.summary.allocated, row.original.currency)}</span>
@@ -143,6 +149,8 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "committed",
+        accessorFn: (row) => row.summary.committed,
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_committed", defaultMessage: "Committed" }),
         cell: ({ row }) => (
           <span className="font-mono text-foreground">{formatCurrency(row.original.summary.committed, row.original.currency)}</span>
@@ -150,6 +158,8 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "spent",
+        accessorFn: (row) => row.summary.spent,
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_spent", defaultMessage: "Spent" }),
         cell: ({ row }) => (
           <span className="font-mono text-foreground">{formatCurrency(row.original.summary.spent, row.original.currency)}</span>
@@ -157,15 +167,19 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "remaining",
+        accessorFn: (row) => row.summary.remaining,
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_remaining", defaultMessage: "Remaining" }),
         cell: ({ row }) => (
-          <span className={`font-mono font-medium ${getRemainingColor(row.original.summary.remaining)}`}>
+          <span className={cn("font-mono font-medium", getRemainingColor(row.original.summary.remaining))}>
             {formatCurrency(row.original.summary.remaining, row.original.currency)}
           </span>
         ),
       },
       {
         id: "programs",
+        accessorFn: (row) => row._count.actionPrograms,
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_programs", defaultMessage: "Programs" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-foreground">{row.original._count.actionPrograms}</span>
@@ -173,6 +187,8 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "proposals",
+        accessorFn: (row) => row._count.eventProposals,
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_line.index.header_proposals", defaultMessage: "Proposals" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-foreground">{row.original._count.eventProposals}</span>
@@ -180,6 +196,7 @@ export const BudgetLineIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
@@ -246,7 +263,15 @@ export const BudgetLineIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full gap-3">
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "budget-line-index",
+        itemCount: totalRows,
+        page: pagination.pageIndex + 1,
+        search,
+      })}
+    >
       <PageHeader
         module="budgetLine"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -254,64 +279,120 @@ export const BudgetLineIndexPage = () => {
         description={intl.formatMessage({ id: "budget_line.index.subtitle", defaultMessage: "Manage budget line allocations with scope and remaining tracking." })}
         actions={
           canCreate ? (
-            <Button onClick={() => navigate("/budget-line/create")}>
+            <Button type="button" onClick={() => navigate("/budget-line/create")}>
               <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
+          ) : undefined
+        }
+      />
+
+      <DataTable
+        density="crm"
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={intl.formatMessage({
+          id: "budget_line.index.load_failed",
+          defaultMessage:
+            "We could not load budget lines. Check your connection and try again.",
+        })}
+        onRowClick={(row) => navigate(`/budget-line/${row.id}`)}
+        toolbar={
+          <FilterBar
+            search={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder={intl.formatMessage({
+              id: "budget_line.index.search_placeholder",
+              defaultMessage: "Search budget lines…",
+            })}
+            countLabel={intl.formatMessage(
+              {
+                id: "budget_line.index.count_label",
+                defaultMessage: "{count, plural, one {# budget line} other {# budget lines}}",
+              },
+              { count: totalRows },
+            )}
+            actions={
+              isError ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void refetch()}
+                >
+                  <RefreshCw className="size-3.5" aria-hidden />
+                  {intl.formatMessage({ id: "common.action.retry", defaultMessage: "Retry" })}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+        empty={
+          <EmptyState
+            module="budgetLine"
+            title={
+              search
+                ? intl.formatMessage({
+                    id: "budget_line.index.empty_search",
+                    defaultMessage: "No budget lines found",
+                  })
+                : intl.formatMessage({
+                    id: "budget_line.index.empty_title",
+                    defaultMessage: "No budget lines yet",
+                  })
+            }
+            description={
+              search
+                ? intl.formatMessage({
+                    id: "budget_line.index.empty_search_sub",
+                    defaultMessage: "Try adjusting your search terms.",
+                  })
+                : intl.formatMessage({
+                    id: "budget_line.index.empty_description",
+                    defaultMessage: "Create your first budget line to get started.",
+                  })
+            }
+            action={
+              canCreate && !search ? (
+                <Button type="button" onClick={() => navigate("/budget-line/create")}>
+                  <Plus className="size-4" />
+                  {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+        footer={
+          totalPages > 1 ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {intl.formatMessage(
+                  { id: "common.pagination_info", defaultMessage: "Page {page} of {total}" },
+                  { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) },
+                )}
+              </p>
+              <Pagination
+                page={pagination.pageIndex + 1}
+                totalPages={totalPages}
+                onChange={(p) => setPagination({ pageIndex: p - 1, pageSize: pagination.pageSize })}
+              />
+            </div>
           ) : null
         }
       />
-      <FilterBar
-        search={searchInput}
-        onSearchChange={setSearchInput}
-        searchPlaceholder={intl.formatMessage({ id: "common.search.placeholder", defaultMessage: "Search..." })}
-      />
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      ) : isError ? (
-        <EmptyState
-          title={intl.formatMessage({ id: "common.error.load_failed", defaultMessage: "Failed to load data" })}
-          description={intl.formatMessage({ id: "common.error.try_again", defaultMessage: "Please try again later" })}
-        />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          title={intl.formatMessage({ id: "budget_line.index.empty_title", defaultMessage: "No budget lines found" })}
-          description={intl.formatMessage({ id: "budget_line.index.empty_description", defaultMessage: "Create your first budget line to get started." })}
-          action={
-            canCreate ? (
-              <Button onClick={() => navigate("/budget-line/create")}>
-                <Plus className="size-4 mr-2" />
-                {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create Budget Line" })}
-              </Button>
-            ) : null
-          }
-        />
-      ) : (
-        <div className="flex-1 overflow-auto">
-          <DataTable
-            columns={columns}
-            data={rows}
-            isLoading={isLoading}
-            onRowClick={(row) => navigate(`/budget-line/${row.id}`)}
-          />
-          <Pagination
-            page={pagination.pageIndex + 1}
-            totalPages={totalPages}
-            onChange={(page) => setPagination((p) => ({ ...p, pageIndex: page - 1 }))}
-          />
-        </div>
-      )}
+
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete budget line?" })}
+        title={intl.formatMessage({ id: "budget_line.confirm.delete_title", defaultMessage: "Delete budget line?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
         onConfirm={handleDelete}
         loading={isDeleting}
       />
-    </div>
+    </section>
   );
 };

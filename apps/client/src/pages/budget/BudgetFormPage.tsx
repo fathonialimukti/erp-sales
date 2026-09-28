@@ -320,7 +320,7 @@ export const BudgetFormPage = () => {
                     disabled={isEdit}
                   >
                     <SelectTrigger id="budgetTypeId">
-                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select budget type" })} />
+                      <SelectValue placeholder={intl.formatMessage({ id: "budget.form.select_budget_type", defaultMessage: "Select budget type" })} />
                     </SelectTrigger>
                     <SelectContent>
                       {budgetTypes?.data?.map((type: BudgetTypeOption) => (
@@ -347,7 +347,7 @@ export const BudgetFormPage = () => {
                     disabled={isEdit}
                   >
                     <SelectTrigger id="periodId">
-                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select budget period" })} />
+                      <SelectValue placeholder={intl.formatMessage({ id: "budget.form.select_budget_period", defaultMessage: "Select budget period" })} />
                     </SelectTrigger>
                     <SelectContent>
                       {budgetPeriods?.data?.map((period: BudgetPeriodOption) => (
@@ -374,7 +374,7 @@ export const BudgetFormPage = () => {
                     onValueChange={(value) => handleScopeChange(value as "REGION" | "AREA")}
                   >
                     <SelectTrigger id="scope">
-                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select scope" })} />
+                      <SelectValue placeholder={intl.formatMessage({ id: "budget.form.select_scope", defaultMessage: "Select scope" })} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="REGION">
@@ -402,7 +402,7 @@ export const BudgetFormPage = () => {
                     disabled={formData.scope !== "REGION"}
                   >
                     <SelectTrigger id="regionId">
-                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select region" })} />
+                      <SelectValue placeholder={intl.formatMessage({ id: "budget.form.select_region", defaultMessage: "Select region" })} />
                     </SelectTrigger>
                     <SelectContent>
                       {regions?.data?.map((region: RegionOption) => (
@@ -429,7 +429,7 @@ export const BudgetFormPage = () => {
                     disabled={formData.scope !== "AREA"}
                   >
                     <SelectTrigger id="areaId">
-                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select area" })} />
+                      <SelectValue placeholder={intl.formatMessage({ id: "budget.form.select_area", defaultMessage: "Select area" })} />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredAreas.map((area: AreaOption) => (

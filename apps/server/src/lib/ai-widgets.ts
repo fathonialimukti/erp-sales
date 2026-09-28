@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { stepCountIs, tool, type StopCondition } from 'ai';
 import * as z from 'zod';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@repo/schemas/chatWidget';
 import { logActivity } from './activity-log.js';
 import type { DbClient } from './prisma.js';
+import { generateUlid } from './ulid.js';
 
 /**
  * Widget tools for the AI chat pipeline (SPEC §3, §5, §8).
@@ -29,25 +30,7 @@ export const WIDGET_TOOL_NAMES = ['request_form_input', 'request_confirmation'] 
 export const isWidgetToolName = (name: string): boolean =>
     (WIDGET_TOOL_NAMES as readonly string[]).includes(name);
 
-// ponytail: same ULID encoding as lib/backup.ts, whose generator isn't exported
-// (importing it would pull in backup module side effects); 14 lines < a new dep.
-const ULID_ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-
-const generateUlid = (): string => {
-    let time = Date.now();
-    let timePart = '';
-    for (let i = 0; i < 10; i++) {
-        timePart = ULID_ENCODING[time % 32]! + timePart;
-        time = Math.floor(time / 32);
-    }
-    let random = BigInt(`0x${randomBytes(10).toString('hex')}`);
-    let randomPart = '';
-    for (let i = 0; i < 16; i++) {
-        randomPart = ULID_ENCODING[Number(random % 32n)]! + randomPart;
-        random /= 32n;
-    }
-    return timePart + randomPart;
-};
+// ponytail: ULID lives in ./ulid.js (shared with lib/backup.ts) — no local dup.
 
 // SPEC §6 row guard: up to 200 rows are stored, but only the FIRST 20 reach the
 // model context (ai-chat.ts stores ≤200 per Task 3's snapshot comment).

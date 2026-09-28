@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { useIntl } from "react-intl";
+import { useIntl, type IntlShape } from "react-intl";
 import { useQuery } from "@tanstack/react-query";
 import { useAtomValue } from "jotai";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   Area,
   AreaChart,
@@ -31,6 +29,7 @@ import { PageHeader } from "../components/PageHeader";
 import { useMeta } from "../lib/useMeta";
 import { StatusChip } from "../components/StatusChip";
 import { EmptyState } from "../components/EmptyState";
+import { AiMarkdown } from "@/components/ai/AiMarkdown";
 import { Stagger, StaggerItem } from "../components/motion/Stagger";
 import {
   Card,
@@ -105,31 +104,50 @@ const chartTooltipStyle = {
 
 const MAIN_CHART_HEIGHT = 280;
 
-const formatCompact = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
+// Number and date formatting follows the UI language, not a hardcoded region —
+// a Bahasa user must not read English month names, or vice versa.
+const formatCompact = (value: number, locale: string) =>
+  new Intl.NumberFormat(locale, {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
 
-const formatShortDate = (date: string | Date) => {
+const formatShortDate = (date: string | Date, locale: string) => {
   const d = new Date(date);
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "short",
   }).format(d);
 };
 
-const formatRelative = (date: string | Date) => {
+const formatRelative = (date: string | Date, locale: string, intl: IntlShape) => {
   const d = new Date(date).getTime();
   const diff = Date.now() - d;
   const m = Math.floor(diff / 60_000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) {
+    return intl.formatMessage({ id: "common.time.just_now", defaultMessage: "just now" });
+  }
+  if (m < 60) {
+    return intl.formatMessage(
+      { id: "common.time.minutes_ago", defaultMessage: "{minutes}m ago" },
+      { minutes: m },
+    );
+  }
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) {
+    return intl.formatMessage(
+      { id: "common.time.hours_ago", defaultMessage: "{hours}h ago" },
+      { hours: h },
+    );
+  }
   const days = Math.floor(h / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Intl.DateTimeFormat("en-GB", {
+  if (days < 7) {
+    return intl.formatMessage(
+      { id: "common.time.days_ago", defaultMessage: "{days}d ago" },
+      { days },
+    );
+  }
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "short",
   }).format(d);
@@ -258,10 +276,10 @@ export const Dashboard = () => {
     () =>
       (sales?.revenueTrend ?? []).map((p) => ({
         date: p.date,
-        label: formatShortDate(p.date),
+        label: formatShortDate(p.date, intl.locale),
         total: p.total,
       })),
-    [sales?.revenueTrend],
+    [sales?.revenueTrend, intl.locale],
   );
 
   const quickActions = useMemo(
@@ -346,7 +364,7 @@ export const Dashboard = () => {
   }, []);
   const greeting = intl.formatMessage({ id: greetingKey, defaultMessage: "Hello" });
   const userName = authUser?.name?.split(/\s+/)[0] ?? authUser?.username ?? "there";
-  const todayLabel = new Intl.DateTimeFormat("en-GB", {
+  const todayLabel = new Intl.DateTimeFormat(intl.locale, {
     weekday: "long",
     day: "2-digit",
     month: "long",
@@ -476,7 +494,7 @@ export const Dashboard = () => {
               isLoading || !sales ? (
                 <Skeleton className="h-7 w-16" />
               ) : (
-                formatCompact(sales.kpis.openOrders)
+                formatCompact(sales.kpis.openOrders, intl.locale)
               )
             }
           />
@@ -493,7 +511,7 @@ export const Dashboard = () => {
               isLoading || !sales ? (
                 <Skeleton className="h-7 w-16" />
               ) : (
-                formatCompact(sales.kpis.customerCount)
+                formatCompact(sales.kpis.customerCount, intl.locale)
               )
             }
           />
@@ -510,7 +528,7 @@ export const Dashboard = () => {
               isLoading || !sales ? (
                 <Skeleton className="h-7 w-16" />
               ) : (
-                formatCompact(sales.kpis.visitCount)
+                formatCompact(sales.kpis.visitCount, intl.locale)
               )
             }
           />
@@ -527,7 +545,7 @@ export const Dashboard = () => {
               isLoading || !sales ? (
                 <Skeleton className="h-7 w-16" />
               ) : (
-                formatCompact(sales.kpis.skuCount)
+                formatCompact(sales.kpis.skuCount, intl.locale)
               )
             }
           />
@@ -577,7 +595,7 @@ export const Dashboard = () => {
                       tickLine={false}
                       axisLine={false}
                       width={48}
-                      tickFormatter={(v) => formatCompact(Number(v))}
+                      tickFormatter={(v) => formatCompact(Number(v), intl.locale)}
                     />
                     <Tooltip
                       contentStyle={chartTooltipStyle}
@@ -629,7 +647,7 @@ export const Dashboard = () => {
                       tick={{ fill: chartColors.axis, fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(v) => formatCompact(Number(v))}
+                      tickFormatter={(v) => formatCompact(Number(v), intl.locale)}
                     />
                     <YAxis
                       type="category"
@@ -701,7 +719,7 @@ export const Dashboard = () => {
                       tick={{ fill: chartColors.axis, fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(v) => formatCompact(Number(v))}
+                      tickFormatter={(v) => formatCompact(Number(v), intl.locale)}
                     />
                     <YAxis
                       type="category"
@@ -785,7 +803,7 @@ export const Dashboard = () => {
                       tick={{ fill: chartColors.axis, fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(v) => formatCompact(Number(v))}
+                      tickFormatter={(v) => formatCompact(Number(v), intl.locale)}
                     />
                     <YAxis
                       type="category"
@@ -1033,7 +1051,7 @@ export const Dashboard = () => {
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-[11px] text-muted-foreground tabular-nums">
-                          {formatRelative(a.createdAt)}
+                          {formatRelative(a.createdAt, intl.locale, intl)}
                         </p>
                         <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
                           {a.resource}
@@ -1122,43 +1140,7 @@ export const Dashboard = () => {
           ) : null}
           {insightResult ? (
             <div className="max-w-none break-words rounded-xl border bg-card p-4 text-foreground">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  p: ({ node, ...props }) => (
-                    <p className="mb-2 last:mb-0" {...props} />
-                  ),
-                  ul: ({ node, ...props }) => (
-                    <ul className="mb-2 ml-5 list-disc" {...props} />
-                  ),
-                  ol: ({ node, ...props }) => (
-                    <ol className="mb-2 ml-5 list-decimal" {...props} />
-                  ),
-                  li: ({ node, ...props }) => (
-                    <li className="mb-0.5" {...props} />
-                  ),
-                  h1: ({ node, ...props }) => (
-                    <h1 className="font-heading mb-2 text-lg font-semibold" {...props} />
-                  ),
-                  h2: ({ node, ...props }) => (
-                    <h2 className="font-heading mb-2 text-base font-semibold" {...props} />
-                  ),
-                  h3: ({ node, ...props }) => (
-                    <h3 className="font-heading mb-1 text-sm font-semibold" {...props} />
-                  ),
-                  code: ({ node, ...props }) => (
-                    <code
-                      className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground"
-                      {...props}
-                    />
-                  ),
-                  pre: ({ node, ...props }) => (
-                    <pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs" {...props} />
-                  ),
-                }}
-              >
-                {insightResult}
-              </ReactMarkdown>
+              <AiMarkdown>{insightResult}</AiMarkdown>
             </div>
           ) : (
             <div className="flex h-32 flex-col items-center justify-center gap-2 text-center opacity-60">

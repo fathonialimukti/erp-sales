@@ -11,17 +11,12 @@ import {
   CheckCircle2,
   Code2,
   FilePlus2,
-  Handshake,
   LandPlot,
-  Link2,
   LogIn,
   Mail,
   MapPin,
   Medal,
   MessageSquare,
-  Phone,
-  Quote,
-  Server,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
@@ -94,13 +89,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Only channels that resolve to a real destination. A link to a number or
+// address nobody owns is worse than no link: it hands a visitor to a stranger
+// and it bounces for the owner. Add channels here once they are real.
 const CONTACT = {
-  email: "mailto:fathoni@example.com",
-  whatsapp: "https://wa.me/6281234567890",
   github: "https://github.com/fathoni",
-  linkedin: "https://linkedin.com/in/fathoni",
-  hire: "https://fathoni.dev/hire",
-};
+} as const;
 
 const FEATURES = [
   {
@@ -260,28 +254,10 @@ const SKILLS = [
 
 const CONTACT_ITEMS = [
   {
-    key: "email",
-    icon: Mail,
-    labelId: "landing.contact_email",
-    href: CONTACT.email,
-  },
-  {
-    key: "whatsapp",
-    icon: Phone,
-    labelId: "landing.contact_whatsapp",
-    href: CONTACT.whatsapp,
-  },
-  {
     key: "github",
     icon: Code2,
     labelId: "landing.contact_github",
     href: CONTACT.github,
-  },
-  {
-    key: "linkedin",
-    icon: Link2,
-    labelId: "landing.contact_linkedin",
-    href: CONTACT.linkedin,
   },
 ] as const;
 
@@ -346,21 +322,19 @@ export const LandingPage = () => {
           { '@type': 'ListItem', position: 3, name: 'How It Works', item: `${BASE}/#how-it-works` },
         ],
       },
-      // ── Portfolio: Person (freelance branding) ──
+      // ── Author: Person ──
+      // `url`/`sameAs` carry only destinations that resolve. There is no
+      // portfolio site and no storefront behind this repo, so there is no
+      // `makesOffer` to declare either.
       {
         '@type': 'Person',
         name: 'Fathoni',
         alternateName: 'Fathoni Full-Stack Developer',
-        url: 'https://fathoni.dev',
-        image: `${BASE}/og-image.png`,
+        url: CONTACT.github,
         jobTitle: 'Full-Stack Developer & ERP Specialist',
         description:
           'Independent full-stack developer specializing in custom ERP systems, CRM platforms, and business automation. TypeScript, React, tRPC, PostgreSQL.',
-        sameAs: [
-          'https://github.com/fathoni',
-          'https://linkedin.com/in/fathoni',
-          'https://fathoni.dev',
-        ],
+        sameAs: [CONTACT.github],
         knowsAbout: [
           'ERP Systems',
           'Sales Management',
@@ -373,26 +347,6 @@ export const LandingPage = () => {
           'Prisma',
           'Node.js',
         ],
-        makesOffer: [
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'Custom ERP Development',
-              description:
-                'End-to-end ERP and CRM platform development for sales teams, field operations, and back-office.',
-            },
-          },
-          {
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: 'Full-Stack Web Development',
-              description:
-                'TypeScript full-stack web applications with React, tRPC, Prisma, and PostgreSQL.',
-            },
-          },
-        ],
       },
       // ── App ──
       {
@@ -403,13 +357,9 @@ export const LandingPage = () => {
         url: BASE,
         description:
           'One platform to manage customers, outlets, sales orders, visits, and approvals. Built with React, tRPC, and PostgreSQL.',
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'USD',
-          availability: 'https://schema.org/InStock',
-        },
-        author: { '@type': 'Person', name: 'Fathoni', url: 'https://fathoni.dev' },
+        // No `offers`: there is no pricing page and no storefront, so any price
+        // or availability here would be a claim the site cannot support.
+        author: { '@type': 'Person', name: 'Fathoni', url: CONTACT.github },
         featureList: [
           'Customer & Outlet Management',
           'Sales Order Processing',
@@ -428,8 +378,8 @@ export const LandingPage = () => {
         name: 'How to Manage Your Sales Operation with B2B CRM',
         description:
           'Set up your territory, register customers and outlets, log visits, process orders, and gain insights — all in one platform.',
-        totalTime: 'P1D',
-        estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
+        // No `totalTime` / `estimatedCost`: neither has been measured, and a
+        // structured-data duration and price is a claim a search result shows.
         tool: [
           { '@type': 'HowToTool', name: 'Web browser (Chrome, Firefox, Safari)' },
           { '@type': 'HowToTool', name: 'Desktop app (Windows, macOS, Linux via Tauri)' },
@@ -494,8 +444,7 @@ export const LandingPage = () => {
         author: {
           name: 'Fathoni',
           type: 'Full-Stack Developer',
-          portfolio: 'https://fathoni.dev',
-          url: 'https://fathoni.dev',
+          url: CONTACT.github,
           expertise: ['ERP Systems', 'Custom CRM', 'Business Automation', 'TypeScript', 'React', 'tRPC', 'PostgreSQL', 'Prisma'],
         },
         techStack: ['TypeScript', 'React', 'tRPC', 'Prisma', 'PostgreSQL', 'n8n', 'Node.js', 'Tailwind CSS', 'Vite', 'Tauri'],
@@ -981,16 +930,6 @@ export const LandingPage = () => {
                     </Badge>
                   ))}
                 </div>
-                <Button asChild className="min-h-11">
-                  <a
-                    href={CONTACT.hire}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Handshake className="size-4" />
-                    {t("landing.about_hire_cta", "Hire Me")}
-                  </a>
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1019,7 +958,7 @@ export const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto grid max-w-sm gap-4">
             {CONTACT_ITEMS.map((item) => (
               <a
                 key={item.key}

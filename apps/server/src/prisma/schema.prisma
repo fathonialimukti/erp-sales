@@ -28,8 +28,14 @@ model User {
   visitLogs             VisitLog[]
   notificationsCreated  Notification[]  @relation("notification_created_by")
   notificationsReceived Notification[]  @relation("notification_recipient")
-  crmArea               Area?           @relation(fields: [areaId], references: [id])
-  role                  Role?           @relation(fields: [roleId], references: [id])
+  // Both of these are optional references off `users` itself, so Prisma's
+  // implicit default (SET NULL) is the intended behaviour, stated rather than
+  // inherited: deleting a role or an area leaves its users in place and
+  // roleless / area-less, which is a state this schema already models
+  // (`role Role?`, `crmArea Area?`) and which `prisma/seed.ts` relies on when
+  // it nulls `roleId` before re-seeding roles.
+  crmArea               Area?           @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  role                  Role?           @relation(fields: [roleId], references: [id], onDelete: SetNull)
   backups               Backup[]        @relation("backup_created_by")
 
   @@index([roleId])
@@ -120,7 +126,10 @@ model Notification {
   readAt      DateTime?              @map("read_at")
   createdAt   DateTime               @default(now()) @map("created_at")
   updatedAt   DateTime               @updatedAt @map("updated_at")
-  createdBy   User?                  @relation("notification_created_by", fields: [createdById], references: [id])
+  // The notification belongs to `user` (the recipient, which cascades). The
+  // creator is provenance on someone else's record, so the notification outlives
+  // its author with a null creator rather than being deleted with them.
+  createdBy   User?                  @relation("notification_created_by", fields: [createdById], references: [id], onDelete: SetNull)
   user        User                   @relation("notification_recipient", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
@@ -261,7 +270,14 @@ model VisitLog {
   approvedAt     DateTime?      @map("approved_at")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
-  approvedBy     User?          @relation("visit_approved_by", fields: [approvedById], references: [id])
+  // SET NULL, not Restrict: the approver's human-readable provenance is already
+  // denormalized into `approvalHistory` (`{ process, name, dateTime, message }`,
+  // written by lib/approval-helpers.ts) and `approvedAt` is its own column, so
+  // nulling this pointer loses no audit trail — while Restrict would make every
+  // user who ever approved a visit permanently undeletable, with no UI path out.
+  // This is the same choice the 4-tier models make: ActionProgram and
+  // EventProposal store their approver ids as plain strings with no FK at all.
+  approvedBy     User?          @relation("visit_approved_by", fields: [approvedById], references: [id], onDelete: SetNull)
   outlet         Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade)
   salesOrder     SalesOrder?    @relation(fields: [salesOrderId], references: [id])
   salesman       User           @relation(fields: [salesmanId], references: [id], onDelete: Cascade)
@@ -301,7 +317,14 @@ model SalesOrder {
   payments             Payment[]
   items                SalesOrderItem[]
   actionProgram        ActionProgram?     @relation(fields: [actionProgramId], references: [id])
-  approvedBy           User?              @relation("so_approved_by", fields: [approvedById], references: [id])
+  // SET NULL, not Restrict — same reasoning as VisitLog.approvedBy above, and it
+  // matters more here: a sales order is a financial record. The approver's name
+  // and decision time are already denormalized (see `approvalHistory` and
+  // `approvedAt`, both written in the same transaction as the status change), so
+  // the order survives its approver with the approval intact. `lib/sales-order-pdf.ts`
+  // reads `approvedBy?.name ?? '—'`, which is the intended shape for an
+  // approver-less order.
+  approvedBy           User?              @relation("so_approved_by", fields: [approvedById], references: [id], onDelete: SetNull)
   area                 Area               @relation(fields: [areaId], references: [id])
   createdBy            User               @relation("so_created_by", fields: [createdById], references: [id], onDelete: Cascade)
   customer             Customer?          @relation(fields: [customerId], references: [id])

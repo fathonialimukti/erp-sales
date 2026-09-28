@@ -1,12 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+
+import { useRequiredMessage } from "@/lib/form-validation";import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useAtomValue } from "jotai";
 import type { inferProcedureInput } from "@trpc/server";
-import { AlertTriangle, Loader2, Plus, Save, Send, Sparkles, Trash2, Store, PackagePlus, NotebookPen, Receipt, Hash, CalendarDays, Package, BadgeDollarSign } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Plus, Save, Send, Sparkles, Trash2, Store, PackagePlus, NotebookPen, Receipt, Hash, CalendarDays, Package, BadgeDollarSign } from "lucide-react";
 import type { AppRouter } from "../../lib/trpc";
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
@@ -245,6 +246,7 @@ const TOTAL_SECTIONS = 3;
 export const SalesOrderFormPage = () => {
   const { id } = useParams();
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -266,6 +268,10 @@ export const SalesOrderFormPage = () => {
   const [pendingSaveMode, setPendingSaveMode] = useState<SaveMode>("DRAFT");
   const [proposeMessage, setProposeMessage] = useState("");
   const [resultMessage, setResultMessage] = useState("");
+  // Track which line items have auto-filled discounts (by index).
+  // Keyed by item index → { programName, discountPercent, actionProgramId }.
+  // Declared before runSave so the save callback can read the snapshot.
+  const [autoDiscounts, setAutoDiscounts] = useState<Record<number, { programName: string; discountPercent: number; actionProgramId: string }>>({});
   // Timestamp of the last localStorage draft save — drives the footer indicator.
   const [lastAutosavedAt, setLastAutosavedAt] = useState<Date | undefined>(undefined);
 
@@ -433,16 +439,7 @@ export const SalesOrderFormPage = () => {
         createMutation.mutate(payload as never);
       }
     },
-    [createMutation, updateMutation, id, isEdit, canPropose, intl],
-  );
-
-  // When the user picks an option in the chooser, run the actual save.
-  const handleChooseSaveMode = useCallback(
-    (mode: SaveMode) => {
-      const values = form.state.values as FormValues;
-      runSave(values, mode);
-    },
-    [form, runSave],
+    [createMutation, updateMutation, id, isEdit, autoDiscounts],
   );
 
   useAiFillForm({
@@ -529,10 +526,6 @@ export const SalesOrderFormPage = () => {
     const next = current.filter((_, i) => i !== idx);
     form.setFieldValue("items" as never, (next.length > 0 ? next : [emptyItem()]) as never);
   };
-
-  // Track which line items have auto-filled discounts (by index).
-  // Keyed by item index → { programName, discountPercent, actionProgramId }.
-  const [autoDiscounts, setAutoDiscounts] = useState<Record<number, { programName: string; discountPercent: number; actionProgramId: string }>>({});
 
   // Batch discount lookup: debounced when outlet+date+items present.
   useEffect(() => {
@@ -895,7 +888,7 @@ export const SalesOrderFormPage = () => {
 
             <form.Field
               name="outletId"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -1161,7 +1154,7 @@ export const SalesOrderFormPage = () => {
                             className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-success"
                             title={`${autoDiscounts[idx].programName} - ${autoDiscounts[idx].discountPercent}%`}
                           >
-                            <span>✓</span>
+                            <CheckCircle2 className="size-3" aria-hidden />
                             {intl.formatMessage({
                               id: "sales_order.form.discount_auto_filled_short",
                               defaultMessage: "Auto",

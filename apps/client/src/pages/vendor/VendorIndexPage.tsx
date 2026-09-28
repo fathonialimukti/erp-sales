@@ -4,7 +4,7 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, RefreshCw, Trash2, Eye } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -68,7 +68,7 @@ export const VendorIndexPage = () => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["vendorList", pagination.pageIndex, pagination.pageSize, search],
     queryFn: () =>
       trpcClient.vendor.list.query({
@@ -88,6 +88,8 @@ export const VendorIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "vendor.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
@@ -95,11 +97,15 @@ export const VendorIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "vendor.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
         id: "contactName",
+        accessorKey: "contactName",
+        enableSorting: true,
         header: intl.formatMessage({ id: "vendor.index.header_contact", defaultMessage: "Contact" }),
         cell: ({ row }) => (
           <span className="text-sm text-foreground">{row.original.contactName ?? "—"}</span>
@@ -107,6 +113,8 @@ export const VendorIndexPage = () => {
       },
       {
         id: "category",
+        accessorKey: "category",
+        enableSorting: true,
         header: intl.formatMessage({ id: "vendor.index.header_category", defaultMessage: "Category" }),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.category ?? "—"}</span>
@@ -114,11 +122,14 @@ export const VendorIndexPage = () => {
       },
       {
         id: "status",
+        accessorKey: "status",
+        enableSorting: true,
         header: intl.formatMessage({ id: "vendor.index.header_status", defaultMessage: "Status" }),
         cell: ({ row }) => getStatusBadge(row.original.status),
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
@@ -185,7 +196,15 @@ export const VendorIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full gap-3">
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "vendor-index",
+        itemCount: totalRows,
+        page: pagination.pageIndex + 1,
+        search,
+      })}
+    >
       <PageHeader
         module="vendor"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -193,64 +212,114 @@ export const VendorIndexPage = () => {
         description={intl.formatMessage({ id: "vendor.index.subtitle", defaultMessage: "Manage vendors and suppliers for events." })}
         actions={
           canCreate ? (
-            <Button onClick={() => navigate("/vendor/create")}>
+            <Button type="button" onClick={() => navigate("/vendor/create")}>
               <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
+          ) : undefined
+        }
+      />
+
+      <DataTable
+        density="crm"
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={intl.formatMessage({
+          id: "vendor.index.load_failed",
+          defaultMessage: "We could not load vendors. Check your connection and try again.",
+        })}
+        onRowClick={(row) => navigate(`/vendor/${row.id}`)}
+        toolbar={
+          <FilterBar
+            search={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder={intl.formatMessage({
+              id: "vendor.index.search_placeholder",
+              defaultMessage: "Search vendors…",
+            })}
+            countLabel={intl.formatMessage(
+              {
+                id: "vendor.index.count_label",
+                defaultMessage: "{count, plural, one {# vendor} other {# vendors}}",
+              },
+              { count: totalRows },
+            )}
+            actions={
+              isError ? (
+                <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+                  <RefreshCw className="size-3.5" aria-hidden />
+                  {intl.formatMessage({ id: "common.action.retry", defaultMessage: "Retry" })}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+        empty={
+          <EmptyState
+            module="vendor"
+            title={
+              search
+                ? intl.formatMessage({
+                    id: "vendor.index.empty_search",
+                    defaultMessage: "No vendors found",
+                  })
+                : intl.formatMessage({
+                    id: "vendor.index.empty_title",
+                    defaultMessage: "No vendors yet",
+                  })
+            }
+            description={
+              search
+                ? intl.formatMessage({
+                    id: "vendor.index.empty_search_sub",
+                    defaultMessage: "Try adjusting your search terms.",
+                  })
+                : intl.formatMessage({
+                    id: "vendor.index.empty_description",
+                    defaultMessage: "Create your first vendor to get started.",
+                  })
+            }
+            action={
+              canCreate && !search ? (
+                <Button type="button" onClick={() => navigate("/vendor/create")}>
+                  <Plus className="size-4" />
+                  {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+        footer={
+          totalPages > 1 ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {intl.formatMessage(
+                  { id: "common.pagination_info", defaultMessage: "Page {page} of {total}" },
+                  { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) },
+                )}
+              </p>
+              <Pagination
+                page={pagination.pageIndex + 1}
+                totalPages={totalPages}
+                onChange={(p) => setPagination({ pageIndex: p - 1, pageSize: pagination.pageSize })}
+              />
+            </div>
           ) : null
         }
       />
-      <FilterBar
-        search={searchInput}
-        onSearchChange={setSearchInput}
-        searchPlaceholder={intl.formatMessage({ id: "common.search.placeholder", defaultMessage: "Search..." })}
-      />
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      ) : isError ? (
-        <EmptyState
-          title={intl.formatMessage({ id: "common.error.load_failed", defaultMessage: "Failed to load data" })}
-          description={intl.formatMessage({ id: "common.error.try_again", defaultMessage: "Please try again later" })}
-        />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          title={intl.formatMessage({ id: "vendor.index.empty_title", defaultMessage: "No vendors found" })}
-          description={intl.formatMessage({ id: "vendor.index.empty_description", defaultMessage: "Create your first vendor to get started." })}
-          action={
-            canCreate ? (
-              <Button onClick={() => navigate("/vendor/create")}>
-                <Plus className="size-4 mr-2" />
-                {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create Vendor" })}
-              </Button>
-            ) : null
-          }
-        />
-      ) : (
-        <div className="flex-1 overflow-auto">
-          <DataTable
-            columns={columns}
-            data={rows}
-            isLoading={isLoading}
-            onRowClick={(row) => navigate(`/vendor/${row.id}`)}
-          />
-          <Pagination
-            page={pagination.pageIndex + 1}
-            totalPages={totalPages}
-            onChange={(page) => setPagination((p) => ({ ...p, pageIndex: page - 1 }))}
-          />
-        </div>
-      )}
+
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete vendor?" })}
+        title={intl.formatMessage({ id: "vendor.confirm.delete_title", defaultMessage: "Delete vendor?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
         onConfirm={handleDelete}
         loading={isDeleting}
       />
-    </div>
+    </section>
   );
 };

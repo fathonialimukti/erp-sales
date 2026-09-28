@@ -1,6 +1,6 @@
 # ERP Sales — Agent Bottom Line
 
-Applies to every agent (opencode: `.opencode/agents/` · Copilot: `.github/agents/`). Skills live in `.agents/skills/` (managed by the `skills` CLI, see `skills-lock.json`).
+Applies to every agent (opencode: `.opencode/agents/` · Copilot: `.github/copilot-instructions.md`). Skills live in `.agents/skills/` (managed by the `skills` CLI, see `skills-lock.json`).
 
 ## Stack
 
@@ -31,7 +31,7 @@ bunx playwright test   # e2e
 ## Testing & git
 
 - **Testing ownership:** the `quality-engineer` agent runs all tests; implementers write but never run them
-- **Git is manual-only:** agents never `add`/`commit`/`push`/`merge`/open PRs — recommend only
+- **Git:** the `orchestrator` agent may `add` and `commit` when asked. **Pushing requires its own explicit order, every time** — a request to commit is never a request to push. `merge` and PR creation stay manual-only for every agent, always.
 
 ## Reference docs
 

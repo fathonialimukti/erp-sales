@@ -128,6 +128,8 @@ export const EmailCrmIndexPage = () => {
       return [
         {
           id: "email",
+          accessorKey: "email",
+          enableSorting: true,
           header: intl.formatMessage({ id: "emailCrm.index.col_email", defaultMessage: "Email" }),
           cell: ({ row }) => (
             <span className="font-mono text-xs text-muted-foreground">{row.original.email}</span>
@@ -135,6 +137,8 @@ export const EmailCrmIndexPage = () => {
         },
         {
           id: "subject",
+          accessorKey: "subject",
+          enableSorting: true,
           header: intl.formatMessage({
             id: "emailCrm.index.col_subject",
             defaultMessage: "Subject",
@@ -145,6 +149,8 @@ export const EmailCrmIndexPage = () => {
         },
         {
           id: "status",
+          accessorKey: "status",
+          enableSorting: true,
           header: intl.formatMessage({
             id: "emailCrm.index.col_status",
             defaultMessage: "Status",
@@ -155,6 +161,8 @@ export const EmailCrmIndexPage = () => {
         },
         {
           id: "priority",
+          accessorKey: "priority",
+          enableSorting: true,
           header: intl.formatMessage({
             id: "emailCrm.index.col_priority",
             defaultMessage: "Priority",
@@ -168,6 +176,8 @@ export const EmailCrmIndexPage = () => {
         },
         {
           id: "customer",
+          accessorFn: (row) => row.customer?.name ?? "",
+          enableSorting: true,
           header: intl.formatMessage({
             id: "emailCrm.index.col_customer",
             defaultMessage: "Customer",
@@ -178,6 +188,8 @@ export const EmailCrmIndexPage = () => {
         },
         {
           id: "lastMessageAt",
+          accessorFn: (row) => (row.lastMessageAt ? new Date(row.lastMessageAt).getTime() : 0),
+          enableSorting: true,
           header: intl.formatMessage({
             id: "emailCrm.index.col_last_message",
             defaultMessage: "Last message",
@@ -190,6 +202,7 @@ export const EmailCrmIndexPage = () => {
         },
         {
           id: "actions",
+          enableSorting: false,
           header: "",
           cell: ({ row }) => (
             <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { stringifySetCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
+import { appendSetCookie } from '../lib/cookies.js';
 import { verifyPassword } from '../lib/password.js';
 import { logActivity } from '../lib/activity-log.js';
 import { checkRateLimit } from '../lib/rate-limiter.js';
@@ -56,6 +57,21 @@ export const SYSTEM_EXCLUDED_EMAILS = [
 ];
 
 export const authRouter = router({
+    // ponytail: double-submit delivery. The `csrf_token` cookie is httpOnly and
+    // the web client is a separate origin, so no browser JS can read it — this
+    // is how the client gets the value it has to echo in `x-csrf-token`. Public
+    // on purpose: a first-time visitor reaches the login form with no token
+    // stored, so the client must be able to fetch one before it can mutate.
+    // PublicProcedure also means this is never itself CSRF-gated (queries are
+    // ungated), so calling it can never recurse.
+    csrfToken: publicProcedure.query(({ ctx }) => ({
+        csrfToken: ctx.csrfToken,
+        // The token is `<expiresAtMs>.<nonce>.<hmac>` (lib/csrf.ts), so hand back
+        // the server's own expiry: the client schedules its re-read from the mint
+        // rather than from receipt, which would drift by the request latency.
+        csrfExpiresAt: Number(ctx.csrfToken.split('.')[0]),
+    })),
+
     // ponytail: listDemoUsers + demoLogin are intentionally PUBLIC with no
     // hasPermission() check — the DEMO_LOGIN_ENABLED env gate replaces auth so
     // visitors can one-click login without credentials. Never enable in
@@ -146,7 +162,7 @@ export const authRouter = router({
             const decoded = jwt.decode(token) as jwt.JwtPayload | null;
             const tokenExpiresAt = decoded?.exp ? decoded.exp * 1000 : null;
 
-            ctx.res.setHeader('Set-Cookie', createAuthCookie(token));
+            appendSetCookie(ctx.res, createAuthCookie(token));
 
             await logActivity(ctx.db, {
                 action: 'LOGIN',
@@ -248,7 +264,7 @@ export const authRouter = router({
             const decoded = jwt.decode(token) as jwt.JwtPayload | null;
             const tokenExpiresAt = decoded?.exp ? decoded.exp * 1000 : null;
 
-            ctx.res.setHeader('Set-Cookie', createAuthCookie(token, input.rememberMe));
+            appendSetCookie(ctx.res, createAuthCookie(token, input.rememberMe));
 
             // Log login activity
             await logActivity(prisma, {
@@ -330,7 +346,7 @@ export const authRouter = router({
             message: `User ${ctx.user.name} logged out`,
         });
 
-        ctx.res.setHeader('Set-Cookie', clearAuthCookie());
+        appendSetCookie(ctx.res, clearAuthCookie());
         return { success: true };
     }),
 });

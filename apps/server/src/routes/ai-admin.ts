@@ -273,11 +273,12 @@ export const aiAdminChatHandler = withAuth(
     }
 
     // Extract last user message text for RAG query
-    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user');
+    const lastUserMsg = [...messages].reverse().find((m) => (m as { role?: unknown }).role === 'user');
     const userText = extractUserMessageText(lastUserMsg);
 
     // --- Trim message history ---
-    const trimmedMessages = trimMessageHistory(messages as any[], MAX_HISTORY_TURNS);
+    // ponytail: UI messages are an untyped wire shape — cast once at the SDK boundary.
+    const trimmedMessages = trimMessageHistory(messages as Parameters<typeof convertToModelMessages>[0], MAX_HISTORY_TURNS);
 
     // --- Multimodal ---
     // Whether the conversation carries image parts (from the original, untrimmed
@@ -291,7 +292,7 @@ export const aiAdminChatHandler = withAuth(
     // Structured widget turns (form_response / confirmation / action_result
     // metadata) render as tagged JSON blocks in the model context (SPEC §5.3/§8).
     const preparedMessages = renderStructuredTurns(trimmedMessages);
-    const modelMessages = await convertToModelMessages(preparedMessages as any);
+    const modelMessages = await convertToModelMessages(preparedMessages as Parameters<typeof convertToModelMessages>[0]);
 
     // Only expose the image-analysis tool when the conversation actually contains
     // image parts, so the model cannot call it gratuitously on text-only chats.
@@ -318,7 +319,7 @@ export const aiAdminChatHandler = withAuth(
             ? {
                   analyzeImage: {
                       ...imageTool,
-                      execute: async (args: any, options: any) => {
+                      execute: async (args: Parameters<NonNullable<typeof imageTool.execute>>[0], options: Parameters<NonNullable<typeof imageTool.execute>>[1]) => {
                           try {
                               return (await imageTool.execute!(args, options)) as string;
                           } catch (error) {

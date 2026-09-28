@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
-import { useAtomValue } from "jotai";
+
+import { useRequiredMessage } from "@/lib/form-validation";import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -20,6 +21,7 @@ import { FormField } from "../../components/FormField";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
+import { useDetailForm } from "../../lib/hooks/useDetailForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +46,7 @@ const defaults = (): FormValues => ({ code: "", name: "" });
 
 export const CustomerFormPage = () => {
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -80,14 +83,10 @@ export const CustomerFormPage = () => {
   const filled = [live.name, live.code].filter((v) => String(v ?? "").trim().length > 0).length;
 
   // Re-seed defaults once detail loads in edit mode
-  useEffect(() => {
-    if (isEdit && data) {
-      form.setFieldValue("code", data.code ?? "");
-      form.setFieldValue("name", data.name);
-    }
-    // ponytail: only seed when detail arrives
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, data]);
+  useDetailForm(data, (d) => {
+    form.setFieldValue("code", d.code ?? "");
+    form.setFieldValue("name", d.name);
+  });
 
   const createMutation = useMutation({
     mutationFn: (d: FormValues) => trpcClient.customer.create.mutate(d),
@@ -273,7 +272,7 @@ export const CustomerFormPage = () => {
 
             <form.Field
               name="name"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField

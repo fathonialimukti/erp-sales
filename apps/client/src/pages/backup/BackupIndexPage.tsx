@@ -260,6 +260,8 @@ export const BackupIndexPage = () => {
     () => [
       {
         id: "filename",
+        accessorKey: "filename",
+        enableSorting: true,
         header: intl.formatMessage({ id: "backup.colFilename", defaultMessage: "File" }),
         cell: ({ row }) => (
           <span className="font-medium break-all text-foreground">{row.original.filename}</span>
@@ -267,6 +269,8 @@ export const BackupIndexPage = () => {
       },
       {
         id: "source",
+        accessorKey: "source",
+        enableSorting: true,
         header: intl.formatMessage({ id: "backup.colSource", defaultMessage: "Source" }),
         cell: ({ row }) => {
           const chip = SOURCE_CHIP[row.original.source] ?? SOURCE_CHIP.UPLOADED;
@@ -284,6 +288,8 @@ export const BackupIndexPage = () => {
       },
       {
         id: "size",
+        accessorKey: "sizeBytes",
+        enableSorting: true,
         header: intl.formatMessage({ id: "backup.colSize", defaultMessage: "Size" }),
         cell: ({ row }) => (
           <span className="block text-right tabular-nums text-foreground">
@@ -293,6 +299,8 @@ export const BackupIndexPage = () => {
       },
       {
         id: "tables",
+        accessorFn: (row) => Object.keys(row.tableCounts ?? {}).length,
+        enableSorting: true,
         header: intl.formatMessage({ id: "backup.colTables", defaultMessage: "Tables" }),
         cell: ({ row }) => {
           const counts = row.original.tableCounts ?? {};
@@ -320,6 +328,8 @@ export const BackupIndexPage = () => {
       },
       {
         id: "createdBy",
+        accessorFn: (row) => row.createdBy?.name ?? "",
+        enableSorting: true,
         header: intl.formatMessage({ id: "backup.colCreatedBy", defaultMessage: "Created by" }),
         cell: ({ row }) => (
           <span className="text-foreground">{row.original.createdBy?.name ?? "—"}</span>
@@ -327,6 +337,8 @@ export const BackupIndexPage = () => {
       },
       {
         id: "createdAt",
+        accessorFn: (row) => new Date(row.createdAt).getTime(),
+        enableSorting: true,
         header: intl.formatMessage({ id: "backup.colCreatedAt", defaultMessage: "Date" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-foreground">{formatDateTime(row.original.createdAt)}</span>
@@ -334,6 +346,7 @@ export const BackupIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: intl.formatMessage({ id: "backup.colActions", defaultMessage: "Actions" }),
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

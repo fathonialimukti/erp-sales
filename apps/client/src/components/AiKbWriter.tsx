@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useSetAtom } from "jotai";
 import { FileText, Loader2, Sparkles, X } from "lucide-react";
+import { AiPanel, AiPanelTitle } from "@/components/ai/AiPanel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/lib/api-base";
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
 import { aiFormFillAtom } from "../lib/atoms";
 
 /**
@@ -49,7 +51,10 @@ export function AiKbWriter() {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        throw new Error(body?.message ?? body?.error ?? `Draft failed (${res.status})`);
+        // The friendly-error mapper owns every user-facing AI failure; a raw
+        // status code must never reach the screen.
+        setError(getFriendlyErrorMessage(body?.message ?? body?.error));
+        return;
       }
       const data = (await res.json()) as { data?: { title?: string; content?: string; source?: string } };
       const entry = data.data;
@@ -72,7 +77,7 @@ export function AiKbWriter() {
       setText("");
       setInstruction("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Draft failed");
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -99,14 +104,16 @@ export function AiKbWriter() {
       </Button>
 
       {open && (
-        <div className="w-full max-w-lg rounded-xl border border-border bg-muted/60 p-3 shadow-sm">
-          <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Sparkles className="size-3.5 text-primary" aria-hidden />
-            {intl.formatMessage({
-              id: "ai.kb_writer.label",
-              defaultMessage: "Draft a knowledge entry",
-            })}
-          </div>
+        <AiPanel
+          label={
+            <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
+              {intl.formatMessage({
+                id: "ai.kb_writer.label",
+                defaultMessage: "Draft a knowledge entry",
+              })}
+            </AiPanelTitle>
+          }
+        >
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -157,7 +164,7 @@ export function AiKbWriter() {
               {intl.formatMessage({ id: "ai.kb_writer.generate", defaultMessage: "Generate" })}
             </Button>
           </div>
-        </div>
+        </AiPanel>
       )}
     </div>
   );

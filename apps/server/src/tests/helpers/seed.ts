@@ -31,21 +31,6 @@ export const seedRoleWithPermissions = async (permissions: string[]) => {
   return role;
 };
 
-export const seedTestActor = async (permissions: string[]) => {
-  const role = await seedRoleWithPermissions(permissions);
-  const user = await seedTestUser({
-    roleId: role.id,
-    email: `${randomName('actor')}@example.com`,
-    name: 'Test Actor',
-  });
-
-  return { user, role };
-};
-
-export const deleteTestPermission = async (permissionId: string) => {
-  await prisma.permission.delete({ where: { id: permissionId } });
-};
-
 export const seedTestUser = async (options: {
   roleId: string;
   email?: string;
@@ -89,6 +74,13 @@ export const deleteTestSku = async (skuId: string) => {
 };
 
 // --- CRM Helpers ---
+//
+// These deletes are deliberately NOT wrapped in `.catch(() => {})`. They are
+// the teardown for rows the caller created, and a swallowed FK violation there
+// is how a leak becomes a green run: the row survives, the next file inherits
+// it, and the suite fails somewhere else entirely. A failure here names the
+// file and the row. `setup.ts` fails any file that changes the database beyond
+// its own rows, so a partial teardown cannot pass either.
 
 export const seedTestRegion = async () => {
   return prisma.region.create({
@@ -97,7 +89,7 @@ export const seedTestRegion = async () => {
 };
 
 export const deleteTestRegion = async (id: string) => {
-  await prisma.region.delete({ where: { id } }).catch(() => {});
+  await prisma.region.delete({ where: { id } });
 };
 
 export const seedTestArea = async (regionId: string) => {
@@ -107,7 +99,7 @@ export const seedTestArea = async (regionId: string) => {
 };
 
 export const deleteTestArea = async (id: string) => {
-  await prisma.area.delete({ where: { id } }).catch(() => {});
+  await prisma.area.delete({ where: { id } });
 };
 
 export const seedTestCustomer = async () => {
@@ -117,7 +109,7 @@ export const seedTestCustomer = async () => {
 };
 
 export const deleteTestCustomer = async (id: string) => {
-  await prisma.customer.delete({ where: { id } }).catch(() => {});
+  await prisma.customer.delete({ where: { id } });
 };
 
 export const seedTestOutlet = async (customerId: string, areaId: string) => {
@@ -127,5 +119,5 @@ export const seedTestOutlet = async (customerId: string, areaId: string) => {
 };
 
 export const deleteTestOutlet = async (id: string) => {
-  await prisma.outlet.delete({ where: { id } }).catch(() => {});
+  await prisma.outlet.delete({ where: { id } });
 };

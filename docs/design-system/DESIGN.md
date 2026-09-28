@@ -81,7 +81,7 @@ Same recipe every domain → product reads as one designed system.
 |--------|-----------|
 | `apps/client/src/index.css` (`:root` / `.dark` OKLCH + `@theme inline`) | **Canonical** |
 | Semantic Tailwind classes (`bg-primary`, `text-muted-foreground`, …) | **Only usage mode in components** |
-| `apps/client/src/styles/colors.ts` hex map | **Legacy — do not extend** |
+| Legacy hex map (was `apps/client/src/styles/colors.ts`, now deleted) | **Superseded** by `index.css` — do not recreate |
 | Agent notes citing indigo `#4F46E5` as primary | **Superseded** by this law + live CSS |
 
 **Rule:** no raw `#hex` / `rgb()` in new JSX for brand or chrome. Use CSS variables / semantic classes / `var(--module-*)` via `moduleCssVar()`.
@@ -132,6 +132,8 @@ Dark tokens exist for marketing shells / system preference later. **Product defa
 
 **Must define** `--success` / `--success-foreground` (and `@theme` maps) in `index.css` if missing — code already uses `text-success`, `bg-success/15`.
 
+**Warning text contrast:** `text-warning` measures ~1.6:1 on the light card and fails AA, so it is a plate / border / icon colour only. Warning **text** on a warning plate must be `text-warning-foreground dark:text-warning` — the dark variant is required, because `--warning-foreground` is a near-black that drops to ~1.0:1 on the dark card.
+
 ### Approval chip map (frozen)
 
 | Status | Visual |
@@ -179,7 +181,7 @@ color: var(--module-X)
 | report | ~230 | Analytics |
 | email | ~210 | Inbox |
 | knowledge | ~140 | Docs |
-| ai | ~300 | Assistant accent only — **not brand** |
+| ai | ~300 | Assistant accent only — **not brand**. Narrow by design: plate / rail / border only, never CTA, never body text, never a status colour. Every run / generate action stays Aurora Azure `primary`. |
 
 Also map `--color-module-*` in `@theme inline` if Tailwind utilities like `text-module-ai` are used.
 
@@ -524,7 +526,7 @@ Documented so agents don’t invent ad-hoc values:
 |-----|--------|
 | `--module-*` used widely, not defined in source CSS | Add OKLCH module tokens + `@theme` color maps in `index.css` |
 | `text-success` / `bg-success/*` used; may lack theme wiring | Add `--success` / `--success-foreground` + `@theme` |
-| `styles/colors.ts` hex map | Mark deprecated; do not add keys; prefer CSS vars |
+| A hex value with no token behind it | Add it as an OKLCH token in `index.css` (`:root` / `.dark` + `@theme`) — the old `styles/colors.ts` side map is deleted, do not recreate one |
 | Frontend agent "indigo `#4F46E5`" | Align agent docs to Aurora Azure primary in this law |
 | Legacy adapters under `components/*` mid-migration | New UI → `@/components/ui/*` + domain recipes |
 

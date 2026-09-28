@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { Loader2, Sparkles, Wrench, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { AiMarkdown } from "@/components/ai/AiMarkdown";
+import { AiPanel, AiPanelTitle } from "@/components/ai/AiPanel";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api-base";
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
 
 interface AiRejectionFixButtonProps {
   /** Sales order id. */
@@ -39,12 +40,15 @@ export function AiRejectionFixButton({ salesOrderId }: AiRejectionFixButtonProps
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        throw new Error(body?.message ?? body?.error ?? `Fix suggestions failed (${res.status})`);
+        // The friendly-error mapper owns every user-facing AI failure; a raw
+        // status code must never reach the screen.
+        setError(getFriendlyErrorMessage(body?.message ?? body?.error));
+        return;
       }
       const data = (await res.json()) as { fixes?: string };
       setFixes(data.fixes ?? "");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fix suggestions failed");
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -73,22 +77,17 @@ export function AiRejectionFixButton({ salesOrderId }: AiRejectionFixButtonProps
       </Button>
 
       {open && (
-        <div className="w-full max-w-lg rounded-xl border border-border bg-muted/60 p-3 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Sparkles className="size-3.5 text-primary" aria-hidden />
+        <AiPanel
+          label={
+            <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
               {intl.formatMessage({
                 id: "ai.rejection_fix.label",
                 defaultMessage: "How to fix this order",
               })}
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={loading}
-              className="gap-1.5"
-            >
+            </AiPanelTitle>
+          }
+          actions={
+            <Button type="button" size="sm" onClick={handleGenerate} disabled={loading} className="gap-1.5">
               {loading ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
@@ -99,11 +98,12 @@ export function AiRejectionFixButton({ salesOrderId }: AiRejectionFixButtonProps
                 defaultMessage: "Generate fixes",
               })}
             </Button>
-          </div>
+          }
+        >
           {error && <p className="mb-2 text-xs text-destructive">{error}</p>}
           {fixes ? (
             <div className="rounded-lg border border-border bg-background p-3 text-sm leading-relaxed text-foreground">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{fixes}</ReactMarkdown>
+              <AiMarkdown>{fixes}</AiMarkdown>
             </div>
           ) : loading ? (
             <div className="flex h-16 items-center justify-center text-sm text-muted-foreground">
@@ -117,7 +117,7 @@ export function AiRejectionFixButton({ salesOrderId }: AiRejectionFixButtonProps
               })}
             </div>
           )}
-        </div>
+        </AiPanel>
       )}
     </div>
   );

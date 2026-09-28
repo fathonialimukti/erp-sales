@@ -100,11 +100,14 @@ export const SystemLogsIndexPage = () => {
 
   const rows = (data?.data ?? []) as AppLogRow[];
   const totalPages = data?.pagination?.totalPages ?? 1;
+  const totalRows = data?.pagination?.total ?? 0;
 
   const columns = useMemo<ColumnDef<AppLogRow>[]>(
     () => [
       {
         id: "createdAt",
+        accessorFn: (row) => new Date(row.createdAt).getTime(),
+        enableSorting: true,
         header: intl.formatMessage({ id: "system_log.header_time", defaultMessage: "Time" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
@@ -114,6 +117,8 @@ export const SystemLogsIndexPage = () => {
       },
       {
         id: "level",
+        accessorKey: "level",
+        enableSorting: true,
         header: intl.formatMessage({ id: "system_log.header_level", defaultMessage: "Level" }),
         cell: ({ row }) => {
           const badge = LEVEL_BADGE[row.original.level];
@@ -128,6 +133,8 @@ export const SystemLogsIndexPage = () => {
       },
       {
         id: "module",
+        accessorKey: "module",
+        enableSorting: true,
         header: intl.formatMessage({ id: "system_log.header_module", defaultMessage: "Module" }),
         cell: ({ row }) => (
           <span className="text-sm font-medium text-foreground">{row.original.module}</span>
@@ -135,6 +142,8 @@ export const SystemLogsIndexPage = () => {
       },
       {
         id: "message",
+        accessorKey: "message",
+        enableSorting: true,
         header: intl.formatMessage({ id: "system_log.header_message", defaultMessage: "Message" }),
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -150,7 +159,21 @@ export const SystemLogsIndexPage = () => {
   );
 
   return (
-    <section className="flex flex-col gap-6 pt-2 pb-8">
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "system-logs-index",
+        itemCount: totalRows,
+        page: pagination.pageIndex + 1,
+        search,
+        filters: {
+          level: levelFilter || null,
+          module: moduleFilter || null,
+          startDate: dateRange[0] || null,
+          endDate: dateRange[1] || null,
+        },
+      })}
+    >
       <PageHeader
         module="settings"
         eyebrow={intl.formatMessage({ id: "nav.administration", defaultMessage: "Administration" })}

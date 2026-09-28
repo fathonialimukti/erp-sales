@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { icons } from "../../assets/icons";
+import { DomainIcon, type DomainIconName } from "../../components/DomainIcon";
 
 export type SkuIconName =
   | "back"
@@ -15,6 +15,21 @@ export type SkuIconName =
   | "package"
   | "price";
 
+const SKU_ICON_MAP: Record<SkuIconName, DomainIconName> = {
+  back: "actionBack",
+  edit: "actionEdit",
+  delete: "actionDelete",
+  plus: "actionPlus",
+  search: "actionSearch",
+  check: "actionCheck",
+  close: "actionClose",
+  "chevron-right": "actionChevronRight",
+  "menu-dots": "actionMenuDots",
+  eye: "actionEye",
+  package: "skuPackage",
+  price: "skuPrice",
+};
+
 interface SkuIconProps {
   name: SkuIconName;
   size?: number | string;
@@ -24,21 +39,7 @@ interface SkuIconProps {
   "aria-label"?: string;
 }
 
-const ICON_MAP: Record<SkuIconName, string> = {
-  back: icons.actionBack,
-  edit: icons.actionEdit,
-  delete: icons.actionDelete,
-  plus: icons.actionPlus,
-  search: icons.actionSearch,
-  check: icons.actionCheck,
-  close: icons.actionClose,
-  "chevron-right": icons.actionChevronRight,
-  "menu-dots": icons.actionMenuDots,
-  eye: icons.actionEye,
-  package: icons.skuPackage,
-  price: icons.skuPrice,
-};
-
+/** Re-export shim over shared DomainIcon — keeps existing imports working. */
 export const SkuIcon = ({
   name,
   size = 18,
@@ -47,14 +48,12 @@ export const SkuIcon = ({
   "aria-hidden": hidden,
   "aria-label": label,
 }: SkuIconProps) => (
-  <img
-    src={ICON_MAP[name]}
-    alt={label ?? ""}
-    width={size}
-    height={size}
-    aria-hidden={hidden ?? !label}
-    aria-label={label}
+  <DomainIcon
+    name={SKU_ICON_MAP[name]}
+    size={size}
     className={className}
     style={style}
+    aria-hidden={hidden}
+    aria-label={label}
   />
 );

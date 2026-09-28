@@ -82,6 +82,14 @@ const VIEW_STORAGE_KEY = "view:sales-order";
 
 const STATUS_OPTIONS = ["DRAFT", "VALIDATING", "PROPOSED", "APPROVED", "REJECTED"] as const;
 
+/**
+ * Mirrors the server guard in `routers/sales-order.ts` `delete`: an order is
+ * deletable only while the creator still holds it (DRAFT or REJECTED). Once it
+ * enters the approval pipeline it can be rejected, never erased — so the
+ * affordance must disappear at the same boundary the server enforces.
+ */
+const DELETABLE_STATUSES: string[] = ["DRAFT", "REJECTED"];
+
 const readStoredView = (): IndexView => {
   try {
     return localStorage.getItem(VIEW_STORAGE_KEY) === "pipeline" ? "pipeline" : "table";
@@ -366,7 +374,7 @@ export const SalesOrderIndexPage = () => {
                     defaultMessage: "Print",
                   })}
                 </DropdownMenuItem>
-                {canDelete && row.original.approvalStatus === "DRAFT" ? (
+                {canDelete && DELETABLE_STATUSES.includes(row.original.approvalStatus) ? (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

@@ -85,6 +85,8 @@ export const KnowledgeBaseIndexPage = () => {
     () => [
       {
         id: "title",
+        accessorKey: "title",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "knowledgeBase.index.header_title",
           defaultMessage: "Title",
@@ -95,6 +97,8 @@ export const KnowledgeBaseIndexPage = () => {
       },
       {
         id: "source",
+        accessorKey: "source",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "knowledgeBase.index.header_source",
           defaultMessage: "Source",
@@ -103,6 +107,8 @@ export const KnowledgeBaseIndexPage = () => {
       },
       {
         id: "content",
+        accessorKey: "content",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "knowledgeBase.index.header_content",
           defaultMessage: "Content",
@@ -116,6 +122,8 @@ export const KnowledgeBaseIndexPage = () => {
       },
       {
         id: "embedding",
+        accessorKey: "embeddingStatus",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "knowledgeBase.index.header_embedding",
           defaultMessage: "Embedding",
@@ -175,6 +183,7 @@ export const KnowledgeBaseIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

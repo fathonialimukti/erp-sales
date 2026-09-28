@@ -44,7 +44,7 @@
     }
   },
   // Install deps, generate Prisma client, then start everything under pm2
-  // (dev-mode server/client + headless opencode web UI on port 4096).
+  // (dev-mode server/client + headless opencode web UI on port 10023).
   // The Dockerfile can't do this at build time because package.json isn't present until runtime.
   "postCreateCommand": "bun install && cd apps/server && bun prisma generate && cd ../.. && pm2 start ecosystem.config.js && pm2 save",
   // Restore PM2 processes on every container restart (postCreateCommand only runs once).

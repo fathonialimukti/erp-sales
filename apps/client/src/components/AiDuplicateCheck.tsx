@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { AlertTriangle, CopyCheck, Loader2, Sparkles, X } from "lucide-react";
+import { AiPanel, AiPanelTitle } from "@/components/ai/AiPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { API_BASE_URL } from "@/lib/api-base";
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
 
 interface AiDuplicateCheckProps {
   /** Which dataset to scan: customer | outlet. */
@@ -45,12 +47,15 @@ export function AiDuplicateCheck({ dataset }: AiDuplicateCheckProps) {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        throw new Error(body?.message ?? body?.error ?? `Scan failed (${res.status})`);
+        // The friendly-error mapper owns every user-facing AI failure; a raw
+        // status code must never reach the screen.
+        setError(getFriendlyErrorMessage(body?.message ?? body?.error));
+        return;
       }
       const data = (await res.json()) as { duplicates?: DuplicatePair[] };
       setDuplicates(data.duplicates ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Scan failed");
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -83,22 +88,17 @@ export function AiDuplicateCheck({ dataset }: AiDuplicateCheckProps) {
       </Button>
 
       {open && (
-        <div className="w-full max-w-xl rounded-xl border border-border bg-muted/60 p-3 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Sparkles className="size-3.5 text-primary" aria-hidden />
+        <AiPanel
+          label={
+            <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
               {intl.formatMessage({
                 id: "ai.duplicate.label",
                 defaultMessage: "Likely duplicate records",
               })}
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleScan}
-              disabled={loading}
-              className="gap-1.5"
-            >
+            </AiPanelTitle>
+          }
+          actions={
+            <Button type="button" size="sm" onClick={handleScan} disabled={loading} className="gap-1.5">
               {loading ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
@@ -106,7 +106,8 @@ export function AiDuplicateCheck({ dataset }: AiDuplicateCheckProps) {
               )}
               {intl.formatMessage({ id: "ai.duplicate.scan", defaultMessage: "Scan" })}
             </Button>
-          </div>
+          }
+        >
           {error && <p className="mb-2 text-xs text-destructive">{error}</p>}
           {loading ? (
             <div className="flex h-16 items-center justify-center text-sm text-muted-foreground">
@@ -145,7 +146,7 @@ export function AiDuplicateCheck({ dataset }: AiDuplicateCheckProps) {
               })}
             </div>
           )}
-        </div>
+        </AiPanel>
       )}
     </div>
   );

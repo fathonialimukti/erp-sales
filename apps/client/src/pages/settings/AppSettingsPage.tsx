@@ -831,19 +831,17 @@ export const AppSettingsPage = () => {
                 <Input
                   id="app-accent-color"
                   value={form.accentColor}
-                  placeholder="#3b82f6"
+                  placeholder={intl.formatMessage({
+                    id: "settings.app.field.accentColor_placeholder",
+                    defaultMessage: "Uses the module accent when empty",
+                  })}
                   className="tabular-nums"
                   onChange={(e) => update("accentColor", e.target.value)}
                 />
-                <input
-                  type="color"
-                  value={
-                    /^#[0-9a-fA-F]{6}$/.test(form.accentColor)
-                      ? form.accentColor
-                      : "#3b82f6"
-                  }
-                  onChange={(e) => update("accentColor", e.target.value)}
-                  className="h-8 w-12 shrink-0 cursor-pointer rounded-md border border-border bg-card p-1"
+                <span
+                  className="h-8 w-12 shrink-0 rounded-md border border-border"
+                  style={{ background: "var(--module-settings)" }}
+                  role="img"
                   aria-label={intl.formatMessage({
                     id: "settings.app.field.accentColor",
                     defaultMessage: "Accent Color",

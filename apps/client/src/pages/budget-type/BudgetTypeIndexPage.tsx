@@ -76,6 +76,8 @@ export const BudgetTypeIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_type.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
@@ -83,11 +85,15 @@ export const BudgetTypeIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_type.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
         id: "description",
+        accessorKey: "description",
+        enableSorting: true,
         header: intl.formatMessage({ id: "budget_type.index.header_description", defaultMessage: "Description" }),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.description ?? "—"}</span>
@@ -95,6 +101,7 @@ export const BudgetTypeIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

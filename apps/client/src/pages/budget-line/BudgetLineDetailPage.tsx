@@ -7,6 +7,7 @@ import { ArrowLeft, Pencil, Trash2, AlertCircle, DollarSign, MapPin, Tag } from 
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
+import { getRemainingColor } from "../../lib/status-color";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
@@ -100,12 +101,6 @@ export const BudgetLineDetailPage = () => {
 
   const getStatusBadge = (status: string) => <StatusChip status={status} />;
 
-  const getRemainingColor = (remaining: number) => {
-    if (remaining < 0) return "text-destructive";
-    if (remaining === 0) return "text-orange-600";
-    return "text-green-600";
-  };
-
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -120,7 +115,7 @@ export const BudgetLineDetailPage = () => {
         <div className="text-center">
           <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">
-            {intl.formatMessage({ id: "common.error.not_found", defaultMessage: "Budget line not found" })}
+            {intl.formatMessage({ id: "budget_line.error.not_found", defaultMessage: "Budget line not found" })}
           </h3>
           <Button variant="outline" onClick={() => navigate("/budget-line")} className="mt-4">
             <ArrowLeft className="size-4 mr-2" />
@@ -132,7 +127,21 @@ export const BudgetLineDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "budget-line-detail",
+        id: line.id,
+        budgetType: line.budgetType?.name ?? null,
+        period: line.period?.name ?? null,
+        scope: line.scope,
+        region: line.region?.name ?? line.area?.name ?? null,
+        currency: line.currency,
+        summary: line.summary,
+        actionProgramCount: line._count.actionPrograms,
+        eventProposalCount: line._count.eventProposals,
+      })}
+    >
       <PageHeader
         module="budgetLine"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -346,7 +355,7 @@ export const BudgetLineDetailPage = () => {
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete budget line?" })}
+        title={intl.formatMessage({ id: "budget_line.confirm.delete_title", defaultMessage: "Delete budget line?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
         onConfirm={handleDelete}

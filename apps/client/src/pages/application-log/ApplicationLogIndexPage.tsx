@@ -38,6 +38,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export const APPLICATION_LOG_LEVELS = ["info", "warn", "error", "debug"] as const;
 
@@ -193,6 +194,8 @@ export const ApplicationLogIndexPage = () => {
     () => [
       {
         id: "createdAt",
+        accessorFn: (row) => new Date(row.createdAt).getTime(),
+        enableSorting: true,
         header: intl.formatMessage({
           id: "applicationLog.index.header_time",
           defaultMessage: "Time",
@@ -205,6 +208,8 @@ export const ApplicationLogIndexPage = () => {
       },
       {
         id: "level",
+        accessorKey: "level",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "applicationLog.index.header_level",
           defaultMessage: "Level",
@@ -215,7 +220,7 @@ export const ApplicationLogIndexPage = () => {
             APPLICATION_LOG_LEVEL_BADGE.info;
           const Icon = badge.icon;
           return (
-            <Badge variant={badge.variant} className={`gap-1 ${badge.className}`}>
+            <Badge variant={badge.variant} className={cn("gap-1", badge.className)}>
               <Icon className="size-3" aria-hidden />
               {intl.formatMessage({
                 id: badge.labelId,
@@ -227,6 +232,8 @@ export const ApplicationLogIndexPage = () => {
       },
       {
         id: "source",
+        accessorKey: "source",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "applicationLog.index.header_source",
           defaultMessage: "Source",
@@ -239,6 +246,8 @@ export const ApplicationLogIndexPage = () => {
       },
       {
         id: "message",
+        accessorKey: "message",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "applicationLog.index.header_message",
           defaultMessage: "Message",

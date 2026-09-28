@@ -5,9 +5,11 @@ import { useIntl } from "react-intl";
 import { useNavigate } from "react-router";
 import { useSetAtom } from "jotai";
 import { Loader2, ShoppingCart, Sparkles, X } from "lucide-react";
+import { AiPanel, AiPanelTitle } from "@/components/ai/AiPanel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/lib/api-base";
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
 import { aiFormFillAtom } from "../lib/atoms";
 
 interface AiVisitOrderButtonProps {
@@ -46,7 +48,10 @@ export function AiVisitOrderButton({ visitLogId, outletName }: AiVisitOrderButto
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        throw new Error(body?.message ?? body?.error ?? `Extraction failed (${res.status})`);
+        // The friendly-error mapper owns every user-facing AI failure; a raw
+        // status code must never reach the screen.
+        setError(getFriendlyErrorMessage(body?.message ?? body?.error));
+        return;
       }
       const data = (await res.json()) as {
         data?: { outletId?: string; items?: unknown[]; notes?: string };
@@ -69,7 +74,7 @@ export function AiVisitOrderButton({ visitLogId, outletName }: AiVisitOrderButto
       });
       navigate(`/sales-order/create?visitLogId=${encodeURIComponent(visitLogId)}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Extraction failed");
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -98,19 +103,21 @@ export function AiVisitOrderButton({ visitLogId, outletName }: AiVisitOrderButto
       </Button>
 
       {open && (
-        <div className="w-full max-w-md rounded-xl border border-border bg-muted/60 p-3 shadow-sm">
-          <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Sparkles className="size-3.5 text-primary" aria-hidden />
-            {outletName
-              ? intl.formatMessage(
-                  { id: "ai.visit_order.label", defaultMessage: "Extract order from {outlet}" },
-                  { outlet: outletName },
-                )
-              : intl.formatMessage({
-                  id: "ai.visit_order.label_plain",
-                  defaultMessage: "Extract order from visit",
-                })}
-          </div>
+        <AiPanel
+          label={
+            <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
+              {outletName
+                ? intl.formatMessage(
+                    { id: "ai.visit_order.label", defaultMessage: "Extract order from {outlet}" },
+                    { outlet: outletName },
+                  )
+                : intl.formatMessage({
+                    id: "ai.visit_order.label_plain",
+                    defaultMessage: "Extract order from visit",
+                  })}
+            </AiPanelTitle>
+          }
+        >
           <Textarea
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
@@ -153,7 +160,7 @@ export function AiVisitOrderButton({ visitLogId, outletName }: AiVisitOrderButto
               })}
             </Button>
           </div>
-        </div>
+        </AiPanel>
       )}
     </div>
   );

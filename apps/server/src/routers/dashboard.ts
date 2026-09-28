@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma.js';
-import { protectedProcedure, router } from '../trpc.js';
+import { hasPermission, protectedProcedure, router } from '../trpc.js';
 
 export const dashboardRouter = router({
     /**
@@ -7,7 +7,7 @@ export const dashboardRouter = router({
      * top-5 customers by revenue this month, and recent activity.
      * All queries run in parallel and return Decimal as number.
      */
-    sales: protectedProcedure.query(async () => {
+    sales: protectedProcedure.use(hasPermission('report@read')).query(async () => {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);

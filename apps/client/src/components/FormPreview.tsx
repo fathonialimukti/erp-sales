@@ -97,7 +97,6 @@ export const FormPreview = ({
       return () => clearTimeout(timer);
     }
     return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);
 
   return (
@@ -111,12 +110,13 @@ export const FormPreview = ({
         data-slot="form-preview"
         data-module={module}
       >
-        {/* Completion accent border — 3px left strip filling vertically by pct */}
+        {/* Completion accent border — 3px left strip, fill via scaleY
+            (transform-only: animating height is layout thrash per motion law) */}
         <motion.div
-          className="absolute inset-y-0 left-0 w-[3px] rounded-l"
+          className="absolute inset-y-0 left-0 w-[3px] origin-top rounded-l"
           style={accent ? { backgroundColor: accent } : undefined}
           initial={false}
-          animate={{ height: `${pct}%` }}
+          animate={{ scaleY: pct / 100 }}
           transition={reduced ? { duration: 0 } : { duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           aria-hidden
         />
@@ -178,25 +178,15 @@ export const FormPreview = ({
                     {empty ? (
                       <span className="text-xs text-muted-foreground">—</span>
                     ) : (
-                      <motion.span
+                      <span
                         className={cn(
-                          "max-w-[55%] truncate rounded px-1.5 py-0.5 text-right text-sm font-semibold text-foreground",
+                          "max-w-[55%] truncate rounded px-1.5 py-0.5 text-right text-sm font-semibold text-foreground transition-colors duration-300 motion-reduce:transition-none",
                           row.money && "tabular-nums",
+                          flashing && "bg-primary/10",
                         )}
-                        initial={false}
-                        animate={{
-                          backgroundColor: flashing
-                            ? "color-mix(in srgb, var(--primary) 10%, transparent)"
-                            : "transparent",
-                        }}
-                        transition={
-                          reduced
-                            ? { duration: 0 }
-                            : { backgroundColor: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }
-                        }
                       >
                         {row.value}
-                      </motion.span>
+                      </span>
                     )}
                   </li>
                 );
@@ -235,9 +225,9 @@ export const FormPreview = ({
               })}
             >
               <motion.div
-                className={cn("h-full rounded-full", complete ? "bg-success" : "bg-primary")}
+                className={cn("h-full w-full origin-left rounded-full", complete ? "bg-success" : "bg-primary")}
                 initial={false}
-                animate={{ width: `${pct}%` }}
+                animate={{ scaleX: pct / 100 }}
                 transition={reduced ? { duration: 0 } : { duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
               />
             </div>

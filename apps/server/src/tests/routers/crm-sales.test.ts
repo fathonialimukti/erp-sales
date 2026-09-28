@@ -11,6 +11,9 @@ let customerId: string;
 let regionId: string;
 let areaId: string;
 let skuId: string;
+// Orders that survive their test (delete is guarded, so the pipeline orders stay) are
+// removed here directly — teardown may bypass the mutation guard.
+const createdOrderIds: string[] = [];
 
 beforeAll(async () => {
   const role = await seedRoleWithPermissions([
@@ -34,6 +37,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await prisma.salesOrder.deleteMany({ where: { id: { in: createdOrderIds } } }).catch(() => {});
   await deleteTestCustomer(customerId);
   await deleteTestSku(skuId);
   await deleteTestArea(areaId);
@@ -66,6 +70,7 @@ describe('sales order CRUD + approval', () => {
     expect(created.id).toBeDefined();
     expect(created.approvalStatus).toBe('DRAFT');
     orderId = created.id;
+    createdOrderIds.push(orderId);
   });
 
   it('gets sales order detail', async () => {
@@ -88,8 +93,53 @@ describe('sales order CRUD + approval', () => {
     expect(result.approvalHistory).toBeDefined();
   });
 
-  it('deletes sales order', async () => {
-    await caller.salesOrder.delete({ id: orderId });
-    // should not throw
+  it('refuses to delete an order in the approval pipeline, leaving it in place', async () => {
+    // orderId is APPROVED by the previous test. Delete is legal only while the creator
+    // still holds the order (DRAFT or REJECTED) — the same set `propose` accepts.
+    await expect(caller.salesOrder.delete({ id: orderId })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    expect(await prisma.salesOrder.findUnique({ where: { id: orderId } })).not.toBeNull();
+  });
+
+  it('refuses to delete an order while AI validation is in flight', async () => {
+    const created = await caller.salesOrder.create({
+      outletId,
+      items: [{ skuId, quantity: 1, unitPrice: 10000, lineTotal: 10000, discountPercent: 0, taxPercent: 0 }],
+      currency: 'USD',
+      subtotal: 10000, grandTotal: 10000, discountTotal: 0, taxTotal: 0,
+    });
+    // propose() would also fire the background AI job; mirror the in-flight state directly.
+    await prisma.salesOrder.update({ where: { id: created.id }, data: { approvalStatus: 'VALIDATING' } });
+    createdOrderIds.push(created.id);
+
+    await expect(caller.salesOrder.delete({ id: created.id })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    expect(await prisma.salesOrder.findUnique({ where: { id: created.id } })).not.toBeNull();
+  });
+
+  it('deletes a DRAFT sales order', async () => {
+    const draft = await caller.salesOrder.create({
+      outletId,
+      items: [{ skuId, quantity: 1, unitPrice: 10000, lineTotal: 10000, discountPercent: 0, taxPercent: 0 }],
+      currency: 'USD',
+      subtotal: 10000, grandTotal: 10000, discountTotal: 0, taxTotal: 0,
+    });
+    await expect(caller.salesOrder.delete({ id: draft.id })).resolves.toEqual({ success: true });
+    expect(await prisma.salesOrder.findUnique({ where: { id: draft.id } })).toBeNull();
+  });
+
+  it('deletes a REJECTED sales order, the other author-held state', async () => {
+    const rejected = await caller.salesOrder.create({
+      outletId,
+      items: [{ skuId, quantity: 1, unitPrice: 10000, lineTotal: 10000, discountPercent: 0, taxPercent: 0 }],
+      currency: 'USD',
+      subtotal: 10000, grandTotal: 10000, discountTotal: 0, taxTotal: 0,
+    });
+    await prisma.salesOrder.update({ where: { id: rejected.id }, data: { approvalStatus: 'REJECTED' } });
+
+    await expect(caller.salesOrder.delete({ id: rejected.id })).resolves.toEqual({ success: true });
+    expect(await prisma.salesOrder.findUnique({ where: { id: rejected.id } })).toBeNull();
+  });
+
+  it('still rejects delete for an unknown id', async () => {
+    await expect(caller.salesOrder.delete({ id: 'missing-order-id' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });

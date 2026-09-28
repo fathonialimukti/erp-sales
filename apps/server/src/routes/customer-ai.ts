@@ -58,7 +58,7 @@ export async function customerAiChatHandler(req: Request, res: Response) {
         return;
     }
 
-    const modelMessages = await convertToModelMessages(messages as any);
+    const modelMessages = await convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0]);
 
     // Only expose the image-analysis tool when the conversation actually contains
     // image parts, so the model cannot call it gratuitously on text-only chats.
@@ -74,7 +74,7 @@ export async function customerAiChatHandler(req: Request, res: Response) {
             ? {
                   analyzeImage: {
                       ...imageTool,
-                      execute: async (args: any, options: any) => {
+                      execute: async (args: Parameters<NonNullable<typeof imageTool.execute>>[0], options: Parameters<NonNullable<typeof imageTool.execute>>[1]) => {
                           try {
                               return (await imageTool.execute!(args, options)) as string;
                           } catch (error) {

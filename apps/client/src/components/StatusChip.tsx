@@ -105,7 +105,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   },
   PENDING: {
     icon: PauseCircle,
-    className: "border-warning/35 bg-warning/15 text-warning-foreground",
+    className: "border-warning/35 bg-warning/15 text-warning-foreground dark:text-warning",
     messageId: "common.status.pending",
     defaultMessage: "Pending",
   },
@@ -175,7 +175,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   },
   HIGH: {
     icon: AlertTriangle,
-    className: "border-warning/35 bg-warning/15 text-warning-foreground",
+    className: "border-warning/35 bg-warning/15 text-warning-foreground dark:text-warning",
     messageId: "common.priority.high",
     defaultMessage: "High",
   },

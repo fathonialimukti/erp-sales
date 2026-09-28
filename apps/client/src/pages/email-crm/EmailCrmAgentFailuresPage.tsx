@@ -141,6 +141,8 @@ export const EmailCrmAgentFailuresPage = () => {
     () => [
       {
         id: "email",
+        accessorKey: "email",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "emailCrm.agentFailures.col_email",
           defaultMessage: "Email",
@@ -151,6 +153,8 @@ export const EmailCrmAgentFailuresPage = () => {
       },
       {
         id: "subject",
+        accessorKey: "subject",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "emailCrm.agentFailures.col_subject",
           defaultMessage: "Subject",
@@ -161,6 +165,8 @@ export const EmailCrmAgentFailuresPage = () => {
       },
       {
         id: "agentError",
+        accessorKey: "agentError",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "emailCrm.agentFailures.col_failure_reason",
           defaultMessage: "Failure reason",
@@ -171,6 +177,8 @@ export const EmailCrmAgentFailuresPage = () => {
       },
       {
         id: "lastMessageAt",
+        accessorFn: (row) => (row.lastMessageAt ? new Date(row.lastMessageAt).getTime() : 0),
+        enableSorting: true,
         header: intl.formatMessage({
           id: "emailCrm.agentFailures.col_last_message",
           defaultMessage: "Last message",
@@ -183,6 +191,8 @@ export const EmailCrmAgentFailuresPage = () => {
       },
       {
         id: "customer",
+        accessorFn: (row) => row.customer?.name ?? "",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "emailCrm.agentFailures.col_customer",
           defaultMessage: "Customer",
@@ -193,6 +203,10 @@ export const EmailCrmAgentFailuresPage = () => {
       },
       {
         id: "status",
+        // Every row on this page is FAILED (server-filtered) — a constant column
+        // has no order to give, so it stays explicitly non-sortable.
+        accessorKey: "agentStatus",
+        enableSorting: false,
         header: intl.formatMessage({
           id: "emailCrm.index.col_status",
           defaultMessage: "Status",
@@ -201,6 +215,7 @@ export const EmailCrmAgentFailuresPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

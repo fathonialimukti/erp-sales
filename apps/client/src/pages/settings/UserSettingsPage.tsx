@@ -54,7 +54,6 @@ interface FormValues {
   phone: string;
   bio: string;
   themeOverride: "light" | "dark" | "system" | "";
-  languageOverride: "en" | "id" | "";
   timezone: string;
   dateFormat: string;
   currency: string;
@@ -77,7 +76,6 @@ const toFormValues = (s: UserSettingsInput): FormValues => ({
   phone: s.phone ?? "",
   bio: s.bio ?? "",
   themeOverride: s.themeOverride ?? "",
-  languageOverride: s.languageOverride ?? "",
   timezone: s.timezone ?? "",
   dateFormat: s.dateFormat ?? "",
   currency: s.currency ?? "",
@@ -98,8 +96,6 @@ const buildPatch = (values: FormValues): UpdateUserSettingsInput => ({
   bio: values.bio.trim() === "" ? null : values.bio.trim(),
   themeOverride:
     values.themeOverride === "" ? null : values.themeOverride,
-  languageOverride:
-    values.languageOverride === "" ? null : values.languageOverride,
   timezone: values.timezone.trim() === "" ? null : values.timezone.trim(),
   dateFormat:
     values.dateFormat.trim() === "" ? null : values.dateFormat.trim(),
@@ -444,37 +440,6 @@ export const UserSettingsPage = () => {
                       defaultMessage: "System",
                     })}
                   </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="user-language-override">
-                {intl.formatMessage({
-                  id: "settings.user.field.languageOverride",
-                  defaultMessage: "Language",
-                })}
-              </Label>
-              <Select
-                value={form.languageOverride || "none"}
-                onValueChange={(v) =>
-                  update(
-                    "languageOverride",
-                    v === "none" ? "" : (v as "en" | "id"),
-                  )
-                }
-              >
-                <SelectTrigger id="user-language-override" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">
-                    {intl.formatMessage({
-                      id: "settings.user.language.inherit",
-                      defaultMessage: "System default",
-                    })}
-                  </SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="id">Bahasa Indonesia</SelectItem>
                 </SelectContent>
               </Select>
             </div>

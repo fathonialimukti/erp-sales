@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useIntl } from "react-intl";
-import { useAtomValue } from "jotai";
+
+import { useRequiredMessage } from "@/lib/form-validation";import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -59,6 +60,7 @@ const defaults = (): FormValues => ({
 
 export const VisitLogFormPage = () => {
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -353,7 +355,7 @@ export const VisitLogFormPage = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
               name="salesmanId"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -396,7 +398,7 @@ export const VisitLogFormPage = () => {
 
             <form.Field
               name="outletId"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -439,7 +441,7 @@ export const VisitLogFormPage = () => {
 
             <form.Field
               name="date"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField

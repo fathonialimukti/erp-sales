@@ -1,9 +1,12 @@
 import { Loader2, Maximize2, Minimize2, Paperclip, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { AiMarkdown } from '@/components/ai/AiMarkdown';
+import { aiBorderStyle, aiPlateStyle } from '@/components/ai/AiPanel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { API_BASE_URL } from '@/lib/api-base';
 import { isAcceptableImage } from '@/lib/attach-limits';
+import { getFriendlyErrorMessage } from '@/lib/friendlyError';
 import { normalizeRoutePath } from '@/lib/route-aliases';
 import { cn } from '@/lib/utils';
 import { useChat } from '@ai-sdk/react';
@@ -12,11 +15,9 @@ import { useGeneralSettings } from '@/hooks/useGeneralSettings';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { UIMessage, type FileUIPart } from 'ai';
 import { useNavigate } from 'react-router';
-import ReactMarkdown, { type Components } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { aiFormFillAtom, authUserAtom } from '../../lib/atoms';
 import {
   ChatWidgetPart,
@@ -81,7 +82,6 @@ const createPatchedFetch = (): typeof fetch => {
                   const injected = JSON.stringify({ type: 'tool-input-available', toolCallId, toolName: buf.toolName, input: toolInput });
                   out.push(`data: ${injected}`);
                   out.push('');
-                  console.log('[AI] injected tool-input-available for', toolCallId, buf.toolName, toolInput);
                 } catch {
                   // incomplete / invalid JSON — skip injection for this tool
                 }
@@ -146,90 +146,31 @@ const resolveToolInput = (part: Record<string, unknown>): unknown => {
   return direct;
 };
 
-const markdownComponents: Components = {
-  h1: ({ children }) => <h1 className="mt-3 mb-1.5 text-[0.9375rem] font-bold">{children}</h1>,
-  h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-sm font-bold">{children}</h2>,
-  h3: ({ children }) => <h3 className="mt-2 mb-1 text-xs font-semibold">{children}</h3>,
-  p: ({ children }) => <p className="my-1.5 leading-relaxed">{children}</p>,
-  ul: ({ children }) => <ul className="my-1.5 list-disc space-y-0.5 pl-5">{children}</ul>,
-  ol: ({ children }) => <ol className="my-1.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
-  li: ({ children }) => <li>{children}</li>,
-  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-  em: ({ children }) => <em className="italic">{children}</em>,
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">
-      {children}
-    </a>
-  ),
-  code: ({ className, children, ...rest }) => {
-    const isInline = !className;
-    if (isInline) {
-      return (
-        <code className="rounded bg-muted px-1 py-px font-mono text-[0.75rem]" {...rest}>
-          {children}
-        </code>
-      );
-    }
-    return (
-      <code className={cn('font-mono text-[0.75rem]', className)} {...rest}>
-        {children}
-      </code>
-    );
-  },
-  pre: ({ children }) => (
-    <pre
-      aria-label="Code block"
-      className="my-2 overflow-x-auto rounded-lg bg-muted p-2 font-mono text-[0.75rem] whitespace-pre"
-    >
-      {children}
-    </pre>
-  ),
-  blockquote: ({ children }) => (
-    <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">
-      {children}
-    </blockquote>
-  ),
-  hr: () => <hr className="my-3 border-border" />,
-  table: ({ children }) => (
-    <div className="my-2 overflow-x-auto">
-      <table className="min-w-full border-collapse text-[0.75rem]">{children}</table>
-    </div>
-  ),
-  thead: ({ children }) => <thead className="bg-muted/60">{children}</thead>,
-  th: ({ children }) => (
-    <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
-  ),
-  td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
-};
-
-// Whitelist safe URL protocols. Blocks javascript: / data: / vbscript: URIs.
-const sanitizeUrl = (url: string) => (/^(https?:|mailto:|#)/.test(url) ? url : '#');
-
 function MarkdownBubble({ text }: { text: string }) {
-  // useMemo skips re-parsing the AST on parent re-renders that don't change the text
-  // (e.g., status flips from 'streaming' to 'submitted' with the same buffer).
-  const rendered = useMemo(
-    () => (
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={markdownComponents}
-        urlTransform={sanitizeUrl}
-      >
-        {text}
-      </ReactMarkdown>
-    ),
-    [text],
-  );
-  return <div className="text-[0.8125rem] leading-relaxed text-foreground">{rendered}</div>;
+  return <div className="text-[0.8125rem] leading-relaxed text-foreground"><AiMarkdown>{text}</AiMarkdown></div>;
 }
 
+/** One assistant per authenticated page, so the dialog ids are stable. */
+const PANEL_ID = 'ai-assistant-panel';
+const PANEL_TITLE_ID = 'ai-assistant-title';
+
+/** Tab order inside the panel: every control a keyboard user can reach. */
+const FOCUSABLE_IN_PANEL = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 // Metadata for rendering tool activity chips
-const TOOL_META: Record<string, { label: string }> = {
-  navigateTo: { label: 'Navigate' },
-  fillFormFields: { label: 'Fill form' },
-  getPageContext: { label: 'Read page' },
-  queryDatabase: { label: 'Query DB' },
-  searchKnowledge: { label: 'Knowledge' },
+const TOOL_META: Record<string, { id: string; defaultMessage: string }> = {
+  navigateTo: { id: 'ai.assistant.tool.navigate', defaultMessage: 'Navigate' },
+  fillFormFields: { id: 'ai.assistant.tool.fill_form', defaultMessage: 'Fill form' },
+  getPageContext: { id: 'ai.assistant.tool.read_page', defaultMessage: 'Read page' },
+  queryDatabase: { id: 'ai.assistant.tool.query_db', defaultMessage: 'Query DB' },
+  searchKnowledge: { id: 'ai.assistant.tool.knowledge', defaultMessage: 'Knowledge' },
 };
 
 /** Best-effort hit/result count from searchKnowledge tool output (server or client). */
@@ -263,7 +204,9 @@ const resolveKnowledgeHitCount = (output: unknown): number | undefined => {
 };
 
 function ToolChip({ toolName, part }: { toolName: string; part: Record<string, unknown> }) {
-  const meta = TOOL_META[toolName] ?? { label: toolName };
+  const intl = useIntl();
+  const message = TOOL_META[toolName];
+  const label = message ? intl.formatMessage(message) : toolName;
   const state = String(part.state ?? 'input-available');
   const input = part.input as Record<string, unknown> | undefined;
 
@@ -297,7 +240,7 @@ function ToolChip({ toolName, part }: { toolName: string; part: Record<string, u
           : '… ';
 
   const labelText =
-    state === 'input-streaming' ? `${meta.label}…` : `${prefix}${meta.label}${detail}`;
+    state === 'input-streaming' ? `${label}…` : `${prefix}${label}${detail}`;
 
   return (
     <Badge variant={variant} className="max-w-full truncate font-normal">
@@ -378,6 +321,15 @@ export const AiAssistant = () => {
   // Sentinel element at the bottom of the messages list for auto-scroll
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Dialog plumbing: the panel traps Tab, closes on Escape and hands focus
+  // back to the launcher. Implemented on the existing fixed element rather
+  // than a shadcn Sheet because the assistant is co-present with the page —
+  // a scrim, scroll lock or blocked outside click would break the
+  // navigateTo / fillFormFields flow that mutates the page behind it.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const composerRef = useRef<HTMLInputElement>(null);
+  const wasOpenRef = useRef(false);
 
   const user = useAtomValue(authUserAtom);
   const chatId = user?.id ? `ai-chat-${user.id}` : 'ai-chat-anon';
@@ -432,7 +384,6 @@ export const AiAssistant = () => {
     onToolCall: ({ toolCall }) => {
       // String(toolCall.toolName) works for both dynamic (string) and typed (literal union) tools.
       const toolName = String(toolCall.toolName);
-      console.log('[AI] onToolCall', toolName, toolCall.toolCallId, 'dynamic:', toolCall.dynamic);
       runTool(toolName, toolCall.toolCallId, toolCall.input as unknown);
     },
   });
@@ -451,11 +402,8 @@ export const AiAssistant = () => {
     if (WIDGET_TOOL_NAMES.has(toolName)) return;
 
     const alreadyHandled = handledToolCallsRef.current.has(toolCallId);
-    if (alreadyHandled) {
-      console.log('[AI] dedup skip side-effects for', toolCallId);
-    } else {
+    if (!alreadyHandled) {
       handledToolCallsRef.current.add(toolCallId);
-      console.log('[AI] runTool', toolName, toolCallId, toolInput);
     }
 
     if (toolName === 'navigateTo') {
@@ -470,7 +418,6 @@ export const AiAssistant = () => {
       }
       const resolved = normalizeRoutePath(String(path));
       if (!alreadyHandled) {
-        console.log('[AI] navigate →', resolved);
         void navigate(resolved);
       }
       addToolOutput({ tool: 'navigateTo', toolCallId, output: `Navigated to ${resolved}` });
@@ -642,7 +589,6 @@ export const AiAssistant = () => {
       // executing on partial deltas would use wrong/incomplete input values.
       if (state !== 'input-available') continue;
 
-      console.log('[AI] useEffect tool part', toolName, p.state);
       runTool(toolName, String(p.toolCallId), resolvedInput);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -664,6 +610,61 @@ export const AiAssistant = () => {
       handleSend();
     }
   };
+
+  const closePanel = () => {
+    setOpen(false);
+    setIsExpanded(false);
+  };
+
+  // Dialog keyboard contract: Escape dismisses, Tab and Shift+Tab cycle inside
+  // the panel so the page behind never receives focus while it is open.
+  const handlePanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closePanel();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const root = panelRef.current;
+    if (!root) return;
+    const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_IN_PANEL)).filter(
+      (el) => el.getClientRects().length > 0,
+    );
+    if (focusable.length === 0) {
+      e.preventDefault();
+      root.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (!active || !root.contains(active)) {
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+    } else if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  // Move focus into the composer on open and back to the launcher on close.
+  // Guarded so a first mount (panel closed) never steals the page's focus.
+  useEffect(() => {
+    if (open) {
+      wasOpenRef.current = true;
+      composerRef.current?.focus();
+      return;
+    }
+    if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      launcherRef.current?.focus();
+    }
+  }, [open]);
 
   const processFiles = async (files: File[]) => {
     let skippedCount = 0;
@@ -757,7 +758,7 @@ export const AiAssistant = () => {
     } catch (e) {
       setMessages([
         ...messages,
-        { id: crypto.randomUUID(), role: 'assistant', parts: [{ type: 'text', text: `Summary failed: ${e instanceof Error ? e.message : 'Unknown error'}` }] },
+        { id: crypto.randomUUID(), role: 'assistant', parts: [{ type: 'text', text: getFriendlyErrorMessage(e) }] },
       ]);
     } finally {
       setSummarizing(false);
@@ -780,27 +781,38 @@ export const AiAssistant = () => {
     <div className="fixed right-6 bottom-6 z-1000 flex flex-col items-end gap-3">
       {open && (
         <div
+          ref={panelRef}
+          id={PANEL_ID}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={PANEL_TITLE_ID}
+          tabIndex={-1}
+          // The drop-target accent wins over the AI identity border.
+          style={isDragging && multimodalEnabled ? undefined : aiBorderStyle}
           className={cn(
-            'flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl',
+            'flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-2xl outline-none',
             'animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none',
             isExpanded ? 'w-170' : 'w-96',
             isDragging && multimodalEnabled ? 'border-dashed border-primary' : '',
           )}
+          onKeyDown={handlePanelKeyDown}
           onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
           onDrop={handleDrop}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
         >
           <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <span
-                className="inline-flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
+                className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg"
+                style={aiPlateStyle}
                 aria-hidden
               >
                 <Sparkles className="size-3.5" />
               </span>
-              <span className="font-heading text-sm font-semibold text-foreground">
-                ERP Assistant
+              <span id={PANEL_TITLE_ID} className="truncate font-heading text-sm font-semibold text-foreground">
+                {/* One product name, one message id: the Sidebar is the brand surface. */}
+                {intl.formatMessage({ id: 'nav.brand_name', defaultMessage: 'B2B CRM' })}
               </span>
             </div>
             <div className="flex items-center gap-0.5">
@@ -810,7 +822,10 @@ export const AiAssistant = () => {
                 size="icon-sm"
                 className="rounded-lg text-muted-foreground"
                 onClick={clearChat}
-                aria-label="Clear chat history"
+                aria-label={intl.formatMessage({
+                  id: 'ai.assistant.clear_history',
+                  defaultMessage: 'Clear chat history',
+                })}
               >
                 <Trash2 className="size-4" aria-hidden />
               </Button>
@@ -820,7 +835,12 @@ export const AiAssistant = () => {
                 size="icon-sm"
                 className="rounded-lg text-muted-foreground"
                 onClick={() => setIsExpanded((v) => !v)}
-                aria-label="Expand chat"
+                aria-label={intl.formatMessage(
+                  isExpanded
+                    ? { id: 'ai.assistant.collapse', defaultMessage: 'Collapse chat' }
+                    : { id: 'ai.assistant.expand', defaultMessage: 'Expand chat' },
+                )}
+                aria-pressed={isExpanded}
               >
                 {isExpanded ? (
                   <Minimize2 className="size-4" aria-hidden />
@@ -833,11 +853,8 @@ export const AiAssistant = () => {
                 variant="ghost"
                 size="icon-sm"
                 className="rounded-lg text-muted-foreground"
-                onClick={() => {
-                  setOpen(false);
-                  setIsExpanded(false);
-                }}
-                aria-label="Close chat"
+                onClick={closePanel}
+                aria-label={intl.formatMessage({ id: 'common.action.close', defaultMessage: 'Close' })}
               >
                 <X className="size-4" aria-hidden />
               </Button>
@@ -852,7 +869,10 @@ export const AiAssistant = () => {
           >
             {messages.length === 0 && (
               <div className="flex flex-col items-center gap-2.5 px-6 py-8 text-center">
-                <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <span
+                  className="inline-flex size-12 items-center justify-center rounded-2xl"
+                  style={aiPlateStyle}
+                >
                   <Sparkles className="size-5" aria-hidden />
                 </span>
                 <span className="max-w-64 text-xs leading-relaxed text-muted-foreground">
@@ -1055,7 +1075,11 @@ export const AiAssistant = () => {
             )}
             <div className="flex w-full items-end gap-2">
               <Input
-                placeholder="Ask a question..."
+                ref={composerRef}
+                placeholder={intl.formatMessage({
+                  id: 'ai.assistant.placeholder',
+                  defaultMessage: 'Ask a question...',
+                })}
                 value={input}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -1070,7 +1094,7 @@ export const AiAssistant = () => {
                   className="size-10 shrink-0 rounded-xl text-muted-foreground hover:text-foreground"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
-                  aria-label="Attach image"
+                  aria-label={intl.formatMessage({ id: 'ai_admin.chat.attach', defaultMessage: 'Attach image' })}
                 >
                   <Paperclip className="size-4" aria-hidden />
                 </Button>
@@ -1081,7 +1105,7 @@ export const AiAssistant = () => {
                 className="size-10 shrink-0 rounded-xl"
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
-                aria-label="Send message"
+                aria-label={intl.formatMessage({ id: 'ai_admin.chat.send', defaultMessage: 'Send' })}
               >
                 {isLoading ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -1095,11 +1119,15 @@ export const AiAssistant = () => {
       )}
 
       <Button
+        ref={launcherRef}
         type="button"
         size="icon"
         className="size-13 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? closePanel() : setOpen(true))}
         aria-label={open ? 'Close AI assistant' : 'Open AI assistant'}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={open ? PANEL_ID : undefined}
       >
         {open ? <X className="size-5" aria-hidden /> : <Sparkles className="size-5" aria-hidden />}
       </Button>

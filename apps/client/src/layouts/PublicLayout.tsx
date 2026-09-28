@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useIntl } from "react-intl";
 import { Globe, LogIn, Menu } from "lucide-react";
@@ -89,13 +89,15 @@ export const PublicLayout = () => {
   const { locale, setLocale } = useLocale();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Computed, not hardcoded — the same rule `LoginPage` follows.
+  const copyrightYear = useMemo(() => new Date().getFullYear(), []);
 
   const isLogin = location.pathname.startsWith("/login");
   const isLanding =
     location.pathname === "/" || location.pathname === "/landing-v1";
 
-  const t = (id: string, fallback: string) =>
-    intl.formatMessage({ id, defaultMessage: fallback });
+  const t = (id: string, fallback: string, values?: Record<string, string | number>) =>
+    intl.formatMessage({ id, defaultMessage: fallback }, values);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -394,7 +396,8 @@ export const PublicLayout = () => {
                 {" · "}
                 {t(
                   "landing.footer_copyright",
-                  "© 2026 B2B CRM. All rights reserved.",
+                  "© {year} B2B CRM. All rights reserved.",
+                  { year: copyrightYear },
                 )}
               </p>
               <p className="text-xs sm:text-sm">

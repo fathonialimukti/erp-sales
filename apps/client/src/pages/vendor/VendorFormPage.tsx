@@ -152,7 +152,14 @@ export const VendorFormPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "vendor-form",
+        mode: isEdit ? "edit" : "create",
+        id: id ?? null,
+      })}
+    >
       <PageHeader
         module="vendor"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -242,7 +249,7 @@ export const VendorFormPage = () => {
                     onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger id="status">
-                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select status" })} />
+                      <SelectValue placeholder={intl.formatMessage({ id: "vendor.form.select_status", defaultMessage: "Select status" })} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ACTIVE">{intl.formatMessage({ id: "vendor.status.active", defaultMessage: "Active" })}</SelectItem>

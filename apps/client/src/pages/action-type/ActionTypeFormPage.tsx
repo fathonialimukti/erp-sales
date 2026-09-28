@@ -125,7 +125,14 @@ export const ActionTypeFormPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "action-type-form",
+        mode: isEdit ? "edit" : "create",
+        id: id ?? null,
+      })}
+    >
       <PageHeader
         module="actionType"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}

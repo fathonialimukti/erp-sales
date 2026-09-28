@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { icons } from "../../assets/icons";
+import { DomainIcon, type DomainIconName } from "../../components/DomainIcon";
 
 export type ActivityLogIconName =
   | "back"
@@ -11,6 +11,17 @@ export type ActivityLogIconName =
   | "clock"
   | "user";
 
+const ACTIVITY_LOG_ICON_MAP: Record<ActivityLogIconName, DomainIconName> = {
+  back: "actionBack",
+  search: "actionSearch",
+  close: "actionClose",
+  "chevron-right": "actionChevronRight",
+  eye: "actionEye",
+  clipboard: "activityClipboard",
+  clock: "activityClock",
+  user: "activityUser",
+};
+
 interface ActivityLogIconProps {
   name: ActivityLogIconName;
   size?: number | string;
@@ -20,17 +31,7 @@ interface ActivityLogIconProps {
   "aria-label"?: string;
 }
 
-const ICON_MAP: Record<ActivityLogIconName, string> = {
-  back: icons.actionBack,
-  search: icons.actionSearch,
-  close: icons.actionClose,
-  "chevron-right": icons.actionChevronRight,
-  eye: icons.actionEye,
-  clipboard: icons.activityClipboard,
-  clock: icons.activityClock,
-  user: icons.activityUser,
-};
-
+/** Re-export shim over shared DomainIcon — keeps existing imports working. */
 export const ActivityLogIcon = ({
   name,
   size = 18,
@@ -39,14 +40,12 @@ export const ActivityLogIcon = ({
   "aria-hidden": hidden,
   "aria-label": label,
 }: ActivityLogIconProps) => (
-  <img
-    src={ICON_MAP[name]}
-    alt={label ?? ""}
-    width={size}
-    height={size}
-    aria-hidden={hidden ?? !label}
-    aria-label={label}
+  <DomainIcon
+    name={ACTIVITY_LOG_ICON_MAP[name]}
+    size={size}
     className={className}
     style={style}
+    aria-hidden={hidden}
+    aria-label={label}
   />
 );

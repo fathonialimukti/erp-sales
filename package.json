@@ -12,8 +12,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "test": "turbo run test",
-    "tsc": "cd apps/server && tsc --noEmit && cd ../client && tsc --noEmit && cd ../../packages/schemas && tsc --noEmit"
+    "test": "turbo run test"
   },
   "devDependencies": {
     "@trpc/server": "^11.18.0",
@@ -30,13 +29,9 @@
     "apps/*",
     "packages/*"
   ],
-  "dependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "fast-check": "^4.9.0",
-    "lucide-react": "^1.28.0",
-    "tailwind-merge": "^3.6.0",
-    "tailwindcss": "^4.3.3"
-  }
+  "overrides": {
+    "deepmerge-ts": "^8.0.2",
+    "mysql2": "^3.24.4"
+  },
+  "dependencies": {}
 }

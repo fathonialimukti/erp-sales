@@ -1,7 +1,14 @@
 import type { CSSProperties } from "react";
-import { icons } from "../../assets/icons";
+import { DomainIcon, type DomainIconName } from "../../components/DomainIcon";
+import { moduleCssVar } from "../../types/module";
 
-const accent = { "--m-accent": "#AF52DE", "--m-accent-end": "#5856D6" } as React.CSSProperties;
+/** Module plate wash helper — `var(--module-*)` only, no hex (design law §2). */
+const customerAccent = (module: string) => {
+  const accent = moduleCssVar(module);
+  return accent ? ({ "--m-accent": accent, "--m-accent-end": accent } as CSSProperties) : undefined;
+};
+
+export { customerAccent };
 
 export type CustomerIconName =
   | "back"
@@ -20,6 +27,24 @@ export type CustomerIconName =
   | "credit"
   | "address";
 
+const CUSTOMER_ICON_MAP: Record<CustomerIconName, DomainIconName> = {
+  back: "actionBack",
+  edit: "actionEdit",
+  delete: "actionDelete",
+  plus: "actionPlus",
+  search: "actionSearch",
+  check: "actionCheck",
+  close: "actionClose",
+  "chevron-right": "actionChevronRight",
+  "menu-dots": "actionMenuDots",
+  eye: "actionEye",
+  user: "customerUser",
+  outlet: "customerOutlet",
+  contacts: "customerContacts",
+  credit: "customerCredit",
+  address: "customerAddress",
+};
+
 interface CustomerIconProps {
   name: CustomerIconName;
   size?: number | string;
@@ -29,24 +54,7 @@ interface CustomerIconProps {
   "aria-label"?: string;
 }
 
-const ICON_MAP: Record<CustomerIconName, string> = {
-  back: icons.actionBack,
-  edit: icons.actionEdit,
-  delete: icons.actionDelete,
-  plus: icons.actionPlus,
-  search: icons.actionSearch,
-  check: icons.actionCheck,
-  close: icons.actionClose,
-  "chevron-right": icons.actionChevronRight,
-  "menu-dots": icons.actionMenuDots,
-  eye: icons.actionEye,
-  user: icons.customerUser,
-  outlet: icons.customerOutlet,
-  contacts: icons.customerContacts,
-  credit: icons.customerCredit,
-  address: icons.customerAddress,
-};
-
+/** Re-export shim over shared DomainIcon — keeps existing imports working. */
 export const CustomerIcon = ({
   name,
   size = 18,
@@ -55,14 +63,12 @@ export const CustomerIcon = ({
   "aria-hidden": hidden,
   "aria-label": label,
 }: CustomerIconProps) => (
-  <img
-    src={ICON_MAP[name]}
-    alt={label ?? ""}
-    width={size}
-    height={size}
-    aria-hidden={hidden ?? !label}
-    aria-label={label}
+  <DomainIcon
+    name={CUSTOMER_ICON_MAP[name]}
+    size={size}
     className={className}
     style={style}
+    aria-hidden={hidden}
+    aria-label={label}
   />
 );

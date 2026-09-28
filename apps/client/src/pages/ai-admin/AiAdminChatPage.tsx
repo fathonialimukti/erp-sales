@@ -3,11 +3,9 @@ import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } fro
 import { useAtomValue, useSetAtom } from "jotai";
 import { useIntl } from "react-intl";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UIMessage, type FileUIPart } from "ai";
 import { useNavigate } from "react-router";
-import ReactMarkdown, { type Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   AlertTriangle,
   Layers,
@@ -24,6 +22,7 @@ import {
   createWidgetTurnHandlers,
   lastAssistantStepHasWidgetTool,
 } from "@/components/ai/ChatWidgetWiring";
+import { AiMarkdown } from "@/components/ai/AiMarkdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -158,80 +157,6 @@ const resolveToolInput = (part: Record<string, unknown>): unknown => {
 
   return direct;
 };
-
-const markdownComponents: Components = {
-  h1: ({ children }) => <h1 className="mt-3 mb-1.5 text-[0.9375rem] font-bold">{children}</h1>,
-  h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-sm font-bold">{children}</h2>,
-  h3: ({ children }) => <h3 className="mt-2 mb-1 text-xs font-semibold">{children}</h3>,
-  p: ({ children }) => <p className="my-1.5 leading-relaxed">{children}</p>,
-  ul: ({ children }) => <ul className="my-1.5 list-disc space-y-0.5 pl-5">{children}</ul>,
-  ol: ({ children }) => <ol className="my-1.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
-  li: ({ children }) => <li>{children}</li>,
-  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-  em: ({ children }) => <em className="italic">{children}</em>,
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">
-      {children}
-    </a>
-  ),
-  code: ({ className, children, ...rest }) => {
-    const isInline = !className;
-    if (isInline) {
-      return (
-        <code className="rounded bg-muted px-1 py-px font-mono text-[0.75rem]" {...rest}>
-          {children}
-        </code>
-      );
-    }
-    return (
-      <code className={cn("font-mono text-[0.75rem]", className)} {...rest}>
-        {children}
-      </code>
-    );
-  },
-  pre: ({ children }) => (
-    <pre
-      aria-label="Code block"
-      className="my-2 overflow-x-auto rounded-lg bg-muted p-2 font-mono text-[0.75rem] whitespace-pre"
-    >
-      {children}
-    </pre>
-  ),
-  blockquote: ({ children }) => (
-    <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">
-      {children}
-    </blockquote>
-  ),
-  hr: () => <hr className="my-3 border-border" />,
-  table: ({ children }) => (
-    <div className="my-2 overflow-x-auto">
-      <table className="min-w-full border-collapse text-[0.75rem]">{children}</table>
-    </div>
-  ),
-  thead: ({ children }) => <thead className="bg-card">{children}</thead>,
-  th: ({ children }) => (
-    <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
-  ),
-  td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
-};
-
-const sanitizeUrl = (url: string) => (/^(https?:|mailto:|#)/.test(url) ? url : "#");
-
-function MarkdownBubble({ text }: { text: string }) {
-  const rendered = useMemo(
-    () => (
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={markdownComponents}
-        urlTransform={sanitizeUrl}
-      >
-        {text}
-      </ReactMarkdown>
-    ),
-    [text]
-  );
-  return <div className="text-[0.8125rem] leading-relaxed text-foreground">{rendered}</div>;
-}
 
 const TOOL_META: Record<string, { label: string }> = {
   navigateTo: { label: "Navigate" },
@@ -755,7 +680,11 @@ const AiAdminChatPage = () => {
                             : "bg-muted text-foreground",
                         )}
                       >
-                        {isUser ? textToRender : <MarkdownBubble text={textToRender} />}
+                        {isUser ? textToRender : (
+                          <div className="text-[0.8125rem] leading-relaxed text-foreground">
+                            <AiMarkdown>{textToRender}</AiMarkdown>
+                          </div>
+                        )}
                       </div>,
                     );
                   };

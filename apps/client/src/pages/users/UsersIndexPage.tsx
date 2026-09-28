@@ -94,6 +94,8 @@ export const UsersIndexPage = () => {
     () => [
       {
         id: "user",
+        accessorFn: (row) => row.name ?? row.email,
+        enableSorting: true,
         header: intl.formatMessage({ id: "users.index.header_user", defaultMessage: "User" }),
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
@@ -109,6 +111,8 @@ export const UsersIndexPage = () => {
       },
       {
         id: "role",
+        accessorFn: (row) => row.role?.name ?? "",
+        enableSorting: true,
         header: intl.formatMessage({ id: "users.index.header_role", defaultMessage: "Role" }),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.role?.name ?? "—"}</span>
@@ -116,6 +120,8 @@ export const UsersIndexPage = () => {
       },
       {
         id: "createdAt",
+        accessorFn: (row) => new Date(row.createdAt).getTime(),
+        enableSorting: true,
         header: intl.formatMessage({ id: "users.index.header_created", defaultMessage: "Created" }),
         cell: ({ row }) => (
           <span className="text-sm tabular-nums text-foreground">
@@ -125,6 +131,7 @@ export const UsersIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

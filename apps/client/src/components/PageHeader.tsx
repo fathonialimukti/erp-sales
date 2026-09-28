@@ -256,6 +256,13 @@ export const PageHeader = ({
           <div
             className={cn(
               "flex shrink-0 flex-wrap items-center gap-2.5 sm:justify-end",
+              // WCAG 2.2 target size (minimum): a 28px action button is widened
+              // to 44px of height by a transparent pseudo-element, so a list
+              // page's Create / duplicate-check controls are tappable without
+              // changing how densely the action bar packs. Height only — these
+              // are wide, and widening would reach into the neighbouring
+              // action's own target. `gap-2.5` keeps a wrapped row clear.
+              "[&_[data-slot=button]]:relative [&_[data-slot=button]]:after:absolute [&_[data-slot=button]]:after:-left-px [&_[data-slot=button]]:after:-right-px [&_[data-slot=button]]:after:top-1/2 [&_[data-slot=button]]:after:h-11 [&_[data-slot=button]]:after:-mt-[22px] [&_[data-slot=button]]:after:content-['']",
               isModuleHeader &&
                 // White CTA on module gradient band — text MUST be a fixed dark
                 // color (not --foreground, which flips to near-white in dark

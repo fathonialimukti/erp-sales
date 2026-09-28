@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { Loader2, Sparkles, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { AiMarkdown } from "@/components/ai/AiMarkdown";
+import { AiPanel, AiPanelTitle } from "@/components/ai/AiPanel";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api-base";
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
 
 interface AiSummarizeButtonProps {
   /** One of: sales-order | customer | visit-log | action-program | event-proposal. */
@@ -47,12 +48,15 @@ export function AiSummarizeButton({ module, id, context }: AiSummarizeButtonProp
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        throw new Error(body?.message ?? body?.error ?? `Summarize failed (${res.status})`);
+        // The friendly-error mapper owns every user-facing AI failure; a raw
+        // status code must never reach the screen.
+        setError(getFriendlyErrorMessage(body?.message ?? body?.error));
+        return;
       }
       const data = (await res.json()) as { summary?: string };
       setSummary(data.summary ?? "");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Summarize failed");
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -78,21 +82,17 @@ export function AiSummarizeButton({ module, id, context }: AiSummarizeButtonProp
       </Button>
 
       {open && (
-        <div className="w-full max-w-lg rounded-xl border border-border bg-muted/60 p-3 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
+        <AiPanel
+          label={
+            <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
               {intl.formatMessage({
                 id: "ai.summarize.label",
                 defaultMessage: "Executive brief",
               })}
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={loading}
-              className="gap-1.5"
-            >
+            </AiPanelTitle>
+          }
+          actions={
+            <Button type="button" size="sm" onClick={handleGenerate} disabled={loading} className="gap-1.5">
               {loading ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
@@ -100,11 +100,12 @@ export function AiSummarizeButton({ module, id, context }: AiSummarizeButtonProp
               )}
               {intl.formatMessage({ id: "ai.summarize.generate", defaultMessage: "Generate" })}
             </Button>
-          </div>
+          }
+        >
           {error && <p className="mb-2 text-xs text-destructive">{error}</p>}
           {summary ? (
             <div className="rounded-lg border border-border bg-background p-3 text-sm leading-relaxed text-foreground">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
+              <AiMarkdown>{summary}</AiMarkdown>
             </div>
           ) : loading ? (
             <div className="flex h-16 items-center justify-center text-sm text-muted-foreground">
@@ -118,7 +119,7 @@ export function AiSummarizeButton({ module, id, context }: AiSummarizeButtonProp
               })}
             </div>
           )}
-        </div>
+        </AiPanel>
       )}
     </div>
   );

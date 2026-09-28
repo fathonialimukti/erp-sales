@@ -10,6 +10,7 @@ import { hasPermissionAtom } from "../../lib/atoms";
 import { useToast } from "../../components/useToast";
 import { useMeta } from "../../lib/useMeta";
 import { PageHeader } from "../../components/PageHeader";
+import { StatusChip } from "../../components/StatusChip";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import {
@@ -73,14 +74,7 @@ export const ActionTypeDetailPage = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "APPROVED": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success text-success-foreground">{intl.formatMessage({ id: "common.status.approved", defaultMessage: "Approved" })}</span>;
-      case "DRAFT": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{intl.formatMessage({ id: "common.status.draft", defaultMessage: "Draft" })}</span>;
-      case "VALIDATING": return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{intl.formatMessage({ id: "common.status.validating", defaultMessage: "Validating" })}</span>;
-      default: return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{status}</span>;
-    }
-  };
+  const getStatusBadge = (status: string) => <StatusChip status={status} />;
 
   if (isLoading) {
     return (
@@ -96,7 +90,7 @@ export const ActionTypeDetailPage = () => {
         <div className="text-center">
           <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">
-            {intl.formatMessage({ id: "common.error.not_found", defaultMessage: "Action type not found" })}
+            {intl.formatMessage({ id: "action_type.error.not_found", defaultMessage: "Action type not found" })}
           </h3>
           <Button variant="outline" onClick={() => navigate("/action-type")} className="mt-4">
             <ArrowLeft className="size-4 mr-2" />
@@ -108,7 +102,16 @@ export const ActionTypeDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "action-type-detail",
+        id: actionType.id,
+        name: actionType.name,
+        code: actionType.code,
+        programCount: actionType._count.actionPrograms,
+      })}
+    >
       <PageHeader
         module="actionType"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -209,7 +212,7 @@ export const ActionTypeDetailPage = () => {
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete action type?" })}
+        title={intl.formatMessage({ id: "action_type.confirm.delete_title", defaultMessage: "Delete action type?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
         onConfirm={handleDelete}

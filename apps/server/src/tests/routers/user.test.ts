@@ -82,7 +82,7 @@ describe('user router', () => {
     createdUserIds.push(createdUser.id);
 
     const updated = await caller.user.update({
-      id: createdUser.id,
+      currentId: createdUser.id,
       name: 'Updated User',
       email: `updated-${randomUUID()}@example.com`,
     });

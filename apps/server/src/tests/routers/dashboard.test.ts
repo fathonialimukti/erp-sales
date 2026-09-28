@@ -9,7 +9,7 @@ let actorUserId: string;
 let caller: ReturnType<typeof createCaller>;
 
 beforeAll(async () => {
-  const role = await seedRoleWithPermissions(['warehouse@read']);
+  const role = await seedRoleWithPermissions(['report@read']);
   actorRoleId = role.id;
   const actor = await seedTestUser({
     roleId: actorRoleId,

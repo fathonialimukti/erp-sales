@@ -196,7 +196,7 @@ export const UserMenuPopover = () => {
           className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
           onClick={handleSettings}
         >
-          <span className="inline-flex size-7 items-center justify-center rounded-lg bg-blue-500 text-white">
+          <span className="inline-flex size-7 items-center justify-center rounded-lg bg-primary/12 text-primary">
             <Settings className="size-3.5" aria-hidden />
           </span>
           <span>
@@ -217,7 +217,7 @@ export const UserMenuPopover = () => {
             void handleLogout();
           }}
         >
-          <span className="inline-flex size-7 items-center justify-center rounded-lg bg-red-500 text-white">
+          <span className="inline-flex size-7 items-center justify-center rounded-lg bg-destructive/12 text-destructive">
             <LogOut className="size-3.5" aria-hidden />
           </span>
           <span>

@@ -1,15 +1,9 @@
 import type { CSSProperties } from "react";
-import { icons } from "../../assets/icons";
+import { DomainIcon } from "../../components/DomainIcon";
 
-/* ============================================================
- * AccessControlIcons — SVG icons for access control (roles) pages
- *
- * Shared action icons are imported from src/assets/icons.
- * Domain-specific icons use inline SVGs.
- *
- * Usage:
- *   <AccessControlIcon name="back" size={18} />
- * ============================================================ */
+/* AccessControl / User keep inline-SVG domain glyphs (no asset keys);
+ * the shared action set delegates to DomainIcon. Files stay as
+ * re-export shims so existing imports keep working. */
 
 export type AccessControlIconName =
   | "back"
@@ -36,17 +30,22 @@ interface AccessControlIconProps {
   "aria-label"?: string;
 }
 
-const SHARED_MAP: Record<string, string> = {
-  back: icons.actionBack,
-  edit: icons.actionEdit,
-  delete: icons.actionDelete,
-  plus: icons.actionPlus,
-  search: icons.actionSearch,
-  check: icons.actionCheck,
-  close: icons.actionClose,
-  "chevron-right": icons.actionChevronRight,
-  eye: icons.actionEye,
+type SharedAction = "back" | "edit" | "delete" | "plus" | "search" | "check" | "close" | "chevron-right" | "eye";
+
+const SHARED_ACTIONS: Record<SharedAction, "actionBack" | "actionEdit" | "actionDelete" | "actionPlus" | "actionSearch" | "actionCheck" | "actionClose" | "actionChevronRight" | "actionEye"> = {
+  back: "actionBack",
+  edit: "actionEdit",
+  delete: "actionDelete",
+  plus: "actionPlus",
+  search: "actionSearch",
+  check: "actionCheck",
+  close: "actionClose",
+  "chevron-right": "actionChevronRight",
+  eye: "actionEye",
 };
+
+const isSharedAction = (name: AccessControlIconName): name is SharedAction =>
+  name in SHARED_ACTIONS;
 
 const INLINE_SVGS: Record<string, string> = {
   shield: `<svg xmlns="http://www.w3.org/2000/svg" width="SIZE" height="SIZE" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>`,
@@ -64,17 +63,15 @@ export const AccessControlIcon = ({
   "aria-hidden": hidden,
   "aria-label": label,
 }: AccessControlIconProps) => {
-  if (SHARED_MAP[name]) {
+  if (isSharedAction(name)) {
     return (
-      <img
-        src={SHARED_MAP[name]}
-        alt={label ?? ""}
-        width={size}
-        height={size}
-        aria-hidden={hidden ?? !label}
-        aria-label={label}
+      <DomainIcon
+        name={SHARED_ACTIONS[name]}
+        size={size}
         className={className}
         style={style}
+        aria-hidden={hidden}
+        aria-label={label}
       />
     );
   }

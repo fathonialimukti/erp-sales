@@ -74,6 +74,8 @@ export const ActionProgramIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "documentNumber",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "action_program.index.header_code",
           defaultMessage: "Document",
@@ -86,6 +88,8 @@ export const ActionProgramIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "action_program.index.header_name",
           defaultMessage: "Type",
@@ -96,6 +100,8 @@ export const ActionProgramIndexPage = () => {
       },
       {
         id: "budget",
+        accessorFn: (row) => row._count.outlets,
+        enableSorting: true,
         header: intl.formatMessage({
           id: "action_program.index.header_budget",
           defaultMessage: "Budget",
@@ -108,6 +114,7 @@ export const ActionProgramIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

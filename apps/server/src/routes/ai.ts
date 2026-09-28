@@ -8,7 +8,7 @@ import {
 import { getChatModel } from '../lib/ai-provider.js';
 import { retrieveRelevantChunks } from '../lib/rag.js';
 import { clientTools, serverTools } from '../lib/ai-tools.js';
-import { validateReadOnlySql, formatQueryResult } from '../lib/ai-db-tools.js';
+import { validateReadOnlySql, formatQueryResult, applyRowCap, DEFAULT_QUERY_ROWS, MAX_QUERY_ROWS } from '../lib/ai-db-tools.js';
 import { prisma } from '../lib/prisma.js';
 import { withAuth } from '../lib/express-auth.js';
 import {
@@ -138,13 +138,14 @@ export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, us
     }
 
     // Extract last user message text for RAG query (from original messages before trimming)
-    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user');
+    const lastUserMsg = [...messages].reverse().find((m) => (m as { role?: unknown }).role === 'user');
     const userText = extractUserMessageText(lastUserMsg);
 
     // --- Trim message history to bound token usage ---
     // Keep the last N user-assistant turn pairs. A "turn" = 1 user msg + 1 assistant msg.
     // Preserves full tool-call tool-result chains within each assistant message.
-    const trimmedMessages = trimMessageHistory(messages as any[], MAX_HISTORY_TURNS);
+    // ponytail: UI messages are an untyped wire shape — cast once at the SDK boundary.
+    const trimmedMessages = trimMessageHistory(messages as Parameters<typeof convertToModelMessages>[0], MAX_HISTORY_TURNS);
 
     // --- Multimodal ---
     // Whether the conversation carries image parts (from the original, untrimmed
@@ -163,7 +164,7 @@ export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, us
     // Structured widget turns (form_response metadata) render as tagged JSON
     // blocks in the model context (SPEC §5.3/§8).
     const preparedMessages = renderStructuredTurns(trimmedMessages);
-    const modelMessages = await convertToModelMessages(preparedMessages as any);
+    const modelMessages = await convertToModelMessages(preparedMessages as Parameters<typeof convertToModelMessages>[0]);
 
     // Only expose the image-analysis tool when the conversation actually contains
     // image parts, so the model cannot call it gratuitously on text-only chats.
@@ -184,7 +185,7 @@ export const aiChatHandler = withAuth({ aiRateLimit: true }, async (req, res, us
             ? {
                   analyzeImage: {
                       ...imageTool,
-                      execute: async (args: any, options: any) => {
+                      execute: async (args: Parameters<NonNullable<typeof imageTool.execute>>[0], options: Parameters<NonNullable<typeof imageTool.execute>>[1]) => {
                           try {
                               return (await imageTool.execute!(args, options)) as string;
                           } catch (error) {
@@ -225,9 +226,13 @@ export const aiChatResumeHandler = withAuth({}, async (_req: Request, res: Respo
     res.status(204).end();
 });
 
-export const aiQueryDatabaseHandler = withAuth({ aiRateLimit: true }, async (req, res) => {
+// The SQL console reads the whole schema (users, tokens, money tables), so it
+// is gated on its own permission rather than mere authentication — the same
+// shape as ai-admin.ts. The system prompt still tells every user to
+// `queryDatabase`, so a role without `ai@query` gets a clean 403 tool error.
+export const aiQueryDatabaseHandler = withAuth({ permission: 'ai@query', aiRateLimit: true }, async (req, res) => {
     // --- Parse body ---
-    const { sql, limit = 100 } = req.body as { sql?: string; limit?: number };
+    const { sql, limit } = req.body as { sql?: string; limit?: number };
     if (!sql || typeof sql !== 'string') {
         res.status(400).json({ error: 'sql is required and must be a string' });
         return;
@@ -243,15 +248,28 @@ export const aiQueryDatabaseHandler = withAuth({ aiRateLimit: true }, async (req
         return;
     }
 
-    // --- Execute query ---
-    const hasLimit = /\bLIMIT\b/i.test(sql);
-    const finalSql = hasLimit ? sql : sql.replace(/;?\s*$/, '') + ` LIMIT ${limit}`;
+    // --- Execute under a hard server-side row cap ---
+    // The caller-supplied limit and any LIMIT written into the SQL are advisory;
+    // effectiveLimit is clamped to MAX_QUERY_ROWS and applyRowCap enforces it
+    // regardless of what the statement itself says.
+    const requestedLimit =
+        typeof limit === 'number' && Number.isInteger(limit) && limit > 0 ? limit : DEFAULT_QUERY_ROWS;
+    const effectiveLimit = Math.min(requestedLimit, MAX_QUERY_ROWS);
+    const finalSql = applyRowCap(sql, effectiveLimit);
 
     try {
         const result = await prisma.$queryRawUnsafe(finalSql);
         const rows = Array.isArray(result) ? result : [];
-        const formatted = formatQueryResult(rows, rows.length, limit);
-        res.json(JSON.parse(formatted));
+        const formatted = formatQueryResult(rows, rows.length, effectiveLimit);
+        // ponytail: formatQueryResult emits a fixed envelope — guard the parse anyway.
+        let payload: unknown;
+        try {
+            payload = JSON.parse(formatted);
+        } catch {
+            res.json({ error: 'Query failed', message: 'Could not decode query result.' });
+            return;
+        }
+        res.json(payload);
     } catch (error) {
         res.json({
             error: 'Query failed',

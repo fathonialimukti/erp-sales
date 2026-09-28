@@ -8,12 +8,9 @@ interface ShowToastOptions {
   durationMs?: number;
 }
 
-// Legacy Toast type kept for Toast.tsx re-export compatibility
-export type Toast = {
-  id: string;
-  message: string;
-  tone: NonNullable<ShowToastOptions["tone"]>;
-};
+// Canonical toast: sonner via useToast. ui/sonner.tsx mounts <Toaster/>.
+// This module stays the single import site — pages never import "sonner"
+// directly (only this file + ui/sonner.tsx do).
 
 const show = ({ message, tone = "info", durationMs = 3500 }: ShowToastOptions) => {
   // id + testId lets ui/sonner.tsx's delegated click handler dismiss this toast
@@ -39,6 +36,3 @@ export const useToast = () => ({
   info: (message: string) => show({ message, tone: "info" }),
   warning: (message: string) => show({ message, tone: "warning" }),
 });
-
-// ponytail: providers still mount ToastContainer; sonner Toaster already present
-export const ToastContainer = () => null;

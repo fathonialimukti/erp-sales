@@ -1,80 +1,28 @@
 import { test, expect } from '@playwright/test';
+import { gotoApp, primaryNav } from './helpers/app';
 
 // Session comes from the auth-setup project's storageState — no per-test
 // login (keeps the suite under the login rate limit).
-test.describe('CRM smoke tests', () => {
-  test('dashboard loads', async ({ page }) => {
-    await page.goto('/dashboard');
-    await expect(page.locator('main')).toBeAttached();
+//
+// The rest of the old route-ping suite has been replaced by behavioural specs
+// (customer.spec, sales-order.spec, locale.spec, theme.spec, permissions.spec,
+// mobile.spec). What is left is the cheap regression net for route wiring and
+// lazy chunks: a renamed export or a broken `lazyNamed` fails here in seconds,
+// which is the only thing these three were ever good for.
+test.describe('route wiring', () => {
+  test('dashboard resolves', async ({ page }) => {
+    await gotoApp(page, '/dashboard');
+    await expect(primaryNav(page)).toBeVisible();
+    await expect(page.getByRole('main')).toBeVisible();
   });
 
-  test('region page loads and shows table', async ({ page }) => {
-    await page.goto('/region');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
+  test('sales order list resolves', async ({ page }) => {
+    await gotoApp(page, '/sales-order');
+    await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
   });
 
-  test('area page loads', async ({ page }) => {
-    await page.goto('/area');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('customer page loads', async ({ page }) => {
-    await page.goto('/customer');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('outlet page loads', async ({ page }) => {
-    await page.goto('/outlet');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('sku category page loads', async ({ page }) => {
-    await page.goto('/sku-category');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('sku page loads', async ({ page }) => {
-    await page.goto('/sku');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('sales order page loads', async ({ page }) => {
-    await page.goto('/sales-order');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('system logs page loads', async ({ page }) => {
-    await page.goto('/system-logs');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('visit log page loads', async ({ page }) => {
-    await page.goto('/visit-log');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('action program page loads', async ({ page }) => {
-    await page.goto('/action-program');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('event proposal page loads', async ({ page }) => {
-    await page.goto('/event-proposal');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('users page loads', async ({ page }) => {
-    await page.goto('/users');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('access control page loads', async ({ page }) => {
-    await page.goto('/access-control');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
-  });
-
-  test('activity logs page loads', async ({ page }) => {
-    await page.goto('/activity-logs');
-    await expect(page.locator('table')).toBeAttached({ timeout: 10000 });
+  test('access control resolves', async ({ page }) => {
+    await gotoApp(page, '/access-control');
+    await expect(page.getByRole('table')).toBeAttached({ timeout: 15_000 });
   });
 });

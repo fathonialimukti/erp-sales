@@ -76,6 +76,8 @@ export const RegionIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "region.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
@@ -83,11 +85,15 @@ export const RegionIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "region.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
         id: "areas",
+        accessorFn: (row) => row._count.areas,
+        enableSorting: true,
         header: intl.formatMessage({ id: "region.index.header_areas", defaultMessage: "Areas" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-foreground">
@@ -97,6 +103,7 @@ export const RegionIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

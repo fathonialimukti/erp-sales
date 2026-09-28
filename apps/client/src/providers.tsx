@@ -4,7 +4,6 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useLocale } from './lib/useLocale';
 import { getLocaleMessages } from './lib/i18n';
-import { ToastContainer } from './components/useToast';
 
 type IntlProviderCompatProps = Omit<React.ComponentProps<typeof IntlProvider>, 'children'> & {
   children?: React.ReactNode;
@@ -39,8 +38,6 @@ export function AppProviders({ children }: AppProvidersProps) {
         <TooltipProvider>
           {children}
           <Toaster />
-          {/* ponytail: keep legacy toast host until Phase 6 purge */}
-          <ToastContainer />
         </TooltipProvider>
       </IntlProviderCompat>
     </QueryClientProvider>

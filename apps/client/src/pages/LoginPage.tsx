@@ -6,14 +6,14 @@ import { useAtomValue } from "jotai";
 import { motion, useReducedMotion } from "motion/react";
 import {
   AlertTriangle,
-  CheckCircle2,
-  MapPin,
-  Quote,
+  FileCheck,
+  Languages,
+  MailCheck,
+  Package,
   RefreshCw,
   Shield,
-  ShieldCheck,
-  ShoppingBag,
   Users,
+  Workflow,
   Zap,
 } from "lucide-react";
 
@@ -169,32 +169,32 @@ export const LoginPage = () => {
             <motion.div className="grid grid-cols-3 gap-3" role="list" variants={staggerItem}>
               {[
                 {
-                  icon: ShoppingBag,
-                  value: "2,481",
-                  label: intl.formatMessage({ id: "login.stat_orders_label" }),
+                  icon: Workflow,
+                  value: intl.formatMessage({ id: "login.cap_approval_value" }),
+                  label: intl.formatMessage({ id: "login.cap_approval_label" }),
                 },
                 {
-                  icon: MapPin,
-                  value: "312",
-                  label: intl.formatMessage({ id: "login.stat_visits_label" }),
+                  icon: Package,
+                  value: intl.formatMessage({ id: "login.cap_carton_value" }),
+                  label: intl.formatMessage({ id: "login.cap_carton_label" }),
                 },
                 {
-                  icon: CheckCircle2,
-                  value: "98.4%",
-                  label: intl.formatMessage({ id: "login.stat_approvals_label" }),
+                  icon: MailCheck,
+                  value: intl.formatMessage({ id: "login.cap_email_value" }),
+                  label: intl.formatMessage({ id: "login.cap_email_label" }),
                 },
-              ].map((stat) => (
+              ].map((capability) => (
                 <div
-                  key={stat.label}
+                  key={capability.label}
                   role="listitem"
-                  className="rounded-xl border border-border bg-muted p-3"
+                  className="flex flex-col rounded-xl border border-border bg-muted p-3"
                 >
-                  <stat.icon className="mb-2 size-4 text-primary" />
-                  <div className="font-heading text-xl font-bold tabular-nums text-foreground">
-                    {stat.value}
+                  <capability.icon className="mb-2 size-4 shrink-0 text-primary" />
+                  <div className="font-heading text-base font-bold leading-snug tracking-tight text-foreground">
+                    {capability.value}
                   </div>
-                  <div className="mt-0.5 text-[11px] font-medium text-muted-foreground">
-                    {stat.label}
+                  <div className="mt-auto pt-1.5 text-[11px] font-normal leading-relaxed text-muted-foreground">
+                    {capability.label}
                   </div>
                 </div>
               ))}
@@ -214,8 +214,8 @@ export const LoginPage = () => {
                 },
                 {
                   icon: Zap,
-                  title: intl.formatMessage({ id: "login.feature_realtime_title" }),
-                  desc: intl.formatMessage({ id: "login.feature_realtime_desc" }),
+                  title: intl.formatMessage({ id: "login.feature_ai_title" }),
+                  desc: intl.formatMessage({ id: "login.feature_ai_desc" }),
                 },
               ].map((feature) => (
                 <li key={feature.title} className="flex gap-3">
@@ -234,18 +234,18 @@ export const LoginPage = () => {
               ))}
             </motion.ul>
 
-            <motion.figure
+            <motion.div
               className="rounded-2xl border border-border bg-card p-5"
               variants={staggerItem}
             >
-              <Quote className="mb-3 size-4 text-primary" />
-              <blockquote className="text-sm leading-relaxed text-foreground">
-                {intl.formatMessage({ id: "login.testimonial_quote" })}
-              </blockquote>
-              <figcaption className="mt-3 text-xs font-semibold text-primary">
-                {intl.formatMessage({ id: "login.testimonial_author" })}
-              </figcaption>
-            </motion.figure>
+              <FileCheck className="mb-3 size-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground">
+                {intl.formatMessage({ id: "login.trace_title" })}
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                {intl.formatMessage({ id: "login.trace_desc" })}
+              </p>
+            </motion.div>
           </motion.div>
         </aside>
 
@@ -424,8 +424,8 @@ export const LoginPage = () => {
                 </CardContent>
 
                 <CardFooter className="justify-center gap-2 border-t pt-6 text-sm text-muted-foreground">
-                  <ShieldCheck className="size-4 text-primary" />
-                  <span>{intl.formatMessage({ id: "login.secure_note" })}</span>
+                  <Languages className="size-4 text-primary" />
+                  <span>{intl.formatMessage({ id: "login.footer_note" })}</span>
                 </CardFooter>
               </Card>
             </motion.div>

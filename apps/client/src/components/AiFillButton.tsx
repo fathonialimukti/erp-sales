@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useSetAtom } from "jotai";
 import { AlertTriangle, Loader2, Sparkles, Wand2, X } from "lucide-react";
+import { AiPanel, AiPanelTitle } from "@/components/ai/AiPanel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/lib/api-base";
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
 import { aiFormFillAtom } from "../lib/atoms";
 
 interface AiFillButtonProps {
@@ -50,7 +52,10 @@ export function AiFillButton({ section, options, context }: AiFillButtonProps) {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        throw new Error(body?.message ?? body?.error ?? `AI fill failed (${res.status})`);
+        // The friendly-error mapper owns every user-facing AI failure; a raw
+        // status code must never reach the screen.
+        setError(getFriendlyErrorMessage(body?.message ?? body?.error));
+        return;
       }
       const data = (await res.json()) as { fields?: Record<string, unknown> };
       const fieldsData = data.fields ?? {};
@@ -68,7 +73,7 @@ export function AiFillButton({ section, options, context }: AiFillButtonProps) {
       setOpen(false);
       setInstruction("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "AI fill failed");
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -77,15 +82,12 @@ export function AiFillButton({ section, options, context }: AiFillButtonProps) {
   return (
     <div className="flex w-full flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <span className="flex size-5 items-center justify-center rounded-md bg-module-ai/12 text-module-ai">
-            <Sparkles className="size-3.5" aria-hidden />
-          </span>
+        <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
           {intl.formatMessage({
             id: "ai.fill.assistant",
             defaultMessage: "AI Assistant",
           })}
-        </div>
+        </AiPanelTitle>
         <Button
           type="button"
           variant="outline"
@@ -99,14 +101,16 @@ export function AiFillButton({ section, options, context }: AiFillButtonProps) {
       </div>
 
       {open && (
-        <div className="w-full rounded-xl border border-module-ai/30 bg-module-ai/4 p-3 shadow-sm">
-          <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
-            <Sparkles className="size-3.5 text-module-ai" aria-hidden />
-            {intl.formatMessage({
-              id: "ai.fill.suggest_label",
-              defaultMessage: "Describe what to fill",
-            })}
-          </div>
+        <AiPanel
+          label={
+            <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
+              {intl.formatMessage({
+                id: "ai.fill.suggest_label",
+                defaultMessage: "Describe what to fill",
+              })}
+            </AiPanelTitle>
+          }
+        >
           <Textarea
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
@@ -157,7 +161,7 @@ export function AiFillButton({ section, options, context }: AiFillButtonProps) {
               {intl.formatMessage({ id: "ai.fill.suggest", defaultMessage: "AI Suggest" })}
             </Button>
           </div>
-        </div>
+        </AiPanel>
       )}
     </div>
   );

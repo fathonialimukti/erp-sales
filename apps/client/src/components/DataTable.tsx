@@ -8,7 +8,9 @@ import {
   type OnChangeFn,
   type SortingState,
 } from "@tanstack/react-table";
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { useQueryClient, useIsFetching } from "@tanstack/react-query";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, RefreshCw } from "lucide-react";
+import { useIntl } from "react-intl";
 
 import {
   TableBody,
@@ -17,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -108,6 +111,10 @@ export function DataTable<T>({
   const [uncontrolledSorting, setUncontrolledSorting] = useState<SortingState>(
     initialSorting ?? [],
   );
+  const intl = useIntl();
+  const queryClient = useQueryClient();
+  // Retry must not read as a dead click, so it reflects real in-flight work.
+  const isRefetching = useIsFetching() > 0;
 
   const sorting = controlledSorting ?? uncontrolledSorting;
   const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
@@ -163,11 +170,38 @@ export function DataTable<T>({
             >
               <AlertCircle className="size-4" />
             </span>
-            <div className="min-w-0 space-y-1">
+            <div className="min-w-0 flex-1 space-y-1">
               <p className="text-sm font-medium text-foreground">
-                {errorMessage ?? "Something went wrong loading this table."}
+                {errorMessage ??
+                  intl.formatMessage({
+                    id: "common.table.load_error",
+                    defaultMessage: "Something went wrong loading this table.",
+                  })}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {intl.formatMessage({
+                  id: "common.table.load_error_hint",
+                  defaultMessage: "Check your connection, then try again.",
+                })}
               </p>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={isRefetching}
+              onClick={() => void queryClient.refetchQueries()}
+            >
+              <RefreshCw
+                className={cn("size-3.5", isRefetching && "animate-spin")}
+                aria-hidden
+              />
+              {intl.formatMessage({
+                id: "common.action.retry",
+                defaultMessage: "Retry",
+              })}
+            </Button>
           </CardContent>
         </Card>
       ) : null}

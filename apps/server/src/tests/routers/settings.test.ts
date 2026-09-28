@@ -27,11 +27,15 @@ let caller: ReturnType<typeof createCaller>;
 let actorUserId: string;
 let actorRoleId: string;
 
-// Rows created during tests, cleaned up in afterAll.
-const createdAppSettingKeys: string[] = [];
+// Rows created during tests, cleaned up in afterAll (app_settings is snapshot-restored).
 const createdUserSettingUserIds: string[] = [];
 const createdUserIds: string[] = [];
 const createdRoleIds: string[] = [];
+
+// These tests write the developer's real `app_settings` (company name, SMTP
+// host, AI keys). Deleting the keys by name afterwards destroyed real
+// configuration, so snapshot the whole table and put it back exactly.
+let priorAppSettings: Array<{ key: string; value: unknown; updatedBy: string | null }> = [];
 
 // Env vars mutated by env-fallback tests, restored in afterAll.
 const envBackup = new Map<string, string | undefined>();
@@ -50,6 +54,12 @@ beforeAll(async () => {
   });
   actorUserId = actor.id;
   caller = createCaller({ userId: actor.id, email: actor.email, name: actor.name });
+
+  priorAppSettings = (await prisma.appSetting.findMany()).map((r) => ({
+    key: r.key,
+    value: r.value,
+    updatedBy: r.updatedBy,
+  }));
 });
 
 afterAll(async () => {
@@ -59,9 +69,17 @@ afterAll(async () => {
     else process.env[key] = value;
   }
 
-  // Clean up app_settings rows created by tests.
-  if (createdAppSettingKeys.length > 0) {
-    await prisma.appSetting.deleteMany({ where: { key: { in: createdAppSettingKeys } } });
+  // Put app_settings back exactly as it was: drop the keys these tests added,
+  // restore the ones they overwrote. Deleting by key name is what destroyed
+  // real company/SMTP/AI configuration on the developer's database.
+  const priorKeys = new Set(priorAppSettings.map((r) => r.key));
+  await prisma.appSetting.deleteMany({ where: { key: { notIn: [...priorKeys] } } });
+  for (const row of priorAppSettings) {
+    await prisma.appSetting.upsert({
+      where: { key: row.key },
+      create: { key: row.key, value: row.value as object, updatedBy: row.updatedBy },
+      update: { value: row.value as object, updatedBy: row.updatedBy },
+    });
   }
 
   // Clean up user_settings rows created by tests.
@@ -204,7 +222,6 @@ describe('settings router (app settings)', () => {
         general: { defaultPageSize: 25 },
       }),
     );
-    createdAppSettingKeys.push('company.name', 'company.tagline', 'general.defaultPageSize');
 
     const settings = await caller.settings.get();
     expect(settings.company.name).toBe('TestCo');
@@ -214,7 +231,6 @@ describe('settings router (app settings)', () => {
 
   it('secret write-only semantics: empty keeps existing, non-empty overwrites', async () => {
     await caller.settings.update(fullAppPatch({ ai: { apiKey: 'first-secret' } }));
-    createdAppSettingKeys.push('ai.apiKey');
 
     expect(await getSettingValue(prisma, 'ai.apiKey')).toBe('first-secret');
 
@@ -236,7 +252,6 @@ describe('settings router (app settings)', () => {
         },
       }),
     );
-    createdAppSettingKeys.push('ai.embeddingBaseUrl', 'ai.embeddingModel');
 
     const settings = await caller.settings.get();
     expect(settings.ai.embeddingBaseUrl).toBe('https://embedding.example.com/v1');
@@ -245,7 +260,6 @@ describe('settings router (app settings)', () => {
 
   it('masks ai.embeddingApiKey and keeps existing on empty write', async () => {
     await caller.settings.update(fullAppPatch({ ai: { embeddingApiKey: 'embed-secret' } }));
-    createdAppSettingKeys.push('ai.embeddingApiKey');
 
     expect(await getSettingValue(prisma, 'ai.embeddingApiKey')).toBe('embed-secret');
 
@@ -295,7 +309,6 @@ describe('cache invalidation', () => {
   it('reflects new values after setAppSettings (not stale cache)', async () => {
     // Seed a DB value and warm the per-key cache.
     await setAppSettings(prisma, fullAppPatch({ company: { name: 'CacheCo' } }), actorUserId);
-    createdAppSettingKeys.push('company.name');
     expect(await getSettingValue(prisma, 'company.name')).toBe('CacheCo'); // warms cache
 
     // Update via setAppSettings — must invalidate the cache.

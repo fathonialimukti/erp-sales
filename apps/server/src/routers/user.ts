@@ -1,5 +1,7 @@
 import * as z from 'zod';
+import { TRPCError } from '@trpc/server';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere, createListInputSchema } from '../lib/list-query.js';
+import { getMessage } from '../lib/locale.js';
 import { removePhotoValue } from '../lib/photo-lifecycle.js';
 import { prisma } from '../lib/prisma.js';
 import {
@@ -96,7 +98,12 @@ export const userRouter = router({
     update: protectedProcedure.use(hasPermission('user@update'))
         .input(updateUserSchema)
         .mutation(async ({ input, ctx }) => {
-            const { id, password, photo, ...data } = input;
+            // ponytail: `id` is the deprecated alias — `currentId` (frozen contract) wins.
+            const { currentId, id: legacyId, password, photo, ...data } = input;
+            const id = currentId ?? legacyId;
+            if (!id) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: getMessage(ctx.locale, 'user.notFound') });
+            }
 
             if (data.email) {
                 await ensureUserEmailAvailable({

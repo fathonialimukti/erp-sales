@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useIntl } from "react-intl";
-import { useAtomValue } from "jotai";
+
+import { useRequiredMessage } from "@/lib/form-validation";import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -77,6 +78,7 @@ const packSizeFromInput = (raw: string): number => {
 
 export const SkuFormPage = () => {
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -392,7 +394,7 @@ export const SkuFormPage = () => {
 
             <form.Field
               name="name"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField

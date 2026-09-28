@@ -125,7 +125,14 @@ export const EventTypeFormPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "event-type-form",
+        mode: isEdit ? "edit" : "create",
+        id: id ?? null,
+      })}
+    >
       <PageHeader
         module="eventType"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}

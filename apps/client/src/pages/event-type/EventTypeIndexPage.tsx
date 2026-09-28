@@ -4,7 +4,7 @@ import { useAtomValue } from "jotai";
 import { useNavigate } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Plus, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, RefreshCw, Trash2, Eye } from "lucide-react";
 
 import { trpcClient } from "../../lib/trpc";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -58,7 +58,7 @@ export const EventTypeIndexPage = () => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["eventTypeList", pagination.pageIndex, pagination.pageSize, search],
     queryFn: () =>
       trpcClient.eventType.list.query({
@@ -76,6 +76,8 @@ export const EventTypeIndexPage = () => {
     () => [
       {
         id: "code",
+        accessorKey: "code",
+        enableSorting: true,
         header: intl.formatMessage({ id: "event_type.index.header_code", defaultMessage: "Code" }),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.code ?? "—"}</span>
@@ -83,11 +85,15 @@ export const EventTypeIndexPage = () => {
       },
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "event_type.index.header_name", defaultMessage: "Name" }),
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
         id: "description",
+        accessorKey: "description",
+        enableSorting: true,
         header: intl.formatMessage({ id: "event_type.index.header_description", defaultMessage: "Description" }),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.description ?? "—"}</span>
@@ -95,6 +101,7 @@ export const EventTypeIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
@@ -161,7 +168,15 @@ export const EventTypeIndexPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full gap-3">
+    <section
+      className="flex flex-col gap-6 pt-2 pb-8"
+      data-ai-context={JSON.stringify({
+        section: "event-type-index",
+        itemCount: totalRows,
+        page: pagination.pageIndex + 1,
+        search,
+      })}
+    >
       <PageHeader
         module="eventType"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -169,64 +184,120 @@ export const EventTypeIndexPage = () => {
         description={intl.formatMessage({ id: "event_type.index.subtitle", defaultMessage: "Manage event types and classifications." })}
         actions={
           canCreate ? (
-            <Button onClick={() => navigate("/event-type/create")}>
+            <Button type="button" onClick={() => navigate("/event-type/create")}>
               <Plus className="size-4" />
               {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
             </Button>
+          ) : undefined
+        }
+      />
+
+      <DataTable
+        density="crm"
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={intl.formatMessage({
+          id: "event_type.index.load_failed",
+          defaultMessage:
+            "We could not load event types. Check your connection and try again.",
+        })}
+        onRowClick={(row) => navigate(`/event-type/${row.id}`)}
+        toolbar={
+          <FilterBar
+            search={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder={intl.formatMessage({
+              id: "event_type.index.search_placeholder",
+              defaultMessage: "Search event types…",
+            })}
+            countLabel={intl.formatMessage(
+              {
+                id: "event_type.index.count_label",
+                defaultMessage: "{count, plural, one {# event type} other {# event types}}",
+              },
+              { count: totalRows },
+            )}
+            actions={
+              isError ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void refetch()}
+                >
+                  <RefreshCw className="size-3.5" aria-hidden />
+                  {intl.formatMessage({ id: "common.action.retry", defaultMessage: "Retry" })}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+        empty={
+          <EmptyState
+            module="eventType"
+            title={
+              search
+                ? intl.formatMessage({
+                    id: "event_type.index.empty_search",
+                    defaultMessage: "No event types found",
+                  })
+                : intl.formatMessage({
+                    id: "event_type.index.empty_title",
+                    defaultMessage: "No event types yet",
+                  })
+            }
+            description={
+              search
+                ? intl.formatMessage({
+                    id: "event_type.index.empty_search_sub",
+                    defaultMessage: "Try adjusting your search terms.",
+                  })
+                : intl.formatMessage({
+                    id: "event_type.index.empty_description",
+                    defaultMessage: "Create your first event type to get started.",
+                  })
+            }
+            action={
+              canCreate && !search ? (
+                <Button type="button" onClick={() => navigate("/event-type/create")}>
+                  <Plus className="size-4" />
+                  {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create" })}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+        footer={
+          totalPages > 1 ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {intl.formatMessage(
+                  { id: "common.pagination_info", defaultMessage: "Page {page} of {total}" },
+                  { page: pagination.pageIndex + 1, total: Math.max(totalPages, 1) },
+                )}
+              </p>
+              <Pagination
+                page={pagination.pageIndex + 1}
+                totalPages={totalPages}
+                onChange={(p) => setPagination({ pageIndex: p - 1, pageSize: pagination.pageSize })}
+              />
+            </div>
           ) : null
         }
       />
-      <FilterBar
-        search={searchInput}
-        onSearchChange={setSearchInput}
-        searchPlaceholder={intl.formatMessage({ id: "common.search.placeholder", defaultMessage: "Search..." })}
-      />
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      ) : isError ? (
-        <EmptyState
-          title={intl.formatMessage({ id: "common.error.load_failed", defaultMessage: "Failed to load data" })}
-          description={intl.formatMessage({ id: "common.error.try_again", defaultMessage: "Please try again later" })}
-        />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          title={intl.formatMessage({ id: "event_type.index.empty_title", defaultMessage: "No event types found" })}
-          description={intl.formatMessage({ id: "event_type.index.empty_description", defaultMessage: "Create your first event type to get started." })}
-          action={
-            canCreate ? (
-              <Button onClick={() => navigate("/event-type/create")}>
-                <Plus className="size-4 mr-2" />
-                {intl.formatMessage({ id: "common.action.create", defaultMessage: "Create Event Type" })}
-              </Button>
-            ) : null
-          }
-        />
-      ) : (
-        <div className="flex-1 overflow-auto">
-          <DataTable
-            columns={columns}
-            data={rows}
-            isLoading={isLoading}
-            onRowClick={(row) => navigate(`/event-type/${row.id}`)}
-          />
-          <Pagination
-            page={pagination.pageIndex + 1}
-            totalPages={totalPages}
-            onChange={(page) => setPagination((p) => ({ ...p, pageIndex: page - 1 }))}
-          />
-        </div>
-      )}
+
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete event type?" })}
+        title={intl.formatMessage({ id: "event_type.confirm.delete_title", defaultMessage: "Delete event type?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
+        variant="destructive"
         onConfirm={handleDelete}
         loading={isDeleting}
       />
-    </div>
+    </section>
   );
 };

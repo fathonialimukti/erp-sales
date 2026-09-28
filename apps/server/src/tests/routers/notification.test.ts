@@ -11,7 +11,7 @@ let actorRoleId: string;
 let notificationId: string;
 
 beforeAll(async () => {
-  const role = await seedRoleWithPermissions(['warehouse@read']);
+  const role = await seedRoleWithPermissions(['notification@read', 'notification@update', 'notification@delete']);
   actorRoleId = role.id;
   const actor = await seedTestUser({
     roleId: actorRoleId,

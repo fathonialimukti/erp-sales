@@ -236,7 +236,7 @@ export const BudgetPeriodFormPage = () => {
                     onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger id="status">
-                      <SelectValue placeholder={intl.formatMessage({ id: "common.select.placeholder", defaultMessage: "Select status" })} />
+                      <SelectValue placeholder={intl.formatMessage({ id: "budget_period.form.select_status", defaultMessage: "Select status" })} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="OPEN">{intl.formatMessage({ id: "budget_period.status.open", defaultMessage: "Open" })}</SelectItem>

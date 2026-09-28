@@ -488,7 +488,7 @@ export const SalesOrderPdfPreview = ({ orderId, onClose }: SalesOrderPdfPreviewP
             {t("sales_order.preview.title", "PDF Preview")}
           </h3>
           <button
-            className="so-btn so-btn--ghost so-btn--sm"
+            className="so-pdf-modal__close"
             onClick={onClose}
             aria-label={t("common.action.close", "Close")}
           >

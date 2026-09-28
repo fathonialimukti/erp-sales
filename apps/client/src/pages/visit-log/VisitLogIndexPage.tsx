@@ -111,17 +111,21 @@ export const VisitLogIndexPage = () => {
       return [
         {
           id: "date",
-          header: intl.formatMessage({ id: "visit_log.index.header_code", defaultMessage: "Date" }),
+          accessorFn: (row) => new Date(row.date).getTime(),
+          enableSorting: true,
+          header: intl.formatMessage({ id: "visit_log.index.header_date", defaultMessage: "Date" }),
           cell: ({ row }) => (
             <span className="font-mono text-xs text-muted-foreground">
-              {new Date(row.original.date).toLocaleDateString()}
+              {new Date(row.original.date).toLocaleDateString(intl.locale)}
             </span>
           ),
         },
         {
           id: "salesman",
+          accessorFn: (row) => row.salesman.name,
+          enableSorting: true,
           header: intl.formatMessage({
-            id: "visit_log.index.header_name",
+            id: "visit_log.index.header_salesman",
             defaultMessage: "Salesman",
           }),
           cell: ({ row }) => (
@@ -130,6 +134,8 @@ export const VisitLogIndexPage = () => {
         },
         {
           id: "outlet",
+          accessorFn: (row) => row.outlet?.name ?? "",
+          enableSorting: true,
           header: intl.formatMessage({
             id: "visit_log.index.header_outlet",
             defaultMessage: "Outlet",
@@ -140,6 +146,8 @@ export const VisitLogIndexPage = () => {
         },
         {
           id: "status",
+          accessorKey: "approvalStatus",
+          enableSorting: true,
           header: intl.formatMessage({
             id: "visit_log.index.header_status",
             defaultMessage: "Status",
@@ -153,6 +161,7 @@ export const VisitLogIndexPage = () => {
         },
         {
           id: "actions",
+          enableSorting: false,
           header: "",
           cell: ({ row }) => (
             <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

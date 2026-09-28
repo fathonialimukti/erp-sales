@@ -36,17 +36,18 @@ export const salesOrderPdfHandler = withAuth(
     }
 
     // --- Stream PDF ---
+    // ponytail: Prisma returns nullable names; the PDF record maps null → '' (display-only).
     const pdfRecord: SalesOrderPdfRecord = {
         id: record.id,
         documentNumber: record.documentNumber,
         date: record.date,
         currency: record.currency,
         paymentTerms: record.paymentTerms,
-        customer: (record as any).customer,
-        outlet: (record as any).outlet,
-        area: (record as any).area,
-        createdBy: (record as any).createdBy,
-        approvedBy: (record as any).approvedBy,
+        customer: record.customer ? { id: record.customer.id, name: record.customer.name } : { id: '', name: '' },
+        outlet: record.outlet ? { id: record.outlet.id, name: record.outlet.name } : null,
+        area: { id: record.area.id, name: record.area.name },
+        createdBy: record.createdBy ? { id: record.createdBy.id, name: record.createdBy.name ?? '' } : null,
+        approvedBy: record.approvedBy ? { id: record.approvedBy.id, name: record.approvedBy.name ?? '' } : null,
         approvalStatus: record.approvalStatus,
         subtotal: record.subtotal ? Number(record.subtotal) : null,
         discountTotal: record.discountTotal ? Number(record.discountTotal) : null,
@@ -54,7 +55,7 @@ export const salesOrderPdfHandler = withAuth(
         grandTotal: record.grandTotal ? Number(record.grandTotal) : null,
         notes: record.notes,
         expectedDeliveryDate: record.expectedDeliveryDate,
-        items: (record as any).items.map((it: any) => ({
+        items: record.items.map((it) => ({
             id: it.id,
             sku: it.sku,
             quantity: Number(it.quantity),

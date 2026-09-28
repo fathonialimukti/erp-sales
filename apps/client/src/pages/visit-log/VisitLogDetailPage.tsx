@@ -3,8 +3,6 @@ import { useIntl } from "react-intl";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   ChevronRight,
   ClipboardList,
@@ -32,6 +30,7 @@ import { AiSummarizeButton } from "../../components/AiSummarizeButton";
 import { AiVisitOrderButton } from "../../components/AiVisitOrderButton";
 import { PdfDocumentModal } from "../../components/pdf/PdfDocumentModal";
 import { Button } from "@/components/ui/button";
+import { AiMarkdown } from "@/components/ai/AiMarkdown";
 import {
   Card,
   CardContent,
@@ -492,7 +491,7 @@ export const VisitLogDetailPage = () => {
           {draftError ? <p className="text-sm text-destructive">{draftError}</p> : null}
           {draftResult ? (
             <div className="text-foreground text-sm font-semibold">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{draftResult}</ReactMarkdown>
+              <AiMarkdown>{draftResult}</AiMarkdown>
             </div>
           ) : null}
         </DialogContent>

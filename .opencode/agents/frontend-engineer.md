@@ -61,7 +61,7 @@ python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<task keywords>" --stack
 python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<task keywords>" --domain ux
 ```
 
-Do **not** load `frontend-design`, `web-design-guidelines`, `modern-css`, or `accessibility` as parallel authorities unless pro-max leaves a concrete gap.
+Do **not** load `web-design-guidelines` or `accessibility` as parallel authorities unless pro-max leaves a concrete gap.
 
 ### Aurora pocket card (semantic only — no raw hex in JSX)
 

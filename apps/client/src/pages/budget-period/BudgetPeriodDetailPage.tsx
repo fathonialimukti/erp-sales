@@ -111,7 +111,7 @@ export const BudgetPeriodDetailPage = () => {
         <div className="text-center">
           <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">
-            {intl.formatMessage({ id: "common.error.not_found", defaultMessage: "Budget period not found" })}
+            {intl.formatMessage({ id: "budget_period.error.not_found", defaultMessage: "Budget period not found" })}
           </h3>
           <Button variant="outline" onClick={() => navigate("/budget-period")} className="mt-4">
             <ArrowLeft className="size-4 mr-2" />
@@ -123,7 +123,18 @@ export const BudgetPeriodDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "budget-period-detail",
+        id: period.id,
+        name: period.name,
+        status: period.status,
+        startDate: period.startDate,
+        endDate: period.endDate,
+        budgetLineCount: period._count.budgetLines,
+      })}
+    >
       <PageHeader
         module="budgetPeriod"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -284,7 +295,7 @@ export const BudgetPeriodDetailPage = () => {
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete budget period?" })}
+        title={intl.formatMessage({ id: "budget_period.confirm.delete_title", defaultMessage: "Delete budget period?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
         onConfirm={handleDelete}

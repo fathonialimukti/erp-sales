@@ -29,6 +29,30 @@ import { trpcClient } from "@/lib/trpc";
 import { useLocale } from "@/lib/useLocale";
 import { cn } from "@/lib/utils";
 
+/**
+ * WCAG 2.2 target size (minimum) for compact chrome: a transparent
+ * pseudo-element gives the control a 44px target without changing what it
+ * looks like or how densely the row packs.
+ *
+ * `HIT_44` puts an exact 44×44 box on a 36px control (icon buttons, avatar).
+ * `HIT_TALL_44` is 44px tall across the control's *own* width — for controls
+ * that are already ≥44px wide but short (a select trigger, a search input),
+ * where widening would claim space horizontally from the neighbour's target.
+ *
+ * Both size from the padding box rather than the border box, so the target is
+ * the same 44px on a bordered and a borderless variant, and both need
+ * `relative` — without it the pseudo resolves against the topbar, not the
+ * control. Centring is an explicit `calc` offset, not `m-auto`: a 44px box in
+ * a 34px padding box is over-constrained, and auto margins resolve to 0 there,
+ * which silently anchors the box to the top-left corner instead of centring.
+ * Deliberately square: a `rounded-full` pseudo clips its own hit area to a
+ * circle, and a 44px circle is not a 44×44 target.
+ */
+const HIT_44 =
+  "relative after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-ml-[22px] after:-mt-[22px] after:content-['']";
+const HIT_TALL_44 =
+  "relative after:absolute after:-left-px after:-right-px after:top-1/2 after:h-11 after:-mt-[22px] after:content-['']";
+
 const findPageMeta = (
   pathname: string,
 ): { kicker: string; title: string } => {
@@ -61,7 +85,12 @@ const findPageMeta = (
   // still get real breadcrumb metadata instead of the generic fallback.
   const utility = ROUTE_META[cur];
   if (utility) return utility;
-  return walk(NAV_MENU) ?? { kicker: "Workspace", title: "Page" };
+  // `Page` used to be a bare word here, so `title` held a literal that is not a
+  // message id: the `*` route renders English "Page" in the Bahasa breadcrumb,
+  // the same defect as the missing `nav.Workspace`, one line down. It has to be
+  // a real id — the gate cannot read `title` (a variable), so a literal would
+  // be the one string here no gate can check and no catalog can translate.
+  return walk(NAV_MENU) ?? { kicker: "Workspace", title: "nav.page_fallback" };
 };
 
 export const Topbar = () => {
@@ -92,8 +121,13 @@ export const Topbar = () => {
     id: meta.title,
     defaultMessage: meta.title.replace("nav.", ""),
   });
+  // Both branches are literals on purpose. `findPageMeta` returns either a
+  // ready `nav.*` section id (from NAV_MENU / ROUTE_META) or the bare
+  // "Workspace" segment this component owns, so a `nav.${…}` template would be
+  // strictly less correct — and it hid the id from the i18n gate, which is how
+  // `nav.Workspace` shipped in neither locale.
   const kickerLabel = intl.formatMessage({
-    id: meta.kicker.startsWith("nav.") ? meta.kicker : `nav.${meta.kicker}`,
+    id: meta.kicker.startsWith("nav.") ? meta.kicker : "nav.Workspace",
     defaultMessage: meta.kicker.replace("nav.", ""),
   });
 
@@ -161,13 +195,23 @@ export const Topbar = () => {
             id: "nav.toggle_sidebar",
             defaultMessage: "Toggle sidebar",
           })}
-          className="size-9 shrink-0 rounded-full"
+          className={cn(
+            "relative size-9 shrink-0 rounded-full",
+            // 44px touch target without growing the 36px circle.
+            HIT_44,
+          )}
         >
           <Menu className="size-4" aria-hidden />
         </Button>
 
-        <div className="min-w-0 leading-tight">
-          <span className="block truncate text-[11px] font-semibold tracking-wide text-primary uppercase">
+        {/* The breadcrumb shares this row with five controls; below 560px it
+            cannot hold both, and the PageHeader h1 directly under it already
+            carries the page name at 20px bold. */}
+        <div className="hidden min-w-0 leading-tight min-[560px]:block">
+          <span
+            className="block truncate text-[11px] font-semibold tracking-wide text-primary uppercase"
+            data-breadcrumb-kicker=""
+          >
             {kickerLabel}
           </span>
           <span className="block truncate font-heading text-sm font-semibold text-foreground sm:text-base">
@@ -178,9 +222,14 @@ export const Topbar = () => {
 
       <div className="flex-1" />
 
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      {/* gap-2 (8px) is the floor: each control claims 4px per side for its
+          44px hit area, so 8px keeps neighbouring targets from overlapping. */}
+      <div className="flex items-center gap-2">
+        {/* The clock is aria-hidden chrome that costs ~88px of the row. At
+            tablet widths the cluster plus the clock leaves the breadcrumb
+            collapsed to a single glyph, so the clock gives way first. */}
         <div
-          className="hidden items-center gap-1.5 rounded-full border border-border bg-primary/6 px-2.5 py-1.5 text-xs font-medium text-primary tabular-nums sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-full border border-border bg-primary/6 px-2.5 py-1.5 text-xs font-medium text-primary tabular-nums lg:inline-flex"
           aria-hidden
           title={intl.formatMessage({
             id: "common.time",
@@ -203,7 +252,12 @@ export const Topbar = () => {
               id: "nav.language",
               defaultMessage: "Language",
             })}
-            className="h-9 w-auto gap-1.5 rounded-full border-border bg-card px-2.5 shadow-none"
+            className={cn(
+              "h-9 w-auto gap-1.5 rounded-full border-border bg-card px-2.5 shadow-none",
+              // 28px tall, already ≥44px wide — grow the height only, so the
+              // trigger never reaches into the bell beside it.
+              HIT_TALL_44,
+            )}
           >
             <Languages className="size-3.5 text-muted-foreground" aria-hidden />
             <SelectValue />
@@ -227,7 +281,12 @@ export const Topbar = () => {
           })}
           aria-expanded={notifsOpen}
           onClick={() => setNotifsOpen((prev) => !prev)}
-          className="relative size-9 rounded-full"
+          className={cn(
+            "relative size-9 rounded-full",
+            // The unread Badge is already -top-0.5; the hit area is a separate
+            // layer so the badge keeps its own offset.
+            HIT_44,
+          )}
         >
           <Bell className="size-4" aria-hidden />
           {unreadCount > 0 && (
@@ -251,7 +310,7 @@ export const Topbar = () => {
               defaultMessage: "App settings",
             })}
             onClick={() => navigate("/settings")}
-            className="size-9 rounded-full"
+            className={cn("size-9 rounded-full", HIT_44)}
           >
             <Server className="size-4" aria-hidden />
           </Button>
@@ -266,7 +325,7 @@ export const Topbar = () => {
             defaultMessage: "Theme",
           })}
           onClick={toggleTheme}
-          className="size-9 rounded-full"
+          className={cn("size-9 rounded-full", HIT_44)}
         >
           {theme === "dark" ? (
             <Sun className="size-4" aria-hidden />
@@ -275,8 +334,12 @@ export const Topbar = () => {
           )}
         </Button>
 
-        {/* P12: topbar avatar only when not shown in sidebar footer */}
-        {!showAvatarInSidebar && <UserAvatarMenu variant="topbar" />}
+        {/* P12: topbar avatar only when not shown in sidebar footer.
+            The hit area rides on the trigger's own className — a wrapper's
+            pseudo-element would swallow the click without reaching it. */}
+        {!showAvatarInSidebar && (
+          <UserAvatarMenu variant="topbar" className={HIT_44} />
+        )}
       </div>
     </header>
   );

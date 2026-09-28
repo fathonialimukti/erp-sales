@@ -90,7 +90,7 @@ export const EventTypeDetailPage = () => {
         <div className="text-center">
           <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">
-            {intl.formatMessage({ id: "common.error.not_found", defaultMessage: "Event type not found" })}
+            {intl.formatMessage({ id: "event_type.error.not_found", defaultMessage: "Event type not found" })}
           </h3>
           <Button variant="outline" onClick={() => navigate("/event-type")} className="mt-4">
             <ArrowLeft className="size-4 mr-2" />
@@ -102,7 +102,16 @@ export const EventTypeDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      data-ai-context={JSON.stringify({
+        section: "event-type-detail",
+        id: eventType.id,
+        name: eventType.name,
+        code: eventType.code,
+        proposalCount: eventType._count.eventProposals,
+      })}
+    >
       <PageHeader
         module="eventType"
         eyebrow={intl.formatMessage({ id: "nav.master_data", defaultMessage: "Master Data" })}
@@ -203,7 +212,7 @@ export const EventTypeDetailPage = () => {
       <ConfirmDialog
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        title={intl.formatMessage({ id: "common.confirm.delete_title", defaultMessage: "Delete event type?" })}
+        title={intl.formatMessage({ id: "event_type.confirm.delete_title", defaultMessage: "Delete event type?" })}
         description={intl.formatMessage({ id: "common.confirm.delete_description", defaultMessage: "This action cannot be undone." })}
         confirmLabel={intl.formatMessage({ id: "common.action.delete", defaultMessage: "Delete" })}
         onConfirm={handleDelete}

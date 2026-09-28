@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { Loader2, Sparkles, UserRound, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { AiMarkdown } from "@/components/ai/AiMarkdown";
+import { AiPanel, AiPanelTitle } from "@/components/ai/AiPanel";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api-base";
+import { getFriendlyErrorMessage } from "@/lib/friendlyError";
 
 interface AiCustomerBriefProps {
   /** Customer id. */
@@ -41,12 +42,15 @@ export function AiCustomerBrief({ customerId, name }: AiCustomerBriefProps) {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        throw new Error(body?.message ?? body?.error ?? `Brief failed (${res.status})`);
+        // The friendly-error mapper owns every user-facing AI failure; a raw
+        // status code must never reach the screen.
+        setError(getFriendlyErrorMessage(body?.message ?? body?.error));
+        return;
       }
       const data = (await res.json()) as { brief?: string };
       setBrief(data.brief ?? "");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Brief failed");
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -72,10 +76,9 @@ export function AiCustomerBrief({ customerId, name }: AiCustomerBriefProps) {
       </Button>
 
       {open && (
-        <div className="w-full max-w-xl rounded-xl border border-border bg-muted/60 p-3 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Sparkles className="size-3.5 text-primary" aria-hidden />
+        <AiPanel
+          label={
+            <AiPanelTitle icon={<Sparkles className="size-3.5" />}>
               {name
                 ? intl.formatMessage(
                     { id: "ai.customer360.label", defaultMessage: "Brief for {name}" },
@@ -85,14 +88,10 @@ export function AiCustomerBrief({ customerId, name }: AiCustomerBriefProps) {
                     id: "ai.customer360.label_plain",
                     defaultMessage: "Customer brief",
                   })}
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={loading}
-              className="gap-1.5"
-            >
+            </AiPanelTitle>
+          }
+          actions={
+            <Button type="button" size="sm" onClick={handleGenerate} disabled={loading} className="gap-1.5">
               {loading ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
@@ -100,11 +99,12 @@ export function AiCustomerBrief({ customerId, name }: AiCustomerBriefProps) {
               )}
               {intl.formatMessage({ id: "ai.customer360.generate", defaultMessage: "Generate" })}
             </Button>
-          </div>
+          }
+        >
           {error && <p className="mb-2 text-xs text-destructive">{error}</p>}
           {brief ? (
             <div className="rounded-lg border border-border bg-background p-3 text-sm leading-relaxed text-foreground">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
+              <AiMarkdown>{brief}</AiMarkdown>
             </div>
           ) : loading ? (
             <div className="flex h-16 items-center justify-center text-sm text-muted-foreground">
@@ -118,7 +118,7 @@ export function AiCustomerBrief({ customerId, name }: AiCustomerBriefProps) {
               })}
             </div>
           )}
-        </div>
+        </AiPanel>
       )}
     </div>
   );

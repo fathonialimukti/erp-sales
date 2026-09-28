@@ -1,10 +1,10 @@
-import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { backupEnvelopeSchema, type BackupEnvelope } from '@repo/schemas/backup';
 import { Prisma } from '../prisma/generated/client';
 import { prisma, type DbClient } from './prisma.js';
+import { generateUlid } from './ulid.js';
 
 type Row = Record<string, unknown>;
 
@@ -48,23 +48,7 @@ const GENERATED_SCHEMA_PATH = path.resolve(MODULE_DIR, '../prisma/generated/sche
 // Directory is created on demand at import time so every consumer can rely on it.
 mkdirSync(BACKUPS_DIR, { recursive: true });
 
-const ULID_ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-
-function generateUlid(): string {
-    let time = Date.now();
-    let timePart = '';
-    for (let i = 0; i < 10; i++) {
-        timePart = ULID_ENCODING[time % 32] + timePart;
-        time = Math.floor(time / 32);
-    }
-    let random = BigInt(`0x${randomBytes(10).toString('hex')}`);
-    let randomPart = '';
-    for (let i = 0; i < 16; i++) {
-        randomPart = ULID_ENCODING[Number(random % 32n)] + randomPart;
-        random /= 32n;
-    }
-    return timePart + randomPart;
-}
+// ponytail: ULID lives in ./ulid.js (shared with lib/ai-widgets.ts) — no local dup.
 
 function getDmmfModels(): DmmfModel[] {
     return Prisma.dmmf.datamodel.models as unknown as DmmfModel[];

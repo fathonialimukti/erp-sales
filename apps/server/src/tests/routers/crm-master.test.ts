@@ -21,8 +21,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await deleteTestRegion(regionId);
-  await deleteTestArea(areaId);
+  // Children before parents, and only rows this file still owns.
+  if (areaId) await deleteTestArea(areaId);
+  if (regionId) await deleteTestRegion(regionId);
   await deleteTestUser(actorUserId);
   await deleteTestRole(actorRoleId);
 });
@@ -60,5 +61,9 @@ describe('region CRUD', () => {
   it('deletes region (cascades area)', async () => {
     await caller.region.delete({ id: regionId });
     // should not throw
+    // The region delete cascaded the area, so both rows are gone. Drop them from
+    // the teardown instead of letting it delete rows that no longer exist.
+    regionId = '';
+    areaId = '';
   });
 });

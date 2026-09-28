@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useIntl } from "react-intl";
-import { useAtomValue } from "jotai";
+
+import { useRequiredMessage } from "@/lib/form-validation";import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -47,6 +48,7 @@ const defaults = (): FormValues => ({ title: "", content: "", source: "" });
 
 export const KnowledgeBaseFormPage = () => {
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -389,7 +391,7 @@ export const KnowledgeBaseFormPage = () => {
           <div className="grid gap-3">
             <form.Field
               name="title"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -422,7 +424,7 @@ export const KnowledgeBaseFormPage = () => {
 
             <form.Field
               name="source"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -455,7 +457,7 @@ export const KnowledgeBaseFormPage = () => {
 
             <form.Field
               name="content"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField

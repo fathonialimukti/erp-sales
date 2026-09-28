@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useStore } from "@tanstack/react-form";
 import { Loader2, Save, Mail, UserRound, Tags, Flame } from "lucide-react";
 
+import { useRequiredMessage } from "@/lib/form-validation";
 import { trpcClient } from "../../lib/trpc";
 import { getFriendlyErrorMessage } from "../../lib/friendlyError";
 import { hasPermissionAtom } from "../../lib/atoms";
@@ -99,6 +100,7 @@ interface InnerFormProps {
 
 const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) => {
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hasPermission = useAtomValue(hasPermissionAtom);
@@ -384,8 +386,13 @@ const InnerForm = ({ initialValues, isEdit, conversationId }: InnerFormProps) =>
               name="email"
               validators={{
                 onChange: ({ value }) => {
-                  if (!value?.trim()) return "Required";
-                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return "Invalid email";
+                  if (!value?.trim()) return requiredMessage;
+                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+                    return intl.formatMessage({
+                      id: "emailCrm.form.error_invalid_email",
+                      defaultMessage: "Invalid email",
+                    });
+                  }
                   return undefined;
                 },
               }}

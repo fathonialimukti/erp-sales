@@ -1,15 +1,8 @@
 import type { CSSProperties } from "react";
-import { icons } from "../../assets/icons";
+import { DomainIcon } from "../../components/DomainIcon";
 
-/* ============================================================
- * UserIcons — SVG icons for user pages
- *
- * Shared action icons are imported from src/assets/icons.
- * Domain-specific icons use inline SVGs.
- *
- * Usage:
- *   <UserIcon name="back" size={18} />
- * ============================================================ */
+/* User keeps inline-SVG domain glyphs (no asset keys);
+ * the shared action set delegates to DomainIcon. */
 
 export type UserIconName =
   | "back"
@@ -37,17 +30,22 @@ interface UserIconProps {
   "aria-label"?: string;
 }
 
-const SHARED_MAP: Record<string, string> = {
-  back: icons.actionBack,
-  edit: icons.actionEdit,
-  delete: icons.actionDelete,
-  plus: icons.actionPlus,
-  search: icons.actionSearch,
-  check: icons.actionCheck,
-  close: icons.actionClose,
-  "chevron-right": icons.actionChevronRight,
-  eye: icons.actionEye,
+type SharedAction = "back" | "edit" | "delete" | "plus" | "search" | "check" | "close" | "chevron-right" | "eye";
+
+const SHARED_ACTIONS: Record<SharedAction, "actionBack" | "actionEdit" | "actionDelete" | "actionPlus" | "actionSearch" | "actionCheck" | "actionClose" | "actionChevronRight" | "actionEye"> = {
+  back: "actionBack",
+  edit: "actionEdit",
+  delete: "actionDelete",
+  plus: "actionPlus",
+  search: "actionSearch",
+  check: "actionCheck",
+  close: "actionClose",
+  "chevron-right": "actionChevronRight",
+  eye: "actionEye",
 };
+
+const isSharedAction = (name: UserIconName): name is SharedAction =>
+  name in SHARED_ACTIONS;
 
 const INLINE_SVGS: Record<string, string> = {
   user: `<svg xmlns="http://www.w3.org/2000/svg" width="SIZE" height="SIZE" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
@@ -66,17 +64,15 @@ export const UserIcon = ({
   "aria-hidden": hidden,
   "aria-label": label,
 }: UserIconProps) => {
-  if (SHARED_MAP[name]) {
+  if (isSharedAction(name)) {
     return (
-      <img
-        src={SHARED_MAP[name]}
-        alt={label ?? ""}
-        width={size}
-        height={size}
-        aria-hidden={hidden ?? !label}
-        aria-label={label}
+      <DomainIcon
+        name={SHARED_ACTIONS[name]}
+        size={size}
         className={className}
         style={style}
+        aria-hidden={hidden}
+        aria-label={label}
       />
     );
   }

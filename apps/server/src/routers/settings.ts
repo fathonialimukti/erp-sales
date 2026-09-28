@@ -209,8 +209,25 @@ export const userSettingsRouter = router({
   update: protectedProcedure
     .input(userSettingsSchema)
     .mutation(async ({ input, ctx }) => {
-      await setUserSettings(ctx.db, ctx.user.userId, input);
+      const userId = ctx.user.userId;
 
-      return { success: true };
+      // Mirrors `updateUser` above: snapshot, write, diff, log — in one tx so
+      // the activity entry can never outlive the settings it describes.
+      return ctx.db.$transaction(async (tx) => {
+        const before = await getUserSettings(tx, userId);
+        await setUserSettings(tx, userId, input);
+        const after = await getUserSettings(tx, userId);
+
+        await logActivity(tx, {
+          action: 'UPDATE',
+          userId,
+          resource: 'settings',
+          resourceId: `user:${userId}`,
+          message: 'Updated user settings',
+          detail: buildUpdateLogDetail(before, after),
+        });
+
+        return { success: true };
+      });
     }),
 });

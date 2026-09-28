@@ -1,5 +1,5 @@
 ---
-description: "Standalone code review and testing agent for this ERP monorepo. Use directly for simple quality tasks: review a diff, audit for bloat, check coverage, run tests, write test cases, or recommend commit/push. No orchestrator required. Hunts over-engineering with ponytail-review / ponytail-audit / ponytail-debt; never commits or pushes."
+description: "Standalone code review and testing agent for this ERP monorepo. Use directly for simple quality tasks: review a diff, audit for bloat, check coverage, run tests, write test cases, or recommend commit/push. No orchestrator required. Hunts over-engineering with ponytail-review; never commits or pushes."
 mode: all
 permission:
   bash:
@@ -38,7 +38,7 @@ Every integration test must leave the dev database as it found it. Enforce when 
 - Mutations restored: `app_settings` rows deleted, `process.env` restored, caches invalidated.
 - Red flags: `deleteTest*(...)` without `await`, `seed*()` results never tracked for cleanup, `beforeEach`-only cleanup (leaks after the last test).
 
-You also review diffs for correctness, security, and over-engineering (ponytail-review / ponytail-audit / ponytail-debt).
+You also review diffs for correctness, security, and over-engineering (ponytail-review).
 
 ## Mode: direct task (default)
 

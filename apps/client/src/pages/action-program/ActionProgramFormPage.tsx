@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
-import { useAtomValue } from "jotai";
+
+import { useRequiredMessage } from "@/lib/form-validation";import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -17,7 +18,6 @@ import { FormFooter } from "../../components/FormFooter";
 import { FormPreview } from "../../components/FormPreview";
 import { FormField } from "../../components/FormField";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { SelectSearch } from "../../components/SelectSearch";
 import { AiFillButton } from '@/components/AiFillButton';
 import { useAiFillForm } from "../../components/AiAssistant/useAiFillForm";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,7 @@ const defaults = (): FormValues => ({
 
 export const ActionProgramFormPage = () => {
   const intl = useIntl();
+  const requiredMessage = useRequiredMessage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -409,7 +410,7 @@ export const ActionProgramFormPage = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             <form.Field
               name="name"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -438,7 +439,7 @@ export const ActionProgramFormPage = () => {
 
             <form.Field
               name="actionTypeId"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -499,7 +500,7 @@ export const ActionProgramFormPage = () => {
 
             <form.Field
               name="startDate"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -529,7 +530,7 @@ export const ActionProgramFormPage = () => {
 
             <form.Field
               name="endDate"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -578,7 +579,7 @@ export const ActionProgramFormPage = () => {
 
             <form.Field
               name="areaId"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -621,7 +622,7 @@ export const ActionProgramFormPage = () => {
 
             <form.Field
               name="picId"
-              validators={{ onChange: ({ value }) => (!value ? "Required" : undefined) }}
+              validators={{ onChange: ({ value }) => (!value ? requiredMessage : undefined) }}
             >
               {(f) => (
                 <FormField
@@ -665,7 +666,7 @@ export const ActionProgramFormPage = () => {
             <form.Field
               name="outlets"
               validators={{
-                onChange: ({ value }) => (value.length === 0 ? "Required" : undefined),
+                onChange: ({ value }) => (value.length === 0 ? requiredMessage : undefined),
               }}
             >
               {(f) => {

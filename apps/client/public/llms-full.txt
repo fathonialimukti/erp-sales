@@ -91,11 +91,10 @@ Built by Fathoni — Full-Stack Developer & ERP Specialist. Independent full-sta
 
 ## Contact
 
-- Email: mailto:fathoni@example.com
-- WhatsApp: https://wa.me/6281234567890
+Only channels that resolve to a real destination are listed. There is no sales
+address, phone number, or hiring page behind this site.
+
 - GitHub: https://github.com/fathoni
-- LinkedIn: https://linkedin.com/in/fathoni
-- Hire: https://fathoni.dev/hire
 
 ## Structured Data
 

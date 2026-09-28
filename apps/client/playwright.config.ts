@@ -7,6 +7,12 @@ import { defineConfig } from '@playwright/test';
 //  2. mutating production data from tests.
 const E2E_PORT = 10025;
 const AUTH_STATE = 'playwright/.auth/admin.json';
+const RESTRICTED_STATE = 'playwright/.auth/restricted.json';
+// Both setup projects + the two logins in auth.spec = 4 attempts, inside the
+// 5/min/IP limiter. A new project must reuse a storageState file, not log in.
+const SETUP_ONLY = /auth\.setup/;
+// The permission spec owns its own session and must not also run as admin.
+const RESTRICTED_ONLY = /permissions\.spec\.ts/;
 
 export default defineConfig({
   testDir: './src/tests/e2e',
@@ -34,7 +40,19 @@ export default defineConfig({
       name: 'chromium',
       use: { browserName: 'chromium', storageState: AUTH_STATE },
       dependencies: ['auth-setup'],
-      testIgnore: /auth\.setup\.ts/,
+      testIgnore: new RegExp(`${SETUP_ONLY.source}|${RESTRICTED_ONLY.source}`),
+    },
+    // A low-privilege session for the permission-denial spec: the guards can
+    // only be proven from the outside by a user that actually lacks them.
+    {
+      name: 'auth-setup-restricted',
+      testMatch: /auth\.setup\.restricted\.ts/,
+    },
+    {
+      name: 'chromium-restricted',
+      use: { browserName: 'chromium', storageState: RESTRICTED_STATE },
+      dependencies: ['auth-setup-restricted'],
+      testMatch: RESTRICTED_ONLY,
     },
   ],
   webServer: {

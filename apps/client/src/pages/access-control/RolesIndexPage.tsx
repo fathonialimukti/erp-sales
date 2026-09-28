@@ -76,6 +76,8 @@ export const RolesIndexPage = () => {
     () => [
       {
         id: "name",
+        accessorKey: "name",
+        enableSorting: true,
         header: intl.formatMessage({ id: "roles.index.header_name", defaultMessage: "Role" }),
         cell: ({ row }) => (
           <span className="font-medium text-foreground">{row.original.name}</span>
@@ -83,6 +85,8 @@ export const RolesIndexPage = () => {
       },
       {
         id: "description",
+        accessorKey: "description",
+        enableSorting: true,
         header: intl.formatMessage({
           id: "roles.index.header_description",
           defaultMessage: "Description",
@@ -95,6 +99,8 @@ export const RolesIndexPage = () => {
       },
       {
         id: "users",
+        accessorFn: (row) => row._count.users,
+        enableSorting: true,
         header: intl.formatMessage({ id: "roles.index.header_users", defaultMessage: "Users" }),
         cell: ({ row }) => (
           <span className="tabular-nums text-muted-foreground">
@@ -104,6 +110,8 @@ export const RolesIndexPage = () => {
       },
       {
         id: "permissions",
+        accessorFn: (row) => row._count.permissions,
+        enableSorting: true,
         header: intl.formatMessage({
           id: "roles.index.header_permissions",
           defaultMessage: "Permissions",
@@ -116,6 +124,7 @@ export const RolesIndexPage = () => {
       },
       {
         id: "actions",
+        enableSorting: false,
         header: "",
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

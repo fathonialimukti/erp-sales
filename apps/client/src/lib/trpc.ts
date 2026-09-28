@@ -13,6 +13,33 @@ const trpcBaseUrl =
 export type AppRouter = typeof appRouter;
 export type AppRouterType = AppRouter;
 
+// ponytail: double-submit CSRF. The `csrf_token` cookie is httpOnly and this app
+// is a different origin from the API, so no browser JS can read it — the server
+// hands the value out in the body of `auth.csrfToken` and we echo it back in
+// CSRF_HEADER, on mutations only.
+//
+// httpBatchLink keeps a separate loader per op type, so a GET batch is always
+// all-queries and a POST batch always all-mutations. Two things fall out: query
+// batches stay token-free (and skip the CORS preflight a custom header would add
+// to them), and a 403 on a POST batch means none of its mutations ran — the
+// middleware throws before any resolver — so re-issuing it once cannot double-write.
+const CSRF_HEADER = 'x-csrf-token';
+// Re-read a minute before the server's stated expiry, so we never race its own
+// check and never hand it a token it has already rejected.
+const CSRF_REFRESH_SKEW_MS = 60_000;
+
+let csrfToken: string | null = null;
+let csrfExpiresAt = 0;
+
+const csrfTokenIsFresh = () =>
+  csrfToken !== null && csrfExpiresAt - Date.now() > CSRF_REFRESH_SKEW_MS;
+
+const refreshCsrfToken = async () => {
+  const fresh = await trpcClient.auth.csrfToken.query();
+  csrfToken = fresh.csrfToken;
+  csrfExpiresAt = fresh.csrfExpiresAt;
+};
+
 const rawClient = createTRPCClient<AppRouterType>({
   links: [
     retryLink({
@@ -25,8 +52,31 @@ const rawClient = createTRPCClient<AppRouterType>({
     }),
     httpBatchLink({
       url: `${trpcBaseUrl}/trpc/v1`,
-      fetch(url, options) {
-        return fetch(url, { ...options, credentials: 'include' });
+      async fetch(url, options) {
+        // tRPC types the custom `fetch` as `(input, init?)` — `init` is optional, so
+        // every `options.` below is an optional-chain on purpose (TS18048 otherwise).
+        // GET batch => queries only => nothing to gate.
+        if (options?.method === 'GET') {
+          return fetch(url, { ...options, credentials: 'include' });
+        }
+
+        const send = (token: string | null) => {
+          const headers = new Headers(options?.headers);
+          if (token) headers.set(CSRF_HEADER, token);
+          return fetch(url, { ...options, headers, credentials: 'include' });
+        };
+
+        if (!csrfTokenIsFresh()) await refreshCsrfToken();
+
+        const response = await send(csrfToken);
+        // Re-minting an expired cookie is routine, so a stale echo must not
+        // surface as an error. Re-send once — but only when the server's token
+        // actually moved: same token means the 403 was a permission denial, and
+        // re-running that batch could repeat a mutation that already committed.
+        if (response.status !== 403) return response;
+        const sent = csrfToken;
+        await refreshCsrfToken();
+        return csrfToken === sent ? response : send(csrfToken);
       },
     }),
   ],
