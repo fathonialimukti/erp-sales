@@ -1,23 +1,14 @@
-import { randomBytes } from 'node:crypto';
-
-const ULID_ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+import { ulid } from 'ulid';
 
 /**
  * Shared ULID generator (T2 dedupe: single export; previously duplicated in
  * lib/ai-widgets.ts and lib/backup.ts).
+ *
+ * T1 hardening: thin wrapper over the `ulid` package — the hand-rolled
+ * Crockford base32 encoder is gone. Output is unchanged in shape: 26 chars,
+ * Crockford's alphabet, 10-char ms timestamp + 16-char random. Not monotonic
+ * (neither was the old impl) and nothing sorts or paginates by id.
  */
 export function generateUlid(): string {
-  let time = Date.now();
-  let timePart = '';
-  for (let i = 0; i < 10; i++) {
-    timePart = ULID_ENCODING[time % 32]! + timePart;
-    time = Math.floor(time / 32);
-  }
-  let random = BigInt(`0x${randomBytes(10).toString('hex')}`);
-  let randomPart = '';
-  for (let i = 0; i < 16; i++) {
-    randomPart = ULID_ENCODING[Number(random % 32n)]! + randomPart;
-    random /= 32n;
-  }
-  return timePart + randomPart;
+  return ulid();
 }
