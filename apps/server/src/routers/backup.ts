@@ -137,10 +137,10 @@ export const backupRouter = router({
       return { success: true };
     }),
 
-  // ponytail: the transaction is opened in the body (not via the `transactional` middleware)
-  // because this restore needs explicit options — Prisma's 5s default interactive-transaction
-  // timeout rolls back real-size restores. Composition is unchanged: isAuthed -> hasPermission
-  // still run before the transaction opens, so denials and refusals never wipe anything.
+  // ponytail: the transaction is opened in the body because this restore needs explicit
+  // options — Prisma's 5s default interactive-transaction timeout rolls back real-size
+  // restores. Composition is unchanged: isAuthed -> hasPermission still run before the
+  // transaction opens, so denials and refusals never wipe anything.
   restore: protectedProcedure
     .use(hasPermission('backup@restore'))
     .input(backupIdInputSchema)

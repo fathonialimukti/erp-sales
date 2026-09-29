@@ -1,6 +1,5 @@
 import { TRPCError, initTRPC } from '@trpc/server';
 import type { Context } from './context.js';
-import { prisma } from './lib/prisma.js';
 import { getMessage, DEFAULT_LOCALE } from './lib/locale.js';
 import { CSRF_HEADER, validateCsrfToken } from './lib/csrf.js';
 
@@ -100,17 +99,6 @@ const hasPermission = (requiredPermissions: string | string[]) => {
     });
 };
 
-const transactional = t.middleware(async ({ ctx, next }) => {
-    return prisma.$transaction(async (tx) => {
-        return next({
-            ctx: {
-                ...ctx,
-                db: tx,
-            },
-        });
-    });
-});
-
 const assertValidCsrfToken = (ctx: Context) => {
     const providedToken = ctx.req.headers[CSRF_HEADER]?.toString();
     if (!providedToken || !validateCsrfToken(providedToken, ctx.csrfToken)) {
@@ -141,5 +129,4 @@ export const csrfOnMutation = t.middleware(({ ctx, next, type }) => {
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(isAuthed).use(csrfOnMutation);
-export const transactionalProtectedProcedure = protectedProcedure.use(transactional);
-export { hasPermission, transactional };
+export { hasPermission };

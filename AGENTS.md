@@ -21,8 +21,8 @@ bunx playwright test   # e2e
 
 ## Hard rules
 
-- Imports use `.js` extensions; Prisma client from `../lib/prisma.js`; transactions via `ctx.db`
-- Procedures: `public` / `protected` / `transactionalProtected` + `hasPermission('resource@action')`
+- Imports use `.js` extensions; Prisma client from `../lib/prisma.js`; multi-write handlers open `prisma.$transaction(async (tx) => …)` and thread `tx` into every write and helper
+- Procedures: `public` / `protected` + `hasPermission('resource@action')`
 - Mutations write activity log (+ log-detail helpers); lists via `createListInputSchema` / pagination helpers
 - IDs are ULID defaults; `update*Schema` requires `currentId`
 - Client: tRPC vanilla only (`trpcClient.*` in `queryFn`), semantic Tailwind tokens (no raw hex, no gray text), functional components, all user-visible strings via `intl.formatMessage`

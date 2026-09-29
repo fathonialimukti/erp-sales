@@ -44,6 +44,8 @@ Monorepo: `apps/client`, `apps/server`, `packages/schemas` (shared Zod), `packag
 | Settings | `lib/settings-service.ts` | Dotted keys (`ai.model`), DB → env → default, 30s cache, secrets masked write-only. |
 | Data integrity | routers | Multi-write flows wrapped in `prisma.$transaction` with conditional `updateMany` state guards; audit rows written in-transaction. Doc numbers: advisory lock inside the tx + unique constraint. |
 
+Transactions are per-handler: a multi-write handler opens `prisma.$transaction(async (tx) => …)` and threads `tx` into every write and helper (`logActivity`, `sendApprovalNotification`'s `db` opt). A status transition is a guarded `updateMany({ where: { id, status } })` with a `count === 0` re-check, so a concurrent decision loses with `BAD_REQUEST` instead of silently overwriting. Note `ctx.db` is the global client, not a transaction handle; the `transactional` / `transactionalProtectedProcedure` middleware in `trpc.ts` has since been removed (no procedure ever composed it).
+
 ## Domain model (Prisma, ULID ids)
 
 Masters: region → area → customer(+contacts) → outlet; sku-category → sku; action-type/event-type/vendor; budget-type → budget-period → budget-line.
