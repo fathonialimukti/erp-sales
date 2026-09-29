@@ -18,7 +18,6 @@
     "ai:devtools": "bunx @ai-sdk/devtools"
   },
   "dependencies": {
-    "@ai-sdk/devtools": "^1.0.9",
     "@ai-sdk/openai": "^4.0.24",
     "@ai-sdk/openai-compatible": "^3.0.17",
     "@prisma/adapter-pg": "^7.9.1",
@@ -36,9 +35,11 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
+    "ulid": "^3.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@ai-sdk/devtools": "^1.0.9",
     "@faker-js/faker": "^10.5.0",
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
