@@ -175,19 +175,27 @@ export const visitLogRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Visit log not found.' });
       if (existing.approvalStatus !== 'VALIDATING') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING visit logs can be submitted.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory ?? null, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Submit',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
         message: 'Visit log submitted for approval',
       });
 
-      const updated = await prisma.visitLog.update({
-        where: { id: input.id },
-        data: { approvalStatus: 'PROPOSED', submittedAt: new Date(), approvalHistory: history } as any,
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.visitLog.updateMany({
+          where: { id: input.id, approvalStatus: 'VALIDATING' },
+          data: { approvalStatus: 'PROPOSED', submittedAt: new Date(), approvalHistory: history },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only VALIDATING visit logs can be submitted.' });
+        }
+        const record = await tx.visitLog.findUniqueOrThrow({ where: { id: input.id } });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'visit_log', resourceId: record.id, message: `Submitted visit log for approval` });
+        return record;
       });
 
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'visit_log', resourceId: updated.id, message: `Submitted visit log for approval` });
       return updated;
     }),
 
@@ -200,34 +208,44 @@ export const visitLogRouter = router({
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Visit log not found.' });
       if (existing.approvalStatus !== 'PROPOSED') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only PROPOSED visit logs can be approved.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory ?? null, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Approve',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
         message: message ?? 'Approved',
       });
 
-      const updated = await prisma.visitLog.update({
-        where: { id: idInput.id },
-        data: {
-          approvalStatus: 'APPROVED',
-          approvedById: ctx.user.userId,
-          approvedAt: new Date(),
-          approvalHistory: history,
-        } as any,
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.visitLog.updateMany({
+          where: { id: idInput.id, approvalStatus: 'PROPOSED' },
+          data: {
+            approvalStatus: 'APPROVED',
+            approvedById: ctx.user.userId,
+            approvedAt: new Date(),
+            approvalHistory: history,
+          },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only PROPOSED visit logs can be approved.' });
+        }
+        const record = await tx.visitLog.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        // Notify the salesman atomically with the state change.
+        await sendApprovalNotification({
+          recipientId: existing.salesmanId,
+          createdById: ctx.user.userId,
+          title: `Visit Log Approved`,
+          message: `Your visit log at ${existing.outletId ? 'outlet' : 'location'} has been approved.`,
+          targetType: 'VISIT_LOG',
+          targetId: existing.id,
+          actionUrl: `/visit-log/${existing.id}`,
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'APPROVE', userId: ctx.user.userId, resource: 'visit_log', resourceId: record.id, message: `Approved visit log` });
+        return record;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.salesmanId,
-        createdById: ctx.user.userId,
-        title: `Visit Log Approved`,
-        message: `Your visit log at ${existing.outletId ? 'outlet' : 'location'} has been approved.`,
-        targetType: 'VISIT_LOG',
-        targetId: existing.id,
-        actionUrl: `/visit-log/${existing.id}`,
-      });
-
-      await logActivity(prisma, { action: 'APPROVE', userId: ctx.user.userId, resource: 'visit_log', resourceId: updated.id, message: `Approved visit log` });
       return updated;
     }),
 
@@ -239,30 +257,41 @@ export const visitLogRouter = router({
       const existing = await prisma.visitLog.findUnique({ where: { id: idInput.id } });
       if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Visit log not found.' });
 
-      const history = pushApprovalHistory((existing as any).approvalHistory ?? null, {
+      const history = pushApprovalHistory(existing.approvalHistory, {
         process: 'Reject',
         name: ctx.user.name ?? 'Unknown',
         dateTime: new Date().toISOString(),
         message: message ?? 'Rejected',
       });
 
-      const updated = await prisma.visitLog.update({
-        where: { id: idInput.id },
-        data: { approvalStatus: 'REJECTED', approvalHistory: history } as any,
+      const updated = await prisma.$transaction(async (tx) => {
+        // No status precondition on this transition today (unlike approve), so
+        // the guard is existence-only — tightening it would be a state change.
+        const result = await tx.visitLog.updateMany({
+          where: { id: idInput.id },
+          data: { approvalStatus: 'REJECTED', approvalHistory: history },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Visit log not found.' });
+        }
+        const record = await tx.visitLog.findUniqueOrThrow({ where: { id: idInput.id } });
+
+        await sendApprovalNotification({
+          recipientId: existing.salesmanId,
+          createdById: ctx.user.userId,
+          title: `Visit Log Rejected`,
+          message: `Your visit log has been rejected.${message ? ` Reason: ${message}` : ''}`,
+          targetType: 'VISIT_LOG',
+          targetId: existing.id,
+          actionUrl: `/visit-log/${existing.id}`,
+          type: 'WARNING',
+          db: tx,
+        });
+
+        await logActivity(tx, { action: 'REJECT', userId: ctx.user.userId, resource: 'visit_log', resourceId: record.id, message: `Rejected visit log` });
+        return record;
       });
 
-      await sendApprovalNotification({
-        recipientId: existing.salesmanId,
-        createdById: ctx.user.userId,
-        title: `Visit Log Rejected`,
-        message: `Your visit log has been rejected.${message ? ` Reason: ${message}` : ''}`,
-        targetType: 'VISIT_LOG',
-        targetId: existing.id,
-        actionUrl: `/visit-log/${existing.id}`,
-        type: 'WARNING',
-      });
-
-      await logActivity(prisma, { action: 'REJECT', userId: ctx.user.userId, resource: 'visit_log', resourceId: updated.id, message: `Rejected visit log` });
       return updated;
     }),
 });
