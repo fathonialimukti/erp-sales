@@ -253,23 +253,24 @@ model Outlet {
 }
 
 model VisitLog {
-  id             String         @id @default(ulid()) @map("id")
-  salesmanId     String         @map("salesman_id")
-  outletId       String         @map("outlet_id")
-  date           DateTime       @map("date") @db.Date
-  checkInAt      DateTime?      @map("check_in_at")
-  checkOutAt     DateTime?      @map("check_out_at")
-  purpose        String?        @map("purpose")
-  notes          String?        @map("notes")
-  photos         Json?          @map("photos")
-  feedback       String?        @map("feedback")
-  salesOrderId   String?        @map("sales_order_id")
-  approvalStatus ApprovalStatus @default(DRAFT) @map("approval_status")
-  submittedAt    DateTime?      @map("submitted_at")
-  approvedById   String?        @map("approved_by_id")
-  approvedAt     DateTime?      @map("approved_at")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  id              String         @id @default(ulid()) @map("id")
+  salesmanId      String         @map("salesman_id")
+  outletId        String         @map("outlet_id")
+  date            DateTime       @map("date") @db.Date
+  checkInAt       DateTime?      @map("check_in_at")
+  checkOutAt      DateTime?      @map("check_out_at")
+  purpose         String?        @map("purpose")
+  notes           String?        @map("notes")
+  photos          Json?          @map("photos")
+  feedback        String?        @map("feedback")
+  salesOrderId    String?        @map("sales_order_id")
+  approvalStatus  ApprovalStatus @default(DRAFT) @map("approval_status")
+  submittedAt     DateTime?      @map("submitted_at")
+  approvedById    String?        @map("approved_by_id")
+  approvedAt      DateTime?      @map("approved_at")
+  approvalHistory Json?          @map("approval_history")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
   // SET NULL, not Restrict: the approver's human-readable provenance is already
   // denormalized into `approvalHistory` (`{ process, name, dateTime, message }`,
   // written by lib/approval-helpers.ts) and `approvedAt` is its own column, so
@@ -277,10 +278,10 @@ model VisitLog {
   // user who ever approved a visit permanently undeletable, with no UI path out.
   // This is the same choice the 4-tier models make: ActionProgram and
   // EventProposal store their approver ids as plain strings with no FK at all.
-  approvedBy     User?          @relation("visit_approved_by", fields: [approvedById], references: [id], onDelete: SetNull)
-  outlet         Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  salesOrder     SalesOrder?    @relation(fields: [salesOrderId], references: [id])
-  salesman       User           @relation(fields: [salesmanId], references: [id], onDelete: Cascade)
+  approvedBy      User?          @relation("visit_approved_by", fields: [approvedById], references: [id], onDelete: SetNull)
+  outlet          Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  salesOrder      SalesOrder?    @relation(fields: [salesOrderId], references: [id])
+  salesman        User           @relation(fields: [salesmanId], references: [id], onDelete: Cascade)
 
   @@index([salesmanId, date])
   @@index([outletId, date])
