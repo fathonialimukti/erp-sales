@@ -1,5 +1,5 @@
 import { Prisma } from '../prisma/generated/client';
-import type { DbClient } from './prisma.js';
+import { prisma, type DbClient } from './prisma.js';
 import type { AppSettings, UserSettings } from '@repo/schemas/settings';
 
 // =============================================
@@ -246,18 +246,27 @@ export async function setAppSettings(
   patch: AppSettingsPatch,
   updatedBy: string,
 ): Promise<void> {
-  const entries = flattenPatch(patch);
-  for (const [key, value] of entries) {
-    if (isSecretKey(key)) {
-      if (typeof value !== 'string' || value === '') continue; // keep existing
-    }
+  const upserts = flattenPatch(patch).flatMap(([key, value]) => {
+    if (isSecretKey(key) && (typeof value !== 'string' || value === '')) return []; // keep existing
     const jsonValue = value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
-    await db.appSetting.upsert({
+    return [db.appSetting.upsert({
       where: { key },
       create: { key, value: jsonValue, updatedBy },
       update: { value: jsonValue, updatedBy },
-    });
+    })];
+  });
+
+  if (db === prisma) {
+    // We own the connection: ONE transaction for the whole patch. Array form
+    // executes the batch serially, exactly like the old per-key loop.
+    if (upserts.length > 0) await db.$transaction(upserts);
+  } else {
+    // `db` is a caller's transaction client — the upserts already belong to that
+    // tx. Array-form `db.$transaction()` on a tx client ESCAPES the parent (probed
+    // on Prisma 7.9 + pg adapter: rows survived a parent rollback), so never nest.
+    for (const upsert of upserts) await upsert;
   }
+
   cacheInvalidate();
 }
 
