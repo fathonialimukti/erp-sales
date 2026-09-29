@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import * as z from 'zod';
 import { checkCartonLines, cartonToolError } from './carton-pack-size.js';
 import { prisma } from './prisma.js';
+import { Prisma } from '../prisma/generated/client.js';
 import { getSettingValue } from './settings-service.js';
 
 /**
@@ -63,8 +64,7 @@ export const customerAiTools = {
             limit: z.number().int().min(1).max(50).optional().default(20),
         }),
         execute: async ({ search, category, limit = 20 }) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const where: any = { status: 'ACTIVE' };
+            const where: Prisma.SkuWhereInput = { status: 'ACTIVE' };
             if (search) {
                 where.OR = [
                     { name: { contains: search, mode: 'insensitive' } },

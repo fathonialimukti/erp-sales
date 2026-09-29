@@ -3,6 +3,7 @@ import { logActivity } from '../lib/activity-log.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams, buildTextSearchWhere } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
+import { Prisma } from '../prisma/generated/client.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import { createAreaSchema, updateAreaSchema, areaIdSchema, areaListInputSchema } from '@repo/schemas/area';
 
@@ -14,7 +15,7 @@ export const areaRouter = router({
       const { page, limit, skip } = buildPaginationParams(input);
       const searchWhere = buildTextSearchWhere(input?.search, ['name', 'code'] as const);
 
-      const where: any = { ...searchWhere };
+      const where: Prisma.AreaWhereInput = { ...searchWhere };
       if (input?.regionId) where.regionId = input.regionId;
 
       const [data, total] = await Promise.all([

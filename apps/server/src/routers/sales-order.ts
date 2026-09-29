@@ -3,6 +3,7 @@ import { logActivity } from '../lib/activity-log.js';
 import { buildCreateLogDetail, buildUpdateLogDetail, buildDeleteLogDetail } from '../lib/log-detail.js';
 import { buildPaginationMeta, buildPaginationParams } from '../lib/list-query.js';
 import { prisma } from '../lib/prisma.js';
+import { Prisma } from '../prisma/generated/client.js';
 import { hasPermission, protectedProcedure, router } from '../trpc.js';
 import * as z from 'zod';
 import { createSalesOrderSchema, updateSalesOrderSchema, salesOrderIdSchema, salesOrderListInputSchema } from '@repo/schemas/sales-order';
@@ -19,17 +20,20 @@ export const salesOrderRouter = router({
     .query(async ({ input }) => {
       const { page, limit, skip } = buildPaginationParams(input);
 
-      const where: Record<string, unknown> = {};
+      const where: Prisma.SalesOrderWhereInput = {};
       if (input?.customerId) where.customerId = input.customerId;
       if (input?.outletId) where.outletId = input.outletId;
       if (input?.areaId) where.areaId = input.areaId;
-      if (input?.approvalStatus) where.approvalStatus = input.approvalStatus;
+      // ponytail: list input types approvalStatus as z.string() (schema change =
+      // behavior change), so the raw string is passed through as before.
+      if (input?.approvalStatus) where.approvalStatus = input.approvalStatus as Prisma.SalesOrderWhereInput['approvalStatus'];
 
       // Date range filter
       if (input?.dateFrom || input?.dateTo) {
-        where.date = {};
-        if (input.dateFrom) (where.date as any).gte = new Date(input.dateFrom);
-        if (input.dateTo) (where.date as any).lte = new Date(input.dateTo);
+        const date: Prisma.DateTimeFilter = {};
+        if (input.dateFrom) date.gte = new Date(input.dateFrom);
+        if (input.dateTo) date.lte = new Date(input.dateTo);
+        where.date = date;
       }
 
       // Global search across all table columns
@@ -38,7 +42,7 @@ export const salesOrderRouter = router({
         const numeric = Number(raw.replace(/\./g, '').replace(/,/g, '.'));
         const isNumeric = !Number.isNaN(numeric);
 
-        where.OR = [
+        const or: Prisma.SalesOrderWhereInput[] = [
           { documentNumber: { contains: raw, mode: 'insensitive' } },
           { notes: { contains: raw, mode: 'insensitive' } },
           { customer: { name: { contains: raw, mode: 'insensitive' } } },
@@ -47,16 +51,16 @@ export const salesOrderRouter = router({
         ];
 
         if (isNumeric) {
-          (where.OR as Record<string, unknown>[]).push(
-            { grandTotal: { equals: numeric } },
-          );
+          or.push({ grandTotal: { equals: numeric } });
         }
+
+        where.OR = or;
       }
 
       // Sorting
       const sortBy = input?.sortBy || 'createdAt';
       const sortOrder = input?.sortOrder || 'desc';
-      const orderBy: any = { [sortBy]: sortOrder };
+      const orderBy: Prisma.SalesOrderOrderByWithRelationInput = { [sortBy]: sortOrder };
 
       const [data, total] = await Promise.all([
         prisma.salesOrder.findMany({
