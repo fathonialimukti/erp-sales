@@ -18,14 +18,14 @@
     "ai:devtools": "bunx @ai-sdk/devtools"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.24",
-    "@ai-sdk/openai-compatible": "^3.0.17",
+    "@ai-sdk/openai": "^4.0.81",
+    "@ai-sdk/openai-compatible": "^3.0.59",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@prisma/client-runtime-utils": "^7.9.1",
     "@repo/schemas": "*",
     "@trpc/server": "^11.18.0",
-    "ai": "^7.0.42",
+    "ai": "^7.0.122",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie": "^2.0.1",
@@ -39,7 +39,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@ai-sdk/devtools": "^1.0.9",
+    "@ai-sdk/devtools": "^1.0.25",
     "@faker-js/faker": "^10.5.0",
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
@@ -48,7 +48,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.6.3",
     "@types/nodemailer": "^8.0.1",
     "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.20.0",
