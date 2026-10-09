@@ -1,19 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g-region" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#60A5FA"/>
-      <stop offset="1" stop-color="#3730A3"/>
-    </linearGradient>
-    <linearGradient id="shine-region" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-region)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-region)"/>
-  <path d="M32 12 C21 12 14 22 14 31 C14 38 19 43 24 46 L24 50 C24 51 25 52 26 52 H28 C29 52 30 51 30 50 V46 H34 V50 C34 51 35 52 36 52 H38 C39 52 40 51 40 50 V46 C45 43 50 38 50 31 C50 22 43 12 32 12 Z" fill="#FFFFFF"/>
-  <circle cx="24" cy="30" r="3.2" fill="#60A5FA" opacity="0.9"/>
-  <circle cx="32" cy="24" r="3.2" fill="#60A5FA" opacity="0.75"/>
-  <circle cx="40" cy="30" r="3.2" fill="#60A5FA" opacity="0.9"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Region — folded map sheet · solid region tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-region, #0069a3)" fill-opacity="var(--plate-alpha, 1)"/>
+  <path d="M13 20l12-5 14 5 12-5v27l-12 5-14-5-12 5z" fill="var(--plate-ink, #fff)"/><g fill="var(--plate-ink, #fff)" opacity=".55"><rect x="13" y="20" width="12" height="6" rx="2"/><rect x="39" y="20" width="12" height="6" rx="2"/></g>
 </svg>

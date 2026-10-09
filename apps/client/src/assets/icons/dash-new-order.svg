@@ -1,15 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="noBg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#34D399"/>
-      <stop offset="1" stop-color="#10B981"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#noBg)"/>
-  <rect x="16" y="14" width="28" height="36" rx="4" fill="#FFFFFF"/>
-  <rect x="22" y="22" width="16" height="2.5" rx="1.25" fill="#10B981"/>
-  <rect x="22" y="28" width="12" height="2.5" rx="1.25" fill="#10B981" fill-opacity="0.6"/>
-  <rect x="22" y="34" width="14" height="2.5" rx="1.25" fill="#10B981" fill-opacity="0.4"/>
-  <circle cx="42" cy="42" r="10" fill="#FFFFFF"/>
-  <path d="M42 38 L42 46 M38 42 L46 42" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Quick create: sales order · solid order tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-order, #00529b)" fill-opacity="var(--plate-alpha, 1)"/>
+  <path d="M10 13h7l4.5 26h27l4-19H20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="49" r="5" fill="var(--plate-ink, #fff)"/><circle cx="43" cy="49" r="5" fill="var(--plate-ink, #fff)"/>
 </svg>

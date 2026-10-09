@@ -1,13 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="ncBg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F472B6"/>
-      <stop offset="1" stop-color="#EC4899"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#ncBg)"/>
-  <circle cx="32" cy="26" r="9" fill="#FFFFFF"/>
-  <path d="M16 50 Q16 38 32 38 Q48 38 48 50 Z" fill="#FFFFFF"/>
-  <circle cx="46" cy="22" r="7" fill="#FFFFFF"/>
-  <path d="M44 22 L46 24 L48 20" stroke="#EC4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Quick create: customer · solid customer tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-customer, #0054c1)" fill-opacity="var(--plate-alpha, 1)"/>
+  <circle cx="32" cy="25" r="9" fill="var(--plate-ink, #fff)"/><path d="M14 46a18 18 0 0 1 36 0v2a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2z" fill="var(--plate-ink, #fff)"/>
 </svg>

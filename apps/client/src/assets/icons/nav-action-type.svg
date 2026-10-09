@@ -1,25 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g-action-type" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#4ADE80"/>
-      <stop offset="1" stop-color="#16A34A"/>
-    </linearGradient>
-    <linearGradient id="shine-action-type" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-action-type)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-action-type)"/>
-  <path d="M20 14 C18 14 16 16 16 18 V50 C16 52 18 54 20 54 H44 C46 54 48 52 48 50 V18 C48 16 46 14 44 14 Z" fill="#FFFFFF"/>
-  <rect x="24" y="10" width="16" height="7" rx="2" fill="#FFFFFF"/>
-  <rect x="21" y="24" width="7" height="7" rx="2" fill="#16A34A" opacity="0.85"/>
-  <path d="M22.8 27.5 L24.2 29 L26.6 25.8" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <rect x="32" y="26.2" width="11" height="2.6" rx="1.3" fill="#16A34A" opacity="0.5"/>
-  <rect x="21" y="35" width="7" height="7" rx="2" fill="#16A34A" opacity="0.6"/>
-  <path d="M22.8 38.5 L24.2 40 L26.6 36.8" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <rect x="32" y="37.2" width="9" height="2.6" rx="1.3" fill="#16A34A" opacity="0.4"/>
-  <rect x="21" y="46" width="7" height="7" rx="2" fill="none" stroke="#16A34A" stroke-width="1.8" opacity="0.55"/>
-  <rect x="32" y="48.2" width="11" height="2.6" rx="1.3" fill="#16A34A" opacity="0.3"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Action types — checked tile · solid action-type tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-action-type, #12654c)" fill-opacity="var(--plate-alpha, 1)"/>
+  <rect x="13" y="13" width="38" height="38" rx="9" fill="var(--plate-ink, #fff)"/><path d="M23 32.5l6.5 6.5L42 26l4.5 4.8-17 17-11-11z" fill="var(--plate-detail, #000)" opacity=".28"/>
 </svg>

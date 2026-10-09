@@ -1,22 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g-visit" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FDBA74"/>
-      <stop offset="1" stop-color="#EA580C"/>
-    </linearGradient>
-    <linearGradient id="shine-visit" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-visit)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-visit)"/>
-  <path d="M20 12 H44 C46 12 48 14 48 16 V50 C48 52 46 54 44 54 H20 C18 54 16 52 16 50 V16 C16 14 18 12 20 12 Z" fill="#FFFFFF"/>
-  <rect x="24" y="8" width="16" height="8" rx="2" fill="#FFFFFF" opacity="0.9"/>
-  <rect x="22" y="24" width="20" height="3" rx="1.5" fill="#F97316" opacity="0.75"/>
-  <rect x="22" y="32" width="16" height="2.5" rx="1" fill="#F97316" opacity="0.55"/>
-  <rect x="22" y="38" width="18" height="2.5" rx="1" fill="#F97316" opacity="0.55"/>
-  <path d="M40 40 C40 40 46 44 46 48 C46 50.2 44.2 52 42 52 C39.8 52 38 50.2 38 48 C38 44 40 40 40 40 Z" fill="#FFFFFF" opacity="0.95"/>
-  <circle cx="42" cy="48" r="1.8" fill="#F97316"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Visit log — routed field path · solid visit tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-visit, #0a6b52)" fill-opacity="var(--plate-alpha, 1)"/>
+  <circle cx="18" cy="18" r="8" fill="var(--plate-ink, #fff)"/><circle cx="46" cy="46" r="8" fill="var(--plate-ink, #fff)"/><path d="M18 26v6a8 8 0 0 0 8 8h12" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
 </svg>

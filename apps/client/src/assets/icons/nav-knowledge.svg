@@ -1,23 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g-knowledge" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#C4B5FD"/>
-      <stop offset="1" stop-color="#6D28D9"/>
-    </linearGradient>
-    <linearGradient id="shine-knowledge" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-knowledge)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-knowledge)"/>
-  <path d="M14 16 H30 C31 16 32 17 32 18 V50 C32 49 31 48 30 48 H16 C15 48 14 47 14 46 Z" fill="#FFFFFF"/>
-  <path d="M50 16 H34 C33 16 32 17 32 18 V50 C32 49 33 48 34 48 H48 C49 48 50 47 50 46 Z" fill="#FFFFFF" opacity="0.85"/>
-  <path d="M32 18 V48" stroke="#8B5CF6" stroke-width="2" opacity="0.55"/>
-  <rect x="18" y="22" width="10" height="2" rx="1" fill="#8B5CF6" opacity="0.55"/>
-  <rect x="18" y="28" width="8" height="2" rx="1" fill="#8B5CF6" opacity="0.4"/>
-  <rect x="36" y="22" width="10" height="2" rx="1" fill="#8B5CF6" opacity="0.55"/>
-  <rect x="36" y="28" width="8" height="2" rx="1" fill="#8B5CF6" opacity="0.4"/>
-  <path d="M48 10 L49.4 13.6 L53 15 L49.4 16.4 L48 20 L46.6 16.4 L43 15 L46.6 13.6 Z" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Knowledge base — open book · solid knowledge tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-knowledge, #12664a)" fill-opacity="var(--plate-alpha, 1)"/>
+  <path d="M32 16c-4.5-3.4-10-5-16-5H11v33h5c6 0 11.5 1.6 16 5 4.5-3.4 10-5 16-5h5V11h-5c-6 0-11.5 1.6-16 5z" fill="var(--plate-ink, #fff)"/><rect x="29" y="16" width="6" height="33" rx="2" fill="var(--plate-ink, #fff)" opacity=".7"/>
 </svg>

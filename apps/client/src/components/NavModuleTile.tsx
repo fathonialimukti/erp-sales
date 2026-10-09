@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -6,7 +6,7 @@ import { moduleCssVar, type ModuleKey } from "@/types/module";
 
 interface NavModuleTileProps {
   label: string;
-  icon?: string;
+  icon?: ReactNode;
   active?: boolean;
   collapsed?: boolean;
   module?: ModuleKey;
@@ -41,13 +41,6 @@ export const NavModuleTile = ({
           borderLeftColor: accent,
         } satisfies CSSProperties)
       : undefined;
-  const iconPlateStyle =
-    active && accent
-      ? ({
-          backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)`,
-        } satisfies CSSProperties)
-      : undefined;
-
   return (
     <button
       type="button"
@@ -70,24 +63,16 @@ export const NavModuleTile = ({
       onFocus={(e) => onFocus?.(e.currentTarget)}
       onBlur={onBlur}
     >
+      {/*
+        No wash behind the plate: it already carries its own solid module fill,
+        so tinting the slot as well would stack two module colours. The row's
+        own active wash (above) still marks selection.
+      */}
       <span
-        className={cn(
-          "inline-flex shrink-0 items-center justify-center",
-          collapsed ? "size-10" : "size-8",
-        )}
-        style={iconPlateStyle}
+        className="inline-flex shrink-0 items-center justify-center"
         aria-hidden
       >
-        {icon ? (
-          <img
-            src={icon}
-            alt=""
-            className={cn(
-              "rounded-xl object-contain",
-              collapsed ? "size-9" : "size-8",
-            )}
-          />
-        ) : null}
+        {icon}
       </span>
 
       {!collapsed ? (

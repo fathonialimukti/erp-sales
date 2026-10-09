@@ -46,7 +46,7 @@ import { formatCurrency } from "@/lib/format";
 import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { trpcClient } from "../lib/trpc";
 import { authUserAtom, hasPermissionAtom } from "../lib/atoms";
-import { icons } from "../assets/icons";
+import { plates, type PlateName } from "@/assets/plates";
 
 type SalesDashboard = {
   kpis: {
@@ -242,6 +242,21 @@ export const Dashboard = () => {
     staleTime: 30_000,
   });
 
+  /**
+   * Plates carry their own solid module fill, so the quick-action / agenda /
+   * greeting slots render the tile alone — no surrounding tint wrapper, which
+   * would stack a second colour on top (DESIGN.md §2 colour law).
+   */
+  const QuickActionPlate = ({ name }: { name: PlateName }) => {
+    const P = plates[name];
+    return <P size={44} className="rounded-xl" />;
+  };
+  const ActivityPlate = ({ visit }: { visit: boolean }) => {
+    const P = plates[visit ? "dashVisits" : "dashOrders"];
+    return <P size={36} className="shrink-0 rounded-lg" />;
+  };
+  const GreetingPlate = plates.dashSun;
+
   const todayAgenda = useMemo(() => {
     type AgendaItem = {
       id: string;
@@ -286,69 +301,63 @@ export const Dashboard = () => {
     () => [
       {
         id: "new-order",
-        icon: icons.dashNewOrder,
+        icon: "dashNewOrder" as PlateName,
         label: intl.formatMessage({
           id: "dashboard.action.new_order",
           defaultMessage: "New sales order",
         }),
         permission: "sales-order@create",
         href: "/sales-order/create",
-        tone: "bg-[color-mix(in_srgb,var(--module-order)_16%,transparent)]",
       },
       {
         id: "new-visit",
-        icon: icons.dashNewVisit,
+        icon: "dashNewVisit" as PlateName,
         label: intl.formatMessage({
           id: "dashboard.action.new_visit",
           defaultMessage: "Log a visit",
         }),
         permission: "visit-log@create",
         href: "/visit-log/create",
-        tone: "bg-[color-mix(in_srgb,var(--module-visit)_16%,transparent)]",
       },
       {
         id: "new-customer",
-        icon: icons.dashNewCustomer,
+        icon: "dashNewCustomer" as PlateName,
         label: intl.formatMessage({
           id: "dashboard.action.new_customer",
           defaultMessage: "Add customer",
         }),
         permission: "customer@create",
         href: "/customer/create",
-        tone: "bg-[color-mix(in_srgb,var(--module-customer)_16%,transparent)]",
       },
       {
         id: "new-sku",
-        icon: icons.dashNewSku,
+        icon: "dashNewSku" as PlateName,
         label: intl.formatMessage({
           id: "dashboard.action.new_sku",
           defaultMessage: "Add SKU",
         }),
         permission: "sku@create",
         href: "/sku/create",
-        tone: "bg-[color-mix(in_srgb,var(--module-sku)_16%,transparent)]",
       },
       {
         id: "new-program",
-        icon: icons.dashNewProgram,
+        icon: "dashNewProgram" as PlateName,
         label: intl.formatMessage({
           id: "dashboard.action.new_program",
           defaultMessage: "New action program",
         }),
         permission: "action-program@create",
         href: "/action-program/create",
-        tone: "bg-[color-mix(in_srgb,var(--module-planning)_16%,transparent)]",
       },
       {
         id: "new-event",
-        icon: icons.dashNewEvent,
+        icon: "dashNewEvent" as PlateName,
         label: intl.formatMessage({
           id: "dashboard.action.new_event",
           defaultMessage: "New event proposal",
         }),
         permission: "event-proposal@create",
         href: "/event-proposal/create",
-        tone: "bg-[color-mix(in_srgb,var(--module-event)_16%,transparent)]",
       },
     ],
     [intl],
@@ -394,7 +403,7 @@ export const Dashboard = () => {
             "Sales performance, approvals, and customer activity at a glance.",
         })}
         icon={
-          <img src={icons.dashSun} alt="" className="size-7 object-contain sm:size-8" />
+          <GreetingPlate />
         }
       />
 
@@ -887,14 +896,7 @@ export const Dashboard = () => {
                   onClick={() => navigate(a.href)}
                   className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-xl border bg-card p-3 text-center shadow-sm transition-colors duration-200 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <span
-                    className={cn(
-                      "flex size-11 items-center justify-center overflow-hidden rounded-xl",
-                      a.tone,
-                    )}
-                  >
-                    <img src={a.icon} alt="" className="size-full object-contain" />
-                  </span>
+                  <QuickActionPlate name={a.icon} />
                   <span className="text-xs font-semibold text-foreground leading-tight">{a.label}</span>
                 </button>
               </StaggerItem>
@@ -963,21 +965,7 @@ export const Dashboard = () => {
                       onClick={() => navigate(item.href)}
                       className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
-                      <span
-                        className={cn(
-                          "flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
-                          item.type === "visit"
-                            ? "bg-[color-mix(in_srgb,var(--module-visit)_16%,transparent)]"
-                            : "bg-[color-mix(in_srgb,var(--module-order)_16%,transparent)]",
-                        )}
-                        aria-hidden
-                      >
-                        <img
-                          src={item.type === "visit" ? icons.dashVisits : icons.dashOrders}
-                          alt=""
-                          className="size-full object-contain"
-                        />
-                      </span>
+                      <ActivityPlate visit={item.type === "visit"} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-foreground">
                           {item.title}

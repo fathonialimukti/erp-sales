@@ -203,9 +203,9 @@
     --module-event: oklch(0.52 0.21 20);
     --module-user: oklch(0.5 0.2 270);
     --module-report: oklch(0.5 0.2 230);
-    --module-email: oklch(0.52 0.2 210);
+    --module-email: oklch(0.5 0.2 210);
     --module-region: oklch(0.52 0.2 220);
-    --module-area: oklch(0.52 0.2 190);
+    --module-area: oklch(0.5 0.2 190);
     --module-budget: oklch(0.52 0.2 260);
     --module-budget-type: oklch(0.52 0.2 50);
     --module-budget-period: oklch(0.52 0.2 242);

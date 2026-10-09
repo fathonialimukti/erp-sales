@@ -22,7 +22,7 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { icons } from "@/assets/icons";
+import { plates, type PlateName } from "@/assets/plates";
 import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
 import { hasPermissionAtom, searchOpenAtom } from "@/lib/atoms";
 import { trpcClient } from "@/lib/trpc";
@@ -38,13 +38,14 @@ interface SearchResult {
   href: string;
   label: string;
   hint: string;
-  icon?: string;
+  /** Present on create-actions, where the slot shows a module plate. */
+  icon?: PlateName;
 }
 
 interface NavLeaf {
   name: string;
   href: string;
-  icon?: string;
+  icon?: PlateName;
   permission?: string | string[];
 }
 
@@ -74,6 +75,12 @@ const KIND_TINT: Record<SearchResultKind, string> = {
   customer: "bg-primary/10 text-primary",
   sku: "bg-muted text-foreground",
   "sales-order": "bg-primary/10 text-primary",
+};
+
+/** Create-action rows show the module plate itself; results show a Lucide glyph. */
+const ResultActionPlate = ({ name }: { name: PlateName }) => {
+  const P = plates[name];
+  return <P size={32} className="shrink-0 rounded-lg" />;
 };
 
 export const SearchPalette = () => {
@@ -108,7 +115,7 @@ export const SearchPalette = () => {
       labelId: string;
       label: string;
       permission: string;
-      icon?: string;
+      icon?: PlateName;
     }> = [
       {
         id: "create-sales-order",
@@ -116,7 +123,7 @@ export const SearchPalette = () => {
         labelId: "search.create.sales_order",
         label: "New sales order",
         permission: "sales-order@create",
-        icon: icons.dashNewOrder,
+        icon: "dashNewOrder" as PlateName,
       },
       {
         id: "create-customer",
@@ -124,7 +131,7 @@ export const SearchPalette = () => {
         labelId: "search.create.customer",
         label: "New customer",
         permission: "customer@create",
-        icon: icons.dashNewCustomer,
+        icon: "dashNewCustomer" as PlateName,
       },
       {
         id: "create-visit",
@@ -132,7 +139,7 @@ export const SearchPalette = () => {
         labelId: "search.create.visit",
         label: "Log a visit",
         permission: "visit-log@create",
-        icon: icons.dashNewVisit,
+        icon: "dashNewVisit" as PlateName,
       },
       {
         id: "create-sku",
@@ -140,7 +147,7 @@ export const SearchPalette = () => {
         labelId: "search.create.sku",
         label: "New SKU",
         permission: "sku@create",
-        icon: icons.dashNewSku,
+        icon: "dashNewSku" as PlateName,
       },
       {
         id: "create-action-program",
@@ -148,7 +155,7 @@ export const SearchPalette = () => {
         labelId: "search.create.action_program",
         label: "New action program",
         permission: "action-program@create",
-        icon: icons.dashNewProgram,
+        icon: "dashNewProgram" as PlateName,
       },
       {
         id: "create-event-proposal",
@@ -156,7 +163,7 @@ export const SearchPalette = () => {
         labelId: "search.create.event_proposal",
         label: "New event proposal",
         permission: "event-proposal@create",
-        icon: icons.dashNewEvent,
+        icon: "dashNewEvent" as PlateName,
       },
     ];
     return actions
@@ -441,25 +448,33 @@ export const SearchPalette = () => {
                   onSelect={() => goTo(r.href)}
                   className="min-h-11 gap-3 rounded-lg px-2.5 py-2"
                 >
-                  <span
-                    className={cn(
-                      "inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg",
-                      KIND_TINT[r.kind],
-                    )}
-                    aria-hidden
-                  >
-                    {r.icon ? (
-                      <img src={r.icon} alt="" className="size-5" />
-                    ) : r.kind === "customer" ? (
-                      <UserRound className="size-4" />
-                    ) : r.kind === "sku" ? (
-                      <Package className="size-4" />
-                    ) : r.kind === "sales-order" ? (
-                      <FileText className="size-4" />
-                    ) : (
-                      <Search className="size-4" />
-                    )}
-                  </span>
+                  {/*
+                    A create-action result carries a full plate (solid module
+                    fill); everything else is a plain Lucide glyph on the
+                    neutral kind tint. Mixing the two in one slot would double
+                    the colour, so they take separate branches.
+                  */}
+                  {r.icon ? (
+                    <ResultActionPlate name={r.icon} />
+                  ) : (
+                    <span
+                      className={cn(
+                        "inline-flex size-9 shrink-0 items-center justify-center rounded-lg",
+                        KIND_TINT[r.kind],
+                      )}
+                      aria-hidden
+                    >
+                      {r.kind === "customer" ? (
+                        <UserRound className="size-4" />
+                      ) : r.kind === "sku" ? (
+                        <Package className="size-4" />
+                      ) : r.kind === "sales-order" ? (
+                        <FileText className="size-4" />
+                      ) : (
+                        <Search className="size-4" />
+                      )}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-foreground">
                       <HighlightedText text={r.label} query={query} />

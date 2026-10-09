@@ -3,29 +3,38 @@ import { ArrowLeft } from "lucide-react";
 import { useIntl } from "react-intl";
 import { motion, useReducedMotion } from "motion/react";
 
-import { icons } from "@/assets/icons";
+import { plates, type PlateName } from "@/assets/plates";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { moduleCssVar, type ModuleKey } from "@/types/module";
 import { pageEnter, getMotionProps } from "@/lib/motion";
 
-/** Default left plate icon per module key (nav Family A tiles). */
-const MODULE_ICON: Record<string, string> = {
-  customer: icons.navCustomer,
-  outlet: icons.navOutlet,
-  order: icons.navSalesOrder,
-  visit: icons.navVisit,
-  sku: icons.navSku,
-  planning: icons.navPlanning,
-  event: icons.navEvent,
-  user: icons.navUsers,
-  report: icons.navReports,
-  email: icons.navEmailCrm,
-  knowledge: icons.navKnowledge,
-  ai: icons.navAi,
+/** Default left plate per module key (solid module tile, see assets/plates). */
+const MODULE_PLATE: Record<string, PlateName> = {
+  customer: "navCustomer",
+  outlet: "navOutlet",
+  order: "navSalesOrder",
+  visit: "navVisit",
+  sku: "navSku",
+  skuCategory: "navSkuCategory",
+  planning: "navPlanning",
+  budget: "navBudget",
+  budgetType: "navBudgetType",
+  budgetPeriod: "navBudgetPeriod",
+  budgetLine: "navBudgetLine",
+  actionType: "navActionType",
+  eventType: "navEventType",
+  event: "navEvent",
+  user: "navUsers",
+  settings: "navLogs",
+  vendor: "navVendor",
+  report: "navReports",
+  email: "navEmailCrm",
+  knowledge: "navKnowledge",
+  ai: "navAi",
   // geo master data (pages use these keys even if not in ModuleKey spectrum)
-  region: icons.navRegion,
-  area: icons.navArea,
+  region: "navRegion",
+  area: "navArea",
 };
 
 interface PageHeaderProps {
@@ -93,17 +102,29 @@ export const PageHeader = ({
       }
     : undefined;
 
+  const modulePlate = module ? MODULE_PLATE[module] : undefined;
+  const Plate = modulePlate ? plates[modulePlate] : null;
+
+  /**
+   * On a module header the band is already the module colour, so the plate is
+   * washed white — a second saturated tile on top of it would be two competing
+   * colours (DESIGN.md §2: never a saturated gradient banner inside a band).
+   * Generic headers sit on `bg-card`, so the plate keeps its own solid fill.
+   */
   const resolvedIcon =
-    icon === null
-      ? null
-      : (icon ??
-        (module && MODULE_ICON[module] ? (
-          <img
-            src={MODULE_ICON[module]}
-            alt=""
-            className="size-7 object-contain sm:size-8"
-          />
-        ) : null));
+    icon === null ? null : (
+      icon ??
+      (Plate ? (
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center justify-center rounded-xl",
+            isModuleHeader ? "bg-white/15 p-1" : undefined,
+          )}
+        >
+          <Plate size={isModuleHeader ? 24 : 32} />
+        </span>
+      ) : null)
+    );
 
   return (
     <header

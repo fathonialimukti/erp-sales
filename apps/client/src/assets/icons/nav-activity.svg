@@ -1,23 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g-activity" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#A5B4FC"/>
-      <stop offset="1" stop-color="#4F46E5"/>
-    </linearGradient>
-    <linearGradient id="shine-activity" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-activity)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-activity)"/>
-  <rect x="22" y="14" width="28" height="8" rx="2" fill="#FFFFFF"/>
-  <rect x="22" y="28" width="28" height="8" rx="2" fill="#FFFFFF" opacity="0.85"/>
-  <rect x="22" y="42" width="28" height="8" rx="2" fill="#FFFFFF" opacity="0.7"/>
-  <circle cx="16" cy="18" r="3.5" fill="#FFFFFF"/>
-  <circle cx="16" cy="32" r="3.5" fill="#FFFFFF" opacity="0.85"/>
-  <circle cx="16" cy="46" r="3.5" fill="#FFFFFF" opacity="0.7"/>
-  <path d="M16 21.5 V28.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
-  <path d="M16 35.5 V42.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.45"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Activity log — ruled list · solid user tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-user, #3f2e93)" fill-opacity="var(--plate-alpha, 1)"/>
+  <g fill="var(--plate-ink, #fff)"><rect x="13" y="16" width="38" height="7" rx="3.5"/><rect x="13" y="28.5" width="38" height="7" rx="3.5"/><rect x="13" y="41" width="38" height="7" rx="3.5"/></g>
 </svg>

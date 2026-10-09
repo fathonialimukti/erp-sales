@@ -1,8 +1,8 @@
-import { icons } from "../assets/icons";
+import type { PlateName } from "../assets/plates";
 
 export interface NavMenuItem {
   name: string;
-  icon?: string;
+  icon?: PlateName;
   href?: string;
   permission?: string | string[];
   children?: NavMenuItem[];
@@ -11,52 +11,52 @@ export interface NavMenuItem {
 export const NAV_MENU: NavMenuItem[] = [
   {
     name: "nav.dashboard",
-    icon: icons.navDashboard,
+    icon: "navDashboard",
     href: "/dashboard",
   },
   {
     name: "nav.reports",
-    icon: icons.navReports,
+    icon: "navReports",
     href: "/reports",
     permission: "report@read",
   },
   {
     name: "nav.master_data",
-    icon: icons.navRegion,
+    icon: "navRegion",
     children: [
       {
         name: "nav.region",
-        icon: icons.navRegion,
+        icon: "navRegion",
         href: "/region",
         permission: "region@read",
       },
       {
         name: "nav.area",
-        icon: icons.navArea,
+        icon: "navArea",
         href: "/area",
         permission: "area@read",
       },
       {
         name: "nav.customer",
-        icon: icons.navCustomer,
+        icon: "navCustomer",
         href: "/customer",
         permission: "customer@read",
       },
       {
         name: "nav.outlet",
-        icon: icons.navOutlet,
+        icon: "navOutlet",
         href: "/outlet",
         permission: "outlet@read",
       },
       {
         name: "nav.sku_category",
-        icon: icons.navSkuCategory,
+        icon: "navSkuCategory",
         href: "/sku-category",
         permission: "skuCategory@read",
       },
       {
         name: "nav.sku",
-        icon: icons.navSku,
+        icon: "navSku",
         href: "/sku",
         permission: "sku@read",
       },
@@ -64,17 +64,17 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.sales",
-    icon: icons.navSales,
+    icon: "navSalesOrder",
     children: [
       {
         name: "nav.sales_order",
-        icon: icons.navSalesOrder,
+        icon: "navSalesOrder",
         href: "/sales-order",
         permission: "sales-order@read",
       },
       {
         name: "nav.email_crm",
-        icon: icons.navEmailCrm,
+        icon: "navEmailCrm",
         href: "/email-crm",
         permission: "email-crm@read",
       },
@@ -82,11 +82,11 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.field_ops",
-    icon: icons.navFieldOps,
+    icon: "navVisit",
     children: [
       {
         name: "nav.visit_log",
-        icon: icons.navVisit,
+        icon: "navVisit",
         href: "/visit-log",
         permission: "visit-log@read",
       },
@@ -94,17 +94,17 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.programs",
-    icon: icons.navPlanning,
+    icon: "navPlanning",
     children: [
       {
         name: "nav.action_program",
-        icon: icons.navPlanning,
+        icon: "navPlanning",
         href: "/action-program",
         permission: "action-program@read",
       },
       {
         name: "nav.event_proposal",
-        icon: icons.navEvent,
+        icon: "navEvent",
         href: "/event-proposal",
         permission: "event-proposal@read",
       },
@@ -112,47 +112,47 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.budgeting",
-    icon: icons.navBudget,
+    icon: "navBudget",
     children: [
       {
         name: "nav.budget",
-        icon: icons.navBudget,
+        icon: "navBudget",
         href: "/budget",
         permission: "budget-line@read",
       },
       {
         name: "nav.budget_type",
-        icon: icons.navBudgetType,
+        icon: "navBudgetType",
         href: "/budget-type",
         permission: "budget-type@read",
       },
       {
         name: "nav.budget_period",
-        icon: icons.navBudgetPeriod,
+        icon: "navBudgetPeriod",
         href: "/budget-period",
         permission: "budget-period@read",
       },
       {
         name: "nav.budget_line",
-        icon: icons.navBudgetLine,
+        icon: "navBudgetLine",
         href: "/budget-line",
         permission: "budget-line@read",
       },
       {
         name: "nav.action_type",
-        icon: icons.navActionType,
+        icon: "navActionType",
         href: "/action-type",
         permission: "action-type@read",
       },
       {
         name: "nav.event_type",
-        icon: icons.navEventType,
+        icon: "navEventType",
         href: "/event-type",
         permission: "event-type@read",
       },
       {
         name: "nav.vendor",
-        icon: icons.navVendor,
+        icon: "navVendor",
         href: "/vendor",
         permission: "vendor@read",
       },
@@ -160,47 +160,47 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.system",
-    icon: icons.navUsers,
+    icon: "navUsers",
     children: [
       {
         name: "nav.users",
-        icon: icons.navUsers,
+        icon: "navUsers",
         href: "/users",
         permission: "user@read",
       },
       {
         name: "nav.access_control",
-        icon: icons.navRoles,
+        icon: "navRoles",
         href: "/access-control",
         permission: "role@read",
       },
       {
         name: "nav.activity_logs",
-        icon: icons.navActivity,
+        icon: "navActivity",
         href: "/activity-logs",
         permission: "activity_log@read",
       },
       {
         name: "nav.system_logs",
-        icon: icons.navLogs,
+        icon: "navLogs",
         href: "/system-logs",
         permission: "log@read",
       },
       {
         name: "backup.title",
-        icon: icons.navLogs,
+        icon: "navLogs",
         href: "/backups",
         permission: "backup@read",
       },
       {
         name: "nav.notifications_admin",
-        icon: icons.navNotifications,
+        icon: "navNotifications",
         href: "/notifications",
         permission: "notification@read",
       },
       {
         name: "nav.knowledge_base",
-        icon: icons.navKnowledge,
+        icon: "navKnowledge",
         href: "/knowledge-base",
         permission: "knowledge-base@read",
       },
@@ -208,7 +208,7 @@ export const NAV_MENU: NavMenuItem[] = [
   },
   {
     name: "nav.ai_admin",
-    icon: icons.navAi,
+    icon: "navAi",
     href: "/ai-admin",
     permission: "ai-admin@access",
   },

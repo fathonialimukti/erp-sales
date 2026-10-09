@@ -1,13 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="npBg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F87171"/>
-      <stop offset="1" stop-color="#EF4444"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#npBg)"/>
-  <path d="M18 20 L46 20 L46 44 L32 44 L26 50 L26 44 L18 44 Z" fill="#FFFFFF"/>
-  <path d="M24 28 L40 28 M24 33 L36 33 M24 38 L38 38" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
-  <circle cx="46" cy="22" r="3" fill="#FFFFFF" stroke="#EF4444" stroke-width="1"/>
-  <path d="M46 20 L46 24 M44 22 L48 22" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Quick create: action program · solid planning tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-planning, #4a3ba8)" fill-opacity="var(--plate-alpha, 1)"/>
+  <path d="M17 13h20l11 11v27a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3V16a3 3 0 0 1 3-3z" fill="var(--plate-ink, #fff)"/><path d="M37 13l11 11H40a3 3 0 0 1-3-3z" fill="var(--plate-ink, #fff)" opacity=".7"/><g fill="var(--plate-detail, #000)" opacity=".26"><rect x="21" y="30" width="22" height="5" rx="2.5"/><rect x="21" y="39" width="16" height="5" rx="2.5"/></g>
 </svg>

@@ -194,7 +194,7 @@ Two modes:
 - **Module headers** (`module` set): **directional gradient** fill (`linear-gradient(135deg, var(--module-X), color-mix(in oklch, var(--module-X) 72%, oklch(0.3 0.2 260)))`), white title (`text-white font-bold`) / eyebrow (`text-white/90`) / icon plate (`bg-white/15 text-white`) / description (`text-white/80`) / back (`text-white hover:bg-white/15`), white inset left rail (`bg-white/40`). The gradient runs top-left (module color) → bottom-right (deeper mix of the same hue anchored toward a neutral dark), giving professional section-header depth instead of a flat bloc — the Stripe/Linear/Vercel pattern. The wayfinding band stays a band; only the fill style is a gradient.
 - **Generic headers** (no `module`): flat `bg-card border-b border-border`, black title (`text-foreground font-bold`), description/eyebrow `text-muted-foreground`, 3px `--primary` left rail. Aurora-on-neutral fallback for Dashboard / generic pages.
 
-**Module color must be header-safe**: light-mode `--module-*` at L≈0.45–0.48 / chroma ~0.20 so white text on the text-bearing (top-left) region of the gradient clears WCAG AA (~4.5:1); the deeper bottom-right endpoint sits at ~L≈0.36 and stays away from the title/eyebrow, with `text-white/80` on the description still clearing AA there. Dark-mode `--module-*` stays L~0.68–0.78 for active-wash on the dark sidebar — not for solid headers.
+**Module color must be header-safe**: light-mode `--module-*` at L≈0.45–0.48 / chroma ~0.20 so white text on the text-bearing (top-left) region of the gradient clears WCAG AA (~4.5:1); the deeper bottom-right endpoint sits at ~L≈0.36 and stays away from the title/eyebrow, with `text-white/80` on the description still clearing AA there. Dark-mode `--module-*` sits at L≈0.50–0.54 — `index.css` is canonical and the two paragraphs above disagreed on this band (0.44–0.54 vs 0.68–0.78); treat `index.css` as the source. That band is set so a **solid plate + white glyph** clears 4.5:1 in both themes; `bun run icons:check` fails the build contract if any token drops below it.
 
 ### Login recipe
 
@@ -451,8 +451,37 @@ Landing and auth may use stronger mesh, blobs, and marketing hierarchy. **Do not
 | Kind | Rule |
 |------|------|
 | Lucide | Chrome only (actions, chevrons, status icons) |
-| Custom SVG plates | Nav modules only |
+| Module plates | Nav / KPI / hero wayfinding only (see below) |
 | Emoji | **Never** as icons |
+
+**Module plates** are the solid `--module-*` tiles in `apps/client/src/assets/icons/`, wrapped by
+`src/assets/plates.tsx` and rendered by `NavModuleTile`, `PageHeader`, `Dashboard`, and
+`SearchPalette`. Rules:
+
+- **Solid fills only.** No gradients, filters, or masks — enforced by `bun run icons:check`.
+- The tile is `var(--module-<key>, #hex)`. The fallback hex keeps the file renderable standalone;
+  in-app the token wins, so plates track light/dark automatically.
+- **Inlined via `?raw`, never `<img src>`.** An `<img>`-embedded SVG is an isolated document and
+  cannot read host CSS variables — `currentColor` and `var(--x)` silently resolve to black. The
+  24px `currentColor` family that used to ship as `<img>` files was un-themeable for exactly this
+  reason and has been retired to Lucide.
+- **Two variants**, chosen by the `variant` prop:
+  - `solid` (default) — opaque module tile, white glyph. KPI/hero slots and generic page headers,
+    where the plate *is* the colour signal.
+  - `wash` — 14% module tile, glyph in solid module colour. **Sidebar only.** 27 stacked solid
+    tiles out-shout the row labels and fight the row's own active wash; this is the frozen nav
+    recipe above. Needs a `module` prop so the ink can resolve its token.
+- Colour slots live on the SVG so one file serves both variants: `--plate-alpha` (tile opacity),
+  `--plate-ink` (glyph), `--plate-detail` (knock-out marks inside a glyph — goes light in `wash`,
+  since the solid variant's near-black vanishes against a module-coloured glyph).
+- Exactly one colour per plate. Do not wrap a plate in a second `color-mix` tint — that stacks two
+  module colours. On a coloured `PageHeader` band the plate is washed white instead
+  (`bg-white/15` + white glyph).
+- Glyphs sit on a 40×40 optical box, ≥6 units thick at 64 units, so they survive a 32px render.
+  Tile corner radius is `rx="10"` on 64 (~16%) — deliberately squarer than an iOS app icon; at nav
+  size the iOS-scale radius read as bubbly.
+
+New art: draw the `.svg`, then `bun run icons:raster && bun run icons:check`.
 
 ### Buttons
 

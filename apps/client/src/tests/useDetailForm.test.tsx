@@ -1,11 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { IntlProvider } from "react-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { useEffect, useState } from "react";
 
 import { useDetailForm } from "../lib/hooks/useDetailForm";
-import { DomainIcon } from "../components/DomainIcon";
 
 afterEach(() => {
   cleanup();
@@ -51,20 +50,4 @@ describe("useDetailForm — seeds once when detail arrives", () => {
   });
 });
 
-describe("DomainIcon — shared module icon", () => {
-  it("renders the bundled asset with accessible size", () => {
-    renderWithIntl(<DomainIcon name="actionBack" size={20} aria-label="Back" />);
-    const img = screen.getByRole("img", { name: "Back" });
-    expect(img).toHaveAttribute("width", "20");
-    expect(img).toHaveAttribute("height", "20");
-  });
 
-  it("maps module keys to CSS vars instead of hex", () => {
-    const { container } = renderWithIntl(
-      <DomainIcon name="actionBack" module="customer" aria-label="Back" />,
-    );
-    const img = container.querySelector("img");
-    expect(img?.getAttribute("style")).toContain("var(--module-customer)");
-    expect(img?.getAttribute("style")).not.toMatch(/#[0-9a-fA-F]{3,8}/);
-  });
-});

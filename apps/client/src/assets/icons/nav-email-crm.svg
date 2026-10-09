@@ -1,18 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g-email-crm" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7DD3FC"/>
-      <stop offset="1" stop-color="#0284C7"/>
-    </linearGradient>
-    <linearGradient id="shine-email-crm" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-email-crm)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-email-crm)"/>
-  <path d="M12 20 C12 18 14 16 16 16 H48 C50 16 52 18 52 20 V44 C52 46 50 48 48 48 H16 C14 48 12 46 12 44 Z" fill="#FFFFFF"/>
-  <path d="M14 20 L32 34 L50 20" stroke="#0EA5E9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.85"/>
-  <path d="M48 10 L49.5 14 L53.5 15.5 L49.5 17 L48 21 L46.5 17 L42.5 15.5 L46.5 14 Z" fill="#FFFFFF" opacity="0.95"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Email CRM — envelope · solid email tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-email, #046a9c)" fill-opacity="var(--plate-alpha, 1)"/>
+  <rect x="11" y="17" width="42" height="30" rx="6" fill="var(--plate-ink, #fff)"/><path d="M13 21l19 14 19-14v3L32 38 13 24z" fill="var(--plate-detail, #000)" opacity=".26"/>
 </svg>

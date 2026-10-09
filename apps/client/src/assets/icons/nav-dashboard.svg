@@ -1,20 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g-dashboard" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#818CF8"/>
-      <stop offset="1" stop-color="#4F46E5"/>
-    </linearGradient>
-    <linearGradient id="shine-dashboard" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g-dashboard)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#shine-dashboard)"/>
-  <g fill="#FFFFFF">
-    <rect x="14" y="34" width="9" height="16" rx="2"/>
-    <rect x="27.5" y="24" width="9" height="26" rx="2" opacity="0.85"/>
-    <rect x="41" y="14" width="9" height="36" rx="2" opacity="0.7"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Dashboard — 2x2 layout grid · solid primary tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--primary, #0069a6)" fill-opacity="var(--plate-alpha, 1)"/>
+  <g fill="var(--plate-ink, #fff)"><rect x="14" y="14" width="16" height="16" rx="4"/><rect x="34" y="14" width="16" height="16" rx="4"/><rect x="14" y="34" width="16" height="16" rx="4"/><rect x="34" y="34" width="16" height="16" rx="4"/></g>
 </svg>

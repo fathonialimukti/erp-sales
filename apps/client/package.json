@@ -13,7 +13,9 @@
     "preview": "vite preview --host 0.0.0.0 --port 10021",
     "tauri": "tauri",
     "test": "playwright test",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "icons:raster": "bun scripts/rasterize-icons.ts",
+    "icons:check": "bun scripts/check-icons.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.125",
@@ -67,6 +69,7 @@
     "@playwright/test": "^1.62.0",
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
+    "@resvg/resvg-js": "^2.6.2",
     "@tauri-apps/cli": "^2.12.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

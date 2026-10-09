@@ -4,7 +4,6 @@
 export { ConfirmDialog } from "./ConfirmDialog";
 export { DataTable } from "./DataTable";
 export { DatePicker } from "./DatePicker";
-export { DomainIcon } from "./DomainIcon";
 export { EmptyState } from "./EmptyState";
 export { EntityPhoto } from "./EntityPhoto";
 export { FilterBar } from "./FilterBar";

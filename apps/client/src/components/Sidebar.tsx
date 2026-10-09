@@ -15,6 +15,7 @@ import {
   sidebarOpenAtom,
 } from "@/lib/atoms";
 import { fadeIn, getMotionProps } from "@/lib/motion";
+import { plates, type PlateName } from "@/assets/plates";
 import { cn } from "@/lib/utils";
 import type { ModuleKey } from "@/types/module";
 import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
@@ -22,7 +23,7 @@ import { NAV_MENU, type NavMenuItem } from "@/constants/nav-menu";
 interface NavLeaf {
   name: string;
   href: string;
-  icon?: string;
+  icon?: PlateName;
   permission?: string | string[];
 }
 
@@ -67,7 +68,7 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   "/sales-order": "order",
   "/visit-log": "visit",
   "/sku": "sku",
-  "/sku-category": "sku",
+  "/sku-category": "skuCategory",
   "/action-program": "planning",
   "/event-proposal": "event",
   "/budget": "budget",
@@ -82,11 +83,12 @@ const HREF_MODULE: Record<string, ModuleKey> = {
   "/activity-logs": "user",
   "/backups": "settings",
   "/notifications": "user",
+  "/system-logs": "settings",
   "/reports": "report",
   "/email-crm": "email",
   "/knowledge-base": "knowledge",
   "/ai-admin": "ai",
-  // geo master data — module tokens + PageHeader MODULE_ICON exist for these keys
+  // geo master data — module tokens + PageHeader MODULE_PLATE exist for these keys
   "/region": "region",
   "/area": "area",
 };
@@ -400,12 +402,23 @@ export const Sidebar = () => {
                     id: item.name,
                     defaultMessage: item.name,
                   });
+                  const Plate = item.icon ? plates[item.icon] : null;
+                  // Sidebar plates are washed, not solid: 27 stacked tiles out-shout
+                  // the labels and fight the row's own active wash (DESIGN.md §2).
+                  const PlateIcon = Plate ? (
+                    <Plate
+                      size={isCollapsed ? 36 : 32}
+                      className="rounded-xl"
+                      variant="wash"
+                      module={HREF_MODULE[item.href]}
+                    />
+                  ) : null;
                   const active = isPathActive(location.pathname, item.href);
                   return (
                     <NavModuleTile
                       key={item.href}
                       label={label}
-                      icon={item.icon}
+                      icon={PlateIcon}
                       active={active}
                       collapsed={isCollapsed}
                       module={HREF_MODULE[item.href]}

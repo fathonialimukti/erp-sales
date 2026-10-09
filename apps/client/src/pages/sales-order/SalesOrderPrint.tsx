@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
+import { CircleAlert, Printer, X } from "lucide-react";
 import "./SalesOrder.css";
-import { SOIcon } from "./SalesOrderIcons";
 import { cartonCount } from "@repo/schemas/sales-order";
 import { API_BASE_URL } from "@/lib/api-base";
 import { trpcClient } from "@/lib/trpc";
@@ -484,7 +484,7 @@ export const SalesOrderPdfPreview = ({ orderId, onClose }: SalesOrderPdfPreviewP
       <div className="so-pdf-modal" onClick={(e) => e.stopPropagation()}>
         <header className="so-pdf-modal__header">
           <h3>
-            <SOIcon name="print" size={16} />
+            <Printer className="size-4" aria-hidden />
             {t("sales_order.preview.title", "PDF Preview")}
           </h3>
           <button
@@ -492,7 +492,7 @@ export const SalesOrderPdfPreview = ({ orderId, onClose }: SalesOrderPdfPreviewP
             onClick={onClose}
             aria-label={t("common.action.close", "Close")}
           >
-            <SOIcon name="close" size={14} />
+            <X className="size-3.5" aria-hidden />
           </button>
         </header>
         <div className="so-pdf-modal__body">
@@ -504,7 +504,7 @@ export const SalesOrderPdfPreview = ({ orderId, onClose }: SalesOrderPdfPreviewP
           )}
           {error && (
             <div className="so-pdf-modal__error">
-              <SOIcon name="alert" size={28} />
+              <CircleAlert className="size-7" aria-hidden />
               <p>{error}</p>
             </div>
           )}

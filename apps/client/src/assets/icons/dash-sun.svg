@@ -1,19 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-  <defs>
-    <radialGradient id="sunGlow" cx="16" cy="16" r="16" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FCD34D"/>
-      <stop offset="1" stop-color="#F59E0B"/>
-    </radialGradient>
-  </defs>
-  <circle cx="16" cy="16" r="6" fill="url(#sunGlow)"/>
-  <g stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round">
-    <line x1="16" y1="3" x2="16" y2="6"/>
-    <line x1="16" y1="26" x2="16" y2="29"/>
-    <line x1="3" y1="16" x2="6" y2="16"/>
-    <line x1="26" y1="16" x2="29" y2="16"/>
-    <line x1="6.7" y1="6.7" x2="8.8" y2="8.8"/>
-    <line x1="23.2" y1="23.2" x2="25.3" y2="25.3"/>
-    <line x1="6.7" y1="25.3" x2="8.8" y2="23.2"/>
-    <line x1="23.2" y1="8.8" x2="25.3" y2="6.7"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Daylight summary mark · solid report tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-report, #0b5fa4)" fill-opacity="var(--plate-alpha, 1)"/>
+  <circle cx="32" cy="32" r="12" fill="var(--plate-ink, #fff)"/><g stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M32 8v6M32 50v6M8 32h6M50 32h6M15 15l4 4M45 45l4 4M49 15l-4 4M19 45l-4 4"/></g>
 </svg>

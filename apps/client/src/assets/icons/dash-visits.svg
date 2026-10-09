@@ -1,17 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="visBg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FBBF24"/>
-      <stop offset="1" stop-color="#F59E0B"/>
-    </linearGradient>
-    <linearGradient id="visShine" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#visBg)"/>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#visShine)"/>
-  <path d="M32 18 C24 18 18 24 18 32 C18 40 32 48 32 48 C32 48 46 40 46 32 C46 24 40 18 32 18 Z" fill="#FFFFFF"/>
-  <circle cx="32" cy="31" r="5" fill="#F59E0B"/>
-  <circle cx="32" cy="31" r="2" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Field visits — location pin · solid visit tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-visit, #0a6b52)" fill-opacity="var(--plate-alpha, 1)"/>
+  <path d="M32 12a14 14 0 0 1 14 14c0 10-14 26-14 26S18 36 18 26A14 14 0 0 1 32 12z" fill="var(--plate-ink, #fff)"/><circle cx="32" cy="26" r="5.5" fill="var(--plate-detail, #000)" opacity=".28"/>
 </svg>

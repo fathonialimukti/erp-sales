@@ -1,11 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="nsBg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FB923C"/>
-      <stop offset="1" stop-color="#F97316"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#nsBg)"/>
-  <path d="M32 14 L48 22 L48 42 L32 50 L16 42 L16 22 Z" fill="#FFFFFF"/>
-  <path d="M32 14 L32 50 M16 22 L48 22 M32 32 L48 42 M32 32 L16 42" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.4"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Quick create: SKU · solid sku tile, no gradient -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="var(--module-sku, #874700)" fill-opacity="var(--plate-alpha, 1)"/>
+  <path d="M32 12l19 10v20L32 52 13 42V22z" fill="var(--plate-ink, #fff)"/><path d="M13 22l19 10 19-10-19-10z" fill="var(--plate-ink, #fff)" opacity=".72"/><path d="M32 32v20l19-10V22z" fill="var(--plate-ink, #fff)" opacity=".5"/>
 </svg>
