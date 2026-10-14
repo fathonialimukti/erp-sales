@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'erp-server',
-      cwd: '/workspaces/erp-sales/apps/server',
+      cwd: '/home/ubuntu/erp-sales/apps/server',
       // Run the entrypoint directly, NOT `bun run dev`. `dev` is
       // `bun --watch src/index.ts`, so `bun run dev` makes the watcher pm2's
       // child and the real server its *grandchild*: `pm2 stop` left orphans on
@@ -24,7 +24,7 @@ module.exports = {
     },
     {
       name: 'erp-client',
-      cwd: '/workspaces/erp-sales/apps/client',
+      cwd: '/home/ubuntu/erp-sales/apps/client',
       script: 'bun',
       args: 'run dev',
       interpreter: 'none',
@@ -32,7 +32,7 @@ module.exports = {
     },
     {
       name: 'opencode',
-      cwd: '/workspaces/erp-sales',
+      cwd: '/home/ubuntu/erp-sales',
       // Credentials are NOT inline here — this file is git-tracked. pm2 7 has
       // no `process_env_file` option (it ignores the key); the app env is the
       // pm2 daemon's process.env plus this config's `env`, so the secrets are
@@ -42,13 +42,13 @@ module.exports = {
       script: 'sh',
       args: [
         '-c',
-        'set -a; . ./.env.opencode; set +a; exec /usr/local/bin/opencode serve --hostname 0.0.0.0 --port 10023',
+        'set -a; . ./.env.opencode; set +a; exec /usr/local/bin/opencode serve --hostname 0.0.0.0 --port 10041',
       ],
       interpreter: 'none',
       env: {
         NODE_ENV: 'development',
-        // Enables the built-in websearch tool for non-OpenCode providers
-        // (e.g. routers9). Backend is OpenCode's hosted search, no extra key.
+        // Enables the built-in websearch tool (OpenCode hosted search backend,
+        // no extra key needed).
         OPENCODE_ENABLE_EXA: '1',
       },
     },

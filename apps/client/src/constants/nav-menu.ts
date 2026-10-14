@@ -199,6 +199,12 @@ export const NAV_MENU: NavMenuItem[] = [
         permission: "notification@read",
       },
       {
+        name: "nav.settings_app",
+        icon: "navLogs",
+        href: "/settings",
+        permission: "settings@app@read",
+      },
+      {
         name: "nav.knowledge_base",
         icon: "navKnowledge",
         href: "/knowledge-base",

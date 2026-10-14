@@ -453,36 +453,42 @@ export const AppSettingsPage = () => {
   }, [form, data]);
 
   const handleSave = () => {
-    if (!form) return;
-    updateAppSettings.mutate(buildPatch(form), {
-      onSuccess: () => {
-        if (isAiDirty && aiForm) {
-          aiMutation.mutate(aiForm, {
-            onSuccess: () => {
-              toast.success(
-                intl.formatMessage({
-                  id: "settings.app.saved",
-                  defaultMessage: "App settings saved",
-                }),
-              );
-            },
-            onError: (e) => {
-              toast.error(e, "Failed to save AI settings");
-            },
-          });
-        } else {
-          toast.success(
-            intl.formatMessage({
-              id: "settings.app.saved",
-              defaultMessage: "App settings saved",
-            }),
-          );
-        }
-      },
-      onError: (e) => {
-        toast.error(e, "Failed to save app settings");
-      },
-    });
+    // The AI provider section is a second form (isAiDirty): saving must work
+    // when only it changed, without a no-op write to the app settings.
+    if (isDirty && form) {
+      updateAppSettings.mutate(buildPatch(form), {
+        onSuccess: () => {
+          if (isAiDirty && aiForm) {
+            aiMutation.mutate(aiForm, {
+              onSuccess: () => {
+                toast.success(
+                  intl.formatMessage({
+                    id: "settings.app.saved",
+                    defaultMessage: "App settings saved",
+                  }),
+                );
+              },
+              onError: (e) => {
+                toast.error(e, "Failed to save AI settings");
+              },
+            });
+          } else {
+            toast.success(
+              intl.formatMessage({
+                id: "settings.app.saved",
+                defaultMessage: "App settings saved",
+              }),
+            );
+          }
+        },
+        onError: (e) => {
+          toast.error(e, "Failed to save app settings");
+        },
+      });
+    } else if (isAiDirty && aiForm) {
+      // aiMutation carries its own success/error toasts (see below).
+      aiMutation.mutate(aiForm);
+    }
   };
 
   const legacyQuery = useQuery({
@@ -1550,10 +1556,14 @@ export const AppSettingsPage = () => {
           <Button
             type="button"
             size="sm"
-            disabled={!isDirty || updateAppSettings.isPending}
+            disabled={
+              (!isDirty && !isAiDirty) ||
+              updateAppSettings.isPending ||
+              aiMutation.isPending
+            }
             onClick={handleSave}
           >
-            {updateAppSettings.isPending ? (
+            {updateAppSettings.isPending || aiMutation.isPending ? (
               <Loader2 className="size-3.5 animate-spin" aria-hidden />
             ) : (
               <Save className="size-3.5" aria-hidden />
